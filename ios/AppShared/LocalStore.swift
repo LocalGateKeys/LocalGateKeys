@@ -419,8 +419,8 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
                                           exchangePrivate: try f.bytes("exchange"))
         guard case .array(let members)? = f.o["members"] else { throw LocalStoreError.corrupt("members") }
         // Pinned view signing keys (audit M-7); absent in states stored before the pins existed.
-        let signers = f.o["view_signers"] == nil ? [:] : try f.dict("view_signers").mapValues {
-            guard case .string(let s) = $0 else { throw LocalStoreError.corrupt("view_signers") }; return s
+        let signers: [String: String] = f.o["view_signers"] == nil ? [:] : try f.dict("view_signers").mapValues { v -> String in
+            guard case .string(let s) = v else { throw LocalStoreError.corrupt("view_signers") }; return s
         }
         return SyncGroupState(
             groupID: try f.str("group_id"), epoch: try f.int("epoch"), key: try f.bytes("key"), identity: identity,

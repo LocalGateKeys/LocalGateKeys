@@ -55,6 +55,7 @@ final class SiteIconTests: XCTestCase {
     }
 
     func test_downloads_once_then_serves_from_memory_and_disk() async throws {
+        settings.showWebsiteIcons = true   // off by default (test_icons_are_off_by_default)
         let calls = Counter()
         let png = Self.png(side: 64)
         let s = store { url in await calls.add(url); return png }
@@ -71,6 +72,7 @@ final class SiteIconTests: XCTestCase {
     }
 
     func test_falls_back_to_favicon_then_remembers_a_failure() async {
+        settings.showWebsiteIcons = true
         let calls = Counter()
         let s = store { url in await calls.add(url); throw URLError(.badServerResponse) }
         s.request("nothing.example.org")

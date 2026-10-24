@@ -6,6 +6,24 @@ under docs/archive/. Numbered release documents with full
 detail: docs/RELEASE_020.md, docs/RELEASE_019.md.
 Current implementation and validation status: docs/NEXT_RELEASE_IMPLEMENTATION_STATUS.md.
 
+## Unreleased
+
+### Android
+- The Android app (`android/app`, Android 10 and later; not on Google Play yet) has:
+  - an unlock with your fingerprint, face or screen lock;
+  - the vault, item details, the editor and the password generator;
+  - Wi-Fi sync with a PC by pairing code, and sync through a cloud folder;
+  - phone backups and restore;
+  - settings;
+  - the US$4.99 Pro unlock through Google Play.
+
+  It speaks the desktop's current Wi-Fi pairing: the phone shows a verification code and
+  waits until you choose Accept on the PC.
+
+  It was checked live against the desktop's sync code: pairing, sync both ways, a cloud folder,
+  and a phone backup restored on the desktop. `android/RELEASE.md` lists what is left before
+  release. Autofill, saving logins and passkeys come next.
+
 ## 0.4.7 (2026-10-24)
 
 - Fixes 0.4.6 not starting ("Cannot find win-arm64"): the installer left out

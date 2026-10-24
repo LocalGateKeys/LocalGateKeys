@@ -461,11 +461,13 @@ final class FolderSyncTests: XCTestCase {
         return (folder.files[keyringPath]!, id, folder.files[devPath(id)]!, store)
     }
 
-    /// The keyring without the phone's `signing_proof` (CryptoKit signs Ed25519 with hedged randomness, so the
-    /// proof differs between runs; it is verified by `Keyring.parse` instead).
+    /// The keyring without the phone's `signing_proof` and the keyring `mac` that covers it (CryptoKit signs
+    /// Ed25519 with hedged randomness, so both differ between runs; `Keyring.parse` verifies them instead).
     static func withoutProof(_ keyring: [UInt8], of id: String) throws -> JSONValue {
         let ring = try Keyring.parse(keyring)
-        return KeyringTests.editMember(ring, KeyringTests.memberIndex(ring, id)) { $0["signing_proof"] = .null }
+        var o = MergeVectors.obj(KeyringTests.editMember(ring, KeyringTests.memberIndex(ring, id)) { $0["signing_proof"] = .null })
+        o["mac"] = .null
+        return .object(o)
     }
 
     func test_writes_from_ios_vectors() throws {

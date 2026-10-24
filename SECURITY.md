@@ -443,17 +443,42 @@ Known limitations:
 
 ## Production hardening backlog
 
-Before real credential use, at minimum:
+Status as of app 0.4.7 (October 2026).
 
-- rewrite the vault/broker core in a memory-safe native language
-- independently validate the implemented optional Windows Hello and DPAPI-protected unlock flow
-- complete native browser-host and named-pipe integration validation on clean Windows installations
-- use WinVerifyTrust directly and define a publisher/update/rebinding policy beyond exact-binary pinning
-- sign the executable, installer, extension, and updates; implement rollback protection
-- narrow and review dependencies; pin hashes and generate an SBOM
-- complete failure/recovery rehearsals for the implemented encrypted backup, recovery, and transfer flows
-- add passkey support; password generation and credential editing are already implemented
-- add anti-phishing UX in trusted browser surfaces
-- add fuzzing for vault and protocol parsers
+Done:
+
+- **Signed updates with rollback protection.** The update feed is signed with the
+  release key, and `src/localvault/updates.py` refuses a feed or revocation list
+  older than the highest sequence it has already verified. The Microsoft Store
+  build is signed through the Store.
+- **Pinned dependencies and an SBOM.** `requirements*.lock.txt` pin every package
+  by hash; `scripts/generate_sbom.ps1` produces the SBOM.
+- **Fuzzing and property tests** for the vault, backup, sync, frame, origin and
+  importer parsers (`tests/fuzz/`, `tests/props/`).
+- **Passkeys**, password generation and credential editing, on the desktop and on
+  iPhone.
+- **Internal security audits** with every finding fixed or tracked; the reports
+  are published under `docs/SECURITY_AUDIT_*` and `docs/SECURITY_SCAN_*`.
+
+Partly done:
+
+- **Code signing of the direct-download build.** `scripts/build_personal_installer.ps1`
+  supports Authenticode signing, but it needs a code-signing certificate. The
+  browser extension is signed only once it is published in a browser store.
+- **Clean-install validation** of the native browser host and named pipe. The
+  Store package and VM tests have run; there is no written test run on fresh
+  Windows installations.
+- **Backup, recovery and transfer rehearsals.** Property tests and
+  `docs/DISASTER_RECOVERY_RUNBOOK.md` exist; a full failure rehearsal has not been
+  written up.
+- **Anti-phishing.** Fills are bound to the exact web origin, but there is no
+  dedicated warning for lookalike sites in the extension.
+
+Open:
+
+- use WinVerifyTrust directly and define a publisher/update/rebinding policy
+  beyond exact-binary pinning (`src/localvault/signature.py`)
+- independently validate the optional Windows Hello and DPAPI-protected unlock flow
 - add Windows integration tests across integrity levels and accessibility frameworks
-- commission an independent security audit and remediate findings
+- commission an independent security audit and remediate its findings
+- longer term: move the vault/broker core to a memory-safe native language

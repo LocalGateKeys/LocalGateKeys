@@ -1,6 +1,8 @@
 # LocalGateKeys for Android
 
-Status: Part A (the pure Kotlin core `lgk-core`) is done. Part B (the Compose app) is not started.
+Status: Part A (the pure Kotlin core `lgk-core`) and Part B (the Compose app in `app/`: unlock, vault, editor, sync
+over Wi-Fi and a cloud folder, backups, settings, Play Billing) are done and checked live against the desktop's sync
+code (2026-10-24). Part C (Autofill, save, passkeys) is next. Release steps and the owner checklist: `RELEASE.md`.
 Design: `docs/superpowers/specs/2026-10-23-android-app-design.md`; plan: `docs/superpowers/plans/2026-10-23-android-core.md`.
 
 ## Layout
@@ -69,3 +71,142 @@ The files are binary and byte-exact (`tests/vectors/** -text`, `*.lgksync` and `
   `ios/LGKCore/Sources/LGKCore/Primitives/Casefold.swift` (Unicode 15.0.0, 1530 code points). Do not edit by hand.
 - The Public Suffix List itself is not vendored in `lgk-core`: `records/PublicSuffixRules.kt` parses the list text the
   caller passes in (as the desktop does) and adds the desktop's local rule `*.web.core.windows.net`.
+
+## The app module
+
+`app/` is `app.localgatekeys.android` (debug builds add `.debug`): AGP 9.4.1 with its built-in Kotlin (no
+`kotlin-android` plugin; only the Compose compiler plugin), Compose BOM 2026.09.00, minSdk 29, targetSdk 36.
+`compileSdk` is 37, not 36: the BOM's `ui-android 1.12.1` requires it (platform `android-37.0` is installed).
+`material-icons-core` is a separate dependency (Material 3 1.4 no longer brings it).
+
+- **JVM tests use JUnit 4** (`junit:junit:4.13.2`): it is what AGP 9 runs for `testDebugUnitTest` with no extra
+  plugin. Later tasks write `org.junit.Test` / `org.junit.Assert` tests under `app/src/test/kotlin` (not the JUnit 5 /
+  `kotlin.test` style of `lgk-core`).
+- Device tests: `android/gradlew -p android :app:connectedDebugAndroidTest` with an emulator running. The sync vectors
+  they need are copied from `tests/vectors/sync` into `app/build/generated/vectors` by the `copyVectors` task (not in git).
+- Emulators: `LGK_API36` (Android 16) and `LGK_API29` (Android 10, the minSdk device), both google_apis x86_64 with no
+  screen lock. Device tests and screenshots run there. `Pixel_8` and `Pixel_8_2` are the owner's AVDs: never use them.
+- Debug-only intent extras on `MainActivity` (ignored in release): `lgk.debug.insecure=true` leaves `FLAG_SECURE` off so
+  `adb exec-out screencap -p` works; `lgk.debug.appearance=light|dark|system` forces the theme.
+- `Argon2KtAdapter` (argon2kt) is installed into `Argon2.default` in `LgkApp.onCreate`.
+- Unlock (`unlock/`): `LgkApp.lock` is the process-wide `AppLockModel` (ProcessLifecycleOwner ON_START / ON_STOP);
+  `SystemUnlocker` = androidx `BiometricPrompt` + `VaultOpener` (first run / open / vault without key). `MainActivity` is a
+  `FragmentActivity` (BiometricPrompt needs one) and feeds touches and key presses to `ActivityMonitor`; text fields report
+  typing through `LocalActivityMonitor`.
+- `SystemUnlockDeviceTest` drives the real system prompt with UiAutomator: it sets screen-lock PIN 1234 itself (skips on a
+  device that already has a screen lock), erases the debug app's vault before and after, and removes the PIN at the end.
+  Run on both `LGK_API36` and `LGK_API29` (the API 29 run waits 31 s for the auth window to close).
+- `src/debug/AndroidManifest.xml` keeps the Compose test host activity (from `ui-test-manifest`) unexported.
+
+## Vault list (Task 6)
+
+- `vault/` holds the plain models (`VaultItem`, `VaultGroup`, `VaultSearch` with `SequenceRatio`, `VaultListModel`, `CodeTileModel`,
+  `TotpState`, `QuickActions`, `NewItemGate`, `SiteLogos`); `ui/vault/` has `VaultScreen`, `SearchScreen`, `CodeTile`, `ItemAvatar`.
+  The screens take their outside world as `VaultSeams` (clipboard, Pro state, editor, upgrade sheet, detail, sync); `MainActivity`
+  passes no-ops until Tasks 7, 8, 10, 11 and 13 provide them. No website icon is downloaded: bundled logos only.
+- Site logos: `scripts/make_android_logos.py` (run with the repo Python, no arguments) turns the iPhone image sets into
+  `res/drawable/logo_<slug>.xml` vector drawables, writes `vault/SiteLogoImages.kt` (slug to `R.drawable` id) and copies
+  `src/localvault/assets/site_logos.json` to `app/src/main/assets/`. It is deterministic and stops if the table and the images differ.
+- Debug-only extra `lgk.debug.demo=true` on `MainActivity` fills an empty vault with sample items (`src/debug/.../DemoSeed.kt`; the
+  release source set has a no-op), for emulator screenshots.
+
+## Item detail and secret clipboard (Task 7)
+
+- `detail/` holds `ItemDetailModel` (fields per kind, reveal, copy, TOTP), `SecretClipboard` (one per process in `LgkApp`;
+  expiry from `ClipboardExpiry` through a `LockScheduler`, `clearIfOwned` on lock) and `SystemClipboardSink` over
+  `AndroidClipboardPort`. Every copy is marked `EXTRA_IS_SENSITIVE` and carries a random tag in its description extras;
+  ownership is decided from that tag only, so the app never reads clip text (no "pasted from your clipboard" notice).
+  In the background, where Android 10+ hides the clipboard, an expiry clears unless a foreign copy was seen while focused.
+- All copies (Codes row, quick actions, detail) go through `SecretClipboard`; screens get it as the `Copier` seam.
+- Copy confirmation: `CopyToast` shows its own capsule only below API 33 (Android 13+ confirms copies itself); the confirm
+  haptic fires on every API level, and the detail screen's footnote says when the copy clears.
+- `editor/Amount.kt` (display half) and `editor/WifiSecurity.kt` exist for the detail screen; the editor (Task 8) extends
+  `Amount` and uses `WifiSecurity.label` for `EditorKind.choiceLabel`.
+- Emulators mirror the clipboard with the host: device-test copies reach the PC's clipboard, and the host writes them
+  back as untagged clips. `SystemClipboardSinkTest` checks inside one main-thread block and skips (assumption) when the
+  echo already replaced its clip; on the API 29 emulator it is skipped entirely (its system server crashes on that race).
+
+## Running the app
+
+From the repository root, with an emulator (`LGK_API36` or `LGK_API29`) running:
+
+```
+android/gradlew -p android :app:installDebug
+adb shell am start -n app.localgatekeys.android.debug/app.localgatekeys.android.MainActivity
+```
+
+Unlocking needs a screen lock. For a session on a clean emulator, set one with `adb shell locksettings set-pin 1234`
+and remove it afterwards with `adb shell locksettings clear --old 1234`. On API 29 the PIN unlocks the Keystore key for
+30 s. Useful debug-only extras (ignored in release builds):
+
+- `--ez lgk.debug.insecure true` leaves `FLAG_SECURE` off, so `adb exec-out screencap -p` works.
+- `--es lgk.debug.appearance light|dark|system` forces the theme.
+- `--ez lgk.debug.demo true` fills an empty vault with sample items.
+- `--es lgk.debug.pairing "<lgk-pair:... text>"` joins that Wi-Fi pairing code after the unlock, as if the camera had
+  scanned it (Ruling D). Start with `-S` so the activity is new.
+
+A release build (`:app:assembleRelease`) is minified and unsigned; `RELEASE.md` has the signing steps. The screenshots in
+`docs/design/android/` (`unlock`, `vault`, `detail`, `editor`, `sync`, `settings`, each `-light` and `-dark`) come from
+`LGK_API36`.
+
+## Live checks with the desktop
+
+`scripts/android_live_peer.py` plays the desktop. It runs the desktop's own sync service (`localvault.sync.service`
+with the real `LanAdapter` and `FolderAdapter`, `lan_sync`, `pairing`, `vault_bridge`) in-process on a **scratch**
+vault:
+
+- `--data-dir` must be inside the temp folder, and `LOCALGATEKEYS_DATA_DIR` points there. The real vault, the real
+  settings and the installed desktop app are never touched.
+- It listens on `127.0.0.1` only. The emulator reaches that as `10.0.2.2`, which is the address the pairing code
+  advertises. No firewall rule is needed.
+
+```
+python scripts/android_live_peer.py serve --data-dir %TEMP%\lgk-live --port 47931      (leave it running)
+python scripts/android_live_peer.py send --data-dir %TEMP%\lgk-live pair               (prints the "qr" text)
+adb shell am start -S -n app.localgatekeys.android.debug/app.localgatekeys.android.MainActivity --es lgk.debug.pairing "<qr>"
+python scripts/android_live_peer.py send --data-dir %TEMP%\lgk-live accept <offer id> "<code the phone shows>"
+python scripts/android_live_peer.py send --data-dir %TEMP%\lgk-live status
+```
+
+Sync v2: the phone shows a verification code and waits up to 75 s for the reply. `accept` waits for the phone's
+request, checks the code (Decline if it differs) and chooses Accept, as the user would on the PC. `pending <offer id>`
+shows the waiting request; `decline <offer id>` declines it.
+
+Other commands (see the script's docstring):
+
+- `add-login`, `add-note`, `edit-note`, `edit-login` and `sync` change and sync the desktop side.
+- `add-folder <password>` gives the group a cloud folder in `<data dir>\Folder`. `adb push` its `LocalGateKeys Sync`
+  folder into the emulator's `Download/<name>/` and choose `<name>` in the app.
+- `check-folder <folder>` decodes every device file in a folder pulled back with `adb pull`.
+- `restore <backup.lgkm> <password> [fresh]` restores a backup exported from the app (and pulled) with
+  `phone_backup.read_phone_backup` and `phone_restore.plan_restore`/`restore`.
+- `quit` stops the peer.
+
+The run of 2026-10-24 is recorded in `.superpowers/sdd/2026-10-23-android-app/task-15-report.md`.
+
+## Known limits (v1)
+
+- **Clipboard.**
+  - Every copy is marked sensitive (`EXTRA_IS_SENSITIVE`), not only passwords and codes, as on the iPhone.
+  - If the system or a keyboard rewrites our clip (for example a clipboard editor), it no longer carries our tag. It
+    counts as "not ours" and is not cleared.
+  - Emulators share the clipboard with the host PC: copies made on the emulator reach the PC's clipboard, and the host
+    writes them back as untagged clips. `SystemClipboardSinkTest` skips on emulators for that reason (and always on the
+    API 29 emulator). Check whether it also skips on a real device before relying on it there.
+  - A copy that is due to be cleared is lost if Android kills the process before the deadline, so it stays on the
+    clipboard.
+- **Editor.** An unsaved draft is lost when the activity is recreated for a dark-mode, language or font-size change,
+  and when Android ends the app in the background (process death). Rotation keeps it: MainActivity handles orientation
+  changes itself (`configChanges`).
+- **Folder sync.**
+  - A folder run already in flight when the vault locks may still finish writing its own device file to the folder.
+  - When a document provider cannot truncate (`"wt"`), the rewrite falls back to `"w"`, which is not atomic.
+  - `SafFolderOpener.keepOnly` releases every persisted URI grant except the sync folder's, including any non-folder
+    grant.
+  - A persisted folder grant can briefly outlive a lock until the release finishes.
+- **System picker allowance (Ruling 21).** The 120 s cap and the screen-off lock apply under every auto-lock delay, not
+  only "Immediately".
+- **Autofill.** The Settings › Autofill section does nothing until Part C adds the autofill service.
+- **Free plan.** The free 4-item limit stops the phone from adding a fifth item; the upgrade sheet opens instead.
+  Items that arrive by sync are kept beyond the limit (seen live: a free phone holding 5 synced items). A backup
+  restore fills only the free slots and holds the rest back (Ruling B).

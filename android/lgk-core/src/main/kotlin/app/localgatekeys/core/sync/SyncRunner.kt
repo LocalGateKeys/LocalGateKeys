@@ -89,8 +89,11 @@ object SyncRunner {
 
     internal fun sorted(states: Map<String, ItemState>): List<ItemState> = states.values.sortedWith { a, b -> Scalars.compare(a.itemId, b.itemId) }
 
-    /** The bridge's refusal for a state the fold wants to store, or null (plays the desktop per-record apply check). */
-    internal fun check(state: ItemState, licenseKeys: Map<String, ByteArray>): String? {
+    /**
+     * The bridge's refusal for a state the fold wants to store, or null (plays the desktop per-record apply check,
+     * `vault_bridge.check_remote_state`; phone restore uses it to leave unreadable backup states out before the free cap).
+     */
+    fun check(state: ItemState, licenseKeys: Map<String, ByteArray>): String? {
         if (state.deleted) return null
         val item = state.item ?: return null
         val isCopy: Boolean

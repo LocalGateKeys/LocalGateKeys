@@ -98,3 +98,8 @@ dist-msix/
 # WebView UI: dependencies and build output (built by npm run build in webui/)
 webui/node_modules/
 src/localvault/assets/ui/
+
+# Android signing: upload keys and their settings never go into git (android/RELEASE.md)
+*.jks
+*.keystore
+keystore.properties

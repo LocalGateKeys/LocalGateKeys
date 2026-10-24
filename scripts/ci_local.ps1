@@ -90,7 +90,9 @@ if (Want "webui") {
 }
 
 if (Want "kotlin") {
-    Step "kotlin: lgk-core tests" (Join-Path $Root "android") { .\gradlew.bat -q --console=plain :lgk-core:test }
+    Step "kotlin: lgk-core and app unit tests" (Join-Path $Root "android") {
+        .\gradlew.bat -q --console=plain :lgk-core:test :app:testDebugUnitTest
+    }
 }
 
 if (Want "worker") {

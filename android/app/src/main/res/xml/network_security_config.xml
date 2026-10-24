@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The app's only network use is raw TCP to the paired PC's private LAN address (protected by the LAN protocol's own
+  encryption, which this config does not govern) and Play Billing through the Play Store app. Nothing uses HTTP: no
+  cleartext and only the system's certificate authorities (never user-added ones), with no per-domain exceptions.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

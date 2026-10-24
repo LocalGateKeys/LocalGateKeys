@@ -1,5 +1,6 @@
 pluginManagement {
     repositories {
+        google()
         gradlePluginPortal()
         mavenCentral()
     }
@@ -7,6 +8,7 @@ pluginManagement {
 
 dependencyResolutionManagement {
     repositories {
+        google()
         mavenCentral()
     }
 }
@@ -14,3 +16,4 @@ dependencyResolutionManagement {
 rootProject.name = "localgatekeys-android"
 
 include(":lgk-core")
+include(":app")

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Device tests only (the test APK, never the app): a local document tree for the cloud-folder tests. Both providers live
+  in the test package, so they run in its own process and uid: the app reaches the tree only through a real URI grant,
+  as with a cloud app's provider. The control provider seeds files, grants and revokes (test setup only).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <provider
+            android:name="app.localgatekeys.android.sync.TestDocumentsProvider"
+            android:authorities="${applicationId}.documents"
+            android:exported="true"
+            android:grantUriPermissions="true"
+            android:permission="android.permission.MANAGE_DOCUMENTS">
+            <intent-filter>
+                <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
+            </intent-filter>
+        </provider>
+        <provider
+            android:name="app.localgatekeys.android.sync.TestDocumentsControl"
+            android:authorities="${applicationId}.documents.control"
+            android:exported="true" />
+    </application>
+</manifest>
