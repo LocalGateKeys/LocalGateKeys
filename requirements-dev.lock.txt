@@ -984,16 +984,16 @@ numpy==2.5.3 \
     --hash=sha256:fc36dc566135b5eceec4cf89758fcb719266a019ef07dae1754ae7c9f617ef3e \
     --hash=sha256:ffdc76bfcae6b255dff75202c5e7feaf95b40246bc0a17944facc1fecf9f79ab
     # via opencv-contrib-python
-opencv-contrib-python==4.14.0.94 ; platform_system == "Windows" \
-    --hash=sha256:20f1fc01919fd2116d4fc19d9656c9137d735acdccd64207ba302a17289e5d01 \
-    --hash=sha256:5388c5915a759a543bd7979211c79045cd713de35d6baad5a6fdd2f4c3b359af \
-    --hash=sha256:626617c1e66b2537d075e00adba62bd7566df37f7878d185e047bfd49a6d50c7 \
-    --hash=sha256:6fc25b60cc0fcc6ce9c82d14cf45921b68b9ca15b9458a708bda7874cd486527 \
-    --hash=sha256:8171c172e412721d5e53347cfbd393bcfbd1441d88b8c0cea50cfde0a60cf8e8 \
-    --hash=sha256:9fb4deb9bcb93d41fb2a31c938f47b0d24a8e2b8418f566f939be309e3becb2f \
-    --hash=sha256:ac2e796be65ee8eee56f4f0a6514183f193264f4dc22f9e3a648a261e37f7ebe \
-    --hash=sha256:b36cd24d7e2bd5159bc9f6572c3ccfe333640ab28e123017f366ef286cae7514 \
-    --hash=sha256:f2e58020b9f54d68b49553a161327ae1bbc47da68e147231d444c915ee4cab4c
+opencv-contrib-python==5.0.0.93 ; platform_system == "Windows" \
+    --hash=sha256:29b916da864002a921c79b6df4cfb2dcf79870f166ddf3ce1179b558bc7313d7 \
+    --hash=sha256:3ebb8e0506573f36f54038116321a086c97aeda8ef154198931f3ea18b435cc7 \
+    --hash=sha256:45a1ce7c68828907348e649edd471a7dc5244d3d0ac21989e67c63d2f4fa629a \
+    --hash=sha256:461622db95c964652d4d8fda171034961c3de270f78a6095aaad31050771774a \
+    --hash=sha256:8427dcb0561dc3ba32f3771c627f52b87c29932c265bea28ffcb54804c3c3fec \
+    --hash=sha256:b84f0b0fcdbd2421b5819e517542463e71eed7f41e0a0c4ec280ed88b7269a66 \
+    --hash=sha256:cac609c9a4fce67feb287837c671a2c4da9467df8e47fa0cce7bdc453d12a529 \
+    --hash=sha256:da0ba61096b08c63cb4440d8fd6f323835cbb78b714c5ba22a39e1db68c83166 \
+    --hash=sha256:dd8a80a04a8610c033757135b7846ad2027ba2d3bf9faf2f83f3dc6ed9e3814a
     # via localgatekeys (pyproject.toml)
 packageurl-python==0.17.6 \
     --hash=sha256:1252ce3a102372ca6f86eb968e16f9014c4ba511c5c37d95a7f023e2ca6e5c25 \
