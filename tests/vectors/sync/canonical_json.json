@@ -1,0 +1,233 @@
+{
+  "ascii": [
+    {
+      "canonical_hex": "225c753230323822",
+      "value_json": "\"\\u2028\""
+    },
+    {
+      "canonical_hex": "225c753230323922",
+      "value_json": "\"\\u2029\""
+    },
+    {
+      "canonical_hex": "225c753030376622",
+      "value_json": "\"\\u007f\""
+    },
+    {
+      "canonical_hex": "225c753030303022",
+      "value_json": "\"\\u0000\""
+    },
+    {
+      "canonical_hex": "225c753030316622",
+      "value_json": "\"\\u001f\""
+    },
+    {
+      "canonical_hex": "222f22",
+      "value_json": "\"\\/\""
+    },
+    {
+      "canonical_hex": "225c5c2f22",
+      "value_json": "\"\\\\/\""
+    },
+    {
+      "canonical_hex": "225c75643833645c756464313122",
+      "value_json": "\"\\ud83d\\udd11\""
+    },
+    {
+      "canonical_hex": "225c75643833645c756464313122",
+      "value_json": "\"🔑\""
+    },
+    {
+      "canonical_hex": "226361665c753030653922",
+      "value_json": "\"caf\\u00e9\""
+    },
+    {
+      "canonical_hex": "22636166655c753033303122",
+      "value_json": "\"cafe\\u0301\""
+    },
+    {
+      "canonical_hex": "22615c22625c5c635c6e5c745c625c665c7222",
+      "value_json": "\"a\\\"b\\\\c\\n\\t\\b\\f\\r\""
+    },
+    {
+      "canonical_hex": "313030303030303030303030303030302e30",
+      "value_json": "1e15"
+    },
+    {
+      "canonical_hex": "31652b3136",
+      "value_json": "1e16"
+    },
+    {
+      "canonical_hex": "302e31",
+      "value_json": "0.1"
+    },
+    {
+      "canonical_hex": "2d302e30",
+      "value_json": "-0.0"
+    },
+    {
+      "canonical_hex": "31652d3037",
+      "value_json": "1e-07"
+    },
+    {
+      "canonical_hex": "312e35",
+      "value_json": "1.5"
+    },
+    {
+      "canonical_hex": "3130302e30",
+      "value_json": "100.0"
+    },
+    {
+      "canonical_hex": "39303037313939323534373430393932",
+      "value_json": "9007199254740992"
+    },
+    {
+      "canonical_hex": "39323233333732303336383534373735383037",
+      "value_json": "9223372036854775807"
+    },
+    {
+      "canonical_hex": "2d39323233333732303336383534373735383037",
+      "value_json": "-9223372036854775807"
+    },
+    {
+      "canonical_hex": "7b2261223a225c75323032385c75643833645c7564643131222c2262223a5b313030303030303030303030303030302e302c7b2261223a747275652c227a223a6e756c6c7d5d7d",
+      "value_json": "{\"b\":[1e15,{\"z\":null,\"a\":true}],\"a\":\"\\u2028\\ud83d\\udd11\"}"
+    }
+  ],
+  "note": "utf8 = localvault.updates.canonical_json (views, keyrings): sorted keys, no whitespace, ensure_ascii=False, allow_nan=False. ascii = json.dumps(sort_keys=True, separators=(',', ':'), ensure_ascii=True) (pairing, transport, LAN). value_json is the JSON text to parse; canonical_hex the hex of the output bytes. Floats use Python repr (1e15 -> 1000000000000000.0, 1e16 -> 1e+16).",
+  "rejected": [
+    {
+      "reason": "2**63 does not fit the signed 64-bit item integer range; the item engine (ItemState) rejects it, although a plain JSON parser and the canonical encoder accept it",
+      "rejected_by": [
+        "engine_item_state"
+      ],
+      "text": "{\"n\":9223372036854775808}"
+    },
+    {
+      "reason": "NaN is not JSON; the canonical encoder (allow_nan=False), the item engine and the strict parsers reject it",
+      "rejected_by": [
+        "canonical_encoder",
+        "engine_item_state",
+        "strict_parser"
+      ],
+      "text": "{\"x\":NaN}"
+    },
+    {
+      "reason": "Infinity is not JSON; the canonical encoder (allow_nan=False), the item engine and the strict parsers reject it",
+      "rejected_by": [
+        "canonical_encoder",
+        "engine_item_state",
+        "strict_parser"
+      ],
+      "text": "{\"x\":Infinity}"
+    },
+    {
+      "reason": "a duplicate object key; the strict parsers reject it (a lenient parser keeps the last value)",
+      "rejected_by": [
+        "strict_parser"
+      ],
+      "text": "{\"a\":1,\"a\":2}"
+    },
+    {
+      "reason": "a lone surrogate has no UTF-8 form; the canonical encoder and the item engine (ItemState) reject it; the strict parsers accept the escape text",
+      "rejected_by": [
+        "canonical_encoder",
+        "engine_item_state"
+      ],
+      "text": "{\"s\":\"\\ud800\"}"
+    }
+  ],
+  "utf8": [
+    {
+      "canonical_hex": "22e280a822",
+      "value_json": "\"\\u2028\""
+    },
+    {
+      "canonical_hex": "22e280a922",
+      "value_json": "\"\\u2029\""
+    },
+    {
+      "canonical_hex": "227f22",
+      "value_json": "\"\\u007f\""
+    },
+    {
+      "canonical_hex": "225c753030303022",
+      "value_json": "\"\\u0000\""
+    },
+    {
+      "canonical_hex": "225c753030316622",
+      "value_json": "\"\\u001f\""
+    },
+    {
+      "canonical_hex": "222f22",
+      "value_json": "\"\\/\""
+    },
+    {
+      "canonical_hex": "225c5c2f22",
+      "value_json": "\"\\\\/\""
+    },
+    {
+      "canonical_hex": "22f09f949122",
+      "value_json": "\"\\ud83d\\udd11\""
+    },
+    {
+      "canonical_hex": "22f09f949122",
+      "value_json": "\"🔑\""
+    },
+    {
+      "canonical_hex": "22636166c3a922",
+      "value_json": "\"caf\\u00e9\""
+    },
+    {
+      "canonical_hex": "2263616665cc8122",
+      "value_json": "\"cafe\\u0301\""
+    },
+    {
+      "canonical_hex": "22615c22625c5c635c6e5c745c625c665c7222",
+      "value_json": "\"a\\\"b\\\\c\\n\\t\\b\\f\\r\""
+    },
+    {
+      "canonical_hex": "313030303030303030303030303030302e30",
+      "value_json": "1e15"
+    },
+    {
+      "canonical_hex": "31652b3136",
+      "value_json": "1e16"
+    },
+    {
+      "canonical_hex": "302e31",
+      "value_json": "0.1"
+    },
+    {
+      "canonical_hex": "2d302e30",
+      "value_json": "-0.0"
+    },
+    {
+      "canonical_hex": "31652d3037",
+      "value_json": "1e-07"
+    },
+    {
+      "canonical_hex": "312e35",
+      "value_json": "1.5"
+    },
+    {
+      "canonical_hex": "3130302e30",
+      "value_json": "100.0"
+    },
+    {
+      "canonical_hex": "39303037313939323534373430393932",
+      "value_json": "9007199254740992"
+    },
+    {
+      "canonical_hex": "39323233333732303336383534373735383037",
+      "value_json": "9223372036854775807"
+    },
+    {
+      "canonical_hex": "2d39323233333732303336383534373735383037",
+      "value_json": "-9223372036854775807"
+    },
+    {
+      "canonical_hex": "7b2261223a22e280a8f09f9491222c2262223a5b313030303030303030303030303030302e302c7b2261223a747275652c227a223a6e756c6c7d5d7d",
+      "value_json": "{\"b\":[1e15,{\"z\":null,\"a\":true}],\"a\":\"\\u2028\\ud83d\\udd11\"}"
+    }
+  ]
+}

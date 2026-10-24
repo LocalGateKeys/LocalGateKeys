@@ -1,0 +1,91 @@
+{
+  "manifest_version": 3,
+  "name": "LocalGateKeys",
+  "version": "0.4.5",
+  "description": "Fill and save logins with the LocalGateKeys password manager for Windows. The extension talks only to the app on your own PC.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwulpm1yjzbqHYZsLqpuy4y4HxKnckl9PtXM12a/9zIq7AsZ0czEfhzzJoqTZeGPypDS0sCfYu7i2yfP/KqiQfOz9pB8WkeE5V9f9QqDXQdNNuaLkE/egswpqb4y1f3Qg0NCWyyzMw0XxM6H3xJ5VRU50o7gFPl91/c89j5agP6PJHUewFiv6XswIa4oGra7hHesAeJunVjVOOTS8Bit2hx/ZHGupvN9h+DIL3F4oTSoHgBAW6YBXjTXqc64SC414qdy/v0AonOn2l45354G/64W2Turv8AqaFv3S8vkqQLlOff8nCpuJHtiu9h/qY6oOMGA31Z9F7XAXwzFZ/oJ1rQIDAQAB",
+  "permissions": [
+    "nativeMessaging",
+    "scripting",
+    "storage",
+    "webNavigation",
+    "favicon",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "api.js",
+        "heuristics.js",
+        "login-safety.js",
+        "content.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_idle",
+      "world": "ISOLATED"
+    },
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "webauthn-page.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "api.js",
+        "webauthn-bridge.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start",
+      "world": "ISOLATED"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "action": {
+    "default_title": "LocalGateKeys",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "localgatekeys@localgatekeys.app",
+      "strict_min_version": "128.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+  "minimum_chrome_version": "111"
+}

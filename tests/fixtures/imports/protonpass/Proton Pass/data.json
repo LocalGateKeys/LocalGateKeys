@@ -1,0 +1,172 @@
+{
+  "version": "1.21.2",
+  "userId": "fixture-user-id",
+  "encrypted": false,
+  "vaults": {
+    "share-personal-0001": {
+      "name": "Personal",
+      "description": "Personal vault",
+      "display": {"color": 0, "icon": 0},
+      "items": [
+        {
+          "itemId": "item-login-0001",
+          "shareId": "share-personal-0001",
+          "data": {
+            "metadata": {"name": "Example Social", "note": "Personal profile.", "itemUuid": "uuid-0001"},
+            "extraFields": [
+              {"fieldName": "Backup codes", "type": "hidden", "data": {"content": "1111-2222 3333-4444"}},
+              {"fieldName": "Handle", "type": "text", "data": {"content": "@alex_example"}},
+              {"fieldName": "Second factor", "type": "totp", "data": {"totpUri": "otpauth://totp/Second:alex?secret=GEZDGNBVGY3TQOJQ&issuer=Second"}}
+            ],
+            "type": "login",
+            "content": {
+              "itemEmail": "alex@example.com",
+              "itemUsername": "alex_example",
+              "password": "proton-pass-1",
+              "urls": ["https://social.example.com/login", "https://m.social.example.com"],
+              "totpUri": "otpauth://totp/Social:alex?secret=JBSWY3DPEHPK3PXP&issuer=Social",
+              "passkeys": [{"keyId": "fixture-key", "domain": "social.example.com"}]
+            }
+          },
+          "state": 1,
+          "aliasEmail": null,
+          "contentFormatVersion": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700100000,
+          "pinned": true
+        },
+        {
+          "itemId": "item-login-0002",
+          "shareId": "share-personal-0001",
+          "data": {
+            "metadata": {"name": "Legacy shop", "note": "", "itemUuid": "uuid-0002"},
+            "extraFields": [],
+            "type": "login",
+            "content": {"username": "alex@example.com", "password": "proton-pass-2", "urls": ["https://shop.example.com"], "totpUri": ""}
+          },
+          "state": 1,
+          "aliasEmail": null,
+          "contentFormatVersion": 1,
+          "createTime": 1600000000,
+          "modifyTime": 1600000000,
+          "pinned": false
+        },
+        {
+          "itemId": "item-note-0001",
+          "shareId": "share-personal-0001",
+          "data": {
+            "metadata": {"name": "Locker combination", "note": "12-34-56", "itemUuid": "uuid-0003"},
+            "extraFields": [],
+            "type": "note",
+            "content": {}
+          },
+          "state": 1,
+          "aliasEmail": null,
+          "contentFormatVersion": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700000000,
+          "pinned": false
+        },
+        {
+          "itemId": "item-card-0001",
+          "shareId": "share-personal-0001",
+          "data": {
+            "metadata": {"name": "Shopping Visa", "note": "Online purchases only.", "itemUuid": "uuid-0004"},
+            "extraFields": [],
+            "type": "creditCard",
+            "content": {"cardholderName": "Alex Example", "cardType": 0, "number": "4111111111111111", "verificationNumber": "456", "expirationDate": "2028-09", "pin": "9876"}
+          },
+          "state": 1,
+          "aliasEmail": null,
+          "contentFormatVersion": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700000000,
+          "pinned": false
+        },
+        {
+          "itemId": "item-identity-0001",
+          "shareId": "share-personal-0001",
+          "data": {
+            "metadata": {"name": "Alex (personal)", "note": "Primary identity.", "itemUuid": "uuid-0005"},
+            "extraFields": [],
+            "type": "identity",
+            "content": {
+              "fullName": "Alex Q Example", "email": "alex@example.com", "phoneNumber": "+44 20 7946 0000",
+              "firstName": "Alex", "middleName": "Q", "lastName": "Example", "birthdate": "1990-01-01", "gender": "",
+              "extraPersonalDetails": [], "organization": "Example Ltd", "streetAddress": "1 Example Road",
+              "zipOrPostalCode": "EX1 2PL", "city": "Exampleton", "stateOrProvince": "Exampleshire",
+              "countryOrRegion": "GB", "floor": "2", "county": "", "extraAddressDetails": [],
+              "socialSecurityNumber": "000-00-0000", "passportNumber": "000000000", "licenseNumber": "",
+              "website": "https://alex.example.com", "xHandle": "", "secondPhoneNumber": "", "linkedin": "",
+              "reddit": "", "facebook": "", "yahoo": "", "instagram": "", "extraContactDetails": [],
+              "company": "Example Ltd", "jobTitle": "Tester", "personalWebsite": "", "workPhoneNumber": "",
+              "workEmail": "alex@work.example.com", "extraWorkDetails": [],
+              "extraSections": [{"sectionName": "Membership", "sectionFields": [{"fieldName": "Gym number", "type": "text", "data": {"content": "GYM-0042"}}]}]
+            }
+          },
+          "state": 1,
+          "aliasEmail": null,
+          "contentFormatVersion": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700000000,
+          "pinned": false
+        },
+        {
+          "itemId": "item-alias-0001",
+          "shareId": "share-personal-0001",
+          "data": {
+            "metadata": {"name": "Newsletter alias", "note": "", "itemUuid": "uuid-0006"},
+            "extraFields": [],
+            "type": "alias",
+            "content": {}
+          },
+          "state": 1,
+          "aliasEmail": "news.fixture@passmail.example",
+          "contentFormatVersion": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700000000,
+          "pinned": false
+        },
+        {
+          "itemId": "item-trashed-0001",
+          "shareId": "share-personal-0001",
+          "data": {
+            "metadata": {"name": "Trashed login", "note": "", "itemUuid": "uuid-0007"},
+            "extraFields": [],
+            "type": "login",
+            "content": {"itemEmail": "", "itemUsername": "gone", "password": "gone", "urls": ["https://trash.example.com"], "totpUri": ""}
+          },
+          "state": 2,
+          "aliasEmail": null,
+          "contentFormatVersion": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700000000,
+          "pinned": false
+        }
+      ]
+    },
+    "share-work-0002": {
+      "name": "Work",
+      "description": "",
+      "display": {"color": 1, "icon": 2},
+      "items": [
+        {
+          "itemId": "item-wifi-0001",
+          "shareId": "share-work-0002",
+          "data": {
+            "metadata": {"name": "Office Wi-Fi", "note": "", "itemUuid": "uuid-0008"},
+            "extraFields": [],
+            "type": "wifi",
+            "content": {"ssid": "ExampleOffice", "password": "wifi-fixture-pass", "security": 3}
+          },
+          "state": 1,
+          "aliasEmail": null,
+          "contentFormatVersion": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700000000,
+          "pinned": false
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "reference": {
+    "file": "reference/localgatekeys-sidebar-branded-concept.png",
+    "provenance": "supplied generated raster board; exact visual authority",
+    "width": 1536,
+    "height": 1024,
+    "applicationClientRect": { "x": 23, "y": 53, "width": 1492, "height": 800 }
+  },
+  "layoutTargets": {
+    "sidebarWidth": 318,
+    "headerHeight": 88,
+    "mainContentHorizontalPadding": 32,
+    "sidebarBrandLogoArea": { "x": 15, "y": 14, "size": 74 },
+    "search": { "x": 349, "y": 23, "width": 730, "height": 44 },
+    "table": { "x": 349, "y": 285, "width": 1116, "headerHeight": 58, "rowHeight": 70 }
+  },
+  "colorTargets": {
+    "sidebarBase": ["#041425", "#051527"],
+    "workspace": "#061729",
+    "header": "#041325",
+    "selectedNavigation": ["#042646", "#082A48"],
+    "primaryAction": ["#2669FC", "#266AFE"],
+    "tableHeader": "#0C2239",
+    "tableRow": "#06182A",
+    "text": "near-white",
+    "secondaryText": "pale-blue",
+    "accent": "cyan"
+  },
+  "interpretation": {
+    "exactProvenance": ["reference/localgatekeys-sidebar-branded-concept.png", "reference/localgatekeys-navigation-logo-master.png"],
+    "reconstructionTargets": ["layoutTargets", "colorTargets", "icons/*.svg"],
+    "authority": "docs/UI_SIDEBAR_IMPLEMENTATION_HANDOFF.md section 3 plus the supplied PNG; HTML is interaction/content reference only"
+  }
+}

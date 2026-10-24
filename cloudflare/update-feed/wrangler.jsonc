@@ -1,0 +1,24 @@
+// Release feed Worker. Deploy from this directory: npx wrangler deploy
+// Setup and release steps: docs/UPDATES.md, "Hosting on Cloudflare".
+{
+  "name": "lgk-updates",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  // Off: no client polls lgk-updates.<account>.workers.dev any more (0.4.0 is
+  // retired), and that address carries the account name.
+  "workers_dev": false,
+  // Clients from 0.4.1 on use this custom domain (docs/UPDATES.md).
+  "routes": [
+    { "pattern": "updates.localgatekeys.app", "custom_domain": true }
+  ],
+  // The client fetches only stable.json; no preview URLs that could be
+  // mistaken for the real origin.
+  "preview_urls": false,
+  "r2_buckets": [
+    {
+      "binding": "RELEASES",
+      "bucket_name": "localgatekeys-releases"
+    }
+  ],
+  "observability": { "enabled": true }
+}

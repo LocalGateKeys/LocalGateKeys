@@ -1,0 +1,239 @@
+name: LocalGateKeys
+options:
+  bundleIdPrefix: app.localgatekeys
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    BUNDLE_PREFIX: app.localgatekeys
+    DEVELOPMENT_TEAM: D8636PBGZ6
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    LGK_APP_GROUP: group.$(BUNDLE_PREFIX).localgatekeys
+    LGK_KEYCHAIN_GROUP: $(AppIdentifierPrefix)$(BUNDLE_PREFIX).shared
+    # Main app only: sync slots (paired peer, install id, folder bookmark) the AutoFill extension must not read.
+    LGK_APP_KEYCHAIN_GROUP: $(AppIdentifierPrefix)$(BUNDLE_PREFIX).app
+    # The Safari extension's only group: the two Safari save keys (no Face ID). The app is entitled to it too
+    # (it creates the keys and moves earlier builds' copies out of the shared group); AutoFill is not.
+    LGK_SAFARI_KEYCHAIN_GROUP: $(AppIdentifierPrefix)$(BUNDLE_PREFIX).safari
+packages:
+  LGKCore:
+    path: LGKCore
+targets:
+  AppShared:
+    type: framework
+    platform: iOS
+    sources: [AppShared]
+    # LGKCore is linked statically into AppShared only and re-exported (@_exported import), so the app,
+    # the extension and the tests share one copy of its code and type metadata.
+    dependencies:
+      - package: LGKCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).AppShared
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "7"
+        GENERATE_INFOPLIST_FILE: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+  LocalGateKeys:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes: ["StoreKit/**"]
+      # After each sync the app replaces the AutoFill identities (IdentityStoreSync uses the matcher).
+      - AutoFill/IdentityStoreSync.swift
+      - AutoFill/Matcher.swift
+      - path: ../src/localvault/assets/public_suffix_list.dat
+        buildPhase: resources
+      # The desktop's bundled site logos (SiteLogos.swift); the glyphs are App/SiteLogos.xcassets.
+      - path: ../src/localvault/assets/site_logos.json
+        buildPhase: resources
+    dependencies:
+      - target: AppShared
+      - target: AutoFill
+      # The Safari Web Extension that offers to save logins (embedded like AutoFill).
+      - target: SafariSave
+      - sdk: StoreKit.framework
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: LocalGateKeys
+        CFBundleVersion: "7"
+        UILaunchScreen: {}
+        LGKAppGroup: $(LGK_APP_GROUP)
+        LGKKeychainGroup: $(LGK_KEYCHAIN_GROUP)
+        LGKAppKeychainGroup: $(LGK_APP_KEYCHAIN_GROUP)
+        LGKSafariKeychainGroup: $(LGK_SAFARI_KEYCHAIN_GROUP)
+        NSFaceIDUsageDescription: Unlock your vault with Face ID.
+        # Export compliance (owner decision 2026-10-18, RELEASE.md) is answered in App Store Connect for each
+        # build: without a compliance code, ITSAppUsesNonExemptEncryption true makes the upload fail.
+        NSCameraUsageDescription: Scan the pairing QR code your PC shows to join its sync group, and the 2FA setup QR codes websites show.
+        # Wi-Fi sync connects only to the PC you paired, at the private address in its QR code. The desktop
+        # does not advertise over Bonjour; pairing browses this service type briefly only so iOS shows the
+        # Local Network prompt (and lists the app there) even when the code's address is off-link.
+        NSLocalNetworkUsageDescription: Sync with the PC you paired, over your home Wi-Fi.
+        NSBonjourServices: [_lgksync._tcp]
+    entitlements:
+      path: App/LocalGateKeys.entitlements
+      properties:
+        com.apple.security.application-groups: [$(LGK_APP_GROUP)]
+        # The shared group stays first: it is the default group for items added without one.
+        keychain-access-groups: [$(LGK_KEYCHAIN_GROUP), $(LGK_APP_KEYCHAIN_GROUP), $(LGK_SAFARI_KEYCHAIN_GROUP)]
+        com.apple.developer.authentication-services.autofill-credential-provider: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).app
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # iPhone only (no iPad layouts or orientations yet); see RELEASE.md. Set per target: XcodeGen's
+        # iOS target presets would otherwise win over a project-level value.
+        TARGETED_DEVICE_FAMILY: "1"
+  AutoFill:
+    type: app-extension
+    platform: iOS
+    sources:
+      # IdentityStoreSync too: after creating a passkey the extension republishes the identities.
+      - AutoFill
+      # The app's local-only, 60-second clipboard, for the TOTP code copied on fill.
+      - App/Detail/SecretClipboard.swift
+      # The desktop's Public Suffix List snapshot (base_domain matching), never a copy.
+      - path: ../src/localvault/assets/public_suffix_list.dat
+        buildPhase: resources
+    dependencies:
+      - target: AppShared
+      - sdk: AuthenticationServices.framework
+      # Transaction.currentEntitlements (Pro) before creating a passkey over the free limit.
+      - sdk: StoreKit.framework
+    info:
+      path: AutoFill/Info.plist
+      properties:
+        CFBundleDisplayName: LocalGateKeys
+        CFBundleVersion: "7"
+        LGKAppGroup: $(LGK_APP_GROUP)
+        LGKKeychainGroup: $(LGK_KEYCHAIN_GROUP)
+        NSFaceIDUsageDescription: Unlock your vault with Face ID to fill passwords.
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.authentication-services-credential-provider-ui
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CredentialProviderViewController
+          NSExtensionAttributes:
+            ASCredentialProviderExtensionCapabilities:
+              ProvidesPasskeys: true
+              ProvidesPasswords: true
+    entitlements:
+      path: AutoFill/AutoFill.entitlements
+      properties:
+        com.apple.security.application-groups: [$(LGK_APP_GROUP)]
+        keychain-access-groups: [$(LGK_KEYCHAIN_GROUP)]
+        com.apple.developer.authentication-services.autofill-credential-provider: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).app.autofill
+        TARGETED_DEVICE_FAMILY: "1"
+  # Safari Web Extension: offers to save logins signed in with in Safari. Its native handler only classifies
+  # a login and seals it into the app-group inbox (SafariSaveService); it never reads the vault, syncs or
+  # opens a network connection. The web resources are generated by browser-extension/build-safari-extension.cjs.
+  SafariSave:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: SafariSave
+        excludes: ["Resources/**"]
+      # A group, not a folder reference: each file is copied flat to the appex root, where Safari reads
+      # manifest.json (the generated resources are already flat, icons included).
+      - path: SafariSave/Resources
+        buildPhase: resources
+      # Public Suffix List for same_site (a sign-in that moves to another subdomain keeps its prompt).
+      - path: ../src/localvault/assets/public_suffix_list.dat
+        buildPhase: resources
+    dependencies:
+      - target: AppShared
+      - sdk: SafariServices.framework
+      # Transaction.currentEntitlements (Pro) when the free vault is full.
+      - sdk: StoreKit.framework
+    info:
+      path: SafariSave/Info.plist
+      properties:
+        CFBundleDisplayName: LocalGateKeys
+        CFBundleVersion: "7"
+        LGKAppGroup: $(LGK_APP_GROUP)
+        LGKSafariKeychainGroup: $(LGK_SAFARI_KEYCHAIN_GROUP)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.Safari.web-extension
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).SafariWebExtensionHandler
+    entitlements:
+      path: SafariSave/SafariSave.entitlements
+      properties:
+        com.apple.security.application-groups: [$(LGK_APP_GROUP)]
+        # Only its own group: safariIndexKey and safariInboxKey (no Face ID). Never the group shared with
+        # AutoFill (the vault's local key) nor the app-only group (audit 2026-10-24 L-8).
+        keychain-access-groups: [$(LGK_SAFARI_KEYCHAIN_GROUP)]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).app.safari
+        TARGETED_DEVICE_FAMILY: "1"
+        # The icons are copied as plain resources: keep them standard PNGs (no CgBI) for Safari to read.
+        COMPRESS_PNG_FILES: NO
+        STRIP_PNG_TEXT: NO
+  AppSharedTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [AppSharedTests]
+    dependencies:
+      - target: AppShared
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).AppSharedTests
+  # The extension's logic (matching, unlock-then-fill, identities) compiled straight into an unhosted test
+  # bundle: an app extension cannot host tests.
+  AutoFillTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - AutoFillTests
+      - AutoFill/Matcher.swift
+      - AutoFill/CredentialFlow.swift
+      - AutoFill/PasskeyFlow.swift
+      - AutoFill/IdentityStoreSync.swift
+      - App/Detail/SecretClipboard.swift
+      - path: ../src/localvault/assets/public_suffix_list.dat
+        buildPhase: resources
+    dependencies:
+      - target: AppShared
+      - sdk: AuthenticationServices.framework
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).AutoFillTests
+  LocalGateKeysTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - LocalGateKeysTests
+      # The StoreKit configuration SKTestSession loads by name.
+      - path: App/StoreKit/LocalGateKeys.storekit
+        buildPhase: resources
+    dependencies:
+      - target: LocalGateKeys
+      - target: AppShared
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).LocalGateKeysTests
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/LocalGateKeys.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/LocalGateKeys
+        BUNDLE_LOADER: $(TEST_HOST)
+schemes:
+  LocalGateKeys:
+    build:
+      targets:
+        LocalGateKeys: all
+        AutoFill: all
+        SafariSave: all
+        AppShared: all
+    run:
+      storeKitConfiguration: App/StoreKit/LocalGateKeys.storekit
+    test:
+      targets: [AppSharedTests, AutoFillTests, LocalGateKeysTests]

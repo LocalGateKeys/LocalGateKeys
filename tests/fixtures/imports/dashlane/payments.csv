@@ -1,0 +1,3 @@
+type,account_name,account_holder,cc_number,code,expiration_month,expiration_year,routing_number,account_number,country,issuing_bank
+credit_card,Groceries Mastercard,Alex Example,5555555555554444,777,11,2030,,,GB,Example Bank
+bank,Joint account,Alex Example,,,,,000000,00000000,GB,Example Bank

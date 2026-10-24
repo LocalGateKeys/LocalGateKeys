@@ -1,0 +1,411 @@
+{
+  "WARNING": "TEST ONLY. This signing key exists only for these vectors; the production licence keys never verify it, and it never verifies a production licence.",
+  "bundle": {
+    "license": {
+      "edition": "pro",
+      "email": "ada@example.com",
+      "format": 1,
+      "issued_at": "2026-09-21",
+      "license_id": "lic-vector-0001",
+      "name": "Ada Lovelace",
+      "updates_until": "2027-09-21"
+    },
+    "signature": {
+      "alg": "Ed25519",
+      "key_id": "08974d13b2b5fc4d",
+      "signature": "ejfT3fXgqVKY1AJwdSyCgwms4zBodRvXXGR8PyETHYedaPdZyampUwwoxupDTXjWcMtKRffq5rpogVLb2ryXBg=="
+    }
+  },
+  "cases": [
+    {
+      "copy": false,
+      "expect": "accepted",
+      "name": "valid",
+      "state_id": "lic:c0c4c0830c8852c32ec77d23552e01ac",
+      "wrapper": {
+        "ns": "license",
+        "record": {
+          "license": {
+            "edition": "pro",
+            "email": "ada@example.com",
+            "format": 1,
+            "issued_at": "2026-09-21",
+            "license_id": "lic-vector-0001",
+            "name": "Ada Lovelace",
+            "updates_until": "2027-09-21"
+          },
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "08974d13b2b5fc4d",
+            "signature": "ejfT3fXgqVKY1AJwdSyCgwms4zBodRvXXGR8PyETHYedaPdZyampUwwoxupDTXjWcMtKRffq5rpogVLb2ryXBg=="
+          }
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "copy": false,
+      "expect": "bad-remote",
+      "name": "bad_signature",
+      "state_id": "lic:c0c4c0830c8852c32ec77d23552e01ac",
+      "wrapper": {
+        "ns": "license",
+        "record": {
+          "license": {
+            "edition": "pro",
+            "email": "ada@example.com",
+            "format": 1,
+            "issued_at": "2026-09-21",
+            "license_id": "lic-vector-0001",
+            "name": "Someone Else",
+            "updates_until": "2027-09-21"
+          },
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "08974d13b2b5fc4d",
+            "signature": "ejfT3fXgqVKY1AJwdSyCgwms4zBodRvXXGR8PyETHYedaPdZyampUwwoxupDTXjWcMtKRffq5rpogVLb2ryXBg=="
+          }
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "copy": false,
+      "expect": "bad-remote",
+      "name": "id_mismatch",
+      "state_id": "lic:a4d3db00cd4c4633010368bfc6cd3008",
+      "wrapper": {
+        "ns": "license",
+        "record": {
+          "license": {
+            "edition": "pro",
+            "email": "ada@example.com",
+            "format": 1,
+            "issued_at": "2026-09-21",
+            "license_id": "lic-vector-0001",
+            "name": "Ada Lovelace",
+            "updates_until": "2027-09-21"
+          },
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "08974d13b2b5fc4d",
+            "signature": "ejfT3fXgqVKY1AJwdSyCgwms4zBodRvXXGR8PyETHYedaPdZyampUwwoxupDTXjWcMtKRffq5rpogVLb2ryXBg=="
+          }
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "copy": false,
+      "expect": "update-needed",
+      "name": "unknown_key_id",
+      "state_id": "lic:697c697dca6a2217e72908c01b28a77c",
+      "wrapper": {
+        "ns": "license",
+        "record": {
+          "license": {
+            "edition": "pro",
+            "email": "ada@example.com",
+            "format": 1,
+            "issued_at": "2026-09-21",
+            "license_id": "lic-vector-0002",
+            "name": "Ada Lovelace",
+            "updates_until": "2027-09-21"
+          },
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "ddc74b6842855bf9",
+            "signature": "Jy1vQyTkWCvTX+PO8jc6qI45wbamlGVzbzMcJZnCyQIWbfuoq7w8ElQZz11w+ImzW2LV7KHk83gghq61all5Bg=="
+          }
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "copy": false,
+      "expect": "bad-remote",
+      "name": "malformed_key_id",
+      "state_id": "lic:c0c4c0830c8852c32ec77d23552e01ac",
+      "wrapper": {
+        "ns": "license",
+        "record": {
+          "license": {
+            "edition": "pro",
+            "email": "ada@example.com",
+            "format": 1,
+            "issued_at": "2026-09-21",
+            "license_id": "lic-vector-0001",
+            "name": "Ada Lovelace",
+            "updates_until": "2027-09-21"
+          },
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "not-a-key-id",
+            "signature": "ejfT3fXgqVKY1AJwdSyCgwms4zBodRvXXGR8PyETHYedaPdZyampUwwoxupDTXjWcMtKRffq5rpogVLb2ryXBg=="
+          }
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "copy": false,
+      "expect": "update-needed",
+      "name": "unknown_alg",
+      "state_id": "lic:c0c4c0830c8852c32ec77d23552e01ac",
+      "wrapper": {
+        "ns": "license",
+        "record": {
+          "license": {
+            "edition": "pro",
+            "email": "ada@example.com",
+            "format": 1,
+            "issued_at": "2026-09-21",
+            "license_id": "lic-vector-0001",
+            "name": "Ada Lovelace",
+            "updates_until": "2027-09-21"
+          },
+          "signature": {
+            "alg": "Ed448",
+            "key_id": "08974d13b2b5fc4d",
+            "signature": "ejfT3fXgqVKY1AJwdSyCgwms4zBodRvXXGR8PyETHYedaPdZyampUwwoxupDTXjWcMtKRffq5rpogVLb2ryXBg=="
+          }
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "copy": false,
+      "expect": "update-needed",
+      "name": "format_2_signed",
+      "state_id": "lic:9b16b7b9bf60525afa12afd18cee9000",
+      "wrapper": {
+        "ns": "license",
+        "record": {
+          "license": {
+            "edition": "pro",
+            "email": "ada@example.com",
+            "format": 2,
+            "issued_at": "2026-09-21",
+            "license_id": "lic-vector-0003",
+            "name": "Ada Lovelace",
+            "updates_until": "2027-09-21"
+          },
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "08974d13b2b5fc4d",
+            "signature": "rJuBR3eADI9f1SVqtQhrmP2nmEdeznayILgfTZ/E2jluba/+ptEWda08/xxQMFeSMSPze4jZw7iPFOxUMHDmDA=="
+          }
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "copy": false,
+      "expect": "bad-remote",
+      "name": "format_2_unsigned",
+      "state_id": "lic:c0c4c0830c8852c32ec77d23552e01ac",
+      "wrapper": {
+        "ns": "license",
+        "record": {
+          "license": {
+            "edition": "pro",
+            "email": "ada@example.com",
+            "format": 2,
+            "issued_at": "2026-09-21",
+            "license_id": "lic-vector-0001",
+            "name": "Ada Lovelace",
+            "updates_until": "2027-09-21"
+          },
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "08974d13b2b5fc4d",
+            "signature": "ejfT3fXgqVKY1AJwdSyCgwms4zBodRvXXGR8PyETHYedaPdZyampUwwoxupDTXjWcMtKRffq5rpogVLb2ryXBg=="
+          }
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "copy": false,
+      "expect": "bad-remote",
+      "name": "updated_at_1",
+      "state_id": "lic:c0c4c0830c8852c32ec77d23552e01ac",
+      "wrapper": {
+        "ns": "license",
+        "record": {
+          "license": {
+            "edition": "pro",
+            "email": "ada@example.com",
+            "format": 1,
+            "issued_at": "2026-09-21",
+            "license_id": "lic-vector-0001",
+            "name": "Ada Lovelace",
+            "updates_until": "2027-09-21"
+          },
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "08974d13b2b5fc4d",
+            "signature": "ejfT3fXgqVKY1AJwdSyCgwms4zBodRvXXGR8PyETHYedaPdZyampUwwoxupDTXjWcMtKRffq5rpogVLb2ryXBg=="
+          }
+        },
+        "schema": 1,
+        "updated_at": 1
+      }
+    },
+    {
+      "copy": false,
+      "expect": "bad-remote",
+      "name": "top_level_id",
+      "state_id": "lic:c0c4c0830c8852c32ec77d23552e01ac",
+      "wrapper": {
+        "id": "lic:c0c4c0830c8852c32ec77d23552e01ac",
+        "ns": "license",
+        "record": {
+          "license": {
+            "edition": "pro",
+            "email": "ada@example.com",
+            "format": 1,
+            "issued_at": "2026-09-21",
+            "license_id": "lic-vector-0001",
+            "name": "Ada Lovelace",
+            "updates_until": "2027-09-21"
+          },
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "08974d13b2b5fc4d",
+            "signature": "ejfT3fXgqVKY1AJwdSyCgwms4zBodRvXXGR8PyETHYedaPdZyampUwwoxupDTXjWcMtKRffq5rpogVLb2ryXBg=="
+          }
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "copy": false,
+      "expect": "update-needed",
+      "name": "schema_2",
+      "state_id": "lic:c0c4c0830c8852c32ec77d23552e01ac",
+      "wrapper": {
+        "ns": "license",
+        "record": {
+          "license": {
+            "edition": "pro",
+            "email": "ada@example.com",
+            "format": 1,
+            "issued_at": "2026-09-21",
+            "license_id": "lic-vector-0001",
+            "name": "Ada Lovelace",
+            "updates_until": "2027-09-21"
+          },
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "08974d13b2b5fc4d",
+            "signature": "ejfT3fXgqVKY1AJwdSyCgwms4zBodRvXXGR8PyETHYedaPdZyampUwwoxupDTXjWcMtKRffq5rpogVLb2ryXBg=="
+          }
+        },
+        "schema": 2,
+        "updated_at": 0
+      }
+    },
+    {
+      "copy": false,
+      "expect": "bad-remote",
+      "name": "entry_under_lic_prefix",
+      "state_id": "lic:c0c4c0830c8852c32ec77d23552e01ac",
+      "wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789996400,
+          "favorite": false,
+          "id": "lic:c0c4c0830c8852c32ec77d23552e01ac",
+          "kind": "web",
+          "label": "Not a licence",
+          "password": "pw",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://lic.example.com"
+          },
+          "tags": [],
+          "updated_at": 1789998200,
+          "username": "u@example.com"
+        },
+        "schema": 1,
+        "updated_at": 1789998200
+      }
+    },
+    {
+      "copy": true,
+      "expect": "dropped",
+      "name": "conflict_copy",
+      "state_id": "ea92538b-3094-53bc-b904-7bcca361599d",
+      "wrapper": {
+        "id": "ea92538b-3094-53bc-b904-7bcca361599d",
+        "ns": "license",
+        "record": {
+          "license": {
+            "edition": "pro",
+            "email": "ada@example.com",
+            "format": 1,
+            "issued_at": "2026-09-21",
+            "license_id": "lic-vector-0001",
+            "name": "Ada Lovelace",
+            "updates_until": "2027-09-21"
+          },
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "08974d13b2b5fc4d",
+            "signature": "ejfT3fXgqVKY1AJwdSyCgwms4zBodRvXXGR8PyETHYedaPdZyampUwwoxupDTXjWcMtKRffq5rpogVLb2ryXBg=="
+          }
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    }
+  ],
+  "key_id": "08974d13b2b5fc4d",
+  "license": {
+    "edition": "pro",
+    "email": "ada@example.com",
+    "issued_at": "2026-09-21",
+    "license_id": "lic-vector-0001",
+    "name": "Ada Lovelace",
+    "updates_until": "2027-09-21"
+  },
+  "note": "Verify bundle with keys = {key_id: public_key_b64}; key_id is the first 8 bytes of sha256(raw public key) in hex; the signature covers canonical_json(bundle.license). state_id is 'lic:' + the first 32 hex digits of sha256(license_id). A licence travels as the wrapper {ns: license, schema: 1, updated_at: 0, record: bundle}. cases: each wrapper is a remote state under state_id (a conflict copy of the engine when copy is true), applied with only this TEST key known; expect is accepted (stored and republished), dropped (no write, no report), update-needed or bad-remote (that state is skipped and reported).",
+  "public_key_b64": "ymxvVxqcaDrLVlrVMEJ3vow1Fx4Q9aWJ5fzDHmnktTk=",
+  "state_id": "lic:c0c4c0830c8852c32ec77d23552e01ac",
+  "wrapper": {
+    "ns": "license",
+    "record": {
+      "license": {
+        "edition": "pro",
+        "email": "ada@example.com",
+        "format": 1,
+        "issued_at": "2026-09-21",
+        "license_id": "lic-vector-0001",
+        "name": "Ada Lovelace",
+        "updates_until": "2027-09-21"
+      },
+      "signature": {
+        "alg": "Ed25519",
+        "key_id": "08974d13b2b5fc4d",
+        "signature": "ejfT3fXgqVKY1AJwdSyCgwms4zBodRvXXGR8PyETHYedaPdZyampUwwoxupDTXjWcMtKRffq5rpogVLb2ryXBg=="
+      }
+    },
+    "schema": 1,
+    "updated_at": 0
+  },
+  "wrapper_canonical_hex": "7b226e73223a226c6963656e7365222c227265636f7264223a7b226c6963656e7365223a7b2265646974696f6e223a2270726f222c22656d61696c223a22616461406578616d706c652e636f6d222c22666f726d6174223a312c226973737565645f6174223a22323032362d30392d3231222c226c6963656e73655f6964223a226c69632d766563746f722d30303031222c226e616d65223a22416461204c6f76656c616365222c22757064617465735f756e74696c223a22323032372d30392d3231227d2c227369676e6174757265223a7b22616c67223a2245643235353139222c226b65795f6964223a2230383937346431336232623566633464222c227369676e6174757265223a22656a66543366586771564b5931414a776453794367776d73347a426f645276585847523850794554485965646150645a79616d705577776f7875704454586a57634d744b526666713572706f67564c623272795842673d3d227d7d2c22736368656d61223a312c22757064617465645f6174223a307d"
+}

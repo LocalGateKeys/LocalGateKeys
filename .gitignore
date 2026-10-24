@@ -1,0 +1,99 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Test temp roots (tests/conftest.py writes workspace-local temp dirs)
+.pytest-tmp/
+.next-release-pytest*/
+.next-release-hardened-tests/
+pytest-*/
+pytest-of-*/
+pytest-cache-files-*/
+pytest-run/
+pytest-temp-*/
+m4-pytest-basetemp*/
+next-release-pytest*/
+*-basetemp*/
+.*-basetemp*/
+.__*/
+.e02-*/
+.focused-*/
+.isolated-*/
+.manual-*/
+.migration-worker-check/
+.n08-test-data/
+.next-*/
+.ocr-*/
+.offline-release-*/
+.phase*/
+.safe-workspace-*/
+.scratch-*/
+.security-audit-*/
+.synthetic-*/
+.tmp-*/
+.verification-*/
+.geom-probe-data*/
+.geometry-profile-data/
+.diag-*/
+.m3-writable-test/
+.lgk-*/
+lgk-*/
+!/android/lgk-core/
+probe-*/
+focus-preview-*/
+manual-check/
+vault.json]-*/
+
+# Build outputs
+build/
+build-personal/agent/
+build-personal/native/
+dist/
+dist-personal/
+dist-installer/
+offline-build-*/
+release-inputs/wheelhouse/
+*.spec.bak
+
+# Stray runtime files
+*.lock
+*.log
+*.tmp
+steam-uia.json
+*.zip
+
+# Screenshots and local evidence captured during VM runs
+/vm-*.png
+/.vm-*.png
+
+# Node
+node_modules/
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# CI / local build smoke output roots
+ci-build/
+
+# Legacy fixture roots written by older tests
+.m[0-9]*/
+build-personal/LocalGateKeys-Personal.generated.iss
+
+# MSIX packaging output (scripts/build_msix_package.ps1)
+build-msix/work/
+dist-msix/
+
+# WebView UI: dependencies and build output (built by npm run build in webui/)
+webui/node_modules/
+src/localvault/assets/ui/

@@ -1,0 +1,6 @@
+name,url,username,password,note
+accounts.example.com,https://accounts.example.com/signin,alex@example.com,chrome-pass-1,Main account
+shop.example.com,https://shop.example.com/,alex@example.com,chrome-pass-2,
+shop.example.com,https://shop.example.com/account,alex@example.com,chrome-pass-2-new,
+android://hash@com.example.app/,android://hash@com.example.app/,alex,chrome-pass-app,
+router.local,http://192.168.1.1/,admin,chrome-router-pass,

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://{{DOMAIN}}/</loc></url>
+  <url><loc>https://{{DOMAIN}}/features</loc></url>
+  <url><loc>https://{{DOMAIN}}/pricing</loc></url>
+  <url><loc>https://{{DOMAIN}}/security</loc></url>
+  <url><loc>https://{{DOMAIN}}/get-started</loc></url>
+  <url><loc>https://{{DOMAIN}}/download</loc></url>
+  <url><loc>https://{{DOMAIN}}/support</loc></url>
+  <url><loc>https://{{DOMAIN}}/licence</loc></url>
+  <url><loc>https://{{DOMAIN}}/legal/</loc></url>
+  <url><loc>https://{{DOMAIN}}/legal/eula</loc></url>
+  <url><loc>https://{{DOMAIN}}/legal/privacy</loc></url>
+  <url><loc>https://{{DOMAIN}}/legal/terms-of-sale</loc></url>
+  <url><loc>https://{{DOMAIN}}/legal/refunds</loc></url>
+  <url><loc>https://{{DOMAIN}}/legal/vulnerability-disclosure</loc></url>
+</urlset>

@@ -1,0 +1,16 @@
+{
+  "license": {
+    "format": 1,
+    "license_id": "lgk_0123456789ABCDEFGHJKMNPQRS",
+    "edition": "pro",
+    "name": "Zoë Müller 山田",
+    "email": "zoe@example.com",
+    "issued_at": "2026-10-15",
+    "updates_until": "9999-12-31"
+  },
+  "signature": {
+    "alg": "Ed25519",
+    "key_id": "1fb2572acef33ca2",
+    "signature": "iRNL6c0FtaqJAAG58/hfqYGN5JBuUZfMEz1nhSXzX3tpCnZ5qG/4RmcMqMDI/7ZQV7xS5RV45mCZ+6dyfB9VCQ=="
+  }
+}

@@ -1,0 +1,1227 @@
+{
+ "description": "Origin canonicalisation and URL matching cases produced by the desktop's localvault.origin (canonicalize_origin, normalize_url, origin_of, host_of, match_rank). Every port must give the same value or the same error message. Hosts are ASCII so ports without UTS-46 agree.",
+ "cases": [
+  {
+   "input": "https://paypal.com\\.evil.com",
+   "canonicalize": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "normalize_url": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "origin_of": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "host_of": {
+    "error": "Host contains a character that browsers do not allow"
+   }
+  },
+  {
+   "input": "https://paypal.com\\.evil.com/login",
+   "canonicalize": {
+    "error": "Expected an origin without a path"
+   },
+   "normalize_url": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "origin_of": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "host_of": {
+    "error": "Host contains a character that browsers do not allow"
+   }
+  },
+  {
+   "input": "https://paypal.com%2f.evil.com",
+   "canonicalize": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "normalize_url": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "origin_of": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "host_of": {
+    "error": "Host contains a character that browsers do not allow"
+   }
+  },
+  {
+   "input": "https://a%41.com",
+   "canonicalize": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "normalize_url": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "origin_of": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "host_of": {
+    "error": "Host contains a character that browsers do not allow"
+   }
+  },
+  {
+   "input": "https://a^b.com",
+   "canonicalize": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "normalize_url": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "origin_of": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "host_of": {
+    "error": "Host contains a character that browsers do not allow"
+   }
+  },
+  {
+   "input": "https://a|b.com",
+   "canonicalize": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "normalize_url": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "origin_of": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "host_of": {
+    "error": "Host contains a character that browsers do not allow"
+   }
+  },
+  {
+   "input": "https://a<b.com",
+   "canonicalize": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "normalize_url": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "origin_of": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "host_of": {
+    "error": "Host contains a character that browsers do not allow"
+   }
+  },
+  {
+   "input": "https://a>b.com",
+   "canonicalize": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "normalize_url": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "origin_of": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "host_of": {
+    "error": "Host contains a character that browsers do not allow"
+   }
+  },
+  {
+   "input": "https://a\u007fb.com",
+   "canonicalize": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "normalize_url": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "origin_of": {
+    "error": "Host contains a character that browsers do not allow"
+   },
+   "host_of": {
+    "error": "Host contains a character that browsers do not allow"
+   }
+  },
+  {
+   "input": "https://ex ample.com",
+   "canonicalize": {
+    "error": "Origin contains whitespace or a control character"
+   },
+   "normalize_url": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "origin_of": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "host_of": {
+    "error": "URL contains whitespace or a control character"
+   }
+  },
+  {
+   "input": "https://example.com\u000b",
+   "canonicalize": {
+    "error": "Origin contains whitespace or a control character"
+   },
+   "normalize_url": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "origin_of": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "host_of": {
+    "error": "URL contains whitespace or a control character"
+   }
+  },
+  {
+   "input": "https://example.com ",
+   "canonicalize": {
+    "error": "Origin contains whitespace or a control character"
+   },
+   "normalize_url": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "origin_of": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "host_of": {
+    "error": "URL contains whitespace or a control character"
+   }
+  },
+  {
+   "input": " https://example.com",
+   "canonicalize": {
+    "error": "Origin contains whitespace or a control character"
+   },
+   "normalize_url": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "origin_of": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "host_of": {
+    "error": "URL contains whitespace or a control character"
+   }
+  },
+  {
+   "input": "https://example.com\t",
+   "canonicalize": {
+    "error": "Origin contains whitespace or a control character"
+   },
+   "normalize_url": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "origin_of": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "host_of": {
+    "error": "URL contains whitespace or a control character"
+   }
+  },
+  {
+   "input": "\u0000https://example.com",
+   "canonicalize": {
+    "error": "Origin contains whitespace or a control character"
+   },
+   "normalize_url": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "origin_of": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "host_of": {
+    "error": "URL contains whitespace or a control character"
+   }
+  },
+  {
+   "input": "https://example.com/\u3000",
+   "canonicalize": {
+    "error": "Origin contains whitespace or a control character"
+   },
+   "normalize_url": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "origin_of": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "host_of": {
+    "error": "URL contains whitespace or a control character"
+   }
+  },
+  {
+   "input": "https://127.000.000.001.:8080 ",
+   "canonicalize": {
+    "error": "Origin contains whitespace or a control character"
+   },
+   "normalize_url": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "origin_of": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "host_of": {
+    "error": "URL contains whitespace or a control character"
+   }
+  },
+  {
+   "input": "HTTPS://[::1]:65535#\u000b",
+   "canonicalize": {
+    "error": "Origin contains whitespace or a control character"
+   },
+   "normalize_url": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "origin_of": {
+    "error": "URL contains whitespace or a control character"
+   },
+   "host_of": {
+    "error": "URL contains whitespace or a control character"
+   }
+  },
+  {
+   "input": "https://[::1",
+   "canonicalize": {
+    "error": "Invalid IPv6 URL"
+   },
+   "normalize_url": {
+    "error": "Invalid IPv6 URL"
+   },
+   "origin_of": {
+    "error": "Invalid IPv6 URL"
+   },
+   "host_of": {
+    "error": "Invalid IPv6 URL"
+   }
+  },
+  {
+   "input": "https://::1]",
+   "canonicalize": {
+    "error": "Invalid IPv6 URL"
+   },
+   "normalize_url": {
+    "error": "Invalid IPv6 URL"
+   },
+   "origin_of": {
+    "error": "Invalid IPv6 URL"
+   },
+   "host_of": {
+    "error": "Invalid IPv6 URL"
+   }
+  },
+  {
+   "input": "https://[vzz]",
+   "canonicalize": {
+    "error": "Invalid IPv6 URL"
+   },
+   "normalize_url": {
+    "error": "Invalid IPv6 URL"
+   },
+   "origin_of": {
+    "error": "Invalid IPv6 URL"
+   },
+   "host_of": {
+    "error": "Invalid IPv6 URL"
+   }
+  },
+  {
+   "input": "https://[v1.abc]",
+   "canonicalize": {
+    "error": "Invalid IPv6 URL"
+   },
+   "normalize_url": {
+    "error": "Invalid IPv6 URL"
+   },
+   "origin_of": {
+    "error": "Invalid IPv6 URL"
+   },
+   "host_of": {
+    "error": "Invalid IPv6 URL"
+   }
+  },
+  {
+   "input": "https://[v1.abc]:443/x",
+   "canonicalize": {
+    "error": "Expected an origin without a path"
+   },
+   "normalize_url": {
+    "error": "Invalid IPv6 URL"
+   },
+   "origin_of": {
+    "error": "Invalid IPv6 URL"
+   },
+   "host_of": {
+    "error": "Invalid IPv6 URL"
+   }
+  },
+  {
+   "input": "https://[127.0.0.1]",
+   "canonicalize": {
+    "error": "Invalid IPv6 URL"
+   },
+   "normalize_url": {
+    "error": "Invalid IPv6 URL"
+   },
+   "origin_of": {
+    "error": "Invalid IPv6 URL"
+   },
+   "host_of": {
+    "error": "Invalid IPv6 URL"
+   }
+  },
+  {
+   "input": "https://[]",
+   "canonicalize": {
+    "error": "Invalid IPv6 URL"
+   },
+   "normalize_url": {
+    "error": "Invalid IPv6 URL"
+   },
+   "origin_of": {
+    "error": "Invalid IPv6 URL"
+   },
+   "host_of": {
+    "error": "Invalid IPv6 URL"
+   }
+  },
+  {
+   "input": "https://[::1]]",
+   "canonicalize": {
+    "error": "Invalid IPv6 URL"
+   },
+   "normalize_url": {
+    "error": "Invalid IPv6 URL"
+   },
+   "origin_of": {
+    "error": "Invalid IPv6 URL"
+   },
+   "host_of": {
+    "error": "Invalid IPv6 URL"
+   }
+  },
+  {
+   "input": "https://[[::1]]",
+   "canonicalize": {
+    "error": "Invalid IPv6 URL"
+   },
+   "normalize_url": {
+    "error": "Invalid IPv6 URL"
+   },
+   "origin_of": {
+    "error": "Invalid IPv6 URL"
+   },
+   "host_of": {
+    "error": "Invalid IPv6 URL"
+   }
+  },
+  {
+   "input": "https://evil.com[::1]",
+   "canonicalize": {
+    "error": "Invalid IPv6 URL"
+   },
+   "normalize_url": {
+    "error": "Invalid IPv6 URL"
+   },
+   "origin_of": {
+    "error": "Invalid IPv6 URL"
+   },
+   "host_of": {
+    "error": "Invalid IPv6 URL"
+   }
+  },
+  {
+   "input": "https://evil.com[::1]/x",
+   "canonicalize": {
+    "error": "Invalid IPv6 URL"
+   },
+   "normalize_url": {
+    "error": "Invalid IPv6 URL"
+   },
+   "origin_of": {
+    "error": "Invalid IPv6 URL"
+   },
+   "host_of": {
+    "error": "Invalid IPv6 URL"
+   }
+  },
+  {
+   "input": "https://login.[::1]:443/app",
+   "canonicalize": {
+    "error": "Invalid IPv6 URL"
+   },
+   "normalize_url": {
+    "error": "Invalid IPv6 URL"
+   },
+   "origin_of": {
+    "error": "Invalid IPv6 URL"
+   },
+   "host_of": {
+    "error": "Invalid IPv6 URL"
+   }
+  },
+  {
+   "input": "https://[::1]x",
+   "canonicalize": {
+    "error": "Invalid IPv6 URL"
+   },
+   "normalize_url": {
+    "error": "Invalid IPv6 URL"
+   },
+   "origin_of": {
+    "error": "Invalid IPv6 URL"
+   },
+   "host_of": {
+    "error": "Invalid IPv6 URL"
+   }
+  },
+  {
+   "input": "https://[::1].:8443",
+   "canonicalize": {
+    "error": "Invalid IPv6 URL"
+   },
+   "normalize_url": {
+    "error": "Invalid IPv6 URL"
+   },
+   "origin_of": {
+    "error": "Invalid IPv6 URL"
+   },
+   "host_of": {
+    "error": "Invalid IPv6 URL"
+   }
+  },
+  {
+   "input": "https://[0:0:0:0:0:0:0:1].:8443/x",
+   "canonicalize": {
+    "error": "Invalid IPv6 URL"
+   },
+   "normalize_url": {
+    "error": "Invalid IPv6 URL"
+   },
+   "origin_of": {
+    "error": "Invalid IPv6 URL"
+   },
+   "host_of": {
+    "error": "Invalid IPv6 URL"
+   }
+  },
+  {
+   "input": "https://[1:2:3:4:5:6:7:8:9]",
+   "canonicalize": {
+    "error": "Invalid IPv6 URL"
+   },
+   "normalize_url": {
+    "error": "Invalid IPv6 URL"
+   },
+   "origin_of": {
+    "error": "Invalid IPv6 URL"
+   },
+   "host_of": {
+    "error": "Invalid IPv6 URL"
+   }
+  },
+  {
+   "input": "https://user@[::1]",
+   "canonicalize": {
+    "error": "Origins must not contain user information"
+   },
+   "normalize_url": {
+    "error": "URLs must not contain user information"
+   },
+   "origin_of": {
+    "error": "URLs must not contain user information"
+   },
+   "host_of": {
+    "error": "URLs must not contain user information"
+   }
+  },
+  {
+   "input": "https://[::1%25eth0]",
+   "canonicalize": {
+    "error": "IPv6 zone identifiers are not supported"
+   },
+   "normalize_url": {
+    "error": "IPv6 zone identifiers are not supported"
+   },
+   "origin_of": {
+    "error": "IPv6 zone identifiers are not supported"
+   },
+   "host_of": {
+    "error": "IPv6 zone identifiers are not supported"
+   }
+  },
+  {
+   "input": "https://[::1%eth0]/x",
+   "canonicalize": {
+    "error": "Expected an origin without a path"
+   },
+   "normalize_url": {
+    "error": "IPv6 zone identifiers are not supported"
+   },
+   "origin_of": {
+    "error": "IPv6 zone identifiers are not supported"
+   },
+   "host_of": {
+    "error": "IPv6 zone identifiers are not supported"
+   }
+  },
+  {
+   "input": "http://[::1%25eth0]:8443",
+   "canonicalize": {
+    "error": "IPv6 zone identifiers are not supported"
+   },
+   "normalize_url": {
+    "error": "IPv6 zone identifiers are not supported"
+   },
+   "origin_of": {
+    "error": "IPv6 zone identifiers are not supported"
+   },
+   "host_of": {
+    "error": "IPv6 zone identifiers are not supported"
+   }
+  },
+  {
+   "input": "http://[::ffff:127.0.0.1]",
+   "canonicalize": {
+    "error": "IPv4-mapped IPv6 addresses are not supported"
+   },
+   "normalize_url": {
+    "error": "IPv4-mapped IPv6 addresses are not supported"
+   },
+   "origin_of": {
+    "error": "IPv4-mapped IPv6 addresses are not supported"
+   },
+   "host_of": {
+    "error": "IPv4-mapped IPv6 addresses are not supported"
+   }
+  },
+  {
+   "input": "https://[::ffff:127.0.0.1]:8443/x",
+   "canonicalize": {
+    "error": "Expected an origin without a path"
+   },
+   "normalize_url": {
+    "error": "IPv4-mapped IPv6 addresses are not supported"
+   },
+   "origin_of": {
+    "error": "IPv4-mapped IPv6 addresses are not supported"
+   },
+   "host_of": {
+    "error": "IPv4-mapped IPv6 addresses are not supported"
+   }
+  },
+  {
+   "input": "https://[::FFFF:7f00:1]",
+   "canonicalize": {
+    "error": "IPv4-mapped IPv6 addresses are not supported"
+   },
+   "normalize_url": {
+    "error": "IPv4-mapped IPv6 addresses are not supported"
+   },
+   "origin_of": {
+    "error": "IPv4-mapped IPv6 addresses are not supported"
+   },
+   "host_of": {
+    "error": "IPv4-mapped IPv6 addresses are not supported"
+   }
+  },
+  {
+   "input": "https://[::1]",
+   "canonicalize": {
+    "ok": "https://[::1]"
+   },
+   "normalize_url": {
+    "ok": "https://[::1]/"
+   },
+   "origin_of": {
+    "ok": "https://[::1]"
+   },
+   "host_of": {
+    "ok": "::1"
+   }
+  },
+  {
+   "input": "http://[::1]:8080/x",
+   "canonicalize": {
+    "error": "Expected an origin without a path"
+   },
+   "normalize_url": {
+    "ok": "http://[::1]:8080/x"
+   },
+   "origin_of": {
+    "ok": "http://[::1]:8080"
+   },
+   "host_of": {
+    "ok": "::1"
+   }
+  },
+  {
+   "input": "https://[2001:DB8::1]:8443",
+   "canonicalize": {
+    "ok": "https://[2001:db8::1]:8443"
+   },
+   "normalize_url": {
+    "ok": "https://[2001:db8::1]:8443/"
+   },
+   "origin_of": {
+    "ok": "https://[2001:db8::1]:8443"
+   },
+   "host_of": {
+    "ok": "2001:db8::1"
+   }
+  },
+  {
+   "input": "https://[::127.0.0.1]",
+   "canonicalize": {
+    "ok": "https://[::127.0.0.1]"
+   },
+   "normalize_url": {
+    "ok": "https://[::127.0.0.1]/"
+   },
+   "origin_of": {
+    "ok": "https://[::127.0.0.1]"
+   },
+   "host_of": {
+    "ok": "::127.0.0.1"
+   }
+  },
+  {
+   "input": "https://example.com.",
+   "canonicalize": {
+    "ok": "https://example.com"
+   },
+   "normalize_url": {
+    "ok": "https://example.com/"
+   },
+   "origin_of": {
+    "ok": "https://example.com"
+   },
+   "host_of": {
+    "ok": "example.com"
+   }
+  },
+  {
+   "input": "https://Example.COM.:443/a?b=1#f",
+   "canonicalize": {
+    "error": "Expected an origin, not a URL with a query or fragment"
+   },
+   "normalize_url": {
+    "ok": "https://example.com/a?b=1"
+   },
+   "origin_of": {
+    "ok": "https://example.com"
+   },
+   "host_of": {
+    "ok": "example.com"
+   }
+  },
+  {
+   "input": "http://localhost:8080/x",
+   "canonicalize": {
+    "error": "Expected an origin without a path"
+   },
+   "normalize_url": {
+    "ok": "http://localhost:8080/x"
+   },
+   "origin_of": {
+    "ok": "http://localhost:8080"
+   },
+   "host_of": {
+    "ok": "localhost"
+   }
+  },
+  {
+   "input": "http://127.0.0.1",
+   "canonicalize": {
+    "ok": "http://127.0.0.1"
+   },
+   "normalize_url": {
+    "ok": "http://127.0.0.1/"
+   },
+   "origin_of": {
+    "ok": "http://127.0.0.1"
+   },
+   "host_of": {
+    "ok": "127.0.0.1"
+   }
+  },
+  {
+   "input": "https://example.com:8443/app?x=1#frag",
+   "canonicalize": {
+    "error": "Expected an origin, not a URL with a query or fragment"
+   },
+   "normalize_url": {
+    "ok": "https://example.com:8443/app?x=1"
+   },
+   "origin_of": {
+    "ok": "https://example.com:8443"
+   },
+   "host_of": {
+    "ok": "example.com"
+   }
+  },
+  {
+   "input": "https://example.com..",
+   "canonicalize": {
+    "error": "Invalid internationalized host name"
+   },
+   "normalize_url": {
+    "error": "Invalid internationalized host name"
+   },
+   "origin_of": {
+    "error": "Invalid internationalized host name"
+   },
+   "host_of": {
+    "error": "Invalid internationalized host name"
+   }
+  },
+  {
+   "input": "https://example.com../app",
+   "canonicalize": {
+    "error": "Expected an origin without a path"
+   },
+   "normalize_url": {
+    "error": "Invalid internationalized host name"
+   },
+   "origin_of": {
+    "error": "Invalid internationalized host name"
+   },
+   "host_of": {
+    "error": "Invalid internationalized host name"
+   }
+  },
+  {
+   "input": "https://a..b.com",
+   "canonicalize": {
+    "error": "Invalid internationalized host name"
+   },
+   "normalize_url": {
+    "error": "Invalid internationalized host name"
+   },
+   "origin_of": {
+    "error": "Invalid internationalized host name"
+   },
+   "host_of": {
+    "error": "Invalid internationalized host name"
+   }
+  },
+  {
+   "input": "https://.",
+   "canonicalize": {
+    "error": "Origin is missing a host"
+   },
+   "normalize_url": {
+    "error": "Origin is missing a host"
+   },
+   "origin_of": {
+    "error": "Origin is missing a host"
+   },
+   "host_of": {
+    "error": "Origin is missing a host"
+   }
+  },
+  {
+   "input": "https://..",
+   "canonicalize": {
+    "error": "Invalid internationalized host name"
+   },
+   "normalize_url": {
+    "error": "Invalid internationalized host name"
+   },
+   "origin_of": {
+    "error": "Invalid internationalized host name"
+   },
+   "host_of": {
+    "error": "Invalid internationalized host name"
+   }
+  },
+  {
+   "input": "https://user@example.com",
+   "canonicalize": {
+    "error": "Origins must not contain user information"
+   },
+   "normalize_url": {
+    "error": "URLs must not contain user information"
+   },
+   "origin_of": {
+    "error": "URLs must not contain user information"
+   },
+   "host_of": {
+    "error": "URLs must not contain user information"
+   }
+  },
+  {
+   "input": "https://example.com:99999",
+   "canonicalize": {
+    "error": "Invalid port"
+   },
+   "normalize_url": {
+    "error": "Invalid port"
+   },
+   "origin_of": {
+    "error": "Invalid port"
+   },
+   "host_of": {
+    "error": "Invalid port"
+   }
+  },
+  {
+   "input": "https://example.com:8x",
+   "canonicalize": {
+    "error": "Invalid port"
+   },
+   "normalize_url": {
+    "error": "Invalid port"
+   },
+   "origin_of": {
+    "error": "Invalid port"
+   },
+   "host_of": {
+    "error": "Invalid port"
+   }
+  },
+  {
+   "input": "ftp://example.com",
+   "canonicalize": {
+    "error": "Only HTTPS origins are allowed (HTTP is limited to localhost)"
+   },
+   "normalize_url": {
+    "error": "Only http(s) URLs can be matched"
+   },
+   "origin_of": {
+    "error": "Only http(s) URLs can be matched"
+   },
+   "host_of": {
+    "error": "Only http(s) URLs can be matched"
+   }
+  },
+  {
+   "input": "http://example.com",
+   "canonicalize": {
+    "error": "Plain HTTP is allowed only for loopback test origins"
+   },
+   "normalize_url": {
+    "ok": "http://example.com/"
+   },
+   "origin_of": {
+    "ok": "http://example.com"
+   },
+   "host_of": {
+    "ok": "example.com"
+   }
+  }
+ ],
+ "match": [
+  {
+   "rows": [
+    [
+     "https://example.com:8443/app",
+     "host"
+    ]
+   ],
+   "candidate": "https://example.com/anything",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "https://example.com:8443/app",
+     "host"
+    ]
+   ],
+   "candidate": "https://example.com:8443/x",
+   "rank": 1
+  },
+  {
+   "rows": [
+    [
+     "https://example.com:8443/app",
+     "host"
+    ]
+   ],
+   "candidate": "https://Example.COM.:8443/",
+   "rank": 1
+  },
+  {
+   "rows": [
+    [
+     "https://example.com:8443/app",
+     "host"
+    ]
+   ],
+   "candidate": "https://example.com:9000/",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "https://example.com",
+     "host"
+    ]
+   ],
+   "candidate": "https://example.com:443/x",
+   "rank": 1
+  },
+  {
+   "rows": [
+    [
+     "https://example.com",
+     "host"
+    ]
+   ],
+   "candidate": "https://example.com:8443/x",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "http://localhost:3000",
+     "host"
+    ]
+   ],
+   "candidate": "https://localhost:3000/",
+   "rank": 1
+  },
+  {
+   "rows": [
+    [
+     "http://localhost:3000",
+     "host"
+    ]
+   ],
+   "candidate": "http://localhost:3001/",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "http://localhost",
+     "host"
+    ]
+   ],
+   "candidate": "https://localhost/",
+   "rank": 1
+  },
+  {
+   "rows": [
+    [
+     "https://login.example.com/",
+     "host"
+    ]
+   ],
+   "candidate": "https://login.example.com/q",
+   "rank": 1
+  },
+  {
+   "rows": [
+    [
+     "https://login.example.com/",
+     "host"
+    ]
+   ],
+   "candidate": "http://login.example.com:9/q",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "https://login.example.com/",
+     "host"
+    ]
+   ],
+   "candidate": "http://login.example.com/",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "https://example.com",
+     "base_domain"
+    ]
+   ],
+   "candidate": "http://login.example.com/",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "https://example.com",
+     "base_domain"
+    ]
+   ],
+   "candidate": "https://login.example.com/",
+   "rank": 2
+  },
+  {
+   "rows": [
+    [
+     "https://example.com/app",
+     "starts_with"
+    ]
+   ],
+   "candidate": "http://example.com/app/x",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "https://example.com",
+     "exact_origin"
+    ]
+   ],
+   "candidate": "http://example.com/",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "http://localhost:8080",
+     "exact_origin"
+    ]
+   ],
+   "candidate": "http://localhost:8080/x",
+   "rank": 0
+  },
+  {
+   "rows": [
+    [
+     "http://127.0.0.1",
+     "base_domain"
+    ]
+   ],
+   "candidate": "http://127.0.0.1:9000/",
+   "rank": 2
+  },
+  {
+   "rows": [
+    [
+     "https://[::1]",
+     "base_domain"
+    ]
+   ],
+   "candidate": "https://[::1]:8443/",
+   "rank": 2
+  },
+  {
+   "rows": [
+    [
+     "https://[::1]",
+     "host"
+    ]
+   ],
+   "candidate": "https://[::1]/x",
+   "rank": 1
+  },
+  {
+   "rows": [
+    [
+     "https://paypal.com\\.evil.com",
+     "base_domain"
+    ]
+   ],
+   "candidate": "https://login.evil.com/",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "https://evil.com",
+     "base_domain"
+    ]
+   ],
+   "candidate": "https://paypal.com\\.evil.com/",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "https://paypal.com",
+     "host"
+    ]
+   ],
+   "candidate": "https://paypal.com\\.evil.com/",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "https://[::1]",
+     "exact_origin"
+    ]
+   ],
+   "candidate": "https://evil.com[::1]/",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "https://[::1]",
+     "host"
+    ]
+   ],
+   "candidate": "https://[::1%25eth0]/",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "https://[::1]",
+     "exact_origin"
+    ]
+   ],
+   "candidate": "https://[::ffff:127.0.0.1]/",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "https://[::1",
+     "host"
+    ]
+   ],
+   "candidate": "https://[::1/",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "https://[1:2:3:4:5:6:7:8:9]",
+     "host"
+    ]
+   ],
+   "candidate": "https://[1:2:3:4:5:6:7:8:9]/",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "https://[v1.abc]",
+     "base_domain"
+    ]
+   ],
+   "candidate": "https://www.[v1.abc]/",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "https://example.com",
+     "exact_origin"
+    ]
+   ],
+   "candidate": "https://example.com./",
+   "rank": 0
+  },
+  {
+   "rows": [
+    [
+     "https://example.com",
+     "exact_origin"
+    ]
+   ],
+   "candidate": "https://example.com../",
+   "rank": null
+  },
+  {
+   "rows": [
+    [
+     "https://example.com",
+     "exact_origin"
+    ]
+   ],
+   "candidate": "https://example.com /",
+   "rank": null
+  }
+ ]
+}

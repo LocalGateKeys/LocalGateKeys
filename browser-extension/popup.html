@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LocalGateKeys</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --workspace: #F7F9FC;
+        --surface: #FFFFFF;
+        --ink: #13203A;
+        --muted: #4D5F7C;
+        --subtle: #64748B;
+        --border: #D7E1EE;
+        --border-soft: #E5EAF2;
+        --panel-hover: #F3F7FD;
+        --panel-muted: #EDF2F8;
+        --panel-disabled: #E5ECF5;
+        --accent: #005FCC;
+        --accent-hover: #004FA3;
+        --accent-pressed: #003F85;
+        --accent-soft: #E6F0FF;
+        --accent-foreground: #FFFFFF;
+        --accent-foreground-muted: #E9F2FF;
+        --green: #176B45;
+        --green-soft: #E5F4EC;
+        --amber: #805B00;
+        --amber-soft: #FFF4D6;
+        --red: #B42336;
+        --red-soft: #FDEBED;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { min-height: 100%; }
+      body {
+        width: 360px;
+        margin: 0;
+        color: var(--ink);
+        background: var(--workspace);
+        font: 13px/1.45 "Segoe UI", system-ui, sans-serif;
+      }
+      button { appearance: none; border: 0; color: inherit; font: inherit; }
+      button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      .shell { padding: 12px; }
+
+      .brand { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; }
+      .logo {
+        width: 34px;
+        height: 34px;
+        flex: 0 0 auto;
+        border-radius: 11px;
+        object-fit: cover;
+        box-shadow: 0 1px 3px rgba(23, 43, 58, .12);
+      }
+      .brand h1 { margin: 0; color: var(--ink); font-size: 15px; font-weight: 750; letter-spacing: -.2px; }
+      .tagline { margin-top: 1px; color: var(--subtle); font-size: 11px; }
+      .privacy-mark {
+        margin-left: auto;
+        padding: 3px 7px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: var(--muted);
+        background: var(--surface);
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: .06em;
+      }
+
+      .section-label {
+        margin: 0;
+        color: var(--subtle);
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+      }
+      .site-card {
+        padding: 10px 11px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--surface);
+        box-shadow: 0 1px 2px rgba(23, 43, 58, .035);
+      }
+      .site-topline { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+      .site-origin {
+        min-height: 19px;
+        margin-top: 5px;
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+      }
+      .site-hint { margin: 3px 0 0; color: var(--muted); font-size: 10px; }
+
+      .connection-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 46px;
+        margin: 7px 0 12px;
+        padding: 7px 9px;
+        border: 1px solid var(--border-soft);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, .65);
+      }
+      .connection-indicator {
+        flex: 0 0 auto;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--subtle);
+        box-shadow: 0 0 0 4px var(--border-soft);
+      }
+      .connection-copy { min-width: 0; flex: 1; }
+      .connection-title { color: var(--ink); font-size: 12px; font-weight: 700; }
+      .connection-description { margin-top: 1px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+      .connection-card[data-state="connected"] .connection-indicator { background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
+      .connection-card[data-state="locked"] .connection-indicator,
+      .connection-card[data-state="setup"] .connection-indicator { background: var(--amber); box-shadow: 0 0 0 4px var(--amber-soft); }
+      .connection-card[data-state="disabled"] .connection-indicator,
+      .connection-card[data-state="offline"] .connection-indicator { background: var(--red); box-shadow: 0 0 0 4px var(--red-soft); }
+      .connection-refresh {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        width: 32px;
+        height: 32px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--muted);
+        background: var(--surface);
+        cursor: pointer;
+        font-size: 17px;
+        line-height: 1;
+      }
+      .connection-refresh:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+      .connection-refresh:disabled { cursor: default; color: var(--subtle); }
+      .connection-refresh[aria-busy="true"] { animation: rotate .8s linear infinite; }
+      @keyframes rotate { to { transform: rotate(360deg); } }
+
+      .actions-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+      .shortcut-hint { color: var(--subtle); font-size: 9px; font-weight: 700; letter-spacing: .06em; }
+      .actions { display: grid; gap: 6px; }
+      .action {
+        position: relative;
+        width: 100%;
+        min-height: 42px;
+        padding: 8px 11px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--ink);
+        background: var(--surface);
+        box-shadow: 0 1px 2px rgba(23, 43, 58, .035);
+        cursor: pointer;
+        text-align: left;
+        transition: background-color .14s ease, border-color .14s ease, transform .14s ease, box-shadow .14s ease;
+      }
+      .action:hover:not(:disabled) { border-color: var(--accent); background: var(--panel-hover); box-shadow: 0 2px 5px rgba(19, 32, 58, .07); }
+      .action:active:not(:disabled) { transform: translateY(1px); }
+      .action.primary {
+        min-height: 52px;
+        padding: 9px 42px 9px 12px;
+        border-color: var(--accent);
+        color: var(--accent-foreground);
+        background: var(--accent);
+        box-shadow: 0 2px 4px rgba(0, 95, 204, .15);
+      }
+      .action.primary::after {
+        position: absolute;
+        top: 50%;
+        right: 15px;
+        color: var(--accent-foreground-muted);
+        content: "→";
+        font-size: 20px;
+        line-height: 1;
+        transform: translateY(-54%);
+      }
+      .action.primary:hover:not(:disabled) { border-color: var(--accent-hover); background: var(--accent-hover); }
+      .action.primary:active:not(:disabled) { border-color: var(--accent-pressed); background: var(--accent-pressed); }
+      .action-title { display: block; font-weight: 750; }
+      .action-description { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 400; }
+      .primary .action-description { color: var(--accent-foreground-muted); }
+      .action:disabled, .automatic-toggle:disabled { cursor: default; box-shadow: none; }
+      .action:disabled { border-color: var(--border-soft); color: var(--subtle); background: var(--panel-muted); }
+      .action:disabled .action-description { color: var(--subtle); }
+      .action.primary:disabled { border-color: var(--border-soft); color: var(--muted); background: var(--panel-disabled); }
+      .action.primary:disabled .action-description,
+      .action.primary:disabled::after { color: var(--muted); }
+      .secondary-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .secondary-actions .action { min-height: 50px; }
+      .secondary-actions .action-description { line-height: 1.35; }
+      .action[aria-busy="true"]::before {
+        position: absolute;
+        top: 50%;
+        right: 15px;
+        width: 14px;
+        height: 14px;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        content: "";
+        animation: rotate .7s linear infinite;
+        transform: translateY(-50%);
+      }
+      .action.primary[aria-busy="true"]::after { content: none; }
+
+      .automatic-toggle {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        width: 100%;
+        min-height: 50px;
+        margin-top: 2px;
+        padding: 9px 11px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--ink);
+        background: var(--surface);
+        cursor: pointer;
+        text-align: left;
+      }
+      .automatic-toggle:hover:not(:disabled) { border-color: var(--accent); background: var(--panel-hover); }
+      .toggle-track { position: relative; flex: 0 0 auto; width: 35px; height: 20px; border-radius: 999px; background: var(--panel-disabled); transition: background-color .14s ease; }
+      .toggle-track::after { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px rgba(23, 43, 58, .18); content: ""; transition: transform .14s ease; }
+      .automatic-toggle[aria-pressed="true"] .toggle-track { background: var(--accent); }
+      .automatic-toggle[aria-pressed="true"] .toggle-track::after { transform: translateX(15px); }
+      .automatic-copy { min-width: 0; flex: 1; }
+      .automatic-label { display: block; color: var(--ink); font-weight: 700; }
+      .automatic-hint { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
+      .automatic-toggle:disabled { color: var(--subtle); background: var(--workspace); }
+      .automatic-toggle:disabled .automatic-label,
+      .automatic-toggle:disabled .automatic-hint { color: var(--subtle); }
+      .automatic-toggle:disabled .toggle-track { background: var(--panel-muted); }
+
+      .status-message { margin-top: 10px; padding: 9px 10px; border: 1px solid transparent; border-radius: 9px; color: var(--muted); background: var(--surface); font-size: 11px; overflow-wrap: anywhere; }
+      .status-message[hidden] { display: none; }
+      .status-message[data-kind="success"] { border-color: #B8DEC9; color: var(--green); background: var(--green-soft); }
+      .status-message[data-kind="error"] { border-color: #E9BFC5; color: var(--red); background: var(--red-soft); }
+      .status-message[data-kind="info"] { border-color: #BBD2F1; color: var(--accent-hover); background: var(--accent-soft); }
+      .footer { display: flex; align-items: center; gap: 7px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); color: var(--subtle); font-size: 11px; }
+      .footer-mark { display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; border-radius: 50%; color: var(--accent); background: var(--accent-soft); font-size: 9px; }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="brand">
+        <img src="icons/icon48.png" class="logo" alt="" />
+        <div>
+          <h1>LocalGateKeys</h1>
+          <div class="tagline">Your keys. Your control.</div>
+        </div>
+        <span class="privacy-mark">LOCAL VAULT</span>
+      </header>
+
+      <section class="site-card" aria-labelledby="site-label">
+        <div class="site-topline">
+          <p id="site-label" class="section-label">Current site</p>
+          <span class="section-label">THIS PAGE</span>
+        </div>
+        <div id="site" class="site-origin" aria-live="polite">Checking this page…</div>
+        <p id="site-hint" class="site-hint">Actions stay on this page and require your choice.</p>
+      </section>
+
+      <section id="connection-card" class="connection-card" data-state="checking" aria-labelledby="connection-title">
+        <span class="connection-indicator" aria-hidden="true"></span>
+        <div class="connection-copy">
+          <div id="connection-title" class="connection-title" aria-live="polite">Checking connection…</div>
+          <div id="connection-description" class="connection-description" aria-live="polite">Contacting LocalGateKeys without unlocking your vault.</div>
+        </div>
+        <button id="connection" class="connection-refresh" type="button" aria-label="Refresh connection status" title="Refresh connection status">↻</button>
+      </section>
+
+      <section aria-labelledby="actions-label">
+        <div class="actions-heading">
+          <p id="actions-label" class="section-label">Quick actions</p>
+          <span class="shortcut-hint">MANUAL BY DESIGN</span>
+        </div>
+        <div class="actions">
+          <button id="fill" class="action primary" type="button" disabled>
+            <span class="action-title">Fill login</span>
+            <span class="action-description">Choose a saved login for this page</span>
+          </button>
+          <button id="identity" class="action" type="button" disabled>
+            <span class="action-title">Fill identity</span>
+            <span class="action-description">Review contact fields before filling</span>
+          </button>
+          <button id="card" class="action" type="button" disabled>
+            <span class="action-title">Fill card…</span>
+            <span class="action-description">Pick a card, tick fields, confirm in the app</span>
+          </button>
+          <div class="secondary-actions">
+            <button id="save" class="action" type="button" disabled>
+              <span class="action-title">Save login</span>
+              <span class="action-description">Save these login fields</span>
+            </button>
+            <button id="generate" class="action" type="button" disabled>
+              <span class="action-title">Generate password</span>
+              <span class="action-description">Create a password for sign-up</span>
+            </button>
+          </div>
+          <button id="automatic" class="automatic-toggle" type="button" aria-pressed="false" aria-describedby="automatic-hint" disabled>
+            <span class="toggle-track" aria-hidden="true"></span>
+            <span class="automatic-copy">
+              <span id="automatic-label" class="automatic-label">Turn off save prompts on this site</span>
+              <span id="automatic-hint" class="automatic-hint">On: you're asked after a successful sign-in here</span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <div id="status" class="status-message" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+
+      <footer class="footer"><span class="footer-mark" aria-hidden="true">◆</span><span>Encrypted locally on this device</span></footer>
+    </main>
+    <script src="api.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+*.lgksync binary
+*.lgkm binary
+*.bin binary
+tests/vectors/** -text
+
+ios/** text eol=lf
+ios/**/*.png binary
+
+android/** text eol=lf
+android/gradlew.bat text eol=crlf
+android/**/*.jar binary

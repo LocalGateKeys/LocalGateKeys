@@ -1,0 +1,1714 @@
+{
+  "cases": [
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "note",
+        "payload": {},
+        "title": "Norm note",
+        "updated_at": 1789999950
+      },
+      "name": "note_minimal",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "note",
+        "payload": {
+          "body": "",
+          "fields": [],
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm note",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "collection_ids": [],
+        "created_at": 1789999900,
+        "favorite": true,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "note",
+        "payload": {
+          "body": "hello",
+          "fields": [
+            {
+              "hidden": false,
+              "name": "a",
+              "value": "b"
+            }
+          ],
+          "template_id": null
+        },
+        "revision": 7,
+        "tags": [
+          "home"
+        ],
+        "title": "Norm note",
+        "updated_at": 1789999950
+      },
+      "name": "note_full",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": true,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "note",
+        "payload": {
+          "body": "hello",
+          "fields": [
+            {
+              "hidden": false,
+              "name": "a",
+              "value": "b"
+            }
+          ],
+          "template_id": null
+        },
+        "tags": [
+          "home"
+        ],
+        "title": "Norm note",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "note",
+        "payload": {
+          "body": "hello",
+          "fields": [
+            {
+              "hidden": false,
+              "name": "a",
+              "value": "b"
+            }
+          ],
+          "template_id": null
+        },
+        "tags": [
+          "home"
+        ],
+        "title": "Norm note",
+        "updated_at": 1789999950
+      },
+      "name": "note_already_normal",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "note",
+        "payload": {
+          "body": "hello",
+          "fields": [
+            {
+              "hidden": false,
+              "name": "a",
+              "value": "b"
+            }
+          ],
+          "template_id": null
+        },
+        "tags": [
+          "home"
+        ],
+        "title": "Norm note",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "card",
+        "payload": {},
+        "title": "Norm card",
+        "updated_at": 1789999950
+      },
+      "name": "card_minimal",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "card",
+        "payload": {
+          "billing_address_id": "",
+          "brand": "",
+          "cardholder": "",
+          "cvv": "",
+          "expiry": "",
+          "last4": "",
+          "notes": "",
+          "number": "",
+          "pin": "",
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm card",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "identity",
+        "payload": {},
+        "title": "Norm identity",
+        "updated_at": 1789999950
+      },
+      "name": "identity_minimal",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "identity",
+        "payload": {},
+        "tags": [],
+        "title": "Norm identity",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "identity",
+        "payload": {
+          "address": "",
+          "address_line1": "1 Main Street",
+          "address_line2": "",
+          "city": "Zurich",
+          "company": "Example Ltd",
+          "country": "CH",
+          "email": "ann@example.com",
+          "family_name": "Lee",
+          "given_name": "Ann",
+          "job_title": "",
+          "middle_name": "",
+          "name": "Ann Lee",
+          "organization": "",
+          "phone": "",
+          "postal_code": "8001",
+          "state": "",
+          "website": "https://example.com"
+        },
+        "title": "Norm identity",
+        "updated_at": 1789999950
+      },
+      "name": "identity_populated",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "identity",
+        "payload": {
+          "address": "",
+          "address_line1": "1 Main Street",
+          "address_line2": "",
+          "city": "Zurich",
+          "company": "Example Ltd",
+          "country": "CH",
+          "email": "ann@example.com",
+          "family_name": "Lee",
+          "given_name": "Ann",
+          "job_title": "",
+          "middle_name": "",
+          "name": "Ann Lee",
+          "organization": "",
+          "phone": "",
+          "postal_code": "8001",
+          "state": "",
+          "website": "https://example.com"
+        },
+        "tags": [],
+        "title": "Norm identity",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "identity",
+        "payload": {
+          "template_id": null
+        },
+        "title": "Norm identity",
+        "updated_at": 1789999950
+      },
+      "name": "identity_template_id_null",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "identity",
+        "payload": {
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm identity",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "identity payload contains unsupported fields",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "identity",
+        "payload": {
+          "first_name": "Ann"
+        },
+        "title": "Norm identity",
+        "updated_at": 1789999950
+      },
+      "name": "identity_unknown_field_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bookmark",
+        "payload": {
+          "url": "https://www.example.net/help"
+        },
+        "title": "Norm bookmark",
+        "updated_at": 1789999950
+      },
+      "name": "bookmark_minimal",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bookmark",
+        "payload": {
+          "notes": "",
+          "template_id": null,
+          "url": "https://www.example.net/help"
+        },
+        "tags": [],
+        "title": "Norm bookmark",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "bookmark URL cannot be empty",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bookmark",
+        "payload": {},
+        "title": "Norm bookmark",
+        "updated_at": 1789999950
+      },
+      "name": "bookmark_without_url_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "note",
+        "payload": {},
+        "tags": [
+          "Work",
+          "work",
+          "WORK",
+          "Home"
+        ],
+        "title": "Norm note",
+        "updated_at": 1789999950
+      },
+      "name": "tags_case_fold_dedup",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "note",
+        "payload": {
+          "body": "",
+          "fields": [],
+          "template_id": null
+        },
+        "tags": [
+          "Work",
+          "Home"
+        ],
+        "title": "Norm note",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-AAAA-4000-8000-000000000008",
+        "kind": "note",
+        "payload": {},
+        "title": "Norm note",
+        "updated_at": 1789999950
+      },
+      "name": "id_upper_case_uuid",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "note",
+        "payload": {
+          "body": "",
+          "fields": [],
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm note",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "collection_ids": [
+          "99999999-aaaa-4000-8000-00000000000a"
+        ],
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "license",
+        "payload": {
+          "document_ids": [
+            "99999999-aaaa-4000-8000-000000000009"
+          ],
+          "license_value": "AAAA-BBBB"
+        },
+        "revision": 3,
+        "title": "Norm license",
+        "updated_at": 1789999950
+      },
+      "name": "local_only_fields_stripped",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "license",
+        "payload": {
+          "expiration_date": "",
+          "license_value": "AAAA-BBBB",
+          "notes": "",
+          "product": "",
+          "purchase_date": "",
+          "template_id": null,
+          "vendor": ""
+        },
+        "tags": [],
+        "title": "Norm license",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bookmark",
+        "payload": {
+          "notes": "n",
+          "template_id": null,
+          "url": "http://[2001:db8::1]:8080/a?b#c"
+        },
+        "title": "Norm bookmark",
+        "updated_at": 1789999950
+      },
+      "name": "bookmark_full",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bookmark",
+        "payload": {
+          "notes": "n",
+          "template_id": null,
+          "url": "http://[2001:db8::1]:8080/a?b#c"
+        },
+        "tags": [],
+        "title": "Norm bookmark",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "bookmark URL must use http or https",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bookmark",
+        "payload": {
+          "url": "ftp://example.com/"
+        },
+        "title": "Norm bookmark",
+        "updated_at": 1789999950
+      },
+      "name": "bookmark_ftp_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "bookmark URL must not contain embedded credentials",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bookmark",
+        "payload": {
+          "url": "https://me@example.com/"
+        },
+        "title": "Norm bookmark",
+        "updated_at": 1789999950
+      },
+      "name": "bookmark_credentials_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "bookmark URL contains whitespace or a control character",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bookmark",
+        "payload": {
+          "url": "https://example.com/a b"
+        },
+        "title": "Norm bookmark",
+        "updated_at": 1789999950
+      },
+      "name": "bookmark_space_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "bookmark URL must contain a host",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bookmark",
+        "payload": {
+          "url": "https:///path"
+        },
+        "title": "Norm bookmark",
+        "updated_at": 1789999950
+      },
+      "name": "bookmark_no_host_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "license",
+        "payload": {},
+        "title": "Norm license",
+        "updated_at": 1789999950
+      },
+      "name": "license_minimal",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "license",
+        "payload": {
+          "expiration_date": "",
+          "license_value": "",
+          "notes": "",
+          "product": "",
+          "purchase_date": "",
+          "template_id": null,
+          "vendor": ""
+        },
+        "tags": [],
+        "title": "Norm license",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "license",
+        "payload": {
+          "expiration_date": "2025-02-28",
+          "license_value": "AAAA-BBBB",
+          "notes": "seat 1",
+          "product": "Editor",
+          "purchase_date": "2024-02-29",
+          "template_id": null,
+          "vendor": "Acme"
+        },
+        "title": "Norm license",
+        "updated_at": 1789999950
+      },
+      "name": "license_full",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "license",
+        "payload": {
+          "expiration_date": "2025-02-28",
+          "license_value": "AAAA-BBBB",
+          "notes": "seat 1",
+          "product": "Editor",
+          "purchase_date": "2024-02-29",
+          "template_id": null,
+          "vendor": "Acme"
+        },
+        "tags": [],
+        "title": "Norm license",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "expiration date cannot precede purchase date",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "license",
+        "payload": {
+          "expiration_date": "2024-W01-3",
+          "purchase_date": "2024W01"
+        },
+        "title": "Norm license",
+        "updated_at": 1789999950
+      },
+      "name": "license_week_date",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "expiration date cannot precede purchase date",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "license",
+        "payload": {
+          "expiration_date": "2025-01-01",
+          "purchase_date": "2025-01-02"
+        },
+        "title": "Norm license",
+        "updated_at": 1789999950
+      },
+      "name": "license_expiry_before_purchase_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "purchase date must be an ISO date (YYYY-MM-DD)",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "license",
+        "payload": {
+          "purchase_date": "2023-02-29"
+        },
+        "title": "Norm license",
+        "updated_at": 1789999950
+      },
+      "name": "license_bad_date_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "document_ids contains a duplicate ID",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "license",
+        "payload": {
+          "document_ids": [
+            "99999999-aaaa-4000-8000-000000000009",
+            "99999999-AAAA-4000-8000-000000000009"
+          ]
+        },
+        "title": "Norm license",
+        "updated_at": 1789999950
+      },
+      "name": "license_duplicate_document_ids_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "purchase",
+        "payload": {},
+        "title": "Norm purchase",
+        "updated_at": 1789999950
+      },
+      "name": "purchase_minimal",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "purchase",
+        "payload": {
+          "active": true,
+          "amount_minor": 0,
+          "currency": "XXX",
+          "expiration_date": "",
+          "notes": "",
+          "product": "",
+          "provider": "",
+          "purchase_date": "",
+          "renewal_date": "",
+          "template_id": null,
+          "vendor": ""
+        },
+        "tags": [],
+        "title": "Norm purchase",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "warranty",
+        "payload": {},
+        "title": "Norm warranty",
+        "updated_at": 1789999950
+      },
+      "name": "warranty_minimal",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "warranty",
+        "payload": {
+          "active": true,
+          "amount_minor": 0,
+          "currency": "XXX",
+          "expiration_date": "",
+          "notes": "",
+          "product": "",
+          "provider": "",
+          "purchase_date": "",
+          "renewal_date": "",
+          "template_id": null,
+          "vendor": ""
+        },
+        "tags": [],
+        "title": "Norm warranty",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "subscription",
+        "payload": {},
+        "title": "Norm subscription",
+        "updated_at": 1789999950
+      },
+      "name": "subscription_minimal",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "subscription",
+        "payload": {
+          "active": true,
+          "amount_minor": 0,
+          "currency": "XXX",
+          "expiration_date": "",
+          "notes": "",
+          "product": "",
+          "provider": "",
+          "purchase_date": "",
+          "renewal_date": "",
+          "template_id": null,
+          "vendor": ""
+        },
+        "tags": [],
+        "title": "Norm subscription",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "purchase",
+        "payload": {
+          "active": false,
+          "amount_minor": 129999,
+          "currency": "chf",
+          "expiration_date": "2026-05-01",
+          "notes": "",
+          "product": "Laptop",
+          "provider": "",
+          "purchase_date": "2024-05-01",
+          "renewal_date": "",
+          "vendor": "Shop"
+        },
+        "title": "Norm purchase",
+        "updated_at": 1789999950
+      },
+      "name": "purchase_full",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "purchase",
+        "payload": {
+          "active": false,
+          "amount_minor": 129999,
+          "currency": "CHF",
+          "expiration_date": "2026-05-01",
+          "notes": "",
+          "product": "Laptop",
+          "provider": "",
+          "purchase_date": "2024-05-01",
+          "renewal_date": "",
+          "template_id": null,
+          "vendor": "Shop"
+        },
+        "tags": [],
+        "title": "Norm purchase",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "subscription",
+        "payload": {
+          "amount_minor": -500,
+          "currency": "EUR",
+          "renewal_date": "2025-06-01"
+        },
+        "title": "Norm subscription",
+        "updated_at": 1789999950
+      },
+      "name": "subscription_negative_amount",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "subscription",
+        "payload": {
+          "active": true,
+          "amount_minor": -500,
+          "currency": "EUR",
+          "expiration_date": "",
+          "notes": "",
+          "product": "",
+          "provider": "",
+          "purchase_date": "",
+          "renewal_date": "2025-06-01",
+          "template_id": null,
+          "vendor": ""
+        },
+        "tags": [],
+        "title": "Norm subscription",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "currency requires amount_minor",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "purchase",
+        "payload": {
+          "currency": "EUR"
+        },
+        "title": "Norm purchase",
+        "updated_at": 1789999950
+      },
+      "name": "purchase_currency_without_amount_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "amount_minor requires currency",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "purchase",
+        "payload": {
+          "amount_minor": 5
+        },
+        "title": "Norm purchase",
+        "updated_at": 1789999950
+      },
+      "name": "purchase_amount_without_currency_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "amount_minor must be a bounded integer in minor currency units",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "purchase",
+        "payload": {
+          "amount_minor": 5.0,
+          "currency": "EUR"
+        },
+        "title": "Norm purchase",
+        "updated_at": 1789999950
+      },
+      "name": "purchase_float_amount_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "amount_minor must be a bounded integer in minor currency units",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "purchase",
+        "payload": {
+          "amount_minor": true,
+          "currency": "EUR"
+        },
+        "title": "Norm purchase",
+        "updated_at": 1789999950
+      },
+      "name": "purchase_bool_amount_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "amount_minor must be a bounded integer in minor currency units",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "purchase",
+        "payload": {
+          "amount_minor": 1000000000000001,
+          "currency": "EUR"
+        },
+        "title": "Norm purchase",
+        "updated_at": 1789999950
+      },
+      "name": "purchase_huge_amount_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "currency must be a three-letter code",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "purchase",
+        "payload": {
+          "amount_minor": 1,
+          "currency": "E1R"
+        },
+        "title": "Norm purchase",
+        "updated_at": 1789999950
+      },
+      "name": "purchase_bad_currency_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "renewal date cannot precede purchase date",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "warranty",
+        "payload": {
+          "purchase_date": "2024-05-01",
+          "renewal_date": "2024-04-30"
+        },
+        "title": "Norm warranty",
+        "updated_at": 1789999950
+      },
+      "name": "warranty_renewal_before_purchase_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "active must be boolean",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "subscription",
+        "payload": {
+          "active": 1
+        },
+        "title": "Norm subscription",
+        "updated_at": 1789999950
+      },
+      "name": "subscription_active_not_bool_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bank_account",
+        "payload": {},
+        "title": "Norm bank_account",
+        "updated_at": 1789999950
+      },
+      "name": "bank_account_minimal",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bank_account",
+        "payload": {
+          "account_holder": "",
+          "account_number": "",
+          "bank": "",
+          "notes": "",
+          "number_format": "",
+          "pin": "",
+          "routing": "",
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm bank_account",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bank_account",
+        "payload": {
+          "account_holder": "Ann Lee",
+          "account_number": " ch93 0076 2011 6238 5295 7 ",
+          "bank": "Bank",
+          "notes": "",
+          "pin": "1234",
+          "routing": " ubswchzh80a "
+        },
+        "title": "Norm bank_account",
+        "updated_at": 1789999950
+      },
+      "name": "bank_account_iban",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bank_account",
+        "payload": {
+          "account_holder": "Ann Lee",
+          "account_number": "CH9300762011623852957",
+          "bank": "Bank",
+          "notes": "",
+          "number_format": "iban",
+          "pin": "1234",
+          "routing": "UBSWCHZH80A",
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm bank_account",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bank_account",
+        "payload": {
+          "account_number": "12-345-678",
+          "routing": "021000021"
+        },
+        "title": "Norm bank_account",
+        "updated_at": 1789999950
+      },
+      "name": "bank_account_other_number",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bank_account",
+        "payload": {
+          "account_holder": "",
+          "account_number": "12-345-678",
+          "bank": "",
+          "notes": "",
+          "number_format": "other",
+          "pin": "",
+          "routing": "021000021",
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm bank_account",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "IBAN failed its checksum",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bank_account",
+        "payload": {
+          "account_number": "CH9400762011623852957"
+        },
+        "title": "Norm bank_account",
+        "updated_at": 1789999950
+      },
+      "name": "bank_account_iban_checksum_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bank_account",
+        "payload": {
+          "account_number": "12345678",
+          "number_format": "iban"
+        },
+        "title": "Norm bank_account",
+        "updated_at": 1789999950
+      },
+      "name": "bank_account_number_format_recomputed",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bank_account",
+        "payload": {
+          "account_holder": "",
+          "account_number": "12345678",
+          "bank": "",
+          "notes": "",
+          "number_format": "other",
+          "pin": "",
+          "routing": "",
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm bank_account",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "routing or BIC must be alphanumeric",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bank_account",
+        "payload": {
+          "routing": "UBS WCH"
+        },
+        "title": "Norm bank_account",
+        "updated_at": 1789999950
+      },
+      "name": "bank_account_bad_routing_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "bank PIN must be 4 to 8 digits",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "bank_account",
+        "payload": {
+          "pin": "12"
+        },
+        "title": "Norm bank_account",
+        "updated_at": 1789999950
+      },
+      "name": "bank_account_short_pin_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "ssh_key",
+        "payload": {},
+        "title": "Norm ssh_key",
+        "updated_at": 1789999950
+      },
+      "name": "ssh_key_minimal",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "ssh_key",
+        "payload": {
+          "fingerprint": "",
+          "key_format": "",
+          "notes": "",
+          "passphrase": "",
+          "private_key": "",
+          "public_key": "",
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm ssh_key",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "ssh_key",
+        "payload": {
+          "fingerprint": "ignored",
+          "key_format": "putty",
+          "passphrase": "pw",
+          "private_key": "  -----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaA==\n-----END OPENSSH PRIVATE KEY-----\n",
+          "public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl ann@laptop"
+        },
+        "title": "Norm ssh_key",
+        "updated_at": 1789999950
+      },
+      "name": "ssh_key_openssh",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "ssh_key",
+        "payload": {
+          "fingerprint": "SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU",
+          "key_format": "openssh",
+          "notes": "",
+          "passphrase": "pw",
+          "private_key": "  -----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaA==\n-----END OPENSSH PRIVATE KEY-----\n",
+          "public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl ann@laptop",
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm ssh_key",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "ssh_key",
+        "payload": {
+          "private_key": "-----BEGIN RSA PRIVATE KEY-----\nProc-Type: 4,ENCRYPTED\nDEK-Info: AES-128-CBC,00\n\nAA==\n-----END RSA PRIVATE KEY-----"
+        },
+        "title": "Norm ssh_key",
+        "updated_at": 1789999950
+      },
+      "name": "ssh_key_encrypted_rsa",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "ssh_key",
+        "payload": {
+          "fingerprint": "",
+          "key_format": "pem-rsa-encrypted",
+          "notes": "",
+          "passphrase": "",
+          "private_key": "-----BEGIN RSA PRIVATE KEY-----\nProc-Type: 4,ENCRYPTED\nDEK-Info: AES-128-CBC,00\n\nAA==\n-----END RSA PRIVATE KEY-----",
+          "public_key": "",
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm ssh_key",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "ssh_key",
+        "payload": {
+          "fingerprint": "  MD5:aa:bb  ",
+          "private_key": "not a key",
+          "public_key": "-----BEGIN PUBLIC KEY-----"
+        },
+        "title": "Norm ssh_key",
+        "updated_at": 1789999950
+      },
+      "name": "ssh_key_unknown_format_user_fingerprint",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "ssh_key",
+        "payload": {
+          "fingerprint": "MD5:aa:bb",
+          "key_format": "unknown",
+          "notes": "",
+          "passphrase": "",
+          "private_key": "not a key",
+          "public_key": "-----BEGIN PUBLIC KEY-----",
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm ssh_key",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "OpenSSH public key is not valid base64",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "ssh_key",
+        "payload": {
+          "public_key": "ssh-rsa AAA*"
+        },
+        "title": "Norm ssh_key",
+        "updated_at": 1789999950
+      },
+      "name": "ssh_key_bad_base64_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "OpenSSH public key is not valid base64",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "ssh_key",
+        "payload": {
+          "public_key": "ssh-rsa QQ"
+        },
+        "title": "Norm ssh_key",
+        "updated_at": 1789999950
+      },
+      "name": "ssh_key_missing_padding_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "api_key",
+        "payload": {},
+        "title": "Norm api_key",
+        "updated_at": 1789999950
+      },
+      "name": "api_key_minimal",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "api_key",
+        "payload": {
+          "expires": "",
+          "key": "",
+          "notes": "",
+          "secret": "",
+          "service": "",
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm api_key",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "api_key",
+        "payload": {
+          "expires": "20261231",
+          "key": "k",
+          "notes": "x",
+          "secret": "s",
+          "service": "Cloud"
+        },
+        "title": "Norm api_key",
+        "updated_at": 1789999950
+      },
+      "name": "api_key_full",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "api_key",
+        "payload": {
+          "expires": "20261231",
+          "key": "k",
+          "notes": "x",
+          "secret": "s",
+          "service": "Cloud",
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm api_key",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "API key expiry must be an ISO date (YYYY-MM-DD)",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "api_key",
+        "payload": {
+          "expires": "2026-13-01"
+        },
+        "title": "Norm api_key",
+        "updated_at": 1789999950
+      },
+      "name": "api_key_bad_expiry_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "wifi",
+        "payload": {},
+        "title": "Norm wifi",
+        "updated_at": 1789999950
+      },
+      "name": "wifi_minimal",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "wifi",
+        "payload": {
+          "hidden": false,
+          "notes": "",
+          "password": "",
+          "security": "wpa2",
+          "ssid": "",
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm wifi",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "wifi",
+        "payload": {
+          "hidden": true,
+          "password": "secret",
+          "security": " WPA3 ",
+          "ssid": "Home"
+        },
+        "title": "Norm wifi",
+        "updated_at": 1789999950
+      },
+      "name": "wifi_full",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "wifi",
+        "payload": {
+          "hidden": true,
+          "notes": "",
+          "password": "secret",
+          "security": "wpa3",
+          "ssid": "Home",
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm wifi",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "wifi",
+        "payload": {
+          "security": "  "
+        },
+        "title": "Norm wifi",
+        "updated_at": 1789999950
+      },
+      "name": "wifi_blank_security_defaults",
+      "ns": "item",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "wifi",
+        "payload": {
+          "hidden": false,
+          "notes": "",
+          "password": "",
+          "security": "wpa2",
+          "ssid": "",
+          "template_id": null
+        },
+        "tags": [],
+        "title": "Norm wifi",
+        "updated_at": 1789999950
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "Wi-Fi security type is unsupported",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "wifi",
+        "payload": {
+          "security": "wpa4"
+        },
+        "title": "Norm wifi",
+        "updated_at": 1789999950
+      },
+      "name": "wifi_unknown_security_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "Wi-Fi hidden flag must be boolean",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "wifi",
+        "payload": {
+          "hidden": "yes"
+        },
+        "title": "Norm wifi",
+        "updated_at": 1789999950
+      },
+      "name": "wifi_hidden_not_bool_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "SSID is too long",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "wifi",
+        "payload": {
+          "ssid": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        },
+        "title": "Norm wifi",
+        "updated_at": 1789999950
+      },
+      "name": "wifi_long_ssid_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "collection id must be a UUID",
+      "error": "rejected",
+      "input": {
+        "collection_ids": [
+          "c1"
+        ],
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "note",
+        "payload": {},
+        "title": "Norm note",
+        "updated_at": 1789999950
+      },
+      "name": "collection_id_not_a_uuid_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "Unsupported item kind: spaceship",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "spaceship",
+        "payload": {},
+        "title": "Norm spaceship",
+        "updated_at": 1789999950
+      },
+      "name": "unknown_kind_rejected",
+      "ns": "item",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "updated_at must be a bounded UTC timestamp",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "note",
+        "payload": {},
+        "title": "Norm note",
+        "updated_at": 1.5
+      },
+      "name": "float_timestamp_rejected",
+      "ns": "item",
+      "output": null
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "WARNING": "TEST ONLY. These private keys are published in the repository on purpose. Never use them for a real device or vault.",
+  "devices": {
+    "A": {
+      "device_id": "a1111111-0000-4000-8000-00000000000a",
+      "exchange_public_b64": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+      "fingerprint_sha256_of_signing_public": "5c64391564d6f9308ebda9b4ca516292e354684b870c330326fe13a4153b71ee",
+      "name": "Desk PC (Windows)",
+      "private": {
+        "device_id": "a1111111-0000-4000-8000-00000000000a",
+        "exchange_private": "s8UmUmATs6NaZvx2cpVQ7cy43qNAgBZlqAQJ7jsDAXc=",
+        "signing_private": "cius9SyX7Cb7dYHEtlcgeRsE1G/3wvUwX90ZEKPOZw4="
+      },
+      "signing_public_b64": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+    },
+    "B": {
+      "device_id": "b2222222-0000-4000-8000-00000000000b",
+      "exchange_public_b64": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+      "fingerprint_sha256_of_signing_public": "62df9631b1edda2bd5bfb02df1fee8790fcb5b45d4652a03afe0e20aaf959401",
+      "name": "Laptop (Windows)",
+      "private": {
+        "device_id": "b2222222-0000-4000-8000-00000000000b",
+        "exchange_private": "zfGIi2ccpQ5BHpX+zjwyUe4huMBZYdTV+NhLNfunnuA=",
+        "signing_private": "usdYBsZh1SPFCIJa2khYszY8zZyzAkyaiQtGqSbUZF0="
+      },
+      "signing_public_b64": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+    },
+    "C": {
+      "device_id": "c3333333-0000-4000-8000-00000000000c",
+      "exchange_public_b64": "g86gEoHoAWBsHy69032KTMuk16wmx3QwIyQhqgjDclM=",
+      "fingerprint_sha256_of_signing_public": "210620d0345ada36f6679d9fed58b4f1a921ee98ad9612321d81a62d6a858962",
+      "name": "Old Tablet",
+      "private": {
+        "device_id": "c3333333-0000-4000-8000-00000000000c",
+        "exchange_private": "/7Hw4Kq7ksRAgrQoob2UxINLDvdOSSkBU82Giixfu6I=",
+        "signing_private": "1h7eEKvD7GCCcdRmklWUFoHnVMQg78bvowxijIeQ5oo="
+      },
+      "signing_public_b64": "pl0XiPYzPZisZtbxoPMJIr7ziyemOHZb4viqbxKdUH4="
+    }
+  }
+}

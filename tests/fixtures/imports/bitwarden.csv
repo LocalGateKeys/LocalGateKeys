@@ -1,0 +1,5 @@
+folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp
+Work,1,login,Example Git,Work code hosting.,"Team: Platform
+Recovery code: rc-0000-1111",0,"https://git.example.com/login,https://sso.example.com",alex.example,bw-csv-pass-1,JBSWY3DPEHPK3PXP
+,,note,Router admin,Admin page is on the sticker.,,0,,,,
+Personal,,login,Example Shop,,,0,shop.example.com,alex@example.com,bw-csv-pass-2,

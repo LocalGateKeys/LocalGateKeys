@@ -1,0 +1,2686 @@
+{
+  "cases": [
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "plain_web_login",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "HTTPS://Example.COM"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "origin_upper_case_scheme_and_host",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com:443"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "origin_default_https_port",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com."
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "origin_trailing_dot",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://[2001:DB8::1]:8443"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "origin_ipv6_upper_case_with_port",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://[2001:db8::1]:8443"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "http://localhost:8080"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "origin_localhost_http_with_port",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "http://localhost:8080"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "Plain HTTP is allowed only for loopback test origins",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "http://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "origin_plain_http_rejected",
+      "ns": "entry",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://bücher.example"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "origin_idna_umlaut",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://xn--bcher-kva.example"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://faß.de"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "origin_idna_sharp_s_non_transitional",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://xn--fa-hia.de"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://例え.テスト"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "origin_idna_japanese",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://xn--r8jz45g.xn--zckzah"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "Expected an origin without a path",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com/login"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "origin_with_path_rejected",
+      "ns": "entry",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com",
+          "urls": [
+            "https://app.example.com"
+          ]
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "urls_bare_string_row",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com",
+          "urls": [
+            {
+              "match": "exact_origin",
+              "url": "https://app.example.com"
+            }
+          ]
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com",
+          "urls": [
+            {
+              "match": "exact_origin",
+              "url": "https://a.example.com"
+            },
+            {
+              "match": "host",
+              "url": "https://b.example.com"
+            },
+            {
+              "match": "base_domain",
+              "url": "https://c.example.com"
+            },
+            {
+              "match": "starts_with",
+              "url": "https://d.example.com"
+            }
+          ]
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "urls_each_match_mode",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com",
+          "urls": [
+            {
+              "match": "exact_origin",
+              "url": "https://a.example.com"
+            },
+            {
+              "match": "host",
+              "url": "https://b.example.com/"
+            },
+            {
+              "match": "base_domain",
+              "url": "https://c.example.com/"
+            },
+            {
+              "match": "starts_with",
+              "url": "https://d.example.com/"
+            }
+          ]
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com",
+          "urls": [
+            "https://app.example.com",
+            {
+              "match": "host",
+              "url": "HTTPS://App.Example.com"
+            },
+            {
+              "match": "host",
+              "url": "https://app.example.com"
+            }
+          ]
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "urls_duplicate_row_dropped",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com",
+          "urls": [
+            {
+              "match": "exact_origin",
+              "url": "https://app.example.com"
+            },
+            {
+              "match": "host",
+              "url": "https://app.example.com/"
+            }
+          ]
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "url match mode is unsupported",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com",
+          "urls": [
+            {
+              "match": "regex",
+              "url": "https://a.example.com"
+            }
+          ]
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "urls_bad_match_mode",
+      "ns": "entry",
+      "output": null
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_minimal",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "account": "norm.user",
+          "algorithm": "SHA256",
+          "digits": 8,
+          "issuer": "Example",
+          "period": 60,
+          "secret": "jbswy3dpehpk3pxp"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_all_fields",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "account": "norm.user",
+          "algorithm": "SHA256",
+          "digits": 8,
+          "issuer": "Example",
+          "period": 60,
+          "secret": "jbswy3dpehpk3pxp"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "digits": 7,
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_digits_7",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "digits": 7,
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "period": 15,
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_period_15",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "period": 15,
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "period": 120,
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_period_120",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "period": 120,
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "note": "kept",
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_extra_scalar_key",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "note": "kept",
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "TOTP digits are unsupported",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "digits": 5,
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_digits_5_rejected",
+      "ns": "entry",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "TOTP digits are unsupported",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "digits": 9,
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_digits_9_rejected",
+      "ns": "entry",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "TOTP digits are unsupported",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "digits": "6",
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_digits_as_text_rejected",
+      "ns": "entry",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "TOTP digits are unsupported",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "digits": true,
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_digits_as_bool_rejected",
+      "ns": "entry",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "TOTP period is unsupported",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "period": 14,
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_period_14_rejected",
+      "ns": "entry",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "TOTP period is unsupported",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "period": 121,
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_period_121_rejected",
+      "ns": "entry",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "TOTP algorithm must be text",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "algorithm": 5,
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_algorithm_not_text_rejected",
+      "ns": "entry",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "TOTP secret must be text",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "secret": 5
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_secret_not_text_rejected",
+      "ns": "entry",
+      "output": null
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "algorithm": "MD5",
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_algorithm_unknown_name_kept",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "algorithm": "MD5",
+          "secret": "JBSWY3DPEHPK3PXP"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "secret": ""
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_empty_secret_kept",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "secret": ""
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "digits": 6
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_without_secret_kept",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "digits": 6
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "secret": "!!!!"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_secret_not_base32_kept",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "secret": "!!!!"
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "secret": "JBSW Y3DP EHPK 3PXP===="
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "totp_secret_with_spaces_and_padding",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "totp": {
+          "secret": "JBSW Y3DP EHPK 3PXP===="
+        },
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "custom_fields": [
+          {
+            "hidden": true,
+            "name": "Security answer",
+            "value": "blue"
+          },
+          {
+            "hidden": false,
+            "name": "Branch",
+            "value": "Zurich"
+          }
+        ],
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "custom_fields_name_value_hidden",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "custom_fields": [
+          {
+            "hidden": true,
+            "name": "Security answer",
+            "value": "blue"
+          },
+          {
+            "hidden": false,
+            "name": "Branch",
+            "value": "Zurich"
+          }
+        ],
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "custom_fields": [
+          {
+            "flag": true,
+            "name": "n",
+            "nothing": null,
+            "ratio": 0.5,
+            "value": 3,
+            "whole": 100.0
+          }
+        ],
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "custom_fields_int_float_null",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "custom_fields": [
+          {
+            "flag": true,
+            "name": "n",
+            "nothing": null,
+            "ratio": 0.5,
+            "value": 3,
+            "whole": 100.0
+          }
+        ],
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "custom_fields": [
+          {
+            "k00": 0,
+            "k01": 1,
+            "k02": 2,
+            "k03": 3,
+            "k04": 4,
+            "k05": 5,
+            "k06": 6,
+            "k07": 7,
+            "k08": 8,
+            "k09": 9,
+            "k10": 10,
+            "k11": 11,
+            "k12": 12,
+            "k13": 13,
+            "k14": 14,
+            "k15": 15
+          }
+        ],
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "custom_fields_16_keys",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "custom_fields": [
+          {
+            "k00": 0,
+            "k01": 1,
+            "k02": 2,
+            "k03": 3,
+            "k04": 4,
+            "k05": 5,
+            "k06": 6,
+            "k07": 7,
+            "k08": 8,
+            "k09": 9,
+            "k10": 10,
+            "k11": 11,
+            "k12": 12,
+            "k13": 13,
+            "k14": 14,
+            "k15": 15
+          }
+        ],
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "custom field is malformed",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "custom_fields": [
+          {
+            "k00": 0,
+            "k01": 1,
+            "k02": 2,
+            "k03": 3,
+            "k04": 4,
+            "k05": 5,
+            "k06": 6,
+            "k07": 7,
+            "k08": 8,
+            "k09": 9,
+            "k10": 10,
+            "k11": 11,
+            "k12": 12,
+            "k13": 13,
+            "k14": 14,
+            "k15": 15,
+            "k16": 16
+          }
+        ],
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "custom_fields_17_keys_rejected",
+      "ns": "entry",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "custom field is malformed",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "custom_fields": [
+          {
+            "name": "x",
+            "value": {
+              "a": 1
+            }
+          }
+        ],
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "custom_fields_nested_value_rejected",
+      "ns": "entry",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "policy_missing",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": true,
+          "save_prompts": false
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "policy_full_dict",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": true,
+          "save_prompts": false
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true,
+          "surprise": 1
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "policy_unknown_key",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "auto",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "policy_fill_auto",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "never",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "sometimes"
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "policy_fill_unknown_value",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "never",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": [
+          "fill",
+          "click"
+        ],
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "policy_is_a_list",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [
+          "work",
+          "Work",
+          "bank"
+        ],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "tags_plain",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [
+          "work",
+          "Work",
+          "bank"
+        ],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "tag is too long",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [
+          "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        ],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "tags_too_long_rejected",
+      "ns": "entry",
+      "output": null
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "password_history": [
+          {
+            "changed_at": 1789999900,
+            "password": "old-1"
+          }
+        ],
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "password_history_changed_at",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "password_history": [
+          {
+            "changed_at": 1789999900,
+            "password": "old-1"
+          }
+        ],
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "password_history": [
+          {
+            "password": "old-1",
+            "replaced_at": 1789999900
+          }
+        ],
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "password_history_replaced_at",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "password_history": [
+          {
+            "changed_at": 1789999900,
+            "password": "old-1"
+          }
+        ],
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "password_history": [
+          {
+            "changed_at": 1789999900,
+            "password": "old-1",
+            "replaced_at": 1789999800
+          }
+        ],
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "password_history_both_times_prefers_changed_at",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "password_history": [
+          {
+            "changed_at": 1789999900,
+            "password": "old-1"
+          }
+        ],
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "notes": "n",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "recovery_codes": [
+          "AAAA-1111"
+        ],
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "recovery_codes_and_notes",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "notes": "n",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "recovery_codes": [
+          "AAAA-1111"
+        ],
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "Credential contains unsupported fields: ['surprise']",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "surprise": "x",
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "unknown_top_level_field_rejected",
+      "ns": "entry",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "detail": "Credential updated_at is malformed",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "web",
+        "label": "Norm login",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [],
+        "updated_at": 1.5,
+        "username": "norm.user"
+      },
+      "name": "float_timestamp_rejected",
+      "ns": "entry",
+      "output": null
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "desktop",
+        "label": "Norm desktop",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "binding_mode": "strict",
+          "control_fingerprint": [
+            {
+              "automation_id": "txtUser",
+              "control_type": "Edit",
+              "name": "Username"
+            }
+          ],
+          "exe_path": "C:/Program Files/SampleMail/samplemail.exe",
+          "exe_sha256": "abababababababababababababababababababababababababababababababab",
+          "password_selector": {
+            "automation_id": "txtPass"
+          },
+          "username_selector": {
+            "automation_id": "txtUser"
+          },
+          "window_title": "SampleMail - Sign in"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "desktop_plain",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "desktop",
+        "label": "Norm desktop",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "binding_mode": "strict",
+          "control_fingerprint": [
+            {
+              "automation_id": "txtUser",
+              "control_type": "Edit",
+              "name": "Username"
+            }
+          ],
+          "exe_path": "C:/Program Files/SampleMail/samplemail.exe",
+          "exe_sha256": "ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
+          "password_selector": {
+            "automation_id": "txtPass"
+          },
+          "username_selector": {
+            "automation_id": "txtUser"
+          },
+          "window_title": "SampleMail - Sign in"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": true,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "desktop",
+        "label": "Norm desktop",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "binding_mode": "strict",
+          "control_fingerprint": [
+            {
+              "automation_id": "txtUser",
+              "control_type": "Edit",
+              "name": "Username"
+            }
+          ],
+          "exe_path": "C:/Program Files/SampleMail/samplemail.exe",
+          "exe_sha256": "ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
+          "password_selector": {
+            "automation_id": "txtPass"
+          },
+          "username_selector": {
+            "automation_id": "txtUser"
+          },
+          "window_title": "SampleMail - Sign in"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "desktop_exe_sha256_upper_case",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "desktop",
+        "label": "Norm desktop",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "binding_mode": "strict",
+          "control_fingerprint": [
+            {
+              "automation_id": "txtUser",
+              "control_type": "Edit",
+              "name": "Username"
+            }
+          ],
+          "exe_path": "C:/Program Files/SampleMail/samplemail.exe",
+          "exe_sha256": "ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
+          "password_selector": {
+            "automation_id": "txtPass"
+          },
+          "username_selector": {
+            "automation_id": "txtUser"
+          },
+          "window_title": "SampleMail - Sign in"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "error": null,
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "desktop",
+        "label": "Norm desktop",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "binding_mode": "strict",
+          "control_fingerprint": [
+            {
+              "automation_id": "txtUser",
+              "control_type": "Edit",
+              "name": "Username"
+            }
+          ],
+          "exe_path": "C:/Program Files/SampleMail/samplemail.exe",
+          "exe_sha256": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+          "password_selector": {
+            "automation_id": "txtPass"
+          },
+          "username_selector": {
+            "automation_id": "txtUser"
+          },
+          "window_title": "SampleMail - Sign in"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "desktop_exe_sha256_lower_case",
+      "ns": "entry",
+      "output": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "desktop",
+        "label": "Norm desktop",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "binding_mode": "strict",
+          "control_fingerprint": [
+            {
+              "automation_id": "txtUser",
+              "control_type": "Edit",
+              "name": "Username"
+            }
+          ],
+          "exe_path": "C:/Program Files/SampleMail/samplemail.exe",
+          "exe_sha256": "CDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD",
+          "password_selector": {
+            "automation_id": "txtPass"
+          },
+          "username_selector": {
+            "automation_id": "txtUser"
+          },
+          "window_title": "SampleMail - Sign in"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      }
+    },
+    {
+      "already_normal": false,
+      "detail": "exe_sha256 must be a 64-character hexadecimal SHA-256",
+      "error": "rejected",
+      "input": {
+        "created_at": 1789999900,
+        "favorite": false,
+        "id": "88888888-aaaa-4000-8000-000000000008",
+        "kind": "desktop",
+        "label": "Norm desktop",
+        "password": "norm-pass-sample",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "binding_mode": "strict",
+          "control_fingerprint": [
+            {
+              "automation_id": "txtUser",
+              "control_type": "Edit",
+              "name": "Username"
+            }
+          ],
+          "exe_path": "C:/Program Files/SampleMail/samplemail.exe",
+          "exe_sha256": "zz",
+          "password_selector": {
+            "automation_id": "txtPass"
+          },
+          "username_selector": {
+            "automation_id": "txtUser"
+          },
+          "window_title": "SampleMail - Sign in"
+        },
+        "tags": [],
+        "updated_at": 1789999950,
+        "username": "norm.user"
+      },
+      "name": "desktop_bad_exe_sha256",
+      "ns": "entry",
+      "output": null
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+[
+  {
+    "input": {
+      "algorithm": "ES256",
+      "created": "2026-09-21",
+      "credential_id": "FHXu1EtVaX_tcRNd-FFT9g",
+      "discoverable": true,
+      "private_key": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQggJAFr4R6ySgU2NEGD-pDv92Ax8nnc5g7dPnxMB-ag4uhRANCAARvaw4fOvc3kChJM_Bpa34YDtimWWrF2-Of20DTY7TibutHLx7hAnjZggvTyYrgq668kur1CSNCs1C59qhpNXaB",
+      "relying_party_id": "example.com",
+      "rp_name": "Example",
+      "user_display_name": "Ada Lovelace",
+      "user_handle": "dXNlci1oYW5kbGUtMQ",
+      "user_name": "ada"
+    },
+    "name": "desktop-made",
+    "normalised": {
+      "algorithm": "ES256",
+      "created": "2026-09-21",
+      "credential_id": "FHXu1EtVaX_tcRNd-FFT9g",
+      "discoverable": true,
+      "notes": "",
+      "private_key": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQggJAFr4R6ySgU2NEGD-pDv92Ax8nnc5g7dPnxMB-ag4uhRANCAARvaw4fOvc3kChJM_Bpa34YDtimWWrF2-Of20DTY7TibutHLx7hAnjZggvTyYrgq668kur1CSNCs1C59qhpNXaB",
+      "relying_party_id": "example.com",
+      "rp_name": "Example",
+      "template_id": null,
+      "user_display_name": "Ada Lovelace",
+      "user_handle": "dXNlci1oYW5kbGUtMQ",
+      "user_name": "ada"
+    },
+    "usable": true,
+    "valid": true
+  },
+  {
+    "input": {
+      "algorithm": "RS256",
+      "created": "2026-09-21",
+      "credential_id": "FHXu1EtVaX_tcRNd-FFT9g",
+      "discoverable": true,
+      "private_key": "MIIEvQIBADANBgkqhkiG9w0BAQEFAASC",
+      "relying_party_id": "example.com",
+      "rp_name": "Example",
+      "user_display_name": "Ada Lovelace",
+      "user_handle": "dXNlci1oYW5kbGUtMQ",
+      "user_name": "ada"
+    },
+    "name": "rs256-import",
+    "normalised": {
+      "algorithm": "RS256",
+      "created": "2026-09-21",
+      "credential_id": "FHXu1EtVaX_tcRNd-FFT9g",
+      "discoverable": true,
+      "notes": "",
+      "private_key": "MIIEvQIBADANBgkqhkiG9w0BAQEFAASC",
+      "relying_party_id": "example.com",
+      "rp_name": "Example",
+      "template_id": null,
+      "user_display_name": "Ada Lovelace",
+      "user_handle": "dXNlci1oYW5kbGUtMQ",
+      "user_name": "ada"
+    },
+    "usable": false,
+    "valid": true
+  },
+  {
+    "input": {
+      "algorithm": "ES256",
+      "created": "2026-09-21",
+      "credential_id": "FHXu1EtVaX_tcRNd-FFT9g",
+      "discoverable": true,
+      "private_key": "bm90LWEta2V5",
+      "relying_party_id": "example.com",
+      "rp_name": "Example",
+      "user_display_name": "Ada Lovelace",
+      "user_handle": "dXNlci1oYW5kbGUtMQ",
+      "user_name": "ada"
+    },
+    "name": "garbage-key",
+    "normalised": {
+      "algorithm": "ES256",
+      "created": "2026-09-21",
+      "credential_id": "FHXu1EtVaX_tcRNd-FFT9g",
+      "discoverable": true,
+      "notes": "",
+      "private_key": "bm90LWEta2V5",
+      "relying_party_id": "example.com",
+      "rp_name": "Example",
+      "template_id": null,
+      "user_display_name": "Ada Lovelace",
+      "user_handle": "dXNlci1oYW5kbGUtMQ",
+      "user_name": "ada"
+    },
+    "usable": false,
+    "valid": true
+  },
+  {
+    "input": {
+      "algorithm": "ES256",
+      "created": "2026-09-21",
+      "credential_id": "FHXu1EtVaX_tcRNd-FFT9g",
+      "discoverable": true,
+      "private_key": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQggJAFr4R6ySgU2NEGD-pDv92Ax8nnc5g7dPnxMB-ag4uhRANCAARvaw4fOvc3kChJM_Bpa34YDtimWWrF2-Of20DTY7TibutHLx7hAnjZggvTyYrgq668kur1CSNCs1C59qhpNXaB",
+      "relying_party_id": "Example.COM",
+      "rp_name": "Example",
+      "user_display_name": "Ada Lovelace",
+      "user_handle": "dXNlci1oYW5kbGUtMQ",
+      "user_name": "ada"
+    },
+    "name": "uppercase-rp-id",
+    "normalised": {
+      "algorithm": "ES256",
+      "created": "2026-09-21",
+      "credential_id": "FHXu1EtVaX_tcRNd-FFT9g",
+      "discoverable": true,
+      "notes": "",
+      "private_key": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQggJAFr4R6ySgU2NEGD-pDv92Ax8nnc5g7dPnxMB-ag4uhRANCAARvaw4fOvc3kChJM_Bpa34YDtimWWrF2-Of20DTY7TibutHLx7hAnjZggvTyYrgq668kur1CSNCs1C59qhpNXaB",
+      "relying_party_id": "example.com",
+      "rp_name": "Example",
+      "template_id": null,
+      "user_display_name": "Ada Lovelace",
+      "user_handle": "dXNlci1oYW5kbGUtMQ",
+      "user_name": "ada"
+    },
+    "usable": true,
+    "valid": true
+  },
+  {
+    "input": {
+      "algorithm": "ES256",
+      "created": "2026-09-21",
+      "credential_id": "FHXu1EtVaX_tcRNd-FFT9g",
+      "private_key": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQggJAFr4R6ySgU2NEGD-pDv92Ax8nnc5g7dPnxMB-ag4uhRANCAARvaw4fOvc3kChJM_Bpa34YDtimWWrF2-Of20DTY7TibutHLx7hAnjZggvTyYrgq668kur1CSNCs1C59qhpNXaB",
+      "relying_party_id": "example.com",
+      "rp_name": "Example",
+      "user_display_name": "Ada Lovelace",
+      "user_handle": "dXNlci1oYW5kbGUtMQ",
+      "user_name": "ada"
+    },
+    "name": "missing-discoverable",
+    "normalised": {
+      "algorithm": "ES256",
+      "created": "2026-09-21",
+      "credential_id": "FHXu1EtVaX_tcRNd-FFT9g",
+      "discoverable": true,
+      "notes": "",
+      "private_key": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQggJAFr4R6ySgU2NEGD-pDv92Ax8nnc5g7dPnxMB-ag4uhRANCAARvaw4fOvc3kChJM_Bpa34YDtimWWrF2-Of20DTY7TibutHLx7hAnjZggvTyYrgq668kur1CSNCs1C59qhpNXaB",
+      "relying_party_id": "example.com",
+      "rp_name": "Example",
+      "template_id": null,
+      "user_display_name": "Ada Lovelace",
+      "user_handle": "dXNlci1oYW5kbGUtMQ",
+      "user_name": "ada"
+    },
+    "usable": true,
+    "valid": true
+  },
+  {
+    "input": {
+      "algorithm": "ES256",
+      "created": "2026-09-21",
+      "credential_id": "not base64url!",
+      "discoverable": true,
+      "private_key": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQggJAFr4R6ySgU2NEGD-pDv92Ax8nnc5g7dPnxMB-ag4uhRANCAARvaw4fOvc3kChJM_Bpa34YDtimWWrF2-Of20DTY7TibutHLx7hAnjZggvTyYrgq668kur1CSNCs1C59qhpNXaB",
+      "relying_party_id": "example.com",
+      "rp_name": "Example",
+      "user_display_name": "Ada Lovelace",
+      "user_handle": "dXNlci1oYW5kbGUtMQ",
+      "user_name": "ada"
+    },
+    "name": "bad-b64url-credential-id",
+    "usable": false,
+    "valid": false
+  }
+]

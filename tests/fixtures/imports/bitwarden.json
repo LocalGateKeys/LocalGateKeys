@@ -1,0 +1,137 @@
+{
+  "encrypted": false,
+  "folders": [
+    {"id": "0f1a2b3c-0000-4000-8000-000000000001", "name": "Work"},
+    {"id": "0f1a2b3c-0000-4000-8000-000000000002", "name": "Finance/Cards"}
+  ],
+  "items": [
+    {
+      "passwordHistory": [{"lastUsedDate": "2024-01-01T00:00:00.000Z", "password": "older-bw-pass"}],
+      "revisionDate": "2024-05-01T10:00:00.000Z",
+      "creationDate": "2024-01-02T03:04:05.000Z",
+      "deletedDate": null,
+      "id": "1a2b3c4d-0000-4000-8000-000000000001",
+      "organizationId": null,
+      "folderId": "0f1a2b3c-0000-4000-8000-000000000001",
+      "type": 1,
+      "reprompt": 0,
+      "name": "Example Git",
+      "notes": "Work code hosting.",
+      "favorite": true,
+      "fields": [
+        {"name": "Recovery code", "value": "rc-0000-1111", "type": 1, "linkedId": null},
+        {"name": "Team", "value": "Platform", "type": 0, "linkedId": null},
+        {"name": "Remember me", "value": "true", "type": 2, "linkedId": null},
+        {"name": "Username", "value": null, "type": 3, "linkedId": 100}
+      ],
+      "login": {
+        "fido2Credentials": [{"credentialId": "fixture-credential", "keyType": "public-key", "rpId": "git.example.com"}],
+        "uris": [
+          {"match": null, "uri": "https://git.example.com/login"},
+          {"match": 1, "uri": "https://sso.example.com"},
+          {"match": null, "uri": "androidapp://com.example.git"}
+        ],
+        "username": "alex.example",
+        "password": "bw-git-pass-3x",
+        "totp": "JBSWY3DPEHPK3PXP"
+      },
+      "collectionIds": null
+    },
+    {
+      "id": "1a2b3c4d-0000-4000-8000-000000000002",
+      "organizationId": null,
+      "folderId": null,
+      "type": 2,
+      "reprompt": 0,
+      "name": "Router admin",
+      "notes": "Admin page is on the sticker.",
+      "favorite": false,
+      "secureNote": {"type": 0},
+      "collectionIds": null,
+      "revisionDate": "2024-05-01T10:00:00.000Z",
+      "creationDate": "2024-05-01T10:00:00.000Z",
+      "deletedDate": null
+    },
+    {
+      "id": "1a2b3c4d-0000-4000-8000-000000000003",
+      "organizationId": null,
+      "folderId": "0f1a2b3c-0000-4000-8000-000000000002",
+      "type": 3,
+      "reprompt": 1,
+      "name": "Everyday Mastercard",
+      "notes": "Contactless limit raised.",
+      "favorite": false,
+      "card": {"cardholderName": "Alex Example", "brand": "Mastercard", "number": "5555555555554444", "expMonth": "3", "expYear": "2029", "code": "321"},
+      "collectionIds": null,
+      "revisionDate": "2024-05-01T10:00:00.000Z",
+      "creationDate": "2024-05-01T10:00:00.000Z",
+      "deletedDate": null
+    },
+    {
+      "id": "1a2b3c4d-0000-4000-8000-000000000004",
+      "organizationId": null,
+      "folderId": null,
+      "type": 4,
+      "reprompt": 0,
+      "name": "Home identity",
+      "notes": "Use for deliveries.",
+      "favorite": false,
+      "identity": {
+        "title": "Mx", "firstName": "Alex", "middleName": "Q", "lastName": "Example",
+        "address1": "1 Example Road", "address2": "Flat 2", "address3": null, "city": "Exampleton",
+        "state": "Exampleshire", "postalCode": "EX1 2PL", "country": "GB", "company": "Example Ltd",
+        "email": "alex@example.com", "phone": "+44 20 7946 0000", "ssn": "000-00-0000",
+        "username": "alexq", "passportNumber": "000000000", "licenseNumber": "EXAMP000000AQ9AA"
+      },
+      "collectionIds": null,
+      "revisionDate": "2024-05-01T10:00:00.000Z",
+      "creationDate": "2024-05-01T10:00:00.000Z",
+      "deletedDate": null
+    },
+    {
+      "id": "1a2b3c4d-0000-4000-8000-000000000005",
+      "organizationId": null,
+      "folderId": "0f1a2b3c-0000-4000-8000-000000000001",
+      "type": 5,
+      "reprompt": 0,
+      "name": "Deploy key",
+      "notes": null,
+      "favorite": false,
+      "sshKey": {"privateKey": "-----BEGIN OPENSSH PRIVATE KEY-----\nZml4dHVyZS1vbmx5\n-----END OPENSSH PRIVATE KEY-----", "publicKey": "ssh-ed25519 AAAAC3NzaFixtureOnly deploy@example.com", "keyFingerprint": "SHA256:fixturefingerprint"},
+      "collectionIds": null,
+      "revisionDate": "2024-05-01T10:00:00.000Z",
+      "creationDate": "2024-05-01T10:00:00.000Z",
+      "deletedDate": null
+    },
+    {
+      "id": "1a2b3c4d-0000-4000-8000-000000000006",
+      "organizationId": null,
+      "folderId": null,
+      "type": 1,
+      "reprompt": 0,
+      "name": "Plain HTTP forum",
+      "notes": null,
+      "favorite": false,
+      "login": {"uris": [{"match": null, "uri": "http://forum.example.net/login.php"}], "username": "alex", "password": "bw-forum-pass", "totp": null},
+      "collectionIds": null,
+      "revisionDate": "2024-05-01T10:00:00.000Z",
+      "creationDate": "2024-05-01T10:00:00.000Z",
+      "deletedDate": null
+    },
+    {
+      "id": "1a2b3c4d-0000-4000-8000-000000000007",
+      "organizationId": null,
+      "folderId": null,
+      "type": 1,
+      "reprompt": 0,
+      "name": "Trashed login",
+      "notes": null,
+      "favorite": false,
+      "login": {"uris": [{"match": null, "uri": "https://trash.example.com"}], "username": "gone", "password": "gone", "totp": null},
+      "collectionIds": null,
+      "revisionDate": "2024-05-01T10:00:00.000Z",
+      "creationDate": "2024-05-01T10:00:00.000Z",
+      "deletedDate": "2024-06-01T10:00:00.000Z"
+    }
+  ]
+}

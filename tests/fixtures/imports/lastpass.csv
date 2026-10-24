@@ -1,0 +1,52 @@
+url,username,password,totp,extra,name,grouping,fav
+https://bank.example.com/signin,alex.example,lp-bank-pass-1,JBSWY3DPEHPK3PXP,Branch: High Street,Example Bank,Finance\Banking,1
+http://intranet.example.org,alex,lp-intranet-pass,,,Intranet,Work,0
+http://sn,,,,"Router admin password is on the sticker.
+Second line of the note.",Router note,Home,0
+http://sn,,,,"NoteType:Credit Card
+Language:en-US
+Name on Card:Alex Example
+Type:Visa
+Number:4111111111111111
+Security Code:123
+Start Date:January,2022
+Expiration Date:December,2027
+Notes:Travel card.",Travel Visa,Finance,0
+http://sn,,,,"NoteType:Address
+Language:en-US
+Title:Mx
+First Name:Alex
+Middle Name:Q
+Last Name:Example
+Username:alexq
+Gender:
+Birthday:
+Company:Example Ltd
+Address 1:1 Example Road
+Address 2:Flat 2
+Address 3:
+City / Town:Exampleton
+County:
+State:Exampleshire
+Zip / Postal Code:EX1 2PL
+Country:GB
+Timezone:
+Email Address:alex@example.com
+Phone:+44 20 7946 0000
+Evening Phone:
+Mobile Phone:
+Fax:
+Notes:Use for deliveries.",Home address,Personal,0
+http://sn,,,,"NoteType:Software License
+Language:en-US
+License Key:FIXT-0000-ONLY-1111
+Licensee:Alex Example
+Version:2
+Publisher:Example Soft
+Support Email:
+Website:
+Price:
+Purchase Date:
+Order Number:
+Number of Licenses:1
+Notes:",Editor licence,,0

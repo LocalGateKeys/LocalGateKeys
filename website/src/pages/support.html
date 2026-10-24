@@ -1,0 +1,123 @@
+---
+title: Support and FAQ
+description: Answers to common questions about LocalGateKeys, master passwords, Pro licences, sync and refunds, and how to contact support.
+---
+<div class="wrap page-head">
+  <h1>Support and questions</h1>
+  <p class="lead">Most answers are below. For anything else, email <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>. Never send us your master password, recovery phrase or vault file; we will never ask for them.</p>
+</div>
+
+<div class="wrap page-body">
+  <h2 class="faq-group">Your vault</h2>
+  <div class="faq">
+    <details>
+      <summary>I forgot my master password. Can you reset it?</summary>
+      <div>
+        <p>No. We never have your master password or your vault, so there is nothing we could reset. If you created a recovery phrase, use it on the unlock screen to open the vault and set a new password.</p>
+        <p>Without the password or the recovery phrase, the vault cannot be opened by anyone. Backups are encrypted with their own backup password, so a backup you can still open is the other way back in.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Do you keep a copy of my vault?</summary>
+      <div><p>No. There is no LocalGateKeys account or server that stores vaults. Your vault exists only on your devices and in any backups or cloud folders you set up yourself.</p></div>
+    </details>
+    <details>
+      <summary>Where is the vault stored on my PC?</summary>
+      <div><p>In your Windows user profile, under <code>%LOCALAPPDATA%\LocalGateKeys</code>. Copying that file somewhere else is safe, because it is encrypted, but use scheduled backups rather than copying the live file.</p></div>
+    </details>
+    <details>
+      <summary>Can I import from another password manager?</summary>
+      <div><p>Yes. Choose Import &amp; export in the app and pick the export file from 1Password, Bitwarden, LastPass, Dashlane, Proton Pass, KeePass or KeePassXC (a <code>.kdbx</code> file opens directly), Chrome, Edge, Brave, Firefox or Safari. Any other CSV file works too: you tell the app which column is which. You review every item before anything is written, and the import never goes online. Afterwards, delete the export file, because most exports hold your passwords in plain text.</p></div>
+    </details>
+    <details>
+      <summary>Does it work without an internet connection?</summary>
+      <div><p>Yes, completely. The app uses the network only for update checks (which also fetch the licence revocation list), breach checks you start, website icons if you turn them on, and sync if you set it up. Strict offline mode, on by default, blocks background requests, website icons and breach checks and asks before an update check. See <a href="[[root]]security.html">the security page</a>.</p></div>
+    </details>
+  </div>
+
+  <h2 class="faq-group">Filling sign-ins</h2>
+  <div class="faq">
+    <details>
+      <summary>Why does the browser extension need the desktop app?</summary>
+      <div><p>The vault is kept in the desktop app, not in the browser. The extension asks the app, through a small local helper, for the logins that match the site you are on. That way the browser never holds your whole vault. Install the app first, then add the extension from the <a href="[[root]]download.html">download page</a>.</p></div>
+    </details>
+    <details>
+      <summary>Does LocalGateKeys support passkeys?</summary>
+      <div><p>Yes, in Chrome and Edge on Windows. When a website offers a passkey, the extension asks whether to save it in LocalGateKeys, and you approve it in the desktop app. Signing in with it works the same way. You can always choose the browser's own passkey dialog instead, or turn passkeys off in the app's autofill settings. Passkeys count as items toward the free plan's 4-item limit.</p></div>
+    </details>
+    <details>
+      <summary>A Windows app will not fill. Why?</summary>
+      <div>
+        <p>Windows app fill only works when the app exposes real sign-in fields to Windows. It will refuse when:</p>
+        <ul>
+          <li>the app has been updated since you bound it, so its fingerprint changed; bind it again</li>
+          <li>the app runs as administrator and LocalGateKeys does not</li>
+          <li>the sign-in screen is drawn by a game engine or an embedded web page that cannot be verified</li>
+        </ul>
+        <p>These refusals are deliberate. LocalGateKeys will not fall back to recording or simulating keystrokes blindly.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Does LocalGateKeys log my keystrokes?</summary>
+      <div><p>No. It installs no keyboard hook and never watches what you type. See <a href="[[root]]security.html">things LocalGateKeys never does</a>.</p></div>
+    </details>
+  </div>
+
+  <h2 class="faq-group">Pro, licences and payment</h2>
+  <div class="faq">
+    <details>
+      <summary>What does Pro add?</summary>
+      <div><p>Unlimited items, device sync, two-factor codes and documents. The free edition holds up to 4 items: logins, notes, cards, identities and every other kind count, items in the trash do not. See <a href="[[root]]pricing.html">pricing</a>.</p></div>
+    </details>
+    <details>
+      <summary>What happens if I have more than 4 items without Pro?</summary>
+      <div><p>Nothing is taken away. This can happen after upgrading from an older version or after removing a licence. Every item stays usable, editable and fillable; you just cannot add a new one until you buy Pro or go back under 4.</p></div>
+    </details>
+    <details>
+      <summary>Do I have to pay again for updates?</summary>
+      <div><p>No. Pro is a single payment that includes every future update. There is no subscription and nothing to renew.</p></div>
+    </details>
+    <details>
+      <summary>How many PCs can I use Pro on?</summary>
+      <div><p>All the PCs you personally use. The licence is for one person; please buy one for each member of your household or team.</p></div>
+    </details>
+    <details>
+      <summary>How do I turn on Pro, and what if I lose my key?</summary>
+      <div><p>After payment you see your licence key straight away, with a file to download. Paste the key in Tools &gt; Licence. The key is also saved inside your encrypted vault, so restoring a backup restores Pro. See <a href="[[root]]licence.html">your Pro licence</a>.</p></div>
+    </details>
+    <details>
+      <summary>Can I get a refund?</summary>
+      <div><p>Yes, a full refund within 30 days of purchase, no questions asked. A refunded licence is revoked, so the 4-item limit applies again; every existing item stays usable. See the <a href="[[root]]legal/refunds.html">refund policy</a>.</p></div>
+    </details>
+    <details>
+      <summary>Who handles the payment, and can I get an invoice?</summary>
+      <div><p>{{MERCHANT_OF_RECORD}} sells Pro on our behalf as merchant of record. They take the payment, apply the right VAT or sales tax and issue receipts and invoices, including invoices with your company's VAT number.</p></div>
+    </details>
+  </div>
+
+  <h2 class="faq-group">Sync and iPhone</h2>
+  <div class="faq">
+    <details>
+      <summary>Does Wi-Fi sync go over the internet?</summary>
+      <div><p>No. Paired PCs on the same network connect to each other directly, over a connection that is authenticated and encrypted. Both need to be unlocked. Sync is part of Pro.</p></div>
+    </details>
+    <details>
+      <summary>What can my cloud provider see if I sync through a cloud folder?</summary>
+      <div><p>Encrypted files, how many there are, their sizes and when they change, and a list of your devices' random IDs and public keys. Not the names, usernames, passwords or anything else inside your vault. Your provider's own terms apply to the files you store with them.</p></div>
+    </details>
+    <details>
+      <summary>Is there an iPhone app?</summary>
+      <div><p><!-- if:IPHONE_BETA_URL -->Yes, in public beta. Install Apple's TestFlight app, then open <a href="{{IPHONE_BETA_URL}}">the LocalGateKeys beta link</a> on your iPhone. It syncs with your Windows PC and, like the Windows app, collects no data.<!-- else -->An iPhone app is coming. It will sync with your Windows PC and, like the Windows app, will collect no data.<!-- /if --></p></div>
+    </details>
+  </div>
+
+  <h2 class="faq-group">Contact</h2>
+  <div class="prose">
+    <ul>
+      <li>Questions and help: <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a></li>
+      <li>Security issues: <a href="mailto:{{SECURITY_EMAIL}}">{{SECURITY_EMAIL}}</a>, see the <a href="[[root]]legal/vulnerability-disclosure.html">disclosure policy</a></li>
+      <li>Orders, payments and invoices: {{MERCHANT_OF_RECORD}}, using the link in your receipt</li>
+    </ul>
+    <p>If you send an error log, open it first: it is a plain text file and should contain no secrets, but you decide what to share.</p>
+  </div>
+</div>

@@ -1,0 +1,463 @@
+{
+  "aad_hex": "7b22637265617465645f6174223a313739303030303030302c22666f726d6174223a224c474b4d42414b31222c226b6466223a7b226d656d6f72795f636f73745f6b6962223a3133313037322c226e616d65223a226172676f6e326964222c22706172616c6c656c69736d223a342c2274696d655f636f7374223a347d2c226e6f6e6365223a2277714b394c4f4b693232704f6f523670222c22706c6174666f726d223a22616e64726f6964222c2273616c74223a2251675a62462b426e653149686d624f395a4c625252513d3d222c2276657273696f6e223a317d",
+  "app_version": "1.0.0",
+  "ciphertext_size": 6699,
+  "created_at": 1790000000,
+  "device_id": "a1111111-0000-4000-8000-00000000000a",
+  "file_sha256": "f8d75bcd8d150bcf6b6cb4a0fc196a95eea821302f7f2416cf9b03c71cb8b8af",
+  "file_size": 9179,
+  "header": {
+    "created_at": 1790000000,
+    "format": "LGKMBAK1",
+    "kdf": {
+      "memory_cost_kib": 131072,
+      "name": "argon2id",
+      "parallelism": 4,
+      "time_cost": 4
+    },
+    "nonce": "wqK9LOKi22pOoR6p",
+    "platform": "android",
+    "salt": "QgZbF+Bne1IhmbO9ZLbRRQ==",
+    "version": 1
+  },
+  "key_hex": "52fdce4b6d7831c600d21a55f7836953e12115581316a3b28b359c3f3402e3ed",
+  "nonce_b64": "wqK9LOKi22pOoR6p",
+  "password": "correct horse battery staple 42",
+  "payload_canonical": "{\"app_version\":\"1.0.0\",\"device_id\":\"a1111111-0000-4000-8000-00000000000a\",\"pro_hint\":false,\"states\":[{\"deleted\":false,\"deleted_at\":null,\"id\":\"11111111-aaaa-4000-8000-000000000001\",\"item\":{\"ns\":\"entry\",\"record\":{\"created_at\":1789913600,\"favorite\":false,\"id\":\"11111111-aaaa-4000-8000-000000000001\",\"kind\":\"web\",\"label\":\"Example account\",\"notes\":\"Password rotated from the desk PC.\",\"password\":\"Maple-Orbit-7731\",\"password_history\":[{\"changed_at\":1789996400,\"password\":\"hunter2-sample-only\"}],\"policy\":{\"fill\":\"click\",\"require_master_password\":false,\"save_prompts\":true},\"scope\":{\"origin\":\"https://accounts.example.com\"},\"tags\":[\"personal\"],\"totp\":{\"algorithm\":\"SHA1\",\"digits\":6,\"period\":30,\"secret\":\"JBSWY3DPEHPK3PXP\"},\"updated_at\":1790000500,\"username\":\"sample.user@example.com\"},\"schema\":1,\"updated_at\":1790000500},\"vv\":{\"a1111111-0000-4000-8000-00000000000a\":2,\"b2222222-0000-4000-8000-00000000000b\":1}},{\"deleted\":false,\"deleted_at\":null,\"id\":\"22222222-aaaa-4000-8000-000000000002\",\"item\":{\"ns\":\"item\",\"record\":{\"created_at\":1789956800,\"favorite\":true,\"id\":\"22222222-aaaa-4000-8000-000000000002\",\"kind\":\"note\",\"payload\":{\"body\":\"Router sits behind the pantry door.\\nReset button: hold 10 s.\",\"fields\":[{\"hidden\":false,\"name\":\"SSID\",\"value\":\"CabinNet-5G\"},{\"hidden\":true,\"name\":\"Passphrase\",\"value\":\"pine-cone-lantern-88\"}],\"template_id\":null},\"tags\":[\"home\"],\"title\":\"Wi-Fi at the cabin\",\"updated_at\":1789956800},\"schema\":1,\"updated_at\":1789956800},\"vv\":{\"a1111111-0000-4000-8000-00000000000a\":1}},{\"deleted\":false,\"deleted_at\":null,\"id\":\"33333333-aaaa-4000-8000-000000000003\",\"item\":{\"ns\":\"entry\",\"record\":{\"created_at\":1789992800,\"favorite\":false,\"id\":\"33333333-aaaa-4000-8000-000000000003\",\"kind\":\"desktop\",\"label\":\"Sample Mail Client\",\"password\":\"desk-pass-sample\",\"policy\":{\"fill\":\"click\",\"require_master_password\":false,\"save_prompts\":true},\"scope\":{\"binding_mode\":\"strict\",\"control_fingerprint\":[{\"automation_id\":\"txtUser\",\"control_type\":\"Edit\",\"name\":\"Username\"},{\"automation_id\":\"txtPass\",\"control_type\":\"Edit\",\"name\":\"Password\"}],\"exe_path\":\"C:/Program Files/SampleMail/samplemail.exe\",\"exe_sha256\":\"ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB\",\"password_selector\":{\"automation_id\":\"txtPass\"},\"username_selector\":{\"automation_id\":\"txtUser\"},\"window_title\":\"SampleMail - Sign in\"},\"tags\":[],\"updated_at\":1789992800,\"username\":\"desk.user\"},\"schema\":1,\"updated_at\":1789992800},\"vv\":{\"b2222222-0000-4000-8000-00000000000b\":1}},{\"deleted\":true,\"deleted_at\":1790000300,\"id\":\"44444444-aaaa-4000-8000-000000000004\",\"item\":null,\"vv\":{\"a1111111-0000-4000-8000-00000000000a\":1,\"c3333333-0000-4000-8000-00000000000c\":1}},{\"deleted\":false,\"deleted_at\":null,\"id\":\"55555555-aaaa-4000-8000-000000000005\",\"item\":{\"ns\":\"item\",\"record\":{\"created_at\":1789913600,\"favorite\":false,\"id\":\"55555555-aaaa-4000-8000-000000000005\",\"kind\":\"bookmark\",\"payload\":{\"notes\":\"Opening hours and phone.\",\"template_id\":null,\"url\":\"https://www.example.net/help/contact\"},\"tags\":[],\"title\":\"Bank help page\",\"updated_at\":1790000450},\"schema\":1,\"updated_at\":1790000450},\"vv\":{\"a1111111-0000-4000-8000-00000000000a\":1,\"b2222222-0000-4000-8000-00000000000b\":1,\"c3333333-0000-4000-8000-00000000000c\":1}},{\"deleted\":false,\"deleted_at\":null,\"id\":\"66666666-aaaa-4000-8000-000000000006\",\"item\":{\"ns\":\"item\",\"record\":{\"created_at\":1790000300,\"favorite\":false,\"id\":\"66666666-aaaa-4000-8000-000000000006\",\"kind\":\"note\",\"payload\":{\"body\":\"Grüße aus Zürich 🔑\\n\\tTab, \\\"quotes\\\", back\\\\slash, slash/ok, é中文\",\"fields\":[{\"hidden\":false,\"name\":\"Hotel\",\"value\":\"Hôtel du Lac\"}],\"template_id\":null},\"tags\":[\"travel\"],\"title\":\"Zürich trip ✈ \\\"café\\\" back\\\\slash\",\"updated_at\":1790000300},\"schema\":1,\"updated_at\":1790000300},\"vv\":{\"b2222222-0000-4000-8000-00000000000b\":1}},{\"deleted\":false,\"deleted_at\":null,\"id\":\"77777777-aaaa-4000-8000-000000000007\",\"item\":{\"ns\":\"entry\",\"record\":{\"created_at\":1789995000,\"custom_fields\":[{\"a\":\"ascii\",\"f_0_1\":0.1,\"f_100\":100.0,\"f_1e+16\":1e+16,\"f_1e-07\":1e-07,\"f_neg_zero\":-0.0,\"i_2p62\":4611686018427387904,\"é\":\"e-acute\",\"ｚ\":\"fullwidth z\",\"🔑\":\"key emoji\"}],\"favorite\":false,\"id\":\"77777777-aaaa-4000-8000-000000000007\",\"kind\":\"web\",\"label\":\"Café Zürich ☕\",\"notes\":\"Änderung auf dem Desktop — 中文\",\"password\":\"tie-pass-from-A\",\"policy\":{\"fill\":\"click\",\"require_master_password\":false,\"save_prompts\":true},\"scope\":{\"origin\":\"https://xn--caf-dma.example.com\"},\"tags\":[],\"updated_at\":1790000600,\"username\":\"user@café.example.com\"},\"schema\":1,\"updated_at\":1790000600},\"vv\":{\"a1111111-0000-4000-8000-00000000000a\":2,\"b2222222-0000-4000-8000-00000000000b\":1}},{\"deleted\":false,\"deleted_at\":null,\"id\":\"9e9a151e-b5a5-5e08-b722-1d16a2f77f8d\",\"item\":{\"ns\":\"entry\",\"record\":{\"created_at\":1789995000,\"custom_fields\":[{\"a\":\"ascii\",\"f_0_1\":0.1,\"f_100\":100.0,\"f_1e+16\":1e+16,\"f_1e-07\":1e-07,\"f_neg_zero\":-0.0,\"i_2p62\":4611686018427387904,\"é\":\"e-acute\",\"ｚ\":\"fullwidth z\",\"🔑\":\"key emoji\"}],\"favorite\":false,\"id\":\"9e9a151e-b5a5-5e08-b722-1d16a2f77f8d\",\"kind\":\"web\",\"label\":\"Café Zürich 🔑 (sync conflict)\",\"notes\":\"Changement sur l'ordinateur portable — café\",\"password\":\"tie-pass-from-B\",\"policy\":{\"fill\":\"click\",\"require_master_password\":false,\"save_prompts\":true},\"scope\":{\"origin\":\"https://xn--caf-dma.example.com\"},\"tags\":[],\"updated_at\":1790000600,\"username\":\"user@café.example.com\"},\"schema\":1,\"updated_at\":1790000600},\"vv\":{\"a1111111-0000-4000-8000-00000000000a\":1,\"b2222222-0000-4000-8000-00000000000b\":1}},{\"deleted\":false,\"deleted_at\":null,\"id\":\"aae4dd4f-f438-50f3-8b77-60277aae935e\",\"item\":{\"ns\":\"entry\",\"record\":{\"created_at\":1789913600,\"favorite\":false,\"id\":\"aae4dd4f-f438-50f3-8b77-60277aae935e\",\"kind\":\"web\",\"label\":\"Example account (work) (sync conflict)\",\"notes\":\"Renamed from the laptop.\",\"password\":\"hunter2-sample-only\",\"policy\":{\"fill\":\"click\",\"require_master_password\":false,\"save_prompts\":true},\"recovery_codes\":[\"7Q4K-2M9X\",\"B8T1-5ZHP\"],\"scope\":{\"origin\":\"https://accounts.example.com\"},\"tags\":[\"work\"],\"updated_at\":1790000400,\"username\":\"work.user@example.com\"},\"schema\":1,\"updated_at\":1790000400},\"vv\":{\"a1111111-0000-4000-8000-00000000000a\":1,\"b2222222-0000-4000-8000-00000000000b\":1}},{\"deleted\":false,\"deleted_at\":null,\"id\":\"lic:c0c4c0830c8852c32ec77d23552e01ac\",\"item\":{\"ns\":\"license\",\"record\":{\"license\":{\"edition\":\"pro\",\"email\":\"ada@example.com\",\"format\":1,\"issued_at\":\"2026-09-21\",\"license_id\":\"lic-vector-0001\",\"name\":\"Ada Lovelace\",\"updates_until\":\"2027-09-21\"},\"signature\":{\"alg\":\"Ed25519\",\"key_id\":\"08974d13b2b5fc4d\",\"signature\":\"ejfT3fXgqVKY1AJwdSyCgwms4zBodRvXXGR8PyETHYedaPdZyampUwwoxupDTXjWcMtKRffq5rpogVLb2ryXBg==\"}},\"schema\":1,\"updated_at\":0},\"vv\":{\"a1111111-0000-4000-8000-00000000000a\":1}}],\"version\":1}",
+  "payload_sha256": "e566dc25e4af4251a0bba059e2f6d243ba4b404062ee71e5aef5c1b7eb96a9ee",
+  "platform": "android",
+  "pro_hint": false,
+  "rejected": {
+    "duplicate_ids.lgkm": {
+      "password": "correct horse battery staple 42",
+      "reason": "bad-payload"
+    },
+    "edited_header.lgkm": {
+      "password": "correct horse battery staple 42",
+      "reason": "wrong-password-or-damaged"
+    },
+    "extra_header_key.lgkm": {
+      "password": "correct horse battery staple 42",
+      "reason": "not-a-backup"
+    },
+    "flipped_ciphertext.lgkm": {
+      "password": "correct horse battery staple 42",
+      "reason": "wrong-password-or-damaged"
+    },
+    "kdf_time_11.lgkm": {
+      "password": "correct horse battery staple 42",
+      "reason": "bad-kdf"
+    },
+    "non_ascii_app_version.lgkm": {
+      "password": "correct horse battery staple 42",
+      "reason": "bad-payload"
+    },
+    "noncanonical_ciphertext.lgkm": {
+      "password": "correct horse battery staple 42",
+      "reason": "not-a-backup"
+    },
+    "noncanonical_salt.lgkm": {
+      "password": "correct horse battery staple 42",
+      "reason": "not-a-backup"
+    },
+    "truncated.lgkm": {
+      "password": "correct horse battery staple 42",
+      "reason": "not-a-backup"
+    },
+    "version_2.lgkm": {
+      "password": "correct horse battery staple 42",
+      "reason": "unsupported-version"
+    },
+    "wrong_password.lgkm": {
+      "password": "wrong",
+      "reason": "wrong-password-or-damaged"
+    },
+    "zero_vv_counter.lgkm": {
+      "password": "correct horse battery staple 42",
+      "reason": "bad-payload"
+    }
+  },
+  "salt_b64": "QgZbF+Bne1IhmbO9ZLbRRQ==",
+  "states": [
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "id": "11111111-aaaa-4000-8000-000000000001",
+      "item": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789913600,
+          "favorite": false,
+          "id": "11111111-aaaa-4000-8000-000000000001",
+          "kind": "web",
+          "label": "Example account",
+          "notes": "Password rotated from the desk PC.",
+          "password": "Maple-Orbit-7731",
+          "password_history": [
+            {
+              "changed_at": 1789996400,
+              "password": "hunter2-sample-only"
+            }
+          ],
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://accounts.example.com"
+          },
+          "tags": [
+            "personal"
+          ],
+          "totp": {
+            "algorithm": "SHA1",
+            "digits": 6,
+            "period": 30,
+            "secret": "JBSWY3DPEHPK3PXP"
+          },
+          "updated_at": 1790000500,
+          "username": "sample.user@example.com"
+        },
+        "schema": 1,
+        "updated_at": 1790000500
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 2,
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "id": "22222222-aaaa-4000-8000-000000000002",
+      "item": {
+        "ns": "item",
+        "record": {
+          "created_at": 1789956800,
+          "favorite": true,
+          "id": "22222222-aaaa-4000-8000-000000000002",
+          "kind": "note",
+          "payload": {
+            "body": "Router sits behind the pantry door.\nReset button: hold 10 s.",
+            "fields": [
+              {
+                "hidden": false,
+                "name": "SSID",
+                "value": "CabinNet-5G"
+              },
+              {
+                "hidden": true,
+                "name": "Passphrase",
+                "value": "pine-cone-lantern-88"
+              }
+            ],
+            "template_id": null
+          },
+          "tags": [
+            "home"
+          ],
+          "title": "Wi-Fi at the cabin",
+          "updated_at": 1789956800
+        },
+        "schema": 1,
+        "updated_at": 1789956800
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "id": "33333333-aaaa-4000-8000-000000000003",
+      "item": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789992800,
+          "favorite": false,
+          "id": "33333333-aaaa-4000-8000-000000000003",
+          "kind": "desktop",
+          "label": "Sample Mail Client",
+          "password": "desk-pass-sample",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "binding_mode": "strict",
+            "control_fingerprint": [
+              {
+                "automation_id": "txtUser",
+                "control_type": "Edit",
+                "name": "Username"
+              },
+              {
+                "automation_id": "txtPass",
+                "control_type": "Edit",
+                "name": "Password"
+              }
+            ],
+            "exe_path": "C:/Program Files/SampleMail/samplemail.exe",
+            "exe_sha256": "ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
+            "password_selector": {
+              "automation_id": "txtPass"
+            },
+            "username_selector": {
+              "automation_id": "txtUser"
+            },
+            "window_title": "SampleMail - Sign in"
+          },
+          "tags": [],
+          "updated_at": 1789992800,
+          "username": "desk.user"
+        },
+        "schema": 1,
+        "updated_at": 1789992800
+      },
+      "vv": {
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    },
+    {
+      "deleted": true,
+      "deleted_at": 1790000300,
+      "id": "44444444-aaaa-4000-8000-000000000004",
+      "item": null,
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1,
+        "c3333333-0000-4000-8000-00000000000c": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "id": "55555555-aaaa-4000-8000-000000000005",
+      "item": {
+        "ns": "item",
+        "record": {
+          "created_at": 1789913600,
+          "favorite": false,
+          "id": "55555555-aaaa-4000-8000-000000000005",
+          "kind": "bookmark",
+          "payload": {
+            "notes": "Opening hours and phone.",
+            "template_id": null,
+            "url": "https://www.example.net/help/contact"
+          },
+          "tags": [],
+          "title": "Bank help page",
+          "updated_at": 1790000450
+        },
+        "schema": 1,
+        "updated_at": 1790000450
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1,
+        "b2222222-0000-4000-8000-00000000000b": 1,
+        "c3333333-0000-4000-8000-00000000000c": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "id": "66666666-aaaa-4000-8000-000000000006",
+      "item": {
+        "ns": "item",
+        "record": {
+          "created_at": 1790000300,
+          "favorite": false,
+          "id": "66666666-aaaa-4000-8000-000000000006",
+          "kind": "note",
+          "payload": {
+            "body": "Grüße aus Zürich 🔑\n\tTab, \"quotes\", back\\slash, slash/ok, é中文",
+            "fields": [
+              {
+                "hidden": false,
+                "name": "Hotel",
+                "value": "Hôtel du Lac"
+              }
+            ],
+            "template_id": null
+          },
+          "tags": [
+            "travel"
+          ],
+          "title": "Zürich trip ✈ \"café\" back\\slash",
+          "updated_at": 1790000300
+        },
+        "schema": 1,
+        "updated_at": 1790000300
+      },
+      "vv": {
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "id": "77777777-aaaa-4000-8000-000000000007",
+      "item": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789995000,
+          "custom_fields": [
+            {
+              "a": "ascii",
+              "f_0_1": 0.1,
+              "f_100": 100.0,
+              "f_1e+16": 1e+16,
+              "f_1e-07": 1e-07,
+              "f_neg_zero": -0.0,
+              "i_2p62": 4611686018427387904,
+              "é": "e-acute",
+              "ｚ": "fullwidth z",
+              "🔑": "key emoji"
+            }
+          ],
+          "favorite": false,
+          "id": "77777777-aaaa-4000-8000-000000000007",
+          "kind": "web",
+          "label": "Café Zürich ☕",
+          "notes": "Änderung auf dem Desktop — 中文",
+          "password": "tie-pass-from-A",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://xn--caf-dma.example.com"
+          },
+          "tags": [],
+          "updated_at": 1790000600,
+          "username": "user@café.example.com"
+        },
+        "schema": 1,
+        "updated_at": 1790000600
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 2,
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "id": "9e9a151e-b5a5-5e08-b722-1d16a2f77f8d",
+      "item": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789995000,
+          "custom_fields": [
+            {
+              "a": "ascii",
+              "f_0_1": 0.1,
+              "f_100": 100.0,
+              "f_1e+16": 1e+16,
+              "f_1e-07": 1e-07,
+              "f_neg_zero": -0.0,
+              "i_2p62": 4611686018427387904,
+              "é": "e-acute",
+              "ｚ": "fullwidth z",
+              "🔑": "key emoji"
+            }
+          ],
+          "favorite": false,
+          "id": "9e9a151e-b5a5-5e08-b722-1d16a2f77f8d",
+          "kind": "web",
+          "label": "Café Zürich 🔑 (sync conflict)",
+          "notes": "Changement sur l'ordinateur portable — café",
+          "password": "tie-pass-from-B",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://xn--caf-dma.example.com"
+          },
+          "tags": [],
+          "updated_at": 1790000600,
+          "username": "user@café.example.com"
+        },
+        "schema": 1,
+        "updated_at": 1790000600
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1,
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "id": "aae4dd4f-f438-50f3-8b77-60277aae935e",
+      "item": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789913600,
+          "favorite": false,
+          "id": "aae4dd4f-f438-50f3-8b77-60277aae935e",
+          "kind": "web",
+          "label": "Example account (work) (sync conflict)",
+          "notes": "Renamed from the laptop.",
+          "password": "hunter2-sample-only",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "recovery_codes": [
+            "7Q4K-2M9X",
+            "B8T1-5ZHP"
+          ],
+          "scope": {
+            "origin": "https://accounts.example.com"
+          },
+          "tags": [
+            "work"
+          ],
+          "updated_at": 1790000400,
+          "username": "work.user@example.com"
+        },
+        "schema": 1,
+        "updated_at": 1790000400
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1,
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "id": "lic:c0c4c0830c8852c32ec77d23552e01ac",
+      "item": {
+        "ns": "license",
+        "record": {
+          "license": {
+            "edition": "pro",
+            "email": "ada@example.com",
+            "format": 1,
+            "issued_at": "2026-09-21",
+            "license_id": "lic-vector-0001",
+            "name": "Ada Lovelace",
+            "updates_until": "2027-09-21"
+          },
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "08974d13b2b5fc4d",
+            "signature": "ejfT3fXgqVKY1AJwdSyCgwms4zBodRvXXGR8PyETHYedaPdZyampUwwoxupDTXjWcMtKRffq5rpogVLb2ryXBg=="
+          }
+        },
+        "schema": 1,
+        "updated_at": 0
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1
+      }
+    }
+  ]
+}

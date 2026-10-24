@@ -1,0 +1,4 @@
+"url","username","password","httpRealm","formActionOrigin","guid","timeCreated","timeLastUsed","timePasswordChanged"
+"https://login.example.com","alex@example.com","ff-pass-1",,"https://login.example.com","{00000000-0000-4000-8000-000000000001}","1700000000000","1700500000000","1700400000000"
+"https://media.example.com","alex","ff-pass-2",,"","{00000000-0000-4000-8000-000000000002}","1690000000000","1690000000000","1690000000000"
+"https://proxy.example.net","proxyuser","ff-pass-3","Restricted",,"{00000000-0000-4000-8000-000000000003}","1690000000000","1690000000000","1690000000000"

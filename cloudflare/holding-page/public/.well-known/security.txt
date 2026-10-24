@@ -1,0 +1,4 @@
+Contact: mailto:security@localgatekeys.app
+Expires: 2027-10-01T00:00:00Z
+Preferred-Languages: en
+Canonical: https://localgatekeys.app/.well-known/security.txt

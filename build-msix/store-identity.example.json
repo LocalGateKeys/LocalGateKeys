@@ -1,0 +1,6 @@
+{
+  "Name": "<Package/Identity/Name from Partner Center, e.g. 12345YourName.LocalGateKeys>",
+  "Publisher": "<Package/Identity/Publisher from Partner Center, e.g. CN=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX>",
+  "PublisherDisplayName": "<Package/Properties/PublisherDisplayName from Partner Center>",
+  "DisplayName": "LocalGateKeys"
+}

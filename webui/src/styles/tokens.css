@@ -1,0 +1,95 @@
+/* LocalGateKeys design tokens. Dark navy glass is the default; light is frosted white.
+   Values follow the approved 2026-10-17 glass mockups. */
+:root {
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", "Consolas", ui-monospace, monospace;
+
+  --text: #f4f6fb;
+  --text-muted: rgba(244, 246, 251, 0.6);
+  --text-faint: rgba(244, 246, 251, 0.42);
+  --link: #8fbaff;
+  --accent: #2b6fe0;
+  --brand-text: #22c3f0;
+  --accent-hover: #2563cf;
+  --on-accent: #ffffff;
+  --danger: #ff7a70;
+  --success: #7ee0a8;
+  --warning: #ffcf80;
+
+  /* Layer 2: the page's own colour wash over the OS backdrop (Mica). */
+  --wash-1: rgba(52, 102, 180, 0.55);
+  --wash-2: rgba(138, 78, 42, 0.45);
+  --wash-3: rgba(31, 122, 108, 0.45);
+  --wash-base: rgba(12, 20, 36, 0.72);
+  --wash-base-opaque: #0c1424;
+
+  /* Glass is for controls and chrome; content sits on quiet groups. */
+  --glass: rgba(255, 255, 255, 0.09);
+  --glass-hover: rgba(255, 255, 255, 0.14);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-highlight: rgba(255, 255, 255, 0.18);
+  --glass-blur: 22px;
+  --group: rgba(18, 26, 44, 0.55);
+  --separator: rgba(255, 255, 255, 0.09);
+  --scrim: rgba(4, 8, 16, 0.45);
+
+  --radius-group: 12px;
+  --radius-card: 18px;
+  --radius-field: 10px;
+  --row-pad: 9px 14px;
+  --gap: 12px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --text: #13203a;
+    --text-muted: rgba(19, 32, 58, 0.62);
+    --text-faint: rgba(19, 32, 58, 0.45);
+    --link: #0b5bd3;
+    --accent: #0b5bd3;
+    --brand-text: #0a86c2;
+    --accent-hover: #0a4fb8;
+    --danger: #b42336;
+    --success: #176b45;
+    --warning: #805b00;
+    --wash-1: rgba(120, 165, 235, 0.45);
+    --wash-2: rgba(240, 190, 150, 0.4);
+    --wash-3: rgba(140, 215, 200, 0.4);
+    --wash-base: rgba(244, 247, 252, 0.7);
+    --wash-base-opaque: #eef3fa;
+    --glass: rgba(255, 255, 255, 0.55);
+    --glass-hover: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(19, 32, 58, 0.12);
+    --glass-highlight: rgba(255, 255, 255, 0.8);
+    --group: rgba(255, 255, 255, 0.62);
+    --separator: rgba(19, 32, 58, 0.08);
+    --scrim: rgba(19, 32, 58, 0.2);
+  }
+}
+
+/* An explicit in-app choice wins over the Windows setting. */
+:root[data-theme="light"] {
+  --text: #13203a;
+  --text-muted: rgba(19, 32, 58, 0.62);
+  --text-faint: rgba(19, 32, 58, 0.45);
+  --link: #0b5bd3;
+  --accent: #0b5bd3;
+  --brand-text: #0a86c2;
+  --accent-hover: #0a4fb8;
+  --danger: #b42336;
+  --success: #176b45;
+  --warning: #805b00;
+  --wash-1: rgba(120, 165, 235, 0.45);
+  --wash-2: rgba(240, 190, 150, 0.4);
+  --wash-3: rgba(140, 215, 200, 0.4);
+  --wash-base: rgba(244, 247, 252, 0.7);
+  --wash-base-opaque: #eef3fa;
+  --glass: rgba(255, 255, 255, 0.55);
+  --glass-hover: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(19, 32, 58, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.8);
+  --group: rgba(255, 255, 255, 0.62);
+  --separator: rgba(19, 32, 58, 0.08);
+  --scrim: rgba(19, 32, 58, 0.2);
+}

@@ -1,0 +1,2 @@
+Title,URL,Username,Password,Notes,OTPAuth
+login.example.com (alex),https://login.example.com/,alex,safari-pass-1,Saved from Safari,otpauth://totp/login.example.com:alex?secret=JBSWY3DPEHPK3PXP&algorithm=SHA1&digits=6&period=30

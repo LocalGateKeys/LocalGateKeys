@@ -1,0 +1,11 @@
+[versions]
+kotlin = "2.4.20"
+bouncycastle = "1.86"
+junit = "5.11.4"
+
+[libraries]
+bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

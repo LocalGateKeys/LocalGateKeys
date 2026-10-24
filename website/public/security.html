@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Security | LocalGateKeys</title>
+  <meta name="description" content="How LocalGateKeys protects your vault and what it does not protect against.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/security">
+  <link rel="icon" href="brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="brand/icon-256.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="index.html">
+        <img src="brand/icon.svg" alt="" width="36" height="36">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav aria-label="Main">
+        <ul class="nav">
+          <li><a href="features.html">Features</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+          <li><a href="security.html" aria-current="page">Security</a></li>
+          <li><a href="get-started.html">Get started</a></li>
+          <li><a href="download.html">Download</a></li>
+          <li><a href="support.html">Support</a></li>
+          <li><a href="buy.html">Buy Pro</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>The security model, in plain terms</h1>
+  <p class="lead">What LocalGateKeys is designed to protect, and what it cannot protect.</p>
+</div>
+
+<div class="wrap page-body">
+  <div class="prose">
+    <h2>How your vault is encrypted</h2>
+    <p>A random 256-bit key encrypts the vault. That key is never stored as it is; it is wrapped (encrypted) separately by each way you can unlock, so changing your password does not mean re-encrypting everything, and a wrapper copied from another vault is rejected.</p>
+  </div>
+  <dl class="spec">
+    <dt>Vault encryption</dt><dd>AES-256-GCM with a fresh random nonce for every save</dd>
+    <dt>Master password</dt><dd>Argon2id, 64 MiB memory, 3 passes, parallelism 4, random salt per wrapper</dd>
+    <dt>Recovery phrase</dt><dd>Optional 24-word BIP39 phrase (256 bits), expanded with HKDF-SHA256</dd>
+    <dt>Windows Hello</dt><dd>Wraps the vault key, never the master password</dd>
+    <dt>Backups and transfers</dt><dd>Argon2id and AES-256-GCM with the parameters stored in the authenticated header</dd>
+    <dt>Device sync</dt><dd>A random group key, handed to each device with X25519 and HKDF-SHA256 and, for a cloud folder, also wrapped by your sync password with Argon2id; every record sealed with AES-256-GCM and bound to its item, version and key epoch; every device file bound to the device that wrote it</dd>
+    <dt>Passkeys</dt><dd>ES256 (P-256) keys kept inside the encrypted vault; the app builds the signed data from the origin the browser reports, never from the page</dd>
+    <dt>Writes to disk</dt><dd>Temporary file, flush, then atomic replace, so a crash cannot leave half a vault</dd>
+  </dl>
+
+  <div class="ledger">
+    <section aria-labelledby="protects">
+      <h2 id="protects">Designed to protect against</h2>
+      <ul>
+        <li>Someone who copies your vault file or a backup and does not know your master password</li>
+        <li>A website getting logins or passkeys saved for a different website</li>
+        <li>Another program on your PC talking to LocalGateKeys without the session secret it hands to its own browser helper</li>
+        <li>Filling a desktop app that has been swapped, updated or changed since you bound it</li>
+        <li>Passwords sitting unencrypted on disk</li>
+        <li>Forms being submitted without you</li>
+        <li>Your cloud provider reading synced data: it only stores ciphertext</li>
+      </ul>
+    </section>
+    <section class="not" aria-labelledby="not-protects">
+      <h2 id="not-protects">Not able to protect against</h2>
+      <ul>
+        <li>Malware, or anyone with administrator control, already running on your PC</li>
+        <li>A compromised browser, Windows installation or dependency</li>
+        <li>A website you deliberately fill a password into</li>
+        <li>Someone using your PC while the vault is unlocked</li>
+        <li>Phishing inside a genuine app that shows attacker-controlled content</li>
+        <li>Losing your vault, your backups and your master password with no recovery phrase: nobody, including us, can open it</li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="prose">
+    <h2>Things LocalGateKeys never does</h2>
+    <p>Some ways of filling passwords are indistinguishable from spyware, so they are ruled out by design. LocalGateKeys contains no:</p>
+    <ul>
+      <li>keyboard hooks or keystroke recording</li>
+      <li>clipboard monitoring</li>
+      <li>screen reading or OCR to find credentials</li>
+      <li>scanning of other programs' memory</li>
+      <li>decryption of your browser's saved-password database</li>
+      <li>code injection into other programs or games</li>
+      <li>submitting a sign-in you did not start</li>
+    </ul>
+
+    <h2>The network, honestly</h2>
+    <p>There is no LocalGateKeys account and no server that holds vaults. The app connects to the internet in only these cases:</p>
+    <ul>
+      <li><strong>Update checks.</strong> When you choose Check for updates, the app downloads one small file and verifies its signature with a key built into the app. It never downloads or runs an installer by itself.</li>
+      <li><strong>Licence revocation list.</strong> Together with each update check, the app downloads a signed list of refunded licences and checks your licence against it on your PC. It sends nothing about your licence.</li>
+      <li><strong>Website icons.</strong> To show a site's icon, the app downloads it from that site's own address. No username, password or vault data is sent, but each download tells that site, and anyone watching the network, that your vault has an account there. This is off by default and only happens if you turn on "Show website icons" in Settings; strict offline mode blocks it.</li>
+      <li><strong>Breach checks, if you turn them on.</strong> When you start a check, the app sends the first five characters of each password's SHA-1 hash to Have I Been Pwned. The service sees your IP address, never the password, the full hash, the username or the website.</li>
+      <li><strong>Sync, if you set it up.</strong> Over your home network, devices talk to each other directly. Through a cloud folder, your cloud-drive app does the uploading.</li>
+    </ul>
+    <p>Strict offline mode is on by default. It blocks background internet requests, website icons and breach checks, and an update check asks you first. The <a href="legal/privacy.html">privacy policy</a> lists exactly what our servers see when you do check for updates.</p>
+
+    <h2>Known limitations</h2>
+    <ul>
+      <li>The master password is moved into a wipeable buffer as soon as it reaches the app and is erased when the operation that needed it finishes. The page you type it into runs in Microsoft Edge WebView2, and the hand-off from that page to the app makes a short-lived copy; neither copy can be erased by the app.</li>
+      <li>The camera unlock is a convenience check, not certified protection against photos or masks. Windows Hello is the stronger choice.</li>
+      <li>Windows app fill does not work with programs running as administrator, custom-drawn game interfaces, or embedded web views it cannot verify.</li>
+      <li>The vault detects being rolled back to an older copy, but an attacker who can delete both the vault and its local anchor file can defeat that check.</li>
+      <li>Passkeys work in Chrome and Edge only, and only for the page itself: a sign-in inside another site's frame uses the browser's own passkey dialog. If a site cancels after you approve a new passkey, the passkey may stay in your vault; delete it in the app.</li>
+    </ul>
+
+    <h2>Report a vulnerability</h2>
+    <p>Email <a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>. The <a href="legal/vulnerability-disclosure.html">vulnerability disclosure policy</a> explains what is in scope, how quickly we respond and how we credit researchers.</p>
+  </div>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand">LocalGateKeys</p>
+        <p>A password manager for Windows that keeps your vault on your own devices.</p>
+        <p class="quiet">This site sets no cookies, runs no analytics and loads nothing from other companies.</p>
+      </div>
+      <nav aria-label="Product">
+        <h2>Product</h2>
+        <ul>
+          <li><a href="features.html">Features</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+          <li><a href="download.html">Download</a></li>
+          <li><a href="licence.html">Your Pro licence</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Help">
+        <h2>Help</h2>
+        <ul>
+          <li><a href="support.html">Support and FAQ</a></li>
+          <li><a href="security.html">Security</a></li>
+          <li><a href="legal/vulnerability-disclosure.html">Report a vulnerability</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Legal">
+        <h2>Legal</h2>
+        <ul>
+          <li><a href="legal/eula.html">Licence agreement</a></li>
+          <li><a href="legal/privacy.html">Privacy policy</a></li>
+          <li><a href="legal/terms-of-sale.html">Terms of sale</a></li>
+          <li><a href="legal/refunds.html">Refund policy</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base">
+      <p>&copy; 2026 Ilias Pelekas. Contact: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows is a trademark of the Microsoft group of companies. Chrome is a trademark of Google LLC.</p>
+    </div>
+  </footer>
+</body>
+</html>

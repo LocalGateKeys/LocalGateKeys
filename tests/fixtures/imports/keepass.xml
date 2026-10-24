@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<KeePassFile>
+	<Meta>
+		<Generator>KeePass</Generator>
+		<DatabaseName>Fixture database</DatabaseName>
+		<RecycleBinEnabled>True</RecycleBinEnabled>
+		<RecycleBinUUID>cmVjeWNsZWJpbjAwMDAwMA==</RecycleBinUUID>
+	</Meta>
+	<Root>
+		<Group>
+			<UUID>cm9vdGdyb3VwMDAwMDAwMA==</UUID>
+			<Name>Database</Name>
+			<Entry>
+				<UUID>ZW50cnkwMDAwMDAwMDAwMQ==</UUID>
+				<IconID>0</IconID>
+				<Tags>finance;important</Tags>
+				<Times>
+					<CreationTime>2024-01-01T10:00:00Z</CreationTime>
+					<LastModificationTime>2024-05-01T10:00:00Z</LastModificationTime>
+				</Times>
+				<String><Key>Title</Key><Value>Example Bank</Value></String>
+				<String><Key>UserName</Key><Value>alex.example</Value></String>
+				<String><Key>Password</Key><Value ProtectInMemory="True">kpxml-pass-1</Value></String>
+				<String><Key>URL</Key><Value>https://bank.example.com/</Value></String>
+				<String><Key>Notes</Key><Value>Branch: High Street</Value></String>
+				<String><Key>otp</Key><Value ProtectInMemory="True">otpauth://totp/Bank:alex?secret=JBSWY3DPEHPK3PXP&amp;issuer=Bank</Value></String>
+				<String><Key>Customer number</Key><Value>CN-000123</Value></String>
+				<String><Key>Telephone PIN</Key><Value ProtectInMemory="True">2468</Value></String>
+				<Binary><Key>statement.pdf</Key><Value Ref="0" /></Binary>
+				<History>
+					<Entry>
+						<UUID>ZW50cnkwMDAwMDAwMDAwMQ==</UUID>
+						<String><Key>Title</Key><Value>Example Bank</Value></String>
+						<String><Key>Password</Key><Value ProtectInMemory="True">kpxml-old-pass</Value></String>
+					</Entry>
+				</History>
+			</Entry>
+			<Group>
+				<UUID>d29ya2dyb3VwMDAwMDAwMA==</UUID>
+				<Name>Work</Name>
+				<Entry>
+					<UUID>ZW50cnkwMDAwMDAwMDAwMg==</UUID>
+					<String><Key>Title</Key><Value>Ticket system</Value></String>
+					<String><Key>UserName</Key><Value>alex</Value></String>
+					<String><Key>Password</Key><Value ProtectInMemory="True">kpxml-pass-2</Value></String>
+					<String><Key>URL</Key><Value>https://tickets.example.com/login</Value></String>
+					<String><Key>Notes</Key><Value></Value></String>
+				</Entry>
+				<Entry>
+					<UUID>ZW50cnkwMDAwMDAwMDAwMw==</UUID>
+					<String><Key>Title</Key><Value>Door code</Value></String>
+					<String><Key>UserName</Key><Value></Value></String>
+					<String><Key>Password</Key><Value ProtectInMemory="True"></Value></String>
+					<String><Key>URL</Key><Value></Value></String>
+					<String><Key>Notes</Key><Value>Side entrance: 1357</Value></String>
+				</Entry>
+			</Group>
+			<Group>
+				<UUID>cmVjeWNsZWJpbjAwMDAwMA==</UUID>
+				<Name>Recycle Bin</Name>
+				<Entry>
+					<UUID>ZW50cnkwMDAwMDAwMDAwNA==</UUID>
+					<String><Key>Title</Key><Value>Deleted login</Value></String>
+					<String><Key>UserName</Key><Value>gone</Value></String>
+					<String><Key>Password</Key><Value ProtectInMemory="True">gone-pass</Value></String>
+					<String><Key>URL</Key><Value>https://deleted.example.com</Value></String>
+				</Entry>
+			</Group>
+		</Group>
+	</Root>
+</KeePassFile>

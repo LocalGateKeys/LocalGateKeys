@@ -1,0 +1,15 @@
+{
+  "format": "localgatekeys-release-manifest",
+  "version": 1,
+  "app_version": "0.4.5",
+  "min_supported_version": "0.3.0",
+  "notes_url": "https://localgatekeys.app/download.html",
+  "artifacts": [
+    {
+      "name": "LocalGateKeys-Setup-Personal.exe",
+      "sha256": "da916ad8b3387007de456173bcc84d996a08279774184c7f6018bd878fc9e403",
+      "size": 107793656,
+      "url": "https://updates.localgatekeys.app/releases/0.4.5/LocalGateKeys-Setup-Personal.exe"
+    }
+  ]
+}

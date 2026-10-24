@@ -1,0 +1,91 @@
+{
+  "cases": [
+    {
+      "address": "10.1.2.3",
+      "lan": true
+    },
+    {
+      "address": "172.31.255.255",
+      "lan": true
+    },
+    {
+      "address": "172.32.0.1",
+      "lan": false
+    },
+    {
+      "address": "192.168.1.20",
+      "lan": true
+    },
+    {
+      "address": "169.254.9.9",
+      "lan": true
+    },
+    {
+      "address": "127.0.0.1",
+      "lan": true
+    },
+    {
+      "address": "100.64.0.1",
+      "lan": false
+    },
+    {
+      "address": "192.0.2.1",
+      "lan": false
+    },
+    {
+      "address": "8.8.8.8",
+      "lan": false
+    },
+    {
+      "address": "0.0.0.0",
+      "lan": false
+    },
+    {
+      "address": "224.0.0.1",
+      "lan": false
+    },
+    {
+      "address": "::1",
+      "lan": true
+    },
+    {
+      "address": "fe80::1",
+      "lan": true
+    },
+    {
+      "address": "fd12:3456::1",
+      "lan": true
+    },
+    {
+      "address": "2001:db8::1",
+      "lan": false
+    },
+    {
+      "address": "::ffff:192.168.1.1",
+      "lan": false
+    },
+    {
+      "address": "::",
+      "lan": false
+    },
+    {
+      "address": "fe80::1%eth0",
+      "lan": false
+    },
+    {
+      "address": "fe80::1%1",
+      "lan": false
+    }
+  ],
+  "description": "The explicit LAN address ranges (lan_address.LAN_NETWORKS) and the test_lan_address_table cases with the expected result of is_lan_address. An IPv4-mapped IPv6 address is never accepted, nor is an IPv6 address with a zone id.",
+  "networks": [
+    "10.0.0.0/8",
+    "172.16.0.0/12",
+    "192.168.0.0/16",
+    "169.254.0.0/16",
+    "127.0.0.0/8",
+    "::1/128",
+    "fe80::/10",
+    "fc00::/7"
+  ]
+}

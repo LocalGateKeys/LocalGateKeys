@@ -1,0 +1,95 @@
+{
+  "epochs": {
+    "1": {
+      "file_key_hex": "54da63e1410752d2ad104d539e7a313146d2a789dd66f02f3c4004bd1f3b68a3",
+      "group_key_hex": "92bf049e425ddc225cfcb024b4bd5737c0cc10dacd434777407d366b802d7d71",
+      "keyring_mac_key_hex": "518835c1f2a47eb109fdb27e1be6f34c3ea2c9aacc83232fe80951baa1b2c1a6",
+      "member_name_key_hex": "77726c45f3630e9a310825f5a6cdf7c3ec0481e921abc07a2c8a6c4697664ce1",
+      "member_names": {
+        "a1111111-0000-4000-8000-00000000000a": "Desk PC (Windows)",
+        "b2222222-0000-4000-8000-00000000000b": "Laptop (Windows)",
+        "c3333333-0000-4000-8000-00000000000c": "Old Tablet"
+      },
+      "password_wrap_key_hex": "771b5dff8997f354151c8267f2e2093143b98c06b1485c3cdcc48be9edb4f69b",
+      "record_key_hex": "91289f5aefa7e697a0eff6a1932378552b8fb1894e474f3c71f7ba1ed45a83d0"
+    },
+    "2": {
+      "file_key_hex": "be8b34346570e4d19ce8ffcd03ff05c3dccf49d38208091b00ed76e3b475fb9d",
+      "group_key_hex": "c1faed45937ef54d320bbaa2c7256ab953ff3e594f98a6e5d748fe0c347044a3",
+      "keyring_mac_key_hex": "cd1f543128b7123183215fdfc8c3eafaba88f5d471c660cd262d8b0ae674e580",
+      "member_name_key_hex": "8abc067d8f482f720bd6e45a3eec562bef85b4cb85806b8413e1bd5f3b5ef193",
+      "member_names": {
+        "a1111111-0000-4000-8000-00000000000a": "Desk PC (Windows)",
+        "b2222222-0000-4000-8000-00000000000b": "Laptop (Windows)"
+      },
+      "password_wrap_key_hex": "a4cbca976ec8a52a295885aac2b20b6c32f85bfeb541364e3a18b81217df4720",
+      "record_key_hex": "2befd5fd4dc24ca4ec8b0b71b08ca5eb7e59118636e2f0d963ad8ef6654ebffb"
+    }
+  },
+  "existing_group": {
+    "attach": {
+      "member_names": {
+        "a1111111-0000-4000-8000-00000000000a": "Desk PC (Windows)",
+        "b2222222-0000-4000-8000-00000000000b": "Laptop (Windows)"
+      },
+      "note": "keyring_attach.json is keyring_existing_epoch1.json with device B added by attach_with_password (trusted key = the epoch-1 group key above, B keeps its own identity).",
+      "password": "correct horse battery staple 42",
+      "password_wrap_key_hex": "d4b530e31b3fff3b1c9367affa4aae95b88ce2157d9b8a0ba24679633db89b91"
+    },
+    "epochs": {
+      "1": {
+        "file_key_hex": "83beecc8eb89089a8b6b286470ff6ec606c183bac1113c0ba38d921db47c22d7",
+        "group_key_hex": "a11c09815e0460a4199dfb0328c174b6e99d8ad9a4c14eb52a980a8cd0f11f90",
+        "keyring_mac_key_hex": "5ab2ce078e930e02e2a40d51728422926e314609c25a0eff8abe5e2f9c0cde34",
+        "member_name_key_hex": "84203fa1a136230c8d762470bffbf74cdc44d514674c38dc64f515071326a8fe",
+        "member_names": {
+          "a1111111-0000-4000-8000-00000000000a": "Desk PC (Windows)"
+        },
+        "password": "correct horse battery staple 42",
+        "password_wrap_key_hex": "d4b530e31b3fff3b1c9367affa4aae95b88ce2157d9b8a0ba24679633db89b91",
+        "record_key_hex": "f5ea85012f87a212673eaa84ae680cd9306b3c437d1f4600df30bc7dd1d252dd"
+      },
+      "3": {
+        "file_key_hex": "063bbd5e9001b90fc8540c843db8b7bcc579ffc943d31063c5f81ab3ae048ade",
+        "group_key_hex": "628bdbd62ea216938c0f4371d1218efa65d8fe200c7c58d1619352f12526a925",
+        "keyring_mac_key_hex": "aca8be4b593218627c65afff73f9768c9045933dc14bb566cda0e107b7d44715",
+        "member_name_key_hex": "5e96b209e36a48f8f2b3c87cab02ca2b6ac1d7849bd73f0074f7d34ee19ae3ed",
+        "member_names": {
+          "a1111111-0000-4000-8000-00000000000a": "Desk PC (Windows)"
+        },
+        "password": "violet tram sundial 1987 pebble",
+        "password_wrap_key_hex": "0253cde9eda8a72a22713c29c3c63e95239ea6eb215b69acb2ee90fbc18b9a2f",
+        "record_key_hex": "4feba892f48059fd38674681f0ea41ed0ca7d199dc63da1c60d59e38a7ec5db3"
+      }
+    },
+    "group_id": "e6a1c2d4-7b30-4c58-9f12-0a8d5b3c6e71",
+    "note": "keyring_existing_epoch1.json and keyring_existing_epoch3.json are the first keyring of a group the creating device (A) already held a key for (create_for_existing_group): prev_mac is null at every epoch, the epoch is the one of the supplied key."
+  },
+  "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
+  "kdf": {
+    "iterations": 4,
+    "memory_kib": 131072,
+    "name": "argon2id",
+    "parallelism": 4
+  },
+  "note": "password_wrap_key_hex is the raw 32-byte Argon2id output for that epoch's password and the salt in the matching keyring (epoch 1: keyring_epoch1*.json, epoch 2: keyring_epoch2.json). member_names are the decrypted name_ct values of that epoch's keyring (keyring_epoch1.json / keyring_epoch2.json), keyed by device id.",
+  "password_epoch1": "correct horse battery staple 42",
+  "password_epoch2": "violet tram sundial 1987 pebble",
+  "unicode_password": {
+    "argon2id_nfc_hex": "33fc0cce7adc12b10ad513c78288775c3582e73dc30ba00ee37d410c5708a951",
+    "argon2id_nfd_hex": "3e52a67c36f4d910b2c0000a9462b28907403505624d3568430102a953531053",
+    "kdf": {
+      "iterations": 4,
+      "memory_kib": 131072,
+      "name": "argon2id",
+      "parallelism": 4
+    },
+    "note": "The two passwords look the same but differ in UTF-8 bytes; the sync password is used exactly as typed, so the two outputs differ and must stay different.",
+    "password_nfc": "café sync password 42",
+    "password_nfc_utf8_hex": "636166c3a92073796e632070617373776f7264203432",
+    "password_nfd": "café sync password 42",
+    "password_nfd_utf8_hex": "63616665cc812073796e632070617373776f7264203432",
+    "salt_hex": "4958132301785d3bb92217af7eb18310"
+  },
+  "view_magic_hex": "4c474b53594e43310a"
+}

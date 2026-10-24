@@ -1,0 +1,5 @@
+Contact: mailto:{{SECURITY_EMAIL}}
+Expires: {{SECURITY_TXT_EXPIRES}}
+Preferred-Languages: en
+Canonical: https://{{DOMAIN}}/.well-known/security.txt
+Policy: https://{{DOMAIN}}/legal/vulnerability-disclosure

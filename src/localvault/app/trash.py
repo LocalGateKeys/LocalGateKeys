@@ -1,0 +1,90 @@
+"""Recently deleted (trash) for the WebView UI: list, restore, permanently delete, empty.
+
+Texts and rules follow ``FeatureUI.trash_clicked``
+(docs/superpowers/specs/2026-10-17-webview-items-dataflow.md §3).
+"""
+from __future__ import annotations
+
+from typing import Any
+
+from ..api.result import ApiError
+from ..vault import VaultError
+from .catalog import _safe_display, kind_label
+from .setting_links import open_settings
+from .trash_restore import restore_trash_entries
+
+
+class TrashService:
+    def __init__(self, controller: Any, port: Any) -> None:
+        self._controller = controller
+        self._port = port
+
+    def _session(self) -> Any:
+        if not self._controller.is_unlocked():
+            raise ApiError("locked", "Unlock this profile first.")
+        return self._controller.session
+
+    def _rows(self, session: Any) -> list[dict[str, Any]]:
+        rows = []
+        for row in session.trash_summaries():
+            rows.append({"id": str(row["id"]), "source": "credential", "title": _safe_display(str(row.get("label") or "")),
+                         "kind_label": "Login", "username": _safe_display(str(row.get("username") or "")),
+                         "deleted_at": int(row.get("deleted_at") or 0)})
+        for row in session.item_service.trash_summaries():
+            rows.append({"id": str(row["id"]), "source": "typed", "title": _safe_display(str(row.get("title") or "")),
+                         "kind_label": kind_label(str(row.get("kind") or "")), "username": "",
+                         "deleted_at": int(row.get("deleted_at") or 0)})
+        rows.sort(key=lambda r: r["deleted_at"], reverse=True)
+        return rows
+
+    def list(self) -> dict[str, Any]:
+        session = self._session()
+        settings = self._controller.settings
+        if settings.trash_auto_purge:
+            text = (f"Entries stay encrypted for {settings.trash_retention_days} days. Expired entries are purged on "
+                    "the next vault write. Older backups may retain copies.")
+        else:
+            text = ("Automatic emptying is off, so entries stay encrypted here until you delete them. "
+                    "Older backups may retain copies.")
+        return {"rows": self._rows(session), "retention_text": text,
+                "retention_action": open_settings("privacy", "Change in settings")}
+
+    def restore(self, ids: list[str]) -> dict[str, Any]:
+        session = self._session()
+        rows = {r["id"]: r for r in self._rows(session)}
+        wanted = [i for i in ids if i in rows]
+        lease = self._controller.guard.lease()
+        result = restore_trash_entries(session, wanted, {i: rows[i]["source"] for i in wanted},
+                                       lambda: self._controller.require_lease(lease))
+        if result.limit is not None:
+            self._port.show_upgrade(limit=result.limit.limit, message=str(result.limit), on_enter=lambda: None)
+        self._controller.touch()
+        return {"message": f"Restored {result.restored} item(s).",
+                "failed": [{"title": rows[i]["title"], "message": str(exc)} for i, exc in result.failed]}
+
+    def purge(self, ids: list[str]) -> dict[str, Any]:
+        session = self._session()
+        rows = {r["id"]: r for r in self._rows(session)}
+        wanted = [i for i in ids if i in rows]
+        if not wanted:
+            return {"message": "Permanently deleted 0 item(s)."}
+        if len(wanted) == 1:
+            text = (f"Permanently delete {rows[wanted[0]]['title']!r}? This cannot be undone. "
+                    "Previous backups can still contain it.")
+        else:
+            text = (f"Permanently delete {len(wanted)} items? This cannot be undone. "
+                    "Previous backups can still contain them.")
+        # Take the lease before the dialog: a lock or profile switch while it
+        # is open invalidates it, so the delete below cannot hit another vault.
+        lease = self._controller.guard.lease()
+        if not self._port.confirm("Permanently delete?", text):
+            raise ApiError("cancelled", "Cancelled.")
+        self._controller.require_lease(lease)
+        try:
+            count = session.purge_deleted_many(wanted)
+        except VaultError as exc:
+            raise ApiError("vault_error", str(exc)) from None
+        return {"message": f"Permanently deleted {count} item(s)."}
+
+    def empty(self) -> dict[str, Any]:
+        return self.purge([r["id"] for r in self._rows(self._session())])

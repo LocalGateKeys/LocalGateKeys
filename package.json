@@ -1,0 +1,15 @@
+{
+  "name": "localgatekeys-extension-tests",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Dev-only harness for the LocalGateKeys browser extension tests (node:vm + jsdom). Not shipped.",
+  "scripts": {
+    "test": "node --test tests/*.cjs tests/extension/*.test.cjs",
+    "build:firefox": "node browser-extension/build-firefox-manifest.cjs",
+    "build:store": "node browser-extension/build-store-package.cjs",
+    "build:safari": "node browser-extension/build-safari-extension.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  }
+}

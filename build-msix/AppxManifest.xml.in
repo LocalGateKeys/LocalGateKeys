@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  LocalGateKeys MSIX manifest template. scripts/build_msix_package.ps1 replaces
+  the placeholder tokens and writes the result to the package layout as AppxManifest.xml.
+
+  Identity values: for a Microsoft Store build, paste Package/Identity/Name,
+  Package/Identity/Publisher and Package/Properties/PublisherDisplayName from
+  Partner Center (Product identity page) into build-msix/store-identity.json.
+  The test identity (CN=LocalGateKeys Test Signing) is for sideloading only.
+
+  Names that the Python code depends on (tests/test_msix_packaging.py checks
+  them against localvault.distribution and localvault.config):
+    - alias LocalGateKeysNativeHost.exe          (distribution.NATIVE_HOST_ALIAS)
+    - StartupTask LocalGateKeysStartup           (distribution.STARTUP_TASK_ID)
+    - $(KnownFolder:LocalAppData)\LocalGateKeys  (config.APP_DIR_NAME)
+    - ...\NativeMessagingHosts\com.localgatekeys.app  (config.NATIVE_HOST_NAME)
+  See docs/store/MSIX_FEASIBILITY.md for why each entry exists.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
+  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:virtualization="http://schemas.microsoft.com/appx/manifest/virtualization/windows10"
+  IgnorableNamespaces="uap uap5 uap10 desktop desktop6 rescap virtualization">
+
+  <Identity
+    Name="@IDENTITY_NAME@"
+    Publisher="@PUBLISHER@"
+    Version="@VERSION@"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>@DISPLAY_NAME@</DisplayName>
+    <PublisherDisplayName>@PUBLISHER_DISPLAY_NAME@</PublisherDisplayName>
+    <Logo>PackageAssets\StoreLogo.png</Logo>
+    <Description>Local-first password manager with a browser bridge.</Description>
+
+    <!-- Windows 10: flexible virtualization is not available, so AppData and
+         HKCU write virtualization is switched off for the whole package. That
+         matches what the Inno Setup build does today.
+         Windows 11 (measured on build 26200, docs/store/MSIX_FEASIBILITY.md):
+         the AppData exclusion below replaces the file-system flag, but the
+         registry flag stays in force and is what makes new HKCU keys real; the
+         ExcludedKeys list alone left every write private. Even with the flag,
+         changing a value that already exists in the real HKCU is copy-on-write,
+         so browser_bridge only creates missing keys in a packaged build. -->
+    <desktop6:FileSystemWriteVirtualization>disabled</desktop6:FileSystemWriteVirtualization>
+    <desktop6:RegistryWriteVirtualization>disabled</desktop6:RegistryWriteVirtualization>
+
+    <!-- Windows 11: only these locations are meant to be written to the real
+         AppData and HKCU; everything else stays private to the package. -->
+    <virtualization:FileSystemWriteVirtualization>
+      <virtualization:ExcludedDirectories>
+        <!-- Vault, settings, backups state, install.json and the native
+             messaging manifests: shared with the Inno Setup build, readable by
+             the browsers, and kept when the package is uninstalled. -->
+        <virtualization:ExcludedDirectory>$(KnownFolder:LocalAppData)\LocalGateKeys</virtualization:ExcludedDirectory>
+      </virtualization:ExcludedDirectories>
+    </virtualization:FileSystemWriteVirtualization>
+    <virtualization:RegistryWriteVirtualization>
+      <virtualization:ExcludedKeys>
+        <!-- Browsers read native-messaging registrations from the real HKCU.
+             Kept as the documented declaration (other packaged apps with browser
+             helpers ship the same form); see the note above for what actually
+             governs these writes. -->
+        <virtualization:ExcludedKey>HKEY_CURRENT_USER\Software\Google\Chrome\NativeMessagingHosts\com.localgatekeys.app</virtualization:ExcludedKey>
+        <virtualization:ExcludedKey>HKEY_CURRENT_USER\Software\Microsoft\Edge\NativeMessagingHosts\com.localgatekeys.app</virtualization:ExcludedKey>
+        <virtualization:ExcludedKey>HKEY_CURRENT_USER\Software\Mozilla\NativeMessagingHosts\com.localgatekeys.app</virtualization:ExcludedKey>
+      </virtualization:ExcludedKeys>
+    </virtualization:RegistryWriteVirtualization>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application
+      Id="LocalGateKeys"
+      Executable="LocalGateKeys.exe"
+      uap10:RuntimeBehavior="packagedClassicApp"
+      uap10:TrustLevel="mediumIL">
+      <uap:VisualElements
+        DisplayName="@DISPLAY_NAME@"
+        Description="Local-first password manager"
+        BackgroundColor="transparent"
+        Square150x150Logo="PackageAssets\Square150x150Logo.png"
+        Square44x44Logo="PackageAssets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="PackageAssets\Wide310x150Logo.png" />
+      </uap:VisualElements>
+      <Extensions>
+        <!-- Replaces the HKCU Run value; switched by localvault.msix_startup.
+             Off until the user turns on Start with Windows. -->
+        <desktop:Extension
+          Category="windows.startupTask"
+          Executable="LocalGateKeys.exe"
+          EntryPoint="Windows.FullTrustApplication"
+          uap10:Parameters="--background">
+          <desktop:StartupTask TaskId="LocalGateKeysStartup" Enabled="false" DisplayName="@DISPLAY_NAME@" />
+        </desktop:Extension>
+        <!-- The Chromium/Firefox native-messaging host. Browsers launch it through
+             %LOCALAPPDATA%\Microsoft\WindowsApps\<family name>\LocalGateKeysNativeHost.exe,
+             which survives package updates and gives the host package identity.
+             It hangs off the main app (like wt.exe in Windows Terminal): a second
+             hidden Application (no Start menu entry) is a "headless app", which the
+             Store rejects without a HeadlessAppBypass waiver. -->
+        <uap5:Extension
+          Category="windows.appExecutionAlias"
+          Executable="NativeHost\LocalGateKeysNativeHost.exe"
+          EntryPoint="Windows.FullTrustApplication">
+          <uap5:AppExecutionAlias>
+            <uap5:ExecutionAlias Alias="LocalGateKeysNativeHost.exe" />
+          </uap5:AppExecutionAlias>
+        </uap5:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+    <!-- Needed for the virtualization exclusions above; Partner Center asks
+         for a justification (text in docs/store/MICROSOFT_STORE_CHECKLIST.md). -->
+    <rescap:Capability Name="unvirtualizedResources" />
+    <!-- Optional face unlock / camera confirmation. Packaged apps get their own
+         entry under Settings > Privacy > Camera and must declare it. -->
+    <DeviceCapability Name="webcam" />
+  </Capabilities>
+</Package>

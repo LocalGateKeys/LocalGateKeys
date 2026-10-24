@@ -1,0 +1,5 @@
+type,name,url,email,username,password,note,totp,createTime,modifyTime,vault
+login,Example Social,"https://social.example.com/login, https://m.social.example.com",alex@example.com,alex_example,proton-csv-pass-1,Personal profile.,otpauth://totp/Social:alex?secret=JBSWY3DPEHPK3PXP&issuer=Social,1700000000,1700100000,Personal
+note,Locker combination,,,,,12-34-56,,1700000000,1700000000,Personal
+alias,Newsletter alias,,news.fixture@passmail.example,,,,,1700000000,1700000000,Personal
+creditCard,Shopping Visa,,,,,Online purchases only.,,1700000000,1700000000,Personal

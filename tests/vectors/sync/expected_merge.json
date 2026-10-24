@@ -1,0 +1,892 @@
+{
+  "bridge_stored_states": [
+    {
+      "canonical_sha256": "31bf232b4b6cd39504646661558292ee2d7b46b556d9c8fd654158998c5f9fde",
+      "deleted": false,
+      "deleted_at": null,
+      "id": "11111111-aaaa-4000-8000-000000000001",
+      "item": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789913600,
+          "favorite": false,
+          "id": "11111111-aaaa-4000-8000-000000000001",
+          "kind": "web",
+          "label": "Example account",
+          "notes": "Password rotated from the desk PC.",
+          "password": "Maple-Orbit-7731",
+          "password_history": [
+            {
+              "changed_at": 1789996400,
+              "password": "hunter2-sample-only"
+            }
+          ],
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://accounts.example.com"
+          },
+          "tags": [
+            "personal"
+          ],
+          "totp": {
+            "algorithm": "SHA1",
+            "digits": 6,
+            "period": 30,
+            "secret": "JBSWY3DPEHPK3PXP"
+          },
+          "updated_at": 1790000500,
+          "username": "sample.user@example.com"
+        },
+        "schema": 1,
+        "updated_at": 1790000500
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 2,
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    },
+    {
+      "canonical_sha256": "ebc4a904fa1358537b19196705f536966c84e6eebb6aec0e658de85c6706bf8e",
+      "deleted": false,
+      "deleted_at": null,
+      "id": "22222222-aaaa-4000-8000-000000000002",
+      "item": {
+        "ns": "item",
+        "record": {
+          "created_at": 1789956800,
+          "favorite": true,
+          "id": "22222222-aaaa-4000-8000-000000000002",
+          "kind": "note",
+          "payload": {
+            "body": "Router sits behind the pantry door.\nReset button: hold 10 s.",
+            "fields": [
+              {
+                "hidden": false,
+                "name": "SSID",
+                "value": "CabinNet-5G"
+              },
+              {
+                "hidden": true,
+                "name": "Passphrase",
+                "value": "pine-cone-lantern-88"
+              }
+            ],
+            "template_id": null
+          },
+          "tags": [
+            "home"
+          ],
+          "title": "Wi-Fi at the cabin",
+          "updated_at": 1789956800
+        },
+        "schema": 1,
+        "updated_at": 1789956800
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1
+      }
+    },
+    {
+      "canonical_sha256": "d955ca76d5246526f001bb1141f8a2a679eb363249100ecd3d2f8f9164c3a768",
+      "deleted": false,
+      "deleted_at": null,
+      "id": "33333333-aaaa-4000-8000-000000000003",
+      "item": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789992800,
+          "favorite": false,
+          "id": "33333333-aaaa-4000-8000-000000000003",
+          "kind": "desktop",
+          "label": "Sample Mail Client",
+          "password": "desk-pass-sample",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "binding_mode": "strict",
+            "control_fingerprint": [
+              {
+                "automation_id": "txtUser",
+                "control_type": "Edit",
+                "name": "Username"
+              },
+              {
+                "automation_id": "txtPass",
+                "control_type": "Edit",
+                "name": "Password"
+              }
+            ],
+            "exe_path": "C:/Program Files/SampleMail/samplemail.exe",
+            "exe_sha256": "ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
+            "password_selector": {
+              "automation_id": "txtPass"
+            },
+            "username_selector": {
+              "automation_id": "txtUser"
+            },
+            "window_title": "SampleMail - Sign in"
+          },
+          "tags": [],
+          "updated_at": 1789992800,
+          "username": "desk.user"
+        },
+        "schema": 1,
+        "updated_at": 1789992800
+      },
+      "vv": {
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    },
+    {
+      "canonical_sha256": null,
+      "deleted": true,
+      "deleted_at": 1790000300,
+      "id": "44444444-aaaa-4000-8000-000000000004",
+      "item": null,
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1,
+        "c3333333-0000-4000-8000-00000000000c": 1
+      }
+    },
+    {
+      "canonical_sha256": "3d8013767b4b899c1c9540ffab11d22298a42777c90fe70c32e9b4ad1829dd43",
+      "deleted": false,
+      "deleted_at": null,
+      "id": "55555555-aaaa-4000-8000-000000000005",
+      "item": {
+        "ns": "item",
+        "record": {
+          "created_at": 1789913600,
+          "favorite": false,
+          "id": "55555555-aaaa-4000-8000-000000000005",
+          "kind": "bookmark",
+          "payload": {
+            "notes": "Opening hours and phone.",
+            "template_id": null,
+            "url": "https://www.example.net/help/contact"
+          },
+          "tags": [],
+          "title": "Bank help page",
+          "updated_at": 1790000450
+        },
+        "schema": 1,
+        "updated_at": 1790000450
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1,
+        "b2222222-0000-4000-8000-00000000000b": 1,
+        "c3333333-0000-4000-8000-00000000000c": 1
+      }
+    },
+    {
+      "canonical_sha256": "006adde49fc85ed5944e2257f39903dd7822b0ba893ed87c9c2ee204d4143158",
+      "deleted": false,
+      "deleted_at": null,
+      "id": "66666666-aaaa-4000-8000-000000000006",
+      "item": {
+        "ns": "item",
+        "record": {
+          "created_at": 1790000300,
+          "favorite": false,
+          "id": "66666666-aaaa-4000-8000-000000000006",
+          "kind": "note",
+          "payload": {
+            "body": "Grüße aus Zürich 🔑\n\tTab, \"quotes\", back\\slash, slash/ok, é中文",
+            "fields": [
+              {
+                "hidden": false,
+                "name": "Hotel",
+                "value": "Hôtel du Lac"
+              }
+            ],
+            "template_id": null
+          },
+          "tags": [
+            "travel"
+          ],
+          "title": "Zürich trip ✈ \"café\" back\\slash",
+          "updated_at": 1790000300
+        },
+        "schema": 1,
+        "updated_at": 1790000300
+      },
+      "vv": {
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    },
+    {
+      "canonical_sha256": "d6fbafb847761ffd377e5ed437e9a5585ca4947b780ed71b7d3185ae22c1f710",
+      "deleted": false,
+      "deleted_at": null,
+      "id": "77777777-aaaa-4000-8000-000000000007",
+      "item": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789995000,
+          "custom_fields": [
+            {
+              "a": "ascii",
+              "f_0_1": 0.1,
+              "f_100": 100.0,
+              "f_1e+16": 1e+16,
+              "f_1e-07": 1e-07,
+              "f_neg_zero": -0.0,
+              "i_2p62": 4611686018427387904,
+              "é": "e-acute",
+              "ｚ": "fullwidth z",
+              "🔑": "key emoji"
+            }
+          ],
+          "favorite": false,
+          "id": "77777777-aaaa-4000-8000-000000000007",
+          "kind": "web",
+          "label": "Café Zürich ☕",
+          "notes": "Änderung auf dem Desktop — 中文",
+          "password": "tie-pass-from-A",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://xn--caf-dma.example.com"
+          },
+          "tags": [],
+          "updated_at": 1790000600,
+          "username": "user@café.example.com"
+        },
+        "schema": 1,
+        "updated_at": 1790000600
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 2,
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    },
+    {
+      "canonical_sha256": "99fc228b3aeedfe7efa13346f9090526f7a306f5b8d8c8ac1cba4969355381ce",
+      "deleted": false,
+      "deleted_at": null,
+      "id": "9e9a151e-b5a5-5e08-b722-1d16a2f77f8d",
+      "item": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789995000,
+          "custom_fields": [
+            {
+              "a": "ascii",
+              "f_0_1": 0.1,
+              "f_100": 100.0,
+              "f_1e+16": 1e+16,
+              "f_1e-07": 1e-07,
+              "f_neg_zero": -0.0,
+              "i_2p62": 4611686018427387904,
+              "é": "e-acute",
+              "ｚ": "fullwidth z",
+              "🔑": "key emoji"
+            }
+          ],
+          "favorite": false,
+          "id": "9e9a151e-b5a5-5e08-b722-1d16a2f77f8d",
+          "kind": "web",
+          "label": "Café Zürich 🔑 (sync conflict)",
+          "notes": "Changement sur l'ordinateur portable — café",
+          "password": "tie-pass-from-B",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://xn--caf-dma.example.com"
+          },
+          "tags": [],
+          "updated_at": 1790000600,
+          "username": "user@café.example.com"
+        },
+        "schema": 1,
+        "updated_at": 1790000600
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1,
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    },
+    {
+      "canonical_sha256": "6781c33e92b435ed9e4d3acbad8bab112323edc2cfa10f3c10eee44da9f8405f",
+      "deleted": false,
+      "deleted_at": null,
+      "id": "aae4dd4f-f438-50f3-8b77-60277aae935e",
+      "item": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789913600,
+          "favorite": false,
+          "id": "aae4dd4f-f438-50f3-8b77-60277aae935e",
+          "kind": "web",
+          "label": "Example account (work) (sync conflict)",
+          "notes": "Renamed from the laptop.",
+          "password": "hunter2-sample-only",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "recovery_codes": [
+            "7Q4K-2M9X",
+            "B8T1-5ZHP"
+          ],
+          "scope": {
+            "origin": "https://accounts.example.com"
+          },
+          "tags": [
+            "work"
+          ],
+          "updated_at": 1790000400,
+          "username": "work.user@example.com"
+        },
+        "schema": 1,
+        "updated_at": 1790000400
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1,
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    }
+  ],
+  "conflict_copies": [
+    {
+      "content_digest": "3e7f77b68abec786e500fe26633d7e5da1a7cac00e4d9ba34494ef6002cd3285",
+      "copy_id": "9e9a151e-b5a5-5e08-b722-1d16a2f77f8d",
+      "loser_wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789995000,
+          "custom_fields": [
+            {
+              "a": "ascii",
+              "f_0_1": 0.1,
+              "f_100": 100.0,
+              "f_1e+16": 1e+16,
+              "f_1e-07": 1e-07,
+              "f_neg_zero": -0.0,
+              "i_2p62": 4611686018427387904,
+              "é": "e-acute",
+              "ｚ": "fullwidth z",
+              "🔑": "key emoji"
+            }
+          ],
+          "favorite": false,
+          "id": "77777777-aaaa-4000-8000-000000000007",
+          "kind": "web",
+          "label": "Café Zürich 🔑",
+          "notes": "Changement sur l'ordinateur portable — café",
+          "password": "tie-pass-from-B",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://xn--caf-dma.example.com"
+          },
+          "tags": [],
+          "updated_at": 1790000600,
+          "username": "user@café.example.com"
+        },
+        "schema": 1,
+        "updated_at": 1790000600
+      },
+      "original_id": "77777777-aaaa-4000-8000-000000000007"
+    },
+    {
+      "content_digest": "b3e57012a3059fe565611846164cd6af2ebe5c0d60682f65754a5337771dbd26",
+      "copy_id": "aae4dd4f-f438-50f3-8b77-60277aae935e",
+      "loser_wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789913600,
+          "favorite": false,
+          "id": "11111111-aaaa-4000-8000-000000000001",
+          "kind": "web",
+          "label": "Example account (work)",
+          "notes": "Renamed from the laptop.",
+          "password": "hunter2-sample-only",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "recovery_codes": [
+            "7Q4K-2M9X",
+            "B8T1-5ZHP"
+          ],
+          "scope": {
+            "origin": "https://accounts.example.com"
+          },
+          "tags": [
+            "work"
+          ],
+          "updated_at": 1790000400,
+          "username": "work.user@example.com"
+        },
+        "schema": 1,
+        "updated_at": 1790000400
+      },
+      "original_id": "11111111-aaaa-4000-8000-000000000001"
+    }
+  ],
+  "conflict_suffix": " (sync conflict)",
+  "description": "Final state after merging the three device files in any order (see README.md). engine_states is the engine result (what merge returns, applied to the local map). bridge_stored_states is the same set as the vault bridge stores it: identical except that the conflict copy has no top-level 'id', its record id is the copy id and its label carries the ' (sync conflict)' suffix.",
+  "engine_states": [
+    {
+      "canonical_sha256": "31bf232b4b6cd39504646661558292ee2d7b46b556d9c8fd654158998c5f9fde",
+      "deleted": false,
+      "deleted_at": null,
+      "id": "11111111-aaaa-4000-8000-000000000001",
+      "item": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789913600,
+          "favorite": false,
+          "id": "11111111-aaaa-4000-8000-000000000001",
+          "kind": "web",
+          "label": "Example account",
+          "notes": "Password rotated from the desk PC.",
+          "password": "Maple-Orbit-7731",
+          "password_history": [
+            {
+              "changed_at": 1789996400,
+              "password": "hunter2-sample-only"
+            }
+          ],
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://accounts.example.com"
+          },
+          "tags": [
+            "personal"
+          ],
+          "totp": {
+            "algorithm": "SHA1",
+            "digits": 6,
+            "period": 30,
+            "secret": "JBSWY3DPEHPK3PXP"
+          },
+          "updated_at": 1790000500,
+          "username": "sample.user@example.com"
+        },
+        "schema": 1,
+        "updated_at": 1790000500
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 2,
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    },
+    {
+      "canonical_sha256": "ebc4a904fa1358537b19196705f536966c84e6eebb6aec0e658de85c6706bf8e",
+      "deleted": false,
+      "deleted_at": null,
+      "id": "22222222-aaaa-4000-8000-000000000002",
+      "item": {
+        "ns": "item",
+        "record": {
+          "created_at": 1789956800,
+          "favorite": true,
+          "id": "22222222-aaaa-4000-8000-000000000002",
+          "kind": "note",
+          "payload": {
+            "body": "Router sits behind the pantry door.\nReset button: hold 10 s.",
+            "fields": [
+              {
+                "hidden": false,
+                "name": "SSID",
+                "value": "CabinNet-5G"
+              },
+              {
+                "hidden": true,
+                "name": "Passphrase",
+                "value": "pine-cone-lantern-88"
+              }
+            ],
+            "template_id": null
+          },
+          "tags": [
+            "home"
+          ],
+          "title": "Wi-Fi at the cabin",
+          "updated_at": 1789956800
+        },
+        "schema": 1,
+        "updated_at": 1789956800
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1
+      }
+    },
+    {
+      "canonical_sha256": "d955ca76d5246526f001bb1141f8a2a679eb363249100ecd3d2f8f9164c3a768",
+      "deleted": false,
+      "deleted_at": null,
+      "id": "33333333-aaaa-4000-8000-000000000003",
+      "item": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789992800,
+          "favorite": false,
+          "id": "33333333-aaaa-4000-8000-000000000003",
+          "kind": "desktop",
+          "label": "Sample Mail Client",
+          "password": "desk-pass-sample",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "binding_mode": "strict",
+            "control_fingerprint": [
+              {
+                "automation_id": "txtUser",
+                "control_type": "Edit",
+                "name": "Username"
+              },
+              {
+                "automation_id": "txtPass",
+                "control_type": "Edit",
+                "name": "Password"
+              }
+            ],
+            "exe_path": "C:/Program Files/SampleMail/samplemail.exe",
+            "exe_sha256": "ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
+            "password_selector": {
+              "automation_id": "txtPass"
+            },
+            "username_selector": {
+              "automation_id": "txtUser"
+            },
+            "window_title": "SampleMail - Sign in"
+          },
+          "tags": [],
+          "updated_at": 1789992800,
+          "username": "desk.user"
+        },
+        "schema": 1,
+        "updated_at": 1789992800
+      },
+      "vv": {
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    },
+    {
+      "canonical_sha256": null,
+      "deleted": true,
+      "deleted_at": 1790000300,
+      "id": "44444444-aaaa-4000-8000-000000000004",
+      "item": null,
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1,
+        "c3333333-0000-4000-8000-00000000000c": 1
+      }
+    },
+    {
+      "canonical_sha256": "3d8013767b4b899c1c9540ffab11d22298a42777c90fe70c32e9b4ad1829dd43",
+      "deleted": false,
+      "deleted_at": null,
+      "id": "55555555-aaaa-4000-8000-000000000005",
+      "item": {
+        "ns": "item",
+        "record": {
+          "created_at": 1789913600,
+          "favorite": false,
+          "id": "55555555-aaaa-4000-8000-000000000005",
+          "kind": "bookmark",
+          "payload": {
+            "notes": "Opening hours and phone.",
+            "template_id": null,
+            "url": "https://www.example.net/help/contact"
+          },
+          "tags": [],
+          "title": "Bank help page",
+          "updated_at": 1790000450
+        },
+        "schema": 1,
+        "updated_at": 1790000450
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1,
+        "b2222222-0000-4000-8000-00000000000b": 1,
+        "c3333333-0000-4000-8000-00000000000c": 1
+      }
+    },
+    {
+      "canonical_sha256": "006adde49fc85ed5944e2257f39903dd7822b0ba893ed87c9c2ee204d4143158",
+      "deleted": false,
+      "deleted_at": null,
+      "id": "66666666-aaaa-4000-8000-000000000006",
+      "item": {
+        "ns": "item",
+        "record": {
+          "created_at": 1790000300,
+          "favorite": false,
+          "id": "66666666-aaaa-4000-8000-000000000006",
+          "kind": "note",
+          "payload": {
+            "body": "Grüße aus Zürich 🔑\n\tTab, \"quotes\", back\\slash, slash/ok, é中文",
+            "fields": [
+              {
+                "hidden": false,
+                "name": "Hotel",
+                "value": "Hôtel du Lac"
+              }
+            ],
+            "template_id": null
+          },
+          "tags": [
+            "travel"
+          ],
+          "title": "Zürich trip ✈ \"café\" back\\slash",
+          "updated_at": 1790000300
+        },
+        "schema": 1,
+        "updated_at": 1790000300
+      },
+      "vv": {
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    },
+    {
+      "canonical_sha256": "d6fbafb847761ffd377e5ed437e9a5585ca4947b780ed71b7d3185ae22c1f710",
+      "deleted": false,
+      "deleted_at": null,
+      "id": "77777777-aaaa-4000-8000-000000000007",
+      "item": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789995000,
+          "custom_fields": [
+            {
+              "a": "ascii",
+              "f_0_1": 0.1,
+              "f_100": 100.0,
+              "f_1e+16": 1e+16,
+              "f_1e-07": 1e-07,
+              "f_neg_zero": -0.0,
+              "i_2p62": 4611686018427387904,
+              "é": "e-acute",
+              "ｚ": "fullwidth z",
+              "🔑": "key emoji"
+            }
+          ],
+          "favorite": false,
+          "id": "77777777-aaaa-4000-8000-000000000007",
+          "kind": "web",
+          "label": "Café Zürich ☕",
+          "notes": "Änderung auf dem Desktop — 中文",
+          "password": "tie-pass-from-A",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://xn--caf-dma.example.com"
+          },
+          "tags": [],
+          "updated_at": 1790000600,
+          "username": "user@café.example.com"
+        },
+        "schema": 1,
+        "updated_at": 1790000600
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 2,
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    },
+    {
+      "canonical_sha256": "3e32b95aba40f48a38e86c7195a1a6c8fa2910f635c5a651e0e696c7e3130d9e",
+      "deleted": false,
+      "deleted_at": null,
+      "id": "9e9a151e-b5a5-5e08-b722-1d16a2f77f8d",
+      "item": {
+        "id": "9e9a151e-b5a5-5e08-b722-1d16a2f77f8d",
+        "ns": "entry",
+        "record": {
+          "created_at": 1789995000,
+          "custom_fields": [
+            {
+              "a": "ascii",
+              "f_0_1": 0.1,
+              "f_100": 100.0,
+              "f_1e+16": 1e+16,
+              "f_1e-07": 1e-07,
+              "f_neg_zero": -0.0,
+              "i_2p62": 4611686018427387904,
+              "é": "e-acute",
+              "ｚ": "fullwidth z",
+              "🔑": "key emoji"
+            }
+          ],
+          "favorite": false,
+          "id": "77777777-aaaa-4000-8000-000000000007",
+          "kind": "web",
+          "label": "Café Zürich 🔑",
+          "notes": "Changement sur l'ordinateur portable — café",
+          "password": "tie-pass-from-B",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://xn--caf-dma.example.com"
+          },
+          "tags": [],
+          "updated_at": 1790000600,
+          "username": "user@café.example.com"
+        },
+        "schema": 1,
+        "updated_at": 1790000600
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1,
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    },
+    {
+      "canonical_sha256": "94160d3a4103e867601e2ebfde9d79a9be1883543526d913c60a0d00cfdba8e7",
+      "deleted": false,
+      "deleted_at": null,
+      "id": "aae4dd4f-f438-50f3-8b77-60277aae935e",
+      "item": {
+        "id": "aae4dd4f-f438-50f3-8b77-60277aae935e",
+        "ns": "entry",
+        "record": {
+          "created_at": 1789913600,
+          "favorite": false,
+          "id": "11111111-aaaa-4000-8000-000000000001",
+          "kind": "web",
+          "label": "Example account (work)",
+          "notes": "Renamed from the laptop.",
+          "password": "hunter2-sample-only",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "recovery_codes": [
+            "7Q4K-2M9X",
+            "B8T1-5ZHP"
+          ],
+          "scope": {
+            "origin": "https://accounts.example.com"
+          },
+          "tags": [
+            "work"
+          ],
+          "updated_at": 1790000400,
+          "username": "work.user@example.com"
+        },
+        "schema": 1,
+        "updated_at": 1790000400
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1,
+        "b2222222-0000-4000-8000-00000000000b": 1
+      }
+    }
+  ],
+  "fold_steps": {
+    "ABC": [
+      {
+        "conflicts": [
+          "11111111-aaaa-4000-8000-000000000001",
+          "77777777-aaaa-4000-8000-000000000007"
+        ],
+        "copies": [
+          "9e9a151e-b5a5-5e08-b722-1d16a2f77f8d",
+          "aae4dd4f-f438-50f3-8b77-60277aae935e"
+        ],
+        "deletes": [],
+        "local": "A",
+        "remote": "B",
+        "upserts": [
+          "11111111-aaaa-4000-8000-000000000001",
+          "55555555-aaaa-4000-8000-000000000005",
+          "66666666-aaaa-4000-8000-000000000006",
+          "77777777-aaaa-4000-8000-000000000007"
+        ]
+      },
+      {
+        "conflicts": [
+          "55555555-aaaa-4000-8000-000000000005"
+        ],
+        "copies": [],
+        "deletes": [
+          "44444444-aaaa-4000-8000-000000000004"
+        ],
+        "local": "A+B",
+        "remote": "C",
+        "upserts": [
+          "55555555-aaaa-4000-8000-000000000005"
+        ]
+      }
+    ],
+    "CBA": [
+      {
+        "conflicts": [
+          "55555555-aaaa-4000-8000-000000000005"
+        ],
+        "copies": [],
+        "deletes": [],
+        "local": "C",
+        "remote": "B",
+        "upserts": [
+          "11111111-aaaa-4000-8000-000000000001",
+          "55555555-aaaa-4000-8000-000000000005",
+          "66666666-aaaa-4000-8000-000000000006",
+          "77777777-aaaa-4000-8000-000000000007"
+        ]
+      },
+      {
+        "conflicts": [
+          "11111111-aaaa-4000-8000-000000000001",
+          "77777777-aaaa-4000-8000-000000000007"
+        ],
+        "copies": [
+          "9e9a151e-b5a5-5e08-b722-1d16a2f77f8d",
+          "aae4dd4f-f438-50f3-8b77-60277aae935e"
+        ],
+        "deletes": [],
+        "local": "C+B",
+        "remote": "A",
+        "upserts": [
+          "11111111-aaaa-4000-8000-000000000001",
+          "77777777-aaaa-4000-8000-000000000007"
+        ]
+      }
+    ]
+  },
+  "notes": {
+    "11111111-aaaa-4000-8000-000000000001": "concurrent edit by A and B: A has the larger updated_at and keeps the id with the merged vector; B's version becomes the conflict copy.",
+    "22222222-aaaa-4000-8000-000000000002": "unchanged everywhere.",
+    "33333333-aaaa-4000-8000-000000000003": "unchanged everywhere.",
+    "44444444-aaaa-4000-8000-000000000004": "C's tombstone dominates A's and B's live copies: deleted.",
+    "55555555-aaaa-4000-8000-000000000005": "B edited while C deleted: concurrent edit vs delete keeps the live item with the merged vector; the tombstone is not applied.",
+    "66666666-aaaa-4000-8000-000000000006": "only B has it; exercises non-ASCII canonical JSON.",
+    "77777777-aaaa-4000-8000-000000000007": "concurrent edit with EQUAL updated_at (T0+600): the larger sha256 of the canonical item wins (digest tie-break); the other becomes a conflict copy. The custom field row holds keys a, é, U+FF5A, U+1F511 (code point order, not UTF-16) and the floats 0.1, 1e-07, 1e+16, 100.0, -0.0 plus the int 2**62."
+  }
+}

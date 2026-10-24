@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "models": [
+    {
+      "name": "face_detection_yunet_2023mar.onnx",
+      "sha256": "8F2383E4DD3CFBB4553EA8718107FC0423210DC964F9F4280604804ED2552FA4",
+      "size": 232589
+    },
+    {
+      "name": "face_recognition_sface_2021dec_int8bq.onnx",
+      "sha256": "FB143EEA07838AA532D1C95DF5F69899974EA0140E1FBA05E94204BE13ED74EE",
+      "size": 10667852
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+// Licence-issuing Worker. Setup and secrets: README.md in this directory.
+{
+  "name": "lgk-license-issuer",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  // Deploys only once the custom domain exists; never expose a workers.dev URL.
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "licenses.localgatekeys.app", "custom_domain": true }],
+  "kv_namespaces": [
+    {
+      "binding": "LICENSES",
+      "id": "9ca65df7adf240379d94780669358143"
+    }
+  ],
+  // Non-secret settings go in "vars" (never `secret put`); see README.md:
+  //   PRODUCT_IDS (required: unset/empty makes every webhook 500), PROVIDER,
+  //   ALLOW_TEST_MODE, SUPPORT_EMAIL
+  // Paddle live product "LocalGateKeys Pro" (price pri_01m58y8e705ns678gmwpzfefwj, US$4.99 one-time).
+  "vars": {
+    "PROVIDER": "paddle",
+    "PRODUCT_IDS": "pro_01m58y778xrg43pvvznfhy5k0d",
+    "SUPPORT_EMAIL": "support@localgatekeys.app"
+  },
+  "observability": { "enabled": true }
+}

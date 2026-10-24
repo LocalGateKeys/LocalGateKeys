@@ -1,0 +1,432 @@
+{
+  "cases": [
+    {
+      "expect": "accepted",
+      "item_id": "99999999-aaaa-4000-8000-000000000009",
+      "name": "entry_schema_1",
+      "wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789996400,
+          "favorite": false,
+          "id": "99999999-aaaa-4000-8000-000000000009",
+          "kind": "web",
+          "label": "Schema sample",
+          "password": "schema-pass-sample",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://schema.example.com"
+          },
+          "tags": [],
+          "updated_at": 1789998200,
+          "username": "schema.user@example.com"
+        },
+        "schema": 1,
+        "updated_at": 1789998200
+      }
+    },
+    {
+      "expect": "accepted",
+      "item_id": "99999999-aaaa-4000-8000-00000000000a",
+      "name": "item_schema_1",
+      "wrapper": {
+        "ns": "item",
+        "record": {
+          "created_at": 1789996400,
+          "favorite": false,
+          "id": "99999999-aaaa-4000-8000-00000000000a",
+          "kind": "note",
+          "payload": {
+            "body": "Sample text.",
+            "fields": [],
+            "template_id": null
+          },
+          "tags": [],
+          "title": "Schema note",
+          "updated_at": 1789998200
+        },
+        "schema": 1,
+        "updated_at": 1789998200
+      }
+    },
+    {
+      "expect": "update-needed",
+      "item_id": "99999999-aaaa-4000-8000-000000000009",
+      "name": "entry_schema_2",
+      "wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789996400,
+          "favorite": false,
+          "id": "99999999-aaaa-4000-8000-000000000009",
+          "kind": "web",
+          "label": "Schema sample",
+          "password": "schema-pass-sample",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://schema.example.com"
+          },
+          "tags": [],
+          "updated_at": 1789998200,
+          "username": "schema.user@example.com"
+        },
+        "schema": 2,
+        "updated_at": 1789998200
+      }
+    },
+    {
+      "expect": "update-needed",
+      "item_id": "99999999-aaaa-4000-8000-00000000000a",
+      "name": "item_schema_2",
+      "wrapper": {
+        "ns": "item",
+        "record": {
+          "created_at": 1789996400,
+          "favorite": false,
+          "id": "99999999-aaaa-4000-8000-00000000000a",
+          "kind": "note",
+          "payload": {
+            "body": "Sample text.",
+            "fields": [],
+            "template_id": null
+          },
+          "tags": [],
+          "title": "Schema note",
+          "updated_at": 1789998200
+        },
+        "schema": 2,
+        "updated_at": 1789998200
+      }
+    },
+    {
+      "expect": "update-needed",
+      "item_id": "99999999-aaaa-4000-8000-000000000009",
+      "name": "entry_schema_99",
+      "wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789996400,
+          "favorite": false,
+          "id": "99999999-aaaa-4000-8000-000000000009",
+          "kind": "web",
+          "label": "Schema sample",
+          "password": "schema-pass-sample",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://schema.example.com"
+          },
+          "tags": [],
+          "updated_at": 1789998200,
+          "username": "schema.user@example.com"
+        },
+        "schema": 99,
+        "updated_at": 1789998200
+      }
+    },
+    {
+      "expect": "update-needed",
+      "item_id": "99999999-aaaa-4000-8000-000000000009",
+      "name": "entry_schema_2_extra_wrapper_key",
+      "wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789996400,
+          "favorite": false,
+          "id": "99999999-aaaa-4000-8000-000000000009",
+          "kind": "web",
+          "label": "Schema sample",
+          "password": "schema-pass-sample",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://schema.example.com"
+          },
+          "tags": [],
+          "updated_at": 1789998200,
+          "username": "schema.user@example.com"
+        },
+        "schema": 2,
+        "signed_by": "future",
+        "updated_at": 1789998200
+      }
+    },
+    {
+      "expect": "bad-remote",
+      "item_id": "99999999-aaaa-4000-8000-000000000009",
+      "name": "entry_schema_1_extra_wrapper_key",
+      "wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789996400,
+          "favorite": false,
+          "id": "99999999-aaaa-4000-8000-000000000009",
+          "kind": "web",
+          "label": "Schema sample",
+          "password": "schema-pass-sample",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://schema.example.com"
+          },
+          "tags": [],
+          "updated_at": 1789998200,
+          "username": "schema.user@example.com"
+        },
+        "schema": 1,
+        "signed_by": "future",
+        "updated_at": 1789998200
+      }
+    },
+    {
+      "expect": "bad-remote",
+      "item_id": "99999999-aaaa-4000-8000-000000000009",
+      "name": "entry_schema_true_extra_wrapper_key",
+      "wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789996400,
+          "favorite": false,
+          "id": "99999999-aaaa-4000-8000-000000000009",
+          "kind": "web",
+          "label": "Schema sample",
+          "password": "schema-pass-sample",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://schema.example.com"
+          },
+          "tags": [],
+          "updated_at": 1789998200,
+          "username": "schema.user@example.com"
+        },
+        "schema": true,
+        "signed_by": "future",
+        "updated_at": 1789998200
+      }
+    },
+    {
+      "expect": "bad-remote",
+      "item_id": "99999999-aaaa-4000-8000-000000000009",
+      "name": "entry_schema_missing",
+      "wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789996400,
+          "favorite": false,
+          "id": "99999999-aaaa-4000-8000-000000000009",
+          "kind": "web",
+          "label": "Schema sample",
+          "password": "schema-pass-sample",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://schema.example.com"
+          },
+          "tags": [],
+          "updated_at": 1789998200,
+          "username": "schema.user@example.com"
+        },
+        "updated_at": 1789998200
+      }
+    },
+    {
+      "expect": "bad-remote",
+      "item_id": "99999999-aaaa-4000-8000-000000000009",
+      "name": "entry_schema_0",
+      "wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789996400,
+          "favorite": false,
+          "id": "99999999-aaaa-4000-8000-000000000009",
+          "kind": "web",
+          "label": "Schema sample",
+          "password": "schema-pass-sample",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://schema.example.com"
+          },
+          "tags": [],
+          "updated_at": 1789998200,
+          "username": "schema.user@example.com"
+        },
+        "schema": 0,
+        "updated_at": 1789998200
+      }
+    },
+    {
+      "expect": "bad-remote",
+      "item_id": "99999999-aaaa-4000-8000-000000000009",
+      "name": "entry_schema_negative",
+      "wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789996400,
+          "favorite": false,
+          "id": "99999999-aaaa-4000-8000-000000000009",
+          "kind": "web",
+          "label": "Schema sample",
+          "password": "schema-pass-sample",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://schema.example.com"
+          },
+          "tags": [],
+          "updated_at": 1789998200,
+          "username": "schema.user@example.com"
+        },
+        "schema": -1,
+        "updated_at": 1789998200
+      }
+    },
+    {
+      "expect": "bad-remote",
+      "item_id": "99999999-aaaa-4000-8000-000000000009",
+      "name": "entry_schema_string_1",
+      "wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789996400,
+          "favorite": false,
+          "id": "99999999-aaaa-4000-8000-000000000009",
+          "kind": "web",
+          "label": "Schema sample",
+          "password": "schema-pass-sample",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://schema.example.com"
+          },
+          "tags": [],
+          "updated_at": 1789998200,
+          "username": "schema.user@example.com"
+        },
+        "schema": "1",
+        "updated_at": 1789998200
+      }
+    },
+    {
+      "expect": "bad-remote",
+      "item_id": "99999999-aaaa-4000-8000-000000000009",
+      "name": "entry_schema_float_1",
+      "wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789996400,
+          "favorite": false,
+          "id": "99999999-aaaa-4000-8000-000000000009",
+          "kind": "web",
+          "label": "Schema sample",
+          "password": "schema-pass-sample",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://schema.example.com"
+          },
+          "tags": [],
+          "updated_at": 1789998200,
+          "username": "schema.user@example.com"
+        },
+        "schema": 1.0,
+        "updated_at": 1789998200
+      }
+    },
+    {
+      "expect": "bad-remote",
+      "item_id": "99999999-aaaa-4000-8000-000000000009",
+      "name": "entry_schema_true",
+      "wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789996400,
+          "favorite": false,
+          "id": "99999999-aaaa-4000-8000-000000000009",
+          "kind": "web",
+          "label": "Schema sample",
+          "password": "schema-pass-sample",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://schema.example.com"
+          },
+          "tags": [],
+          "updated_at": 1789998200,
+          "username": "schema.user@example.com"
+        },
+        "schema": true,
+        "updated_at": 1789998200
+      }
+    },
+    {
+      "expect": "bad-remote",
+      "item_id": "99999999-aaaa-4000-8000-000000000009",
+      "name": "entry_schema_null",
+      "wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1789996400,
+          "favorite": false,
+          "id": "99999999-aaaa-4000-8000-000000000009",
+          "kind": "web",
+          "label": "Schema sample",
+          "password": "schema-pass-sample",
+          "policy": {
+            "fill": "click",
+            "require_master_password": false,
+            "save_prompts": true
+          },
+          "scope": {
+            "origin": "https://schema.example.com"
+          },
+          "tags": [],
+          "updated_at": 1789998200,
+          "username": "schema.user@example.com"
+        },
+        "schema": null,
+        "updated_at": 1789998200
+      }
+    }
+  ],
+  "note": "Each wrapper is an item state's body. expect is what the desktop reader does: accepted (applied), update-needed (this item is kept as it is here, reported, everything else syncs) or bad-remote (this item is skipped and reported as damaged). schema must be a JSON integer; true, 1.0 and '1' are not. The schema is checked first (an integer above 1 is update-needed whatever else the wrapper holds), then the exact key set, then the rest."
+}

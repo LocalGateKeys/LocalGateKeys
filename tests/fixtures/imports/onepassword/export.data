@@ -1,0 +1,231 @@
+{
+  "accounts": [
+    {
+      "attrs": {
+        "accountName": "Example Family",
+        "name": "Alex Example",
+        "avatar": "",
+        "email": "alex@example.com",
+        "uuid": "AAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "domain": "https://example.1password.com/"
+      },
+      "vaults": [
+        {
+          "attrs": {"uuid": "vaultpersonal00000000000000", "desc": "", "avatar": "", "name": "Personal", "type": "P"},
+          "items": [
+            {
+              "uuid": "itemlogin000000000000000001",
+              "favIndex": 1,
+              "createdAt": 1700000000,
+              "updatedAt": 1700100000,
+              "state": "active",
+              "categoryUuid": "001",
+              "details": {
+                "loginFields": [
+                  {"value": "alex@example.com", "id": "", "name": "email", "fieldType": "E", "designation": "username"},
+                  {"value": "1p-login-pass-7Q", "id": "", "name": "password", "fieldType": "P", "designation": "password"}
+                ],
+                "notesPlain": "Main mail account.",
+                "sections": [
+                  {
+                    "title": "",
+                    "name": "add more",
+                    "fields": [
+                      {"title": "one-time password", "id": "TOTP_abc", "value": {"totp": "otpauth://totp/Mail:alex%40example.com?secret=JBSWY3DPEHPK3PXP&issuer=Mail"}, "guarded": false, "multiline": false, "dontGenerate": false},
+                      {"title": "recovery email", "id": "recovery", "value": {"string": "backup@example.org"}, "guarded": false},
+                      {"title": "security answer", "id": "answer", "value": {"concealed": "blue-giraffe"}, "guarded": false}
+                    ]
+                  }
+                ],
+                "passwordHistory": [{"value": "old-1p-pass", "time": 1690000000}]
+              },
+              "overview": {
+                "subtitle": "alex@example.com",
+                "urls": [{"label": "", "url": "https://mail.example.com/login"}, {"label": "webmail", "url": "https://webmail.example.com"}],
+                "title": "Example Mail",
+                "url": "https://mail.example.com/login",
+                "ps": 100,
+                "pbe": 90.0,
+                "pgrng": true,
+                "tags": ["email", "personal"]
+              }
+            },
+            {
+              "uuid": "itemcard0000000000000000001",
+              "favIndex": 0,
+              "createdAt": 1700000000,
+              "updatedAt": 1700000000,
+              "state": "active",
+              "categoryUuid": "002",
+              "details": {
+                "loginFields": [],
+                "notesPlain": "Travel card.",
+                "sections": [
+                  {
+                    "title": "",
+                    "name": "",
+                    "fields": [
+                      {"title": "cardholder name", "id": "cardholder", "value": {"string": "ALEX EXAMPLE"}},
+                      {"title": "type", "id": "type", "value": {"creditCardType": "visa"}},
+                      {"title": "number", "id": "ccnum", "value": {"creditCardNumber": "4111 1111 1111 1111"}},
+                      {"title": "verification number", "id": "cvv", "value": {"concealed": "123"}},
+                      {"title": "expiry date", "id": "expiry", "value": {"monthYear": 202712}},
+                      {"title": "valid from", "id": "validFrom", "value": {"monthYear": 202201}}
+                    ]
+                  },
+                  {
+                    "title": "contact information",
+                    "name": "contactInfo",
+                    "fields": [{"title": "issuing bank", "id": "bank", "value": {"string": "Example Bank"}}]
+                  },
+                  {
+                    "title": "additional details",
+                    "name": "details",
+                    "fields": [{"title": "PIN", "id": "pin", "value": {"concealed": "4321"}}]
+                  }
+                ]
+              },
+              "overview": {"subtitle": "4111 ****", "title": "Travel Visa", "url": "", "tags": []}
+            },
+            {
+              "uuid": "itemidentity000000000000001",
+              "favIndex": 0,
+              "createdAt": 1700000000,
+              "updatedAt": 1700000000,
+              "state": "active",
+              "categoryUuid": "004",
+              "details": {
+                "loginFields": [],
+                "notesPlain": "",
+                "sections": [
+                  {
+                    "title": "Identification",
+                    "name": "name",
+                    "fields": [
+                      {"title": "first name", "id": "firstname", "value": {"string": "Alex"}},
+                      {"title": "initial", "id": "initial", "value": {"string": "Q"}},
+                      {"title": "last name", "id": "lastname", "value": {"string": "Example"}},
+                      {"title": "birth date", "id": "birthdate", "value": {"date": 631152000}},
+                      {"title": "occupation", "id": "occupation", "value": {"string": "Tester"}}
+                    ]
+                  },
+                  {
+                    "title": "Address",
+                    "name": "address",
+                    "fields": [
+                      {"title": "address", "id": "address", "value": {"address": {"street": "1 Example Road", "city": "Exampleton", "country": "gb", "zip": "EX1 2PL", "state": "Exampleshire"}}},
+                      {"title": "default phone", "id": "defphone", "value": {"phone": "+44 20 7946 0000"}}
+                    ]
+                  },
+                  {
+                    "title": "Internet Details",
+                    "name": "internet",
+                    "fields": [{"title": "email", "id": "email", "value": {"email": {"email_address": "alex@example.com", "provider": null}}}]
+                  }
+                ]
+              },
+              "overview": {"subtitle": "Alex Example", "title": "Alex identity", "url": "", "tags": []}
+            },
+            {
+              "uuid": "itemnote0000000000000000001",
+              "favIndex": 0,
+              "createdAt": 1700000000,
+              "updatedAt": 1700000000,
+              "state": "active",
+              "categoryUuid": "003",
+              "details": {"loginFields": [], "notesPlain": "Wi-Fi at the cabin: ask the neighbour.", "sections": []},
+              "overview": {"subtitle": "", "title": "Cabin notes", "url": "", "tags": ["home"]}
+            },
+            {
+              "uuid": "itemapi00000000000000000001",
+              "favIndex": 0,
+              "createdAt": 1700000000,
+              "updatedAt": 1700000000,
+              "state": "active",
+              "categoryUuid": "112",
+              "details": {
+                "loginFields": [],
+                "notesPlain": "",
+                "sections": [
+                  {
+                    "title": "",
+                    "name": "",
+                    "fields": [
+                      {"title": "username", "id": "username", "value": {"string": "svc-builder"}},
+                      {"title": "credential", "id": "credential", "value": {"concealed": "api-token-0000-fixture"}},
+                      {"title": "hostname", "id": "hostname", "value": {"string": "api.example.com"}}
+                    ]
+                  }
+                ]
+              },
+              "overview": {"subtitle": "svc-builder", "title": "Build API", "url": "", "tags": []}
+            },
+            {
+              "uuid": "itemarchived000000000000001",
+              "favIndex": 0,
+              "createdAt": 1600000000,
+              "updatedAt": 1600000000,
+              "state": "archived",
+              "categoryUuid": "001",
+              "details": {
+                "loginFields": [
+                  {"value": "alex", "id": "", "name": "username", "fieldType": "T", "designation": "username"},
+                  {"value": "archived-pass-1", "id": "", "name": "password", "fieldType": "P", "designation": "password"}
+                ],
+                "sections": []
+              },
+              "overview": {"title": "Old Forum", "url": "http://forum.example.net", "urls": [{"label": "", "url": "http://forum.example.net"}], "tags": []}
+            },
+            {
+              "uuid": "itemdocument000000000000001",
+              "favIndex": 0,
+              "createdAt": 1700000000,
+              "updatedAt": 1700000000,
+              "state": "active",
+              "categoryUuid": "006",
+              "details": {
+                "loginFields": [],
+                "notesPlain": "Scan of the lease.",
+                "sections": [],
+                "documentAttributes": {"fileName": "lease.pdf", "documentId": "docid0000000000000000000001", "decryptedSize": 1024}
+              },
+              "overview": {"title": "Lease scan", "url": "", "tags": []}
+            },
+            {
+              "uuid": "itemtrashed0000000000000001",
+              "favIndex": 0,
+              "createdAt": 1700000000,
+              "updatedAt": 1700000000,
+              "state": "trashed",
+              "categoryUuid": "001",
+              "details": {"loginFields": [{"value": "gone", "designation": "username"}, {"value": "gone-pass", "designation": "password"}]},
+              "overview": {"title": "Deleted thing", "url": "https://deleted.example.com"}
+            }
+          ]
+        },
+        {
+          "attrs": {"uuid": "vaultshared0000000000000000", "desc": "", "avatar": "", "name": "Family", "type": "U"},
+          "items": [
+            {
+              "uuid": "itemlogin000000000000000002",
+              "favIndex": 0,
+              "createdAt": 1700000000,
+              "updatedAt": 1700000000,
+              "state": "active",
+              "categoryUuid": "001",
+              "details": {
+                "loginFields": [
+                  {"value": "family", "id": "", "name": "username", "fieldType": "T", "designation": "username"},
+                  {"value": "streaming-pass-9", "id": "", "name": "password", "fieldType": "P", "designation": "password"}
+                ],
+                "notesPlain": "",
+                "sections": []
+              },
+              "overview": {"title": "Streaming", "url": "stream.example.com", "tags": []}
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

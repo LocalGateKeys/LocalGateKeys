@@ -1,0 +1,39 @@
+# Cloudflare Pages response headers. The site uses no scripts, so scripts,
+# frames, forms and every third-party origin are blocked outright, except on
+# /buy (rules at the end), which loads Paddle's checkout.
+/*
+  Content-Security-Policy: default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=(), browsing-topics=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  X-Frame-Options: DENY
+
+/*.css
+  Cache-Control: public, max-age=3600
+
+# Paddle's checkout (buy.paddle.com) shows icon-256.png as the product icon,
+# so the logos may be embedded cross-origin.
+/brand/*
+  ! Cross-Origin-Resource-Policy
+  Cross-Origin-Resource-Policy: cross-origin
+  Cache-Control: public, max-age=86400
+
+# The checkout page: Paddle.js from cdn.paddle.com and its overlay frame from
+# buy.paddle.com. Paddle updates paddle.js in place and publishes no hash, so
+# the policy pins origins instead of Subresource Integrity. "! Name" detaches
+# the site-wide value so the two policies are not both enforced.
+/buy
+  ! Content-Security-Policy
+  ! Referrer-Policy
+  ! Permissions-Policy
+  ! Cross-Origin-Opener-Policy
+  Content-Security-Policy: default-src 'none'; script-src 'self' https://cdn.paddle.com; style-src 'self' 'unsafe-inline' https://cdn.paddle.com; img-src 'self' data: https://*.paddle.com; connect-src https://*.paddle.com; frame-src https://buy.paddle.com; font-src https://cdn.paddle.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), usb=(), interest-cohort=(), browsing-topics=(), payment=(self "https://buy.paddle.com")
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+
+/buy.js
+  Cache-Control: public, max-age=300
