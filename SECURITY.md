@@ -75,7 +75,8 @@ The extension uses Manifest V3 (Chromium service worker; Firefox variant generat
 - The desktop agent gives a second save confirmation displaying the canonical origin and username.
 - Fill responses contain one selected credential, never the whole vault.
 - **Site matching.** Internationalised host names are converted with UTS-46 non-transitional processing (the `idna` package), the same mapping browsers use, so `straße.de` is stored as `xn--strae-oqa.de` rather than collapsing to `strasse.de`. Origins saved before this change are plain ASCII and are not recanonicalised; an old row keeps matching only the host it literally records, which fails closed. `base_domain` rows use the bundled Public Suffix List snapshot (`localvault/assets/public_suffix_list.dat`, ICANN and PRIVATE sections, wildcard and exception rules, plus one local narrowing rule `*.web.core.windows.net`), so a login is never offered to another tenant of a shared hosting suffix. If the list is missing or truncated, every host is its own base domain. `starts_with` URL rows narrow which entries are *offered*, but they are not an isolation boundary: any page on the same origin can change its path.
-- **Probe limits.** `check_browser` / `capture_browser` (used to decide whether to offer a save prompt) compare the captured password with the stored one, so they are a password-guessing oracle and are rate-limited. On the desktop, while the vault is unlocked, they answer at most 10 checks per origin, 15 per site (registrable domain) and 60 in total per 60 s; past the total each site keeps 3, up to a hard cap of 240. Safari on iPhone allows 10 per origin and 30 in total per 60 s. Residual risk: within these limits a page can still test a few guesses per minute against the stored password for its origin.
+- **Save prompts.** Browser save prompts never reveal whether a captured password matches the saved one. For a submitted login the desktop app tells the extension only whether an account with that username is already saved for the origin (`new` or `exists`, the same model as Safari), and the page sees the same prompt either way. The password is compared only inside the desktop app after the user clicks Save or Update. If it is unchanged, the app says "Already saved" in its own window and writes nothing. The extension's `session_id` is compared with the session token in constant time; identity and card approvals require it, and a `session_id` sent with a manual save, even an empty one, must match the current session.
+- **Probe limits.** `check_browser` / `capture_browser` (used to decide whether to offer a save prompt) still reveal whether a username is saved for the origin, so they remain rate-limited. On the desktop, while the vault is unlocked, they answer at most 10 checks per origin, 15 per site (registrable domain) and 60 in total per 60 s; past the total each site keeps 3, up to a hard cap of 240. Safari on iPhone allows 10 per origin and 30 in total per 60 s.
 - **Save prompt after a redirect.** A captured login waits in memory for its tab (90 s, on the desktop and in Safari on iPhone). The next document on the same origin may show it. For 12 s after the capture, a document in the same tab on another origin of the same site may also show it: same scheme and port, and the same registrable domain by the bundled Public Suffix List (`login.paddle.com` → `vendors.paddle.com`). Never across a public suffix such as `github.io`, never for IP addresses, never in another tab. The login is saved for the origin it was typed on, and the panel and the desktop confirmation name that origin. Filling stays exact-origin.
 - **Page URL.** For multi-URL logins the content script sends `location.href` (fragment stripped, never credentials) next to `origin` in `begin_browser` / `get_browser`. The service worker re-derives the sender origin from `sender.url`, forwards the `url` only when its canonical origin is identical, and otherwise drops it so the broker matches the origin alone; the broker independently fails closed (`invalid_request`) on a mismatched `url`. Choices carry the broker's `match` kind and the in-page picker labels anything wider than `exact_origin`.
 - **Card fill** (`card_protocol: 1`) mirrors identity fill: `begin_card_browser` returns metadata only (title, brand, last four, which tokens exist), never a number or CVV. The user ticks fields in the extension's closed-shadow-root panel, defaulting to the tokens present on the page with the security code **unticked**; the desktop app then shows the trusted native review (number as `•••• 1111`, CVV masked) and the single-use approval is bound to the lease, origin, tab/document context, item revision and the selected tokens. `release_card_browser` is gesture-gated like `get_browser`; the page fills only the approved tokens into controls that pass the same `safeForm` / `onTop` checks as logins, never submits, discards a reply that carries any unapproved token, and blanks every released value from memory immediately after the fill. Payment forms are recognised from `autocomplete="cc-*"`; name/id heuristics cover only number, expiry and CVV and only inside a scope that already contains a card-number-like field. The PIN has no token and is never released.
@@ -170,9 +171,11 @@ next unlock.
 - The camera sidecar is sealed with current-user DPAPI, so while camera unlock is
   on, an attacker with a copy of the disk and the Windows account password can
   unwrap DK without the master password; the consent text says so. Turning camera
-  unlock off deletes the sidecar and rotates DK when no recovery phrase exists;
-  with a phrase, DK is kept (so the phrase keeps working) and the residual risk is
-  a copy of the old sidecar made elsewhere. Deleting a profile removes its sidecar.
+  unlock off needs the master password, deletes the sidecar and rotates DK, so any
+  earlier copy of the sidecar wraps a retired key. If a recovery phrase exists, the
+  rotation replaces it: the old phrase stops opening the vault and the new one is
+  shown once and must be confirmed. A profile whose camera sidecar exists cannot
+  be deleted until camera verification is removed this way.
 - Decrypted catalog JSON and attachment plaintext are built in `bytearray` buffers
   and zeroed after use (AES-GCM `decrypt_into`); individual field strings remain
   ordinary Python strings and are not wiped.
@@ -221,10 +224,15 @@ attempts are free; afterwards the wait doubles from 2 s up to a 60 s cap, measur
 with a monotonic clock, and a success resets the counter. An unreadable or forged
 counter fails closed to the maximum wait, and restarting the application re-arms
 the persisted wait instead of shortening it. The unlock dialog shows the countdown
-and keeps the Unlock button disabled until it expires. Residual risk: deleting
-both the counter file and its key file resets the count to zero, and restoring an
-older, correctly MAC'd counter file restores its lower count; both need same-user
-write access.
+and keeps the Unlock button disabled until it expires. Each save records the
+throttle key's id and the vault's location in the v3 header, inside the catalog's
+associated data. At that location a missing, replaced or downgraded throttle key
+fails closed to the maximum wait (never a lock-out). A copy at another path (a
+restore, a verified backup) is not bound, and a vault last saved by an older
+release is bound at its next save. Residual risk: restoring an older counter file
+that is correctly MAC'd under the same key restores its lower count; this needs
+same-user write access. Vaults saved by this release cannot be opened by older
+releases.
 
 ## Backup, transfer, attachment and sync cryptography
 
@@ -233,11 +241,16 @@ All derived formats reuse AES-256-GCM with 12 fresh random bytes per sealed obje
 - Vault-only backups (`.lgk`, envelope v2) and full profile backups (v2 container) derive their key with Argon2id using the vault defaults for new writes (64 MiB memory, 3 iterations, parallelism 4, 32-byte output). The parameters are stored in the header and are part of the associated data. Readers accept any header inside the vault's bounded range (8-512 MiB, 1-10 iterations, parallelism 1-16) and reject anything outside it before derivation runs; v1 `.lgk` envelopes (constant associated data) and older 32 MiB files remain restorable.
 - Selective transfer packages use the same Argon2id defaults, bounds, and header-in-associated-data rule.
 - Attachment sidecars (v2) carry only identity in the plaintext header (format, version, attachment id, store id). The plaintext size, SHA-256 digest, and per-attachment key live in the encrypted catalog record; integrity is verified after decryption against that record. v1 sidecars, whose header also exposed size and digest, remain readable.
-- LAN sync typed items (v2) are sealed under a pairwise channel key derived with HKDF-SHA256 from the static X25519 shared secret of the two paired devices (salt: sync group id; info: protocol label, both device ids, both exchange public keys). Each record uses a random 96-bit nonce and binds the item id, item revision, sender device id, and protocol counter in the associated data; the receiver re-derives those values from the authenticated envelope and rejects mismatches, records from a sender other than the authenticated peer, and retired v1 records. The channel derivation is static-static because records are sealed before a transport session exists and may be retried across sessions. The transport session key is also derived from the same static X25519 secret (salted with the session transcript and id), so LAN sync has **no forward secrecy**: anyone who later obtains a device's private exchange key can decrypt recorded sync traffic between it and its paired devices.
+- LAN sync typed items (v2) are sealed under a pairwise channel key derived with HKDF-SHA256 from the static X25519 shared secret of the two paired devices (salt: sync group id; info: protocol label, both device ids, both exchange public keys). Each record uses a random 96-bit nonce and binds the item id, item revision, sender device id, and protocol counter in the associated data; the receiver re-derives those values from the authenticated envelope and rejects mismatches, records from a sender other than the authenticated peer, and retired v1 records. The channel derivation is static-static because records are sealed before a transport session exists and may be retried across sessions.
+- **LAN session (protocol v2).** Every connection carries those records inside a transport session whose key is derived with HKDF-SHA256 from a fresh per-connection ephemeral X25519 exchange mixed with the static-static exchange of the paired devices (salted with the signed hellos, info bound to the session id). Each ephemeral private key is used once and erased, so a later leak of a device's exchange key does not open recorded traffic (forward secrecy). There is no downgrade: a hello of another version is refused, and an older device must be updated before it can sync over Wi-Fi.
+- **Pairing.** After a QR or copied-code request, both devices show the same 6-digit verification code and the inviting device asks Accept / Decline; nothing is sent and nobody is added before Accept, and no answer within 60 s declines. Undo still removes a device that was accepted by mistake.
+- **Signing keys.** Key file format 2 lists each member's view-signing key with a proof signed by that key, both covered by the key file MAC. Folder sync checks a view's signature against the key in the accepted key file first, else the device's LAN-paired key, else the key pinned on first use; only the key file can change a pinned key, and a change is reported.
+- **LAN listener.** Before a verified hello it holds at most 1 connection per source address and 3 per /24 (IPv4) or /64 (IPv6) network, and keeps one slot for peers that completed a verified hello in the last 15 minutes (at most 4 connections, 2 per address).
 
 Known limitations of sync:
 
-- **Signer pins are trust-on-first-use.** A folder-sync view is checked against the device's LAN-paired signing key when one is known; otherwise against the first key seen signing a view for that device. A holder of the group key who writes a signed view for a device before that device does gets their key pinned, and the device's real views are then refused as forged until the next key rotation.
+- **First-use pins for older members.** Members of a format-1 key file (written by older apps) have no signing key in it, so their views are still checked against the first key seen signing for that device. A holder of the group key who writes a signed view for such a device before it does gets their key pinned, and the device's real views are refused as forged until it leaves and joins again with a current app.
+- **The Accept code checks the device, not the person.** Anyone who saw the QR code or copied text can try to pair while it is shown; the user must compare the code on both screens.
 - **Hello replay window after restart.** The last hello counter received from each LAN peer is kept in memory only and starts again when the app restarts, so a recorded hello is not rejected as a replay after a restart; the session key still needs a paired device's private exchange key.
 - **Firewall scope from source.** The Windows Firewall rule for LAN sync names the executable that listens. Packaged builds scope it to the app executable; a source checkout scopes it to the whole `python.exe` interpreter, so any script run by that interpreter is allowed too.
 
@@ -350,8 +363,25 @@ malicious process running as the same user may inspect state or process memory.
   refuses an older or foreign backup without explicit confirmation, and turns off
   autostart, automatic sign-in, per-entry sign-in, desktop-fill approvals and
   Hello/camera bindings in the restored profile.
+  A selected backup is copied into a new owner-only scratch folder before its hash
+  is checked and it is opened, never as a bare file in %TEMP%.
 - Backup verification works in a private temporary folder and never upgrades an
   older envelope, so it leaves no migration copy behind.
+- **Data folder ACL.** The main app gives the data folder a protected owner-only
+  DACL (current user and SYSTEM, inherited by everything inside) once at startup,
+  and skips it when the folder already has that DACL. The native host and pipe
+  helpers never rewrite it. A `LOCALGATEKEYS_DATA_DIR` folder gets this ACL only
+  if LocalGateKeys created it (marker file `.localgatekeys-owned`); an existing
+  folder named there keeps its own ACL.
+- **Popup fallback.** If the popup's navigation lock cannot be installed, the
+  popup is disabled and its prompts are shown in the main window.
+- **Packaging.** The installer installs only into
+  `%LOCALAPPDATA%\Programs\LocalGateKeys` and refuses any other folder, including
+  one given with `/DIR=`. Both executables restrict DLL search
+  (`SetDefaultDllDirectories`) and refuse images from remote shares or with a
+  low integrity label. The native-host log rotates at 1 MiB (about 2 MiB on disk).
+  The build refuses output folders that other accounts can write. Released
+  binaries are not yet Authenticode-signed.
 
 - **No search-path executables.** Every helper the app starts runs by absolute
   path under `%SystemRoot%\System32` (`winpaths.system32()`): Authenticode checks
@@ -387,6 +417,10 @@ malicious process running as the same user may inspect state or process memory.
   whole names (`/JavaScript`, `/JS`, `/OpenAction`, `/AA`, `/Launch`,
   `/EmbeddedFile(s)`, `/RichMedia`, `/SubmitForm`, `/GoToR`, `/GoToE`,
   `/ImportData`). Names inside compressed object streams are not inspected.
+- **Licence server.** A checkout claim is bound to an order atomically in D1, so
+  of two orders racing for one claim the first wins; the other order's licence
+  stays under its own token and `/recover` finds it. `/recover` allows 5 attempts
+  per email per hour, in addition to the per-IP rate limit.
 
 Known limitations:
 

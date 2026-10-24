@@ -80,7 +80,8 @@ actor SocketLanConnection: LanConnection {
 }
 
 /// Sends the one enrollment request of a scanned offer and returns the one-frame reply (desktop
-/// `SyncTransport.enroll`). Not retried, like the desktop.
+/// `SyncTransport.enroll`). Not retried, like the desktop. The reply comes only after the user chose
+/// Accept on the inviting device, so the read waits up to `Enrollment.replySeconds` (75 s).
 protocol EnrollmentSending: Sendable {
     /// `onConnected`: called once the connection is up, before the request is sent.
     func enroll(endpoint: LanEndpoint, request: [UInt8], onConnected: @escaping @Sendable () -> Void) async throws -> [UInt8]
@@ -111,12 +112,14 @@ struct SocketEnroller: EnrollmentSending {
 /// TCP over `NWConnection` to a literal LAN address. No discovery (the desktop does not advertise over
 /// Bonjour): the address comes from the scanned QR offer and is pinned with the peer.
 struct NWLanDialer: LanDialer {
-    /// Desktop `DEFAULT_SOCKET_TIMEOUT = 5.0`, per connection (and the least an enrollment exchange gets
-    /// once connected).
+    /// Desktop `DEFAULT_SOCKET_TIMEOUT = 5.0`, per sync connection.
     var timeout: TimeInterval = 5
     /// Enrollment: how long a connection may wait in `.waiting` for the Local Network prompt to be
     /// answered. Refused and unroutable connects fail at once instead.
     var promptTimeout: TimeInterval = 20
+    /// Enrollment: once connected, the time the request and the reply get (desktop `ENROLL_REPLY_SECONDS`
+    /// = 75): the inviting device answers only after its user chose Accept (up to 60 s).
+    var enrollReplyTimeout: TimeInterval = TimeInterval(Enrollment.replySeconds)
     /// Enrollment: browse for `_lgksync._tcp` while dialling, so iOS asks for (and lists the app under)
     /// Local Network even when the dialled address is off-link and would not trigger the prompt itself.
     var browseForPrompt = true
@@ -131,7 +134,7 @@ struct NWLanDialer: LanDialer {
         params.prohibitedInterfaceTypes = [.cellular]
         let conn = NWConnection(host: NWEndpoint.Host(endpoint.host), port: port, using: params)
         let socket = NWLanSocket(conn, deadline: Date().addingTimeInterval(waitForNetwork ? promptTimeout : timeout),
-                                 ioTimeout: timeout)
+                                 ioTimeout: waitForNetwork ? enrollReplyTimeout : timeout)
         try await socket.start(waitForNetwork: waitForNetwork)
         return socket
     }
@@ -228,8 +231,9 @@ final class NWLanSocket: LanSocket, @unchecked Sendable {
                 }
             }
         } onCancel: { conn.cancel() }
-        // Enrollment connected late (prompt answered near the deadline): the exchange still gets the
-        // per-connection timeout. A sync dial keeps its 5 s in total.
+        // Enrollment: from the moment it connected, the exchange gets `ioTimeout` (the dialer's
+        // `enrollReplyTimeout`, 75 s: the reply waits for Accept on the inviting device), also when the
+        // Local Network prompt was answered near the connect deadline. A sync dial keeps its 5 s in total.
         if waitForNetwork { lock.withLock { _deadline = max(_deadline, Date().addingTimeInterval(ioTimeout)) } }
     }
 

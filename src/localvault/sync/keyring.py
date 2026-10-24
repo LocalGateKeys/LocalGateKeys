@@ -4,16 +4,31 @@ The keyring is the file in the user's cloud folder that holds the sync group key
 ``G`` wrapped by the sync password and by every member device's key.  The iOS app
 implements it byte-for-byte, so every rule below is part of the format.
 
-Format rules (version 1)
-------------------------
+Format rules (version 2; version 1 is still read)
+-------------------------------------------------
 * JSON shape (exactly these fields at every level)::
 
-    {"format":1,"group_id","epoch",
+    {"format":2,"group_id","epoch",
      "kdf":{"name":"argon2id","salt","memory_kib":131072,"iterations":4,"parallelism":4},
      "password_wrap":{"nonce","ct"},
      "device_wraps":{device_id:{"eph","nonce","ct"}},
-     "members":[{"device_id","name_ct","exchange_public","added_at"}],
+     "members":[{"device_id","name_ct","exchange_public","signing_public","signing_proof","added_at"}],
      "prev_mac":null|base64,"mac":base64}
+
+  Format 1 is the same without ``signing_public`` and ``signing_proof`` in a member.  A
+  format-1 keyring is read and accepted exactly as before; every write (create, join,
+  attach, rotate) produces format 2, and a join or attach to a format-1 keyring lists the
+  existing members with ``signing_public`` and ``signing_proof`` null.
+* Member signing key (format 2, audit R-4): ``signing_public`` is the member's raw 32-byte
+  Ed25519 view-signing key (``DeviceIdentity.signing_public_key``) and ``signing_proof`` the
+  member's own Ed25519 signature (64 raw bytes) over ``b"localgatekeys|sync|keyring-member|v2|"
+  + group_id + b"|" + device_id + b"|" + exchange_public + b"|" + signing_public`` (both keys as
+  the base64 text of the entry), so a member entry names only a key its device holds.  Both are
+  null (a member carried over from format 1, which never added its key) or both set; the
+  structure check verifies every proof (``bad-member-proof``).  A device adds its own key when
+  it creates, joins or attaches; a rotation carries every member's key and proof unchanged.
+  Like the rest of the body they are covered by ``mac``.  The folder transport verifies a
+  member's view signatures against this key first (``member_signing_keys``).
 
 * Canonical JSON is ``localvault.updates.canonical_json``; base64 is standard with
   padding, decoded strictly (see ``group.py``); non-finite numbers are rejected.
@@ -128,9 +143,9 @@ import uuid
 from collections.abc import Callable, Iterable, Mapping
 
 from argon2.low_level import Type, hash_secret_raw
-from cryptography.exceptions import InvalidTag
+from cryptography.exceptions import InvalidSignature, InvalidTag
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import x25519
+from cryptography.hazmat.primitives.asymmetric import ed25519, x25519
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
@@ -140,7 +155,9 @@ from localvault.sync.group import GroupKey
 from localvault.sync.pairing import DeviceIdentity
 from localvault.updates import canonical_json
 
-FORMAT = 1
+FORMAT = 2
+#: Keyring formats this version reads (format 1 has no member signing keys).
+READ_FORMATS = (1, 2)
 KDF_NAME = "argon2id"
 KDF_MEMORY_KIB = 131072
 KDF_ITERATIONS = 4
@@ -162,6 +179,7 @@ DEVICE_INFO = b"localgatekeys|sync|device-wrap|v1|"
 MAC_INFO = b"localgatekeys|sync|keyring-mac|v1|"
 NAME_AAD = b"lgk-keyring-member-name-v1|"
 NAME_INFO = b"localgatekeys|sync|member-name|v1|"
+MEMBER_PROOF_LABEL = b"localgatekeys|sync|keyring-member|v2|"
 
 _MAX_INT = 2**53 - 1
 _NONCE_LEN = 12
@@ -178,7 +196,9 @@ _TOP_FIELDS = frozenset(
 _KDF_FIELDS = frozenset({"name", "salt", "memory_kib", "iterations", "parallelism"})
 _PW_WRAP_FIELDS = frozenset({"nonce", "ct"})
 _DEV_WRAP_FIELDS = frozenset({"eph", "nonce", "ct"})
-_MEMBER_FIELDS = frozenset({"device_id", "name_ct", "exchange_public", "added_at"})
+_MEMBER_FIELDS_V1 = frozenset({"device_id", "name_ct", "exchange_public", "added_at"})
+_MEMBER_FIELDS = _MEMBER_FIELDS_V1 | {"signing_public", "signing_proof"}
+_PROOF_LEN = 64
 
 # (memory_kib, iterations, parallelism); tests substitute a cheap profile.
 _PRODUCTION_KDF = (KDF_MEMORY_KIB, KDF_ITERATIONS, KDF_PARALLELISM)
@@ -359,17 +379,34 @@ def member_names(keyring: Mapping, gk: GroupKey) -> dict[str, str | None]:
     return out
 
 
-def _member_entry(gk: GroupKey, member: Mapping, rand: RandomSource | None = None) -> tuple[dict, dict]:
-    """(member entry, device wrap) for *member* (``device_id``, ``name``, ``exchange_public``, ``added_at``).
+def _proof_message(group_id: str, device_id: str, exchange_public: str, signing_public: str) -> bytes:
+    """What ``signing_proof`` signs (the two keys as the entry's base64 text)."""
+    return (MEMBER_PROOF_LABEL + group_id.encode("ascii") + b"|" + device_id.encode("ascii") + b"|"
+            + exchange_public.encode("ascii") + b"|" + signing_public.encode("ascii"))
 
-    Draw order: the device wrap (eph 32, nonce 12), then the name nonce (12).
+
+def _member_entry(gk: GroupKey, member: Mapping, rand: RandomSource | None = None) -> tuple[dict, dict]:
+    """(member entry, device wrap) for *member* (``device_id``, ``name``, ``exchange_public``, ``added_at``,
+    and either ``identity``, whose key signs a new proof, or the carried ``signing_public``/``signing_proof``).
+
+    Draw order: the device wrap (eph 32, nonce 12), then the name nonce (12).  The proof
+    (Ed25519) draws nothing.
     """
     device_id = member["device_id"]
     wrap = _wrap_device(gk, device_id, _b64d(member["exchange_public"], 32, "exchange_public"), rand)
+    identity = member.get("identity")
+    if isinstance(identity, DeviceIdentity):
+        signing_public = _b64e(identity.signing_public_key)
+        proof: str | None = _b64e(identity.signing_key.sign(
+            _proof_message(gk.group_id, device_id, member["exchange_public"], signing_public)))
+    else:
+        signing_public, proof = member.get("signing_public"), member.get("signing_proof")
     entry = {
         "device_id": device_id,
         "name_ct": _seal_name(gk, device_id, member["name"], rand),
         "exchange_public": member["exchange_public"],
+        "signing_public": signing_public,
+        "signing_proof": proof,
         "added_at": member["added_at"],
     }
     return entry, wrap
@@ -380,8 +417,32 @@ def _new_member(identity: DeviceIdentity, name: str, now: int | None = None) -> 
         "device_id": identity.device_id,
         "name": name,
         "exchange_public": _b64e(identity.exchange_public_key),
+        "identity": identity,
         "added_at": int(time.time()) if now is None else now,
     }
+
+
+def _as_format2(member: Mapping) -> dict:
+    """A member entry in format 2 (a format-1 entry gets null ``signing_public`` and ``signing_proof``)."""
+    out = dict(member)
+    out.setdefault("signing_public", None)
+    out.setdefault("signing_proof", None)
+    return out
+
+
+def member_signing_keys(keyring: Mapping) -> dict[str, str]:
+    """``{device_id: base64 Ed25519 key}`` of every member whose entry lists its view-signing key.
+
+    Call it only on a keyring the caller has already accepted; the structure check
+    (``verify_keyring_structure``) verified each listed key's ``signing_proof``.
+    Members without a key (format 1, or carried over from it) are absent.
+    """
+    out: dict[str, str] = {}
+    for m in keyring.get("members", ()):
+        key = m.get("signing_public") if isinstance(m, Mapping) else None
+        if isinstance(key, str) and isinstance(m.get("device_id"), str):
+            out[m["device_id"]] = key
+    return out
 
 
 def _check_name(name: object) -> str:
@@ -496,8 +557,9 @@ def verify_keyring_structure(keyring: object, *, _kdf_override: tuple[int, int, 
     """Validate shape, bounds, KDF parameters and wrap/member sets (no authentication)."""
     profile = _profile(_kdf_override)
     ring = _fields(keyring, _TOP_FIELDS, "keyring fields")
-    if type(ring["format"]) is not int or ring["format"] != FORMAT:
+    if type(ring["format"]) is not int or ring["format"] not in READ_FORMATS:
         raise KeyringError("bad-format", "unsupported keyring format")
+    member_fields = _MEMBER_FIELDS if ring["format"] >= 2 else _MEMBER_FIELDS_V1
     group_id, epoch = ring["group_id"], ring["epoch"]
     if not is_valid_id(group_id):
         raise KeyringError("bad-group-id", "group_id")
@@ -523,7 +585,7 @@ def verify_keyring_structure(keyring: object, *, _kdf_override: tuple[int, int, 
         raise KeyringError("too-many-members", "members must have at most 16 entries")
     ids: set[str] = set()
     for m in members:
-        m = _fields(m, _MEMBER_FIELDS, "member fields")
+        m = _fields(m, member_fields, "member fields")
         if not is_valid_id(m["device_id"]):
             raise KeyringError("bad-device-id", "member device_id")
         if m["device_id"] in ids:
@@ -534,6 +596,8 @@ def verify_keyring_structure(keyring: object, *, _kdf_override: tuple[int, int, 
         if not _is_int(m["added_at"]):
             raise KeyringError("bad-fields", "member added_at")
         _b64d(m["exchange_public"], 32, "member exchange_public")
+        if ring["format"] >= 2:
+            _check_member_proof(group_id, m)
 
     wraps = ring["device_wraps"]
     if not isinstance(wraps, dict) or set(wraps) != ids:
@@ -552,11 +616,29 @@ def verify_keyring_structure(keyring: object, *, _kdf_override: tuple[int, int, 
     _b64d(ring["mac"], _MAC_LEN, "mac")
 
 
+def _check_member_proof(group_id: str, m: Mapping) -> None:
+    """``signing_public`` and ``signing_proof`` both null, or a key with its member's valid proof."""
+    key, proof = m["signing_public"], m["signing_proof"]
+    if key is None and proof is None:
+        return
+    if key is None or proof is None:
+        raise KeyringError("bad-member-proof", "signing_public and signing_proof must both be set or both null")
+    raw_key = _b64d(key, 32, "member signing_public")
+    raw_proof = _b64d(proof, _PROOF_LEN, "member signing_proof")
+    try:
+        ed25519.Ed25519PublicKey.from_public_bytes(raw_key).verify(
+            raw_proof, _proof_message(group_id, m["device_id"], m["exchange_public"], key))
+    except (InvalidSignature, ValueError) as exc:
+        raise KeyringError("bad-member-proof", f"member {m['device_id']}: signing proof does not verify") from exc
+
+
 def _member(ring: Mapping, identity: DeviceIdentity) -> Mapping:
     for m in ring["members"]:
         if m["device_id"] == identity.device_id:
             if m["exchange_public"] != _b64e(identity.exchange_public_key):
                 raise KeyringError("key-mismatch", "device key differs from the registered member")
+            if m.get("signing_public") not in (None, _b64e(identity.signing_public_key)):
+                raise KeyringError("key-mismatch", "signing key differs from the registered member")
             return m
     raise KeyringError("not-member", "device is not a member of this keyring")
 
@@ -632,7 +714,8 @@ def _with_member(keyring: Mapping, gk: GroupKey, identity: DeviceIdentity, name:
     """*keyring* (authenticated under *gk*) plus *identity* and its wrap; ``prev_mac`` carried over."""
     body = {k: v for k, v in keyring.items() if k != "mac"}
     entry, wrap = _member_entry(gk, _new_member(identity, name, now), rand)
-    body["members"] = [*keyring["members"], entry]
+    body["format"] = FORMAT  # a format-1 keyring is written back as format 2
+    body["members"] = [*(_as_format2(m) for m in keyring["members"]), entry]
     body["device_wraps"] = {**keyring["device_wraps"], identity.device_id: wrap}
     return _finish(body, gk, None, keyring["prev_mac"])
 
@@ -861,6 +944,8 @@ def rotate(
             "device_id": m["device_id"],
             "name": names[m["device_id"]] or UNNAMED_DEVICE,
             "exchange_public": m["exchange_public"],
+            "signing_public": m.get("signing_public"),  # carried unchanged (null for a format-1 member)
+            "signing_proof": m.get("signing_proof"),
             "added_at": m["added_at"],
         }
         for m in keyring["members"]

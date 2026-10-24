@@ -88,14 +88,11 @@ def _norm(path: str) -> str:
 
 def _system_directories() -> tuple[str, ...]:
     """``<Windows>\\System32`` and ``SysWOW64`` from the API, never from %SystemRoot%."""
-    if os.name != "nt":
-        return ()
-    import ctypes
+    from .winpaths import system_windows_directory
 
-    buffer = ctypes.create_unicode_buffer(260)
-    if not ctypes.windll.kernel32.GetSystemWindowsDirectoryW(buffer, 260):
+    root = system_windows_directory()
+    if not root:
         return ()
-    root = buffer.value
     return (os.path.join(root, "System32"), os.path.join(root, "SysWOW64"))
 
 

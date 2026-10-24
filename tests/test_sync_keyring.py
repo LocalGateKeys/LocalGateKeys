@@ -87,8 +87,11 @@ def test_create_shape():
     a, ring, gk = make()
     assert set(ring) == {"format", "group_id", "epoch", "kdf", "password_wrap", "device_wraps",
                          "members", "prev_mac", "mac"}
-    assert ring["format"] == 1 and ring["epoch"] == 1 and gk.epoch == 1 and ring["prev_mac"] is None
-    assert set(ring["members"][0]) == {"device_id", "name_ct", "exchange_public", "added_at"}
+    assert ring["format"] == 2 and ring["epoch"] == 1 and gk.epoch == 1 and ring["prev_mac"] is None
+    assert set(ring["members"][0]) == {"device_id", "name_ct", "exchange_public", "signing_public",
+                                       "signing_proof", "added_at"}
+    assert ring["members"][0]["signing_public"] == b64(a.signing_public_key)
+    assert kr.member_signing_keys(ring) == {a.device_id: b64(a.signing_public_key)}
     assert set(ring["device_wraps"][a.device_id]) == {"eph", "nonce", "ct"}
     assert len(base64.b64decode(ring["kdf"]["salt"])) == 16
     structure(ring)
@@ -321,8 +324,11 @@ def test_tampering_same_epoch_reported_tampered():
         else:
             node[path[-1]] = flip(old)
         r = reason(accept, t, gk, a)
-        assert r in ("tampered", "group-mismatch"), (path, r)
-        if path != ("group_id",):
+        # the member proofs bind the group id, so a renamed group fails the structure check first
+        assert r in ("tampered", "group-mismatch", "bad-member-proof"), (path, r)
+        if path[-1] == "exchange_public":
+            assert r == "bad-member-proof", path  # the proof also signs the exchange key
+        elif path != ("group_id",):
             assert r == "tampered", path
     for dev in (a, b):
         t = copy.deepcopy(ring)
@@ -388,7 +394,8 @@ def test_structure_fields_and_types():
         lambda t: t.pop("epoch"),
         lambda t: t.pop("mac"),
         lambda t: t.update(signature="x"),
-        lambda t: t.update(format=2),
+        lambda t: t.update(format=3),
+        lambda t: t.update(format=1),  # format 1 has no member signing fields
         lambda t: t.update(format=True),
         lambda t: t.update(epoch=0),
         lambda t: t.update(epoch=1.0),
@@ -407,6 +414,10 @@ def test_structure_fields_and_types():
         lambda t: t["password_wrap"].update(ct=t["password_wrap"]["ct"] + "\n"),
         lambda t: t["members"][0].update(extra=1),
         lambda t: t["members"][0].update(signing_public=b64(bytes(32))),
+        lambda t: t["members"][0].update(signing_public=None),  # proof without key
+        lambda t: t["members"][0].update(signing_proof=None),  # key without proof
+        lambda t: t["members"][0].update(signing_proof=b64(bytes(64))),
+        lambda t: t["members"][0].pop("signing_proof"),
         lambda t: t["members"][0].update(name_ct=5),
         lambda t: t["members"][0].update(name="Desk"),
         lambda t: t["members"][0].update(added_at="1"),
@@ -532,7 +543,7 @@ def test_member_names_encrypted_and_readable():
     b = ident()
     ring, _ = kr.join_with_password(ring, PW, b, "Laptop", _kdf_override=CHEAP)
     for m in ring["members"]:
-        assert set(m) == {"device_id", "name_ct", "exchange_public", "added_at"}
+        assert set(m) == {"device_id", "name_ct", "exchange_public", "signing_public", "signing_proof", "added_at"}
         assert "Desk" not in m["name_ct"] and "Laptop" not in m["name_ct"]
     assert b"Desk" not in canonical_json(ring) and b"Laptop" not in canonical_json(ring)
     assert kr.member_names(ring, gk) == {a.device_id: "Desk", b.device_id: "Laptop"}
@@ -699,3 +710,98 @@ def test_attach_is_idempotent_for_the_same_device():
                                                      b.device_id, b.exchange_public_key)
     t = kr._finish(t, gk, None, t["prev_mac"])
     assert reason(attach, t, b, gk) == "already-member"
+
+
+# --- format 2: member signing keys (audit R-4) --------------------------------------------------------
+
+
+def _as_format1(ring: dict, gk) -> dict:
+    """*ring* as an older app wrote it: format 1, no member signing fields, MAC recomputed."""
+    body = {k: v for k, v in ring.items() if k != "mac"}
+    body["format"] = 1
+    body["members"] = [{k: v for k, v in m.items() if k not in ("signing_public", "signing_proof")}
+                       for m in ring["members"]]
+    return kr._finish(body, gk, None, ring["prev_mac"])
+
+
+def test_member_proofs_bind_the_key_to_its_device_and_group():
+    a, ring, gk = make()
+    b, ring, _ = join(ring)
+    keys = kr.member_signing_keys(ring)
+    assert keys == {a.device_id: b64(a.signing_public_key), b.device_id: b64(b.signing_public_key)}
+    structure(ring)
+    # B's key and proof copied onto A's entry: the proof names B's device id and exchange key.
+    t = copy.deepcopy(ring)
+    t["members"][0]["signing_public"] = t["members"][1]["signing_public"]
+    t["members"][0]["signing_proof"] = t["members"][1]["signing_proof"]
+    assert reason(structure, t) == "bad-member-proof"
+    # Someone with G lists a key it does not hold for B (no valid proof possible without B's private key).
+    mallory = ident()
+    t = copy.deepcopy(ring)
+    t["members"][1]["signing_public"] = b64(mallory.signing_public_key)
+    assert reason(structure, t) == "bad-member-proof"
+    # A proof made for another group does not verify here.
+    t = copy.deepcopy(ring)
+    other = kr._proof_message("another-group", b.device_id, t["members"][1]["exchange_public"],
+                              t["members"][1]["signing_public"])
+    t["members"][1]["signing_proof"] = b64(b.signing_key.sign(other))
+    assert reason(structure, t) == "bad-member-proof"
+    # The MAC covers the key: a valid entry for another identity under B's id still fails the MAC.
+    t = copy.deepcopy(ring)
+    m = t["members"][1]
+    m["signing_public"] = b64(mallory.signing_public_key)
+    m["signing_proof"] = b64(mallory.signing_key.sign(kr._proof_message(
+        t["group_id"], m["device_id"], m["exchange_public"], m["signing_public"])))
+    structure(t)
+    assert reason(accept, t, gk, a) == "tampered"
+
+
+def test_format1_keyrings_are_still_read_and_written_back_as_format2():
+    a, ring, gk = make()
+    b, ring, _ = join(ring)
+    old = _as_format1(ring, gk)
+    assert old["format"] == 1 and set(old["members"][0]) == {"device_id", "name_ct", "exchange_public", "added_at"}
+    structure(old)
+    assert accept(old, gk, a) == gk and accept(old, gk, b) == gk
+    assert kr.member_signing_keys(old) == {}
+    assert kr.member_names(old, gk) == kr.member_names(ring, gk)
+    # A device joining an older keyring writes format 2: its own key and proof, null for the others.
+    c = ident()
+    joined, _ = kr.join_with_password(old, PW, c, "C", _kdf_override=CHEAP)
+    assert joined["format"] == 2
+    structure(joined)
+    assert kr.member_signing_keys(joined) == {c.device_id: b64(c.signing_public_key)}
+    assert [m["signing_public"] for m in joined["members"][:2]] == [None, None]
+    assert accept(joined, gk, a) == gk
+    # A rotation carries every key and proof unchanged (null stays null).
+    rotated, gk2 = kr.rotate(joined, gk, a, PW2, _kdf_override=CHEAP)
+    assert rotated["format"] == 2 and gk2.epoch == 2
+    assert kr.member_signing_keys(rotated) == kr.member_signing_keys(joined)
+    assert accept(rotated, gk, c) == gk2
+
+
+def test_rotation_keeps_member_keys_and_a_changed_own_key_is_refused():
+    a, ring, gk = make()
+    b, ring, _ = join(ring)
+    rotated, gk2 = kr.rotate(ring, gk, a, PW2, _kdf_override=CHEAP)
+    assert kr.member_signing_keys(rotated) == kr.member_signing_keys(ring)
+    for before, after in zip(ring["members"], rotated["members"], strict=True):
+        assert before["signing_proof"] == after["signing_proof"]
+    # A keyring that lists another signing key for this device is not accepted as its own.
+    impostor = kr.DeviceIdentity(b.device_id, ident().signing_key, b.exchange_key)
+    with pytest.raises(kr.KeyringError) as err:
+        kr._member(rotated, impostor)
+    assert err.value.reason == "key-mismatch"
+
+
+def test_vector_keyrings_format2_and_format1():
+    from pathlib import Path as _Path
+
+    vectors = _Path(__file__).parent / "vectors" / "sync"
+    v2 = kr.parse_keyring((vectors / "keyring_epoch1.json").read_bytes())
+    v1 = kr.parse_keyring((vectors / "keyring_v1_epoch1.json").read_bytes())
+    assert v2["format"] == 2 and v1["format"] == 1
+    kr.verify_keyring_structure(v2)
+    kr.verify_keyring_structure(v1)
+    assert len(kr.member_signing_keys(v2)) == 3 and kr.member_signing_keys(v1) == {}
+    assert [m["device_id"] for m in v1["members"]] == [m["device_id"] for m in v2["members"]]

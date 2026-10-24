@@ -8,6 +8,7 @@ import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.keyring.Keyring
 import app.localgatekeys.core.passkey.PasskeyKey
 import app.localgatekeys.core.passkey.PasskeyRecord
+import app.localgatekeys.core.primitives.Base64Std
 import app.localgatekeys.core.records.Namespace
 import app.localgatekeys.core.records.Normalise
 import app.localgatekeys.core.records.SyncMeta
@@ -128,6 +129,16 @@ class FromAndroidTest {
         return Out(folder.files[KEYRING_PATH]!!, id, folder.files[devPath(id)]!!, store, backup)
     }
 
+    /** [ring] as format 1: members without `signing_public` / `signing_proof`, MAC recomputed under [gk]. */
+    private fun asFormat1(ring: JsonValue, gk: app.localgatekeys.core.group.GroupKey): ByteArray {
+        val body = LinkedHashMap(obj(ring))
+        body["format"] = JsonValue.Int(1)
+        body["members"] = JsonValue.Arr(
+            (body["members"] as JsonValue.Arr).items.map { JsonValue.Obj(obj(it) - "signing_public" - "signing_proof") },
+        )
+        return CanonicalJson.encode(Keyring.finish(body, gk), Dialect.UTF8)
+    }
+
     private fun read(f: File): ByteArray {
         check(f.isFile) { "vector missing: $f (generate with LGK_WRITE_FROM_ANDROID=1)" }
         return f.readBytes()
@@ -198,7 +209,21 @@ class FromAndroidTest {
             File(sync, "devices/${out.deviceId}.lgksync").writeBytes(out.file)
             File(bak, "backup.lgkm").writeBytes(out.backup)
         }
-        assertContentEquals(out.keyring, read(File(sync, "keyring.lgkkeys")))
+        // The join writes keyring format 2 (the phone's entry lists its signing key with a proof; the
+        // members from the format-1 seed get null signing fields).
+        assertEquals(JsonValue.Int(2), obj(ring)["format"])
+        assertEquals(
+            mapOf(out.deviceId to Base64Std.encode(out.store.snapshot.sync!!.identity.signingPublicKey)),
+            Keyring.memberSigningKeys(ring),
+        )
+        // A committed format-1 file (written before format 2) must equal the output with the signing fields
+        // dropped and the MAC recomputed; a regenerated (format 2) file must equal the output exactly.
+        val committed = read(File(sync, "keyring.lgkkeys"))
+        if (obj(Keyring.parse(committed))["format"] == JsonValue.Int(1)) {
+            assertContentEquals(committed, asFormat1(ring, gk))
+        } else {
+            assertContentEquals(out.keyring, committed)
+        }
         assertContentEquals(out.file, read(File(sync, "devices/${out.deviceId}.lgksync")))
         assertContentEquals(out.backup, read(File(bak, "backup.lgkm")))
         assertEquals(listOf("${out.deviceId}.lgksync"), File(sync, "devices").list()!!.toList())

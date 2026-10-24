@@ -254,7 +254,9 @@ ISSUE_COPY: Mapping[str, str] = {
                      "access to the sync folder may have altered it.",
     "view-forged": "{subject} is signed with the wrong key and was skipped. Someone with access to the sync folder "
                    "may have altered it.",
-    "own-file-rewritten": "This PC's sync file was changed by another device or person. This PC wrote it again. If "
+    "signer-changed": "{subject} has a different signing key in the sync folder's member list than before. If you "
+                      "did not set that device up again, remove devices you do not trust.",
+    "own-file-rewritten":"This PC's sync file was changed by another device or person. This PC wrote it again. If "
                           "you did not just restore an older backup, remove devices you do not trust.",
     "counter-exhausted": "This PC's sync file cannot be updated any more. Leave sync on this PC and join again.",
     # merging
@@ -278,6 +280,9 @@ ISSUE_COPY: Mapping[str, str] = {
     "peer-epoch-behind": "{subject} has an older sync key. Pair it again with Show QR code.",
     "offer-used-or-expired": "This pairing code was used up or expired. Show a new code.",
     "too-many-peers": "The other device already has the most paired devices. Remove one there first.",
+    "peer-update-needed": "{subject} runs an older LocalGateKeys and cannot sync over Wi-Fi with this PC. Update "
+                          "LocalGateKeys on that device.",
+    "lan-update-needed": "Another device runs a newer Wi-Fi sync. Update LocalGateKeys on this PC.",
     "lan-not-listening": "Wi-Fi sync is not listening yet.",
     "listen-failed": "Wi-Fi sync could not start listening. Check the address and port, and that no other app "
                      "uses that port.",
@@ -326,7 +331,7 @@ _FILE_KINDS = frozenset({"corrupt", "rollback", "suspicious-rewrite", "epoch-mis
 _DEVICE_KINDS = frozenset({"member-dropped", "member-added", "bad-name", "bad-peer-data", "bad-peer-record",
                            "implausible-vv", "epoch-behind",
                            "peer-epoch-behind", "no-endpoint", "peer-revoked", "peer-mismatch",
-                           "group-mismatch"})
+                           "group-mismatch", "peer-update-needed", "signer-changed"})
 
 
 #: Issues that stop sync for good until the user acts; the banner offers "Reset sync on this PC".
@@ -472,6 +477,9 @@ ERROR_COPY: Mapping[str, str] = {
     "unreachable": "The other device could not be reached. Check that both are on the same Wi-Fi and that the "
                    "other device shows its code.",
     "too-many-peers": "The other device already has the most paired devices. Remove one there first.",
+    "declined": "The other device declined, or nobody chose Accept there in time. Show a new code there and "
+                "choose Accept when both screens show the same code.",
+    "update-needed": "Update LocalGateKeys on this PC to pair with that device.",
     "bad-offer": "That is not a valid LocalGateKeys pairing code.",
     "refused": "The other device refused the pairing. Show a new code and try again.",
     "not-our-offer": "This pairing code belongs to another sync group. Show a new code.",
@@ -1126,13 +1134,15 @@ class _ReleasingEnroll:
             return self._inner.enroll(*args, **kwargs)
 
 
-def enroll_job(qr_text: str, install_id: str, endpoint: Any):
+def enroll_job(qr_text: str, install_id: str, endpoint: Any, *, on_code: Any = None):
+    """Join by QR text; *on_code* receives the verification code the inviting device shows next to Accept."""
+
     def job(session: Any, lease: Any, gate: Any) -> Any:
         from ..sync.lan_sync import enroll_from_qr
         from ..sync.transport import SyncTransport
 
         return enroll_from_qr(qr_text, session, lease, install_id=install_id, endpoint=endpoint,
-                              transport=_ReleasingEnroll(SyncTransport(), gate))
+                              transport=_ReleasingEnroll(SyncTransport(), gate), on_code=on_code)
 
     return job
 

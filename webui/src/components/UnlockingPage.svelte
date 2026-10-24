@@ -4,12 +4,16 @@
   import { okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
   import CameraView from './CameraView.svelte';
+  import PhraseCard from './PhraseCard.svelte';
 
   let { onclose, startHello = false } = $props();
   let hello = $state(null);
   let face = $state(null);
   let busy = $state('');
   let message = $state('');
+  // Removing camera verification with a recovery phrase replaces the phrase: the new one is shown once here.
+  let card = $state(null);
+  let phraseNotes = $state([]);
   let started = false;
 
   async function load() {
@@ -24,8 +28,13 @@
     message = '';
     const result = await call(method);
     busy = '';
-    if (result.ok) message = result.message;
-    else if (result.error.code !== 'cancelled') toast(result.error.message, '', 'error');
+    if (result.ok) {
+      message = result.message;
+      if (result.phrase_card) {
+        card = result.phrase_card;
+        phraseNotes = Array.isArray(card.notes) ? card.notes.filter((n) => typeof n === 'string' && n) : [];
+      }
+    } else if (result.error.code !== 'cancelled') toast(result.error.message, '', 'error');
     else if (result.error.message !== 'Cancelled.') message = result.error.message;
     load();
   }
@@ -46,7 +55,14 @@
     <button class="close" aria-label="Close" onclick={onclose}>✕</button>
   </header>
   {#if message}<p class="summary" role="status">{message}</p>{/if}
-  {#if hello}
+  {#if phraseNotes.length}
+    <ul class="phrase-notes" aria-label="What changed with the new recovery phrase">
+      {#each phraseNotes as note, i (i)}<li>{note}</li>{/each}
+    </ul>
+  {/if}
+  {#if card}
+    {#key card.token}<PhraseCard {card} ondone={(text) => { card = null; if (text) message = text; }} />{/key}
+  {:else if hello}
     <div class="section-label">Windows Hello</div>
     <div class="group card">
       <p class="status {hello.tone}">{hello.status}</p>
@@ -62,7 +78,7 @@
       {/if}
     </div>
   {/if}
-  {#if face}
+  {#if face && !card}
     <div class="section-label">Camera verification</div>
     <div class="group card">
       <p class="status {face.tone}">{face.status}</p>
@@ -92,6 +108,8 @@
   .status.danger { color: var(--danger); }
   .note { margin: 0; color: var(--text-muted); font-size: 12.5px; white-space: pre-line; }
   .summary { padding: 8px 12px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 14%, transparent); }
+  .phrase-notes { margin: 0; padding: 8px 12px 8px 28px; border-radius: 10px; font-size: 12.5px;
+    background: color-mix(in srgb, var(--warning) 14%, transparent); display: grid; gap: 4px; }
   .toggle { display: flex; gap: 8px; align-items: center; font-size: 13px; }
   footer { display: flex; justify-content: flex-end; gap: 8px; }
 </style>

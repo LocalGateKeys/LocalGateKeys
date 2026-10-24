@@ -113,8 +113,8 @@ class HardeningTest {
 
     private class Joined(val folder: MemoryFolder, val store: MemoryStore, val fs: FolderSync)
 
-    private fun joined(): Joined {
-        val folder = SyncFixtures.seededFolder()
+    private fun joined(signed: Boolean = false): Joined {
+        val folder = SyncFixtures.seededFolder(signed)
         val store = MemoryStore()
         val fs = FolderSync(folder, INSTALL)
         val pw = SyncFixtures.pwKey("1")
@@ -128,6 +128,10 @@ class HardeningTest {
         val raw = ViewFile.encode(epochKey("1"), A, counter, aStates(), FixedClock(T0 + 1500), DetRand(label))
         j.folder.files[devPath(A)] = raw
         return raw
+    }
+
+    private fun signA(j: Joined, raw: ByteArray, by: String) {
+        j.folder.files[FolderLayout.signatureFile(A)!!] = ViewSignature.sign(raw, ViewFile.decodeHeader(raw), SyncFixtures.identity(by))
     }
 
     private fun pin(j: Joined, device: String, key: ByteArray) {
@@ -246,4 +250,99 @@ class HardeningTest {
     }
 
     private fun joinedState(): SyncGroupState = joined().store.snapshot.sync!!
+
+    // ---- R-4: the keyring anchors each member's signing key (desktop test_secfix_sync_views.py) ----
+
+    private fun keyOf(who: String): String = Base64Std.encode(SyncFixtures.identity(who).signingPublicKey)
+
+    @Test
+    fun keyring_keys_are_pinned_at_once_on_join() {
+        val j = joined(signed = true)
+        val st = j.store.snapshot.sync!!
+        for (who in listOf("A", "B", "C")) assertEquals(keyOf(who), st.viewSigners[SyncFixtures.identity(who).deviceId], who)
+        assertEquals(7L, st.lastSeen[A])
+    }
+
+    @Test
+    fun keyring_key_wins_over_the_paired_key_and_the_pin() {
+        val j = joined(signed = true)
+        // A wrong LAN-paired key and a wrong pin: the keyring's key (A's real one) still decides.
+        val fs = FolderSync(j.folder, INSTALL, pairedKeys = mapOf(A to keyOf("B")))
+        pin(j, A, SyncFixtures.identity("B").signingPublicKey)
+        val raw = writeA(j, 8, "a8")
+        signA(j, raw, "A")
+        val r = fs.runOnce(j.store, DetRand("r1"), FixedClock(T0 + 1600))
+        assertEquals(listOf("signer-changed"), issues(r)) // the stale pin is replaced from the keyring
+        assertEquals(8L, j.store.snapshot.sync!!.lastSeen[A])
+        assertEquals(keyOf("A"), j.store.snapshot.sync!!.viewSigners[A])
+        // Signed by the paired (wrong) key: forged.
+        val next = writeA(j, 9, "a9")
+        signA(j, next, "B")
+        assertEquals(listOf("view-forged"), issues(fs.runOnce(j.store, DetRand("r2"), FixedClock(T0 + 1700))))
+        assertEquals(8L, j.store.snapshot.sync!!.lastSeen[A])
+    }
+
+    @Test
+    fun a_member_that_never_wrote_cannot_be_pinned_to_a_forger() {
+        // Before R-4 the first signed view pinned its key: someone with G could sign first for a member.
+        val folder = SyncFixtures.seededFolder(signed = true)
+        val raw = folder.files[devPath(A)]!!
+        folder.files[FolderLayout.signatureFile(A)!!] = ViewSignature.sign(raw, ViewFile.decodeHeader(raw), SyncFixtures.identity("C"))
+        val store = MemoryStore()
+        val fs = FolderSync(folder, INSTALL)
+        val pw = SyncFixtures.pwKey("1")
+        val r = fs.join(store, "Pixel", DetRand("hardening|join"), FixedClock(T0 + 1000)) { pw }
+        assertEquals(listOf("view-forged"), issues(r))
+        val st = store.snapshot.sync!!
+        assertEquals(keyOf("A"), st.viewSigners[A]) // pinned from the keyring, not from the forgery
+        assertNull(st.lastSeen[A])
+        // An unsigned file is refused too: a keyring key means "must be signed".
+        folder.files.remove(FolderLayout.signatureFile(A)!!)
+        assertEquals(listOf("view-unsigned"), issues(fs.runOnce(store, DetRand("r1"), FixedClock(T0 + 1100))))
+        // Signed by A: accepted.
+        folder.files[FolderLayout.signatureFile(A)!!] = ViewSignature.sign(raw, ViewFile.decodeHeader(raw), SyncFixtures.identity("A"))
+        assertEquals(emptyList(), issues(fs.runOnce(store, DetRand("r2"), FixedClock(T0 + 1200))))
+        assertEquals(7L, store.snapshot.sync!!.lastSeen[A])
+    }
+
+    @Test
+    fun a_changed_keyring_key_replaces_the_pin_and_is_reported() {
+        val j = joined(signed = true)
+        val old = j.store.snapshot.sync!!.viewSigners[A]
+        assertEquals(keyOf("A"), old)
+        // Someone holding G lists another key (with a valid proof by that key) for A.
+        val gk = epochKey("1")
+        val ring = app.localgatekeys.core.keyring.Keyring.parse(j.folder.files[SyncFixtures.KEYRING_PATH]!!)
+        val body = LinkedHashMap(ring.obj().fields)
+        val forger = SyncFixtures.identity("C")
+        val newKey = Base64Std.encode(forger.signingPublicKey)
+        body["members"] = JsonValue.Arr(
+            (body["members"] as JsonValue.Arr).items.map { m ->
+                val f = LinkedHashMap(m.obj().fields)
+                if (f["device_id"] == JsonValue.Str(A)) {
+                    val proof = app.localgatekeys.core.keyring.Keyring.proofMessage(gk.groupId, A, f["exchange_public"]!!.str(), newKey)
+                    f["signing_public"] = JsonValue.Str(newKey)
+                    f["signing_proof"] = JsonValue.Str(Base64Std.encode(forger.sign(proof)))
+                }
+                JsonValue.Obj(f)
+            },
+        )
+        j.folder.files[SyncFixtures.KEYRING_PATH] = app.localgatekeys.core.json.CanonicalJson.encode(
+            app.localgatekeys.core.keyring.Keyring.finish(body, gk), app.localgatekeys.core.json.Dialect.UTF8,
+        )
+        val r = j.fs.runOnce(j.store, DetRand("r1"), FixedClock(T0 + 1600))
+        // A's file is still signed by A's old key: refused under the keyring's (new) key.
+        assertEquals(listOf("signer-changed", "view-forged"), issues(r))
+        assertEquals("$A: the keyring lists another signing key", r.issues[0].detail)
+        assertEquals(newKey, j.store.snapshot.sync!!.viewSigners[A])
+    }
+
+    @Test
+    fun own_device_is_never_checked_against_the_keyring() {
+        // The phone's own entry lists its key; its own view is never read as a peer and its pin is its own key.
+        val j = joined(signed = true)
+        val st = j.store.snapshot.sync!!
+        assertEquals(Base64Std.encode(st.identity.signingPublicKey), st.viewSigners[st.deviceId])
+        assertEquals(emptyList(), issues(j.fs.runOnce(j.store, DetRand("r1"), FixedClock(T0 + 1600))))
+    }
 }

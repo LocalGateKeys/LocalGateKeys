@@ -39,6 +39,12 @@ class ProfileError(Exception):
     pass
 
 
+CAMERA_UNLOCK_BLOCKS_DELETE = (
+    "Camera verification is set up for this profile. Open the profile and remove camera verification "
+    "first (Unlocking; this re-encrypts the vault under a new key and replaces any recovery phrase), "
+    "then remove the profile.")
+
+
 @dataclass(frozen=True)
 class ProfileRecord:
     id: str
@@ -357,6 +363,12 @@ class ProfileManager:
     def remove_profile_photo(self, profile_id: str) -> ProfileRecord:
         return self.update_profile(profile_id, remove_photo=True)
 
+    def camera_unlock_blocks_delete(self, profile_id: str) -> bool:
+        """True when the profile has a camera-unlock sidecar, so :meth:`delete_profile` will refuse it."""
+        from .face_unlock import envelope_path as face_envelope_path
+
+        return face_envelope_path(self.root / "Profiles" / profile_id / "vault.json").exists()
+
     def delete_profile(self, profile_id: str) -> None:
         raw = self._read_index()
         rows = [item for item in raw["profiles"] if isinstance(item, dict)]
@@ -371,15 +383,13 @@ class ProfileManager:
         source = self.profile_dir(profile_id)
         if source.exists():
             # The camera-unlock sidecar opens the vault with nothing more than
-            # this Windows account (DPAPI); it must not follow the vault into
-            # the archive, where it would keep the archived vault that weak.
-            from .face_unlock import envelope_path as face_envelope_path
-
-            try:
-                face_envelope_path(source / "vault.json").unlink(missing_ok=True)
-            except OSError as exc:
-                raise ProfileError("Could not remove this profile's camera-unlock setup; close LocalGateKeys "
-                                   "windows using it and try again") from exc
+            # this Windows account (DPAPI).  Removing it alone would leave any
+            # earlier copy of it opening the archived vault, so a profile with
+            # camera unlock is refused until camera verification is removed in
+            # the app, which rotates the data key and, when there is one,
+            # replaces the recovery phrase (L-4).
+            if self.camera_unlock_blocks_delete(profile_id):
+                raise ProfileError(CAMERA_UNLOCK_BLOCKS_DELETE)
             archive_root = self.root / "DeletedProfiles"
             archive_root.mkdir(parents=True, exist_ok=True)
             destination = archive_root / f"{int(time.time())}-{profile_id}"

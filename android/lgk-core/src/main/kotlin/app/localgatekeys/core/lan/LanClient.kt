@@ -48,26 +48,37 @@ class LanClient(
     /**
      * One connection: send a hello (fresh 16-byte session id, then a 32-byte hello nonce from
      * `random`), check the responder's hello (pinned keys, same session id, increasing counter),
-     * send one sealed request and open the one sealed response.
+     * send one sealed request and open the one sealed response. A responder that answers the hello
+     * with a version refusal (or a signed hello of another version) stops the request with
+     * [LanSyncException] `peer-update-needed` (it announced an older version) or `lan-update-needed`
+     * (a newer one); there is never a retry with another version. The hello's ephemeral private key
+     * is zeroed when the request ends, used or not.
      */
     fun request(plaintext: ByteArray, peer: PinnedPeer, connection: LanConnection): ByteArray {
         val sessionId = random.bytes(LanTransport.SESSION_ID_BYTES)
         val localHello = SessionHello.make(identity, groupKey.groupId, sessionId, counters.nextCounter(), random)
-        val helloFrame = connection.exchange(LanTransport.encodeFrame(localHello.toBytes()))
-        val remoteHello = SessionHello.parse(LanTransport.decodeFrame(helloFrame))
-        if (remoteHello.deviceId != peer.deviceId) {
-            throw LanTransportException(LanTransportException.Kind.AUTHENTICATION, "Session peer is not the expected paired device")
+        try {
+            val helloFrame = connection.exchange(LanTransport.encodeFrame(localHello.toBytes()))
+            val helloPayload = LanTransport.decodeFrame(helloFrame)
+            val announced = LanTransport.parseVersionRefusal(helloPayload) ?: SessionHello.otherVersion(helloPayload)
+            if (announced != null) throw versionMismatch(announced)
+            val remoteHello = SessionHello.parse(helloPayload)
+            if (remoteHello.deviceId != peer.deviceId) {
+                throw LanTransportException(LanTransportException.Kind.AUTHENTICATION, "Session peer is not the expected paired device")
+            }
+            SessionHello.verify(remoteHello, peer, groupKey.groupId)
+            counters.acceptInbound(remoteHello.counter, peer.deviceId)
+            if (!remoteHello.sessionId.contentEquals(sessionId)) {
+                throw LanTransportException(LanTransportException.Kind.AUTHENTICATION, "Session hello is bound to another session")
+            }
+            val channel = SecureChannel(
+                identity, peer, groupKey.groupId, sessionId, SecureChannel.Role.INITIATOR, localHello, remoteHello,
+            )
+            val response = connection.exchange(channel.seal(plaintext))
+            return channel.open(response)
+        } finally {
+            localHello.ephemeralSecret?.wipe()
         }
-        SessionHello.verify(remoteHello, peer, groupKey.groupId)
-        counters.acceptInbound(remoteHello.counter, peer.deviceId)
-        if (!remoteHello.sessionId.contentEquals(sessionId)) {
-            throw LanTransportException(LanTransportException.Kind.AUTHENTICATION, "Session hello is bound to another session")
-        }
-        val channel = SecureChannel(
-            identity, peer, groupKey.groupId, sessionId, SecureChannel.Role.INITIATOR, localHello, remoteHello,
-        )
-        val response = connection.exchange(channel.seal(plaintext))
-        return channel.open(response)
     }
 
     /**
@@ -171,6 +182,20 @@ class LanClient(
     companion object {
         /** Desktop `lan_sync.CHUNK_RETRY_DELAY = 0.05` s. */
         const val DEFAULT_RETRY_DELAY_MILLIS: Long = 50
+
+        /**
+         * Desktop `PeerVersionMismatch` as its issue: [announced] below this version means the PEER
+         * needs an update (`peer-update-needed`), above it means THIS device does (`lan-update-needed`).
+         */
+        internal fun versionMismatch(announced: Long): LanSyncException {
+            val peerOlder = announced < LanTransport.VERSION
+            val who = if (peerOlder) "the other device" else "this device"
+            return LanSyncException(
+                if (peerOlder) "peer-update-needed" else "lan-update-needed",
+                "update needed: $who runs an older LocalGateKeys (Wi-Fi sync version " +
+                    "${minOf(announced, LanTransport.VERSION)} instead of ${maxOf(announced, LanTransport.VERSION)})",
+            )
+        }
 
         /** `_reply_issue`: a responder error or an unexpected message. */
         internal fun replyIssue(m: LanMessage): LanSyncException {

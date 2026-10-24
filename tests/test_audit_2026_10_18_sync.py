@@ -77,7 +77,8 @@ class Dev:
     def relisten(self) -> None:
         if self.transport is not None:
             self.transport.stop()
-        self.responder = lan.LanResponder(self.session, self.lease, install_id=self.install, clock=lambda: NOW)
+        self.responder = lan.LanResponder(self.session, self.lease, install_id=self.install, clock=lambda: NOW,
+                                          on_pending=lambda pending: pending.decide(True))
         self.transport = SyncTransport(lan.transport_state(self.state, self.session, self.lease))
         self.transport.set_peer_request_handler(self.responder)
         if self.port_hold is not None:
@@ -404,8 +405,10 @@ def test_view_marks_unconfirmed_members_and_offers_confirmation() -> None:
 # --- Low: listener slots ------------------------------------------------------------------------------
 
 
-def _idle(endpoint: LANEndpoint) -> socket.socket:
-    sock = socket.create_connection((endpoint.host, endpoint.port), timeout=5)
+def _idle(endpoint: LANEndpoint, source: str | None = None) -> socket.socket:
+    """An idle connection to *endpoint*, from the loopback address *source* (another host of the same /24)."""
+    sock = socket.create_connection((endpoint.host, endpoint.port), timeout=5,
+                                    source_address=None if source is None else (source, 0))
     sock.settimeout(5)
     return sock
 
@@ -423,7 +426,7 @@ def _closed_by_peer(sock: socket.socket, within: float) -> bool:
 def test_an_idle_unauthenticated_connection_no_longer_blocks_sync(devs) -> None:
     a, b = devs("a", group=True), devs("b")
     _pair(a, b)
-    idle = _idle(a.endpoint)
+    idle = _idle(a.endpoint, "127.0.0.2")  # another host of B's /24 (B connects from 127.0.0.1)
     try:
         time.sleep(0.1)
         _web(b, "through")
@@ -439,22 +442,52 @@ def test_an_idle_unauthenticated_connection_no_longer_blocks_sync(devs) -> None:
 def test_first_frame_deadline_and_per_address_cap(devs, monkeypatch) -> None:
     monkeypatch.setattr(tr, "FIRST_FRAME_SECONDS", 0.4)
     a = devs("a", group=True)
-    first, second = _idle(a.endpoint), _idle(a.endpoint)
+    first = _idle(a.endpoint)
     try:
         time.sleep(0.1)
-        third = _idle(a.endpoint)  # same source address: over MAX_INBOUND_PER_ADDRESS (2)
-        assert _closed_by_peer(third, 1.0)
-        third.close()
-        assert _closed_by_peer(first, 2.0) and _closed_by_peer(second, 2.0)  # first frame never came
+        second = _idle(a.endpoint)  # same source address: over MAX_PRE_AUTH_PER_ADDRESS (1)
+        assert _closed_by_peer(second, 1.0)
+        second.close()
+        assert _closed_by_peer(first, 2.0)  # first frame never came
     finally:
         first.close()
-        second.close()
-    assert tr.MAX_INBOUND_PER_ADDRESS == 2 and tr.FIRST_FRAME_SECONDS == 0.4
+    assert tr.MAX_PRE_AUTH_PER_ADDRESS == 1 and tr.FIRST_FRAME_SECONDS == 0.4
+
+
+def test_a_peer_on_the_same_network_connects_while_another_host_holds_its_allowance(devs, monkeypatch) -> None:
+    """R-1: per-address 1, per-/24 3, total 4 with one slot for recently verified addresses."""
+    monkeypatch.setattr(tr, "FIRST_FRAME_SECONDS", 30.0)  # the idle connections stay for the whole test
+    a, b = devs("a", group=True), devs("b")
+    _pair(a, b)
+    # One attacker address holds its whole allowance (a second connection is refused at once) ...
+    held = [_idle(a.endpoint, "127.0.0.2")]
+    try:
+        time.sleep(0.1)
+        refused = _idle(a.endpoint, "127.0.0.2")
+        assert _closed_by_peer(refused, 1.0)
+        refused.close()
+        # ... and B, on the same /24 and never verified at A before, still syncs.
+        _web(b, "same-net")
+        assert kinds(b.sync_with(a)) == []
+        # Now the attacker uses two more addresses: the /24 allowance (3) is full ...
+        held += [_idle(a.endpoint, "127.0.0.3"), _idle(a.endpoint, "127.0.0.4")]
+        time.sleep(0.1)
+        fourth = _idle(a.endpoint, "127.0.0.5")
+        assert _closed_by_peer(fourth, 1.0)
+        fourth.close()
+        # ... but B completed a verified hello at A a moment ago, so it takes the reserved slot.
+        _web(b, "reserved")
+        assert kinds(b.sync_with(a)) == []
+    finally:
+        for sock in held:
+            sock.close()
+    assert {"same-net", "reserved"} <= {e["label"] for e in a.session._payload["entries"]}
 
 
 def test_total_inbound_cap(devs, monkeypatch) -> None:
     monkeypatch.setattr(tr, "MAX_INBOUND_PER_ADDRESS", 10)
-    monkeypatch.setattr(tr, "MAX_PRE_AUTH_PER_PREFIX", 10)  # every test connection comes from 127.0.0.1
+    monkeypatch.setattr(tr, "MAX_PRE_AUTH_PER_ADDRESS", 10)  # every test connection comes from 127.0.0.1
+    monkeypatch.setattr(tr, "MAX_PRE_AUTH_PER_PREFIX", 10)
     a = devs("a", group=True)
     held = [_idle(a.endpoint) for _ in range(tr.MAX_INBOUND_CONNECTIONS)]
     try:
@@ -506,7 +539,8 @@ def _armed(devs):
     a = devs("a", group=True)
     gate = svc.SyncGate()
     inner = _Inner()
-    responder = lan.LanResponder(a.session, a.lease, install_id=a.install, clock=lambda: NOW)
+    responder = lan.LanResponder(a.session, a.lease, install_id=a.install, clock=lambda: NOW,
+                                 on_pending=lambda pending: pending.decide(True))
     offer = lan.begin_pairing(a.session, a.lease, a.endpoint.host, a.endpoint.port, install_id=a.install, now=NOW)
     responder.start_enrollment(offer, svc._GatedEnrollment(inner, gate))
     return a, gate, inner, responder, offer

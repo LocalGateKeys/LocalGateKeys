@@ -195,9 +195,9 @@ def parse_route_print(text: str) -> frozenset[str]:
 
 
 def _route_print() -> str | None:
-    import os
+    from ..winpaths import system32
 
-    route = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", "route.exe")
+    route = system32("route.exe")
     try:
         result = subprocess.run([route, "print", "-4"], capture_output=True, text=True,  # noqa: S603
                                 errors="replace", timeout=5, check=False,

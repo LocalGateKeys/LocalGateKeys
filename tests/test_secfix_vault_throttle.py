@@ -62,18 +62,27 @@ def test_success_keeps_a_macd_zero_record(tmp_path: Path, clock: FakeClock) -> N
     assert V.remaining_backoff_seconds(path) > 0
 
 
-def test_fresh_vault_without_failures_has_no_throttle_files(tmp_path: Path) -> None:
+def test_fresh_vault_without_failures_has_a_bound_zero_record(tmp_path: Path) -> None:
+    # R-8 (round 3): every save binds the throttle key in the header, so the key and a MAC'd zero
+    # counter exist from the first save on; no failure, no wait.
     path = tmp_path / "vault.json"
     V.create_vault(path, MASTER, kdf_overrides=LOW).lock()
     V.unlock_vault(path, MASTER).lock()
-    assert not V._unlock_throttle_path(path).exists()
-    assert not V._unlock_throttle_key_path(path).exists()
+    assert read_json(V._unlock_throttle_path(path))["failures"] == 0
+    assert read_json(V._unlock_throttle_key_path(path))["version"] == 2
+    assert V.THROTTLE_BINDING_FIELD in read_json(path)
+    V._reset_unlock_throttle_state_for_tests()
     assert V.remaining_backoff_seconds(path) == 0.0
 
 
-def test_legacy_key_without_counter_is_not_locked_out_and_is_upgraded(tmp_path: Path, clock: FakeClock) -> None:
+def test_legacy_key_without_counter_is_not_locked_out_and_is_upgraded(tmp_path: Path, clock: FakeClock,
+                                                                     monkeypatch) -> None:
     path = tmp_path / "vault.json"
-    V.create_vault(path, MASTER, kdf_overrides=LOW).lock()
+    with monkeypatch.context() as older_release:
+        # A vault last saved by a release without the header binding.
+        older_release.setattr(V.UnlockThrottle, "binding", lambda self: None)
+        V.create_vault(path, MASTER, kdf_overrides=LOW).lock()
+    assert V.THROTTLE_BINDING_FIELD not in read_json(path)
     _fail(path, 1, clock)
     # A release before the fix: version 1 key, counter deleted by a successful unlock.
     key_path = V._unlock_throttle_key_path(path)
@@ -99,4 +108,5 @@ def test_unreadable_key_is_replaced_at_reset(tmp_path: Path, clock: FakeClock) -
     clock.now += V.THROTTLE_MAX_SECONDS
     V.unlock_vault(path, MASTER).lock()  # e.g. a profile copied to another Windows account
     V._reset_unlock_throttle_state_for_tests()
+    # The unlock re-recorded the replacement key in the header, so the next start does not fail closed.
     assert V.remaining_backoff_seconds(path) == 0.0

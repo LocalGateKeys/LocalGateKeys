@@ -110,8 +110,14 @@ def test_equal_vv_different_content_is_conflict():
     a = live("i", {"a": 1}, t="A")
     b = live("i", {"a": 1}, t="B")
     o1, o2 = merge({"i": a}, [b]), merge({"i": b}, [a])
-    assert o1.upserts[0].item == o2.upserts[0].item
+    # The side whose local state wins upserts nothing (it would be a no-op with the same
+    # vector); the other side takes the winner.  Both end with the same winner and copy.
+    winners = [u.item for u in (*o1.upserts, *o2.upserts)]
+    assert len(winners) == 1
     assert o1.copies == o2.copies and len(o1.copies) == 1
+    after1 = {"i": o1.upserts[0] if o1.upserts else a, **{c.item_id: c for c in o1.copies}}
+    after2 = {"i": o2.upserts[0] if o2.upserts else b, **{c.item_id: c for c in o2.copies}}
+    assert after1 == after2
 
 
 def test_edit_vs_delete_keeps_item():

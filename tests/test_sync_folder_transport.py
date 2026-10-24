@@ -363,6 +363,18 @@ def test_no_temp_files_left_and_other_files_untouched(tmp_path: Path, root: Path
 # --- keyring trust ---------------------------------------------------------------------------
 
 
+def _older_app_members(root: Path, holder: Dev, *devs: Dev) -> None:
+    """Rewrite the keyring (MAC under *holder*'s key) as if *devs* joined with an app from before keyring
+    format 2: their entries list no signing key, so only first-use pinning covers their views."""
+    path = _ring_path(root)
+    ring = kr.parse_keyring(path.read_bytes())
+    ids = {d.device_id for d in devs}
+    for m in ring["members"]:
+        if m["device_id"] in ids:
+            m["signing_public"] = m["signing_proof"] = None
+    path.write_bytes(kr.canonical_json(kr._finish(ring, holder.gk(), None, ring["prev_mac"])))
+
+
 def _ring_path(root: Path) -> Path:
     return root / ft.SYNC_DIR_NAME / "keyring.lgkkeys"
 
@@ -1021,6 +1033,7 @@ def test_next_epoch_key_mismatch_stops_without_restore(tmp_path: Path, root: Pat
     for m in ring["members"]:
         if m["device_id"] == b.device_id:
             m["exchange_public"] = pubs[c.device_id]  # B is listed, but with another device's key
+            m["signing_public"] = m["signing_proof"] = None  # (B's proof signs its real exchange key)
     forged = kr.canonical_json(ring)
     path.write_bytes(forged)
     b_file = b.own_file.read_bytes()

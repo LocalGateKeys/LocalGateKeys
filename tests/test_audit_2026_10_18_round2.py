@@ -75,7 +75,7 @@ def sync(tmp_path, monkeypatch):
     calls = []
     for name in ("create_group_job", "join_folder_job", "enroll_job", "snapshot_job"):
         monkeypatch.setattr(f"localvault.app.sync.{name}",
-                            lambda *args, _n=name: calls.append(_n) or (lambda s, lease, g: None))
+                            lambda *args, _n=name, **kwargs: calls.append(_n) or (lambda s, lease, g: None))
     monkeypatch.setattr("localvault.app.sync_view.add_folder_job",
                         lambda *args: calls.append("add_folder_job") or (lambda s, lease, g: None))
     monkeypatch.setattr("localvault.app.sync_view.attach_folder_job",

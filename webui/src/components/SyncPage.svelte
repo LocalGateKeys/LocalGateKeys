@@ -20,6 +20,7 @@
   let qr = $state(null);
   let qrProblem = $state(''); // the listener is not running: no QR, only the reason and the address
   let paired = $state(null); // {id, name, fingerprint, message}: who just paired by QR, with Undo
+  let confirm = $state(null); // {id, name, code, fingerprint, seconds, message, adding}: a device waits for Accept
   let firewall = $state(null); // {supported, allowed, profile, advice}
   let firewallBusy = $state(false);
   let qrTimer = null;
@@ -168,21 +169,37 @@
     qrTimer = setInterval(async () => {
       if (!qr) return;
       const r = await call('sync_qr_poll', qr.offer_id);
-      if (!r.ok || r.state === 'closed' || r.state === 'expired') { stopQr(); qr = null; return; }
-      if (r.state === 'paired') {
-        stopQr(); qr = null; firewall = null;
-        paired = r.device ? { ...r.device, message: r.message } : null;
-        if (!paired) toast(r.message);
-        load('sync_refresh');
-        return;
-      }
-      qr = { ...qr, countdown: r.countdown };
+      showQrState(r);
     }, 1000);
+  }
+  function showQrState(r) {
+    if (!r.ok || r.state === 'closed' || r.state === 'expired') { stopQr(); qr = null; confirm = null; return; }
+    if (r.state === 'paired') {
+      stopQr(); qr = null; confirm = null; firewall = null;
+      paired = r.device ? { ...r.device, message: r.message } : null;
+      if (!paired) toast(r.message);
+      load('sync_refresh');
+      return;
+    }
+    if (r.state === 'declined') { stopQr(); qr = null; confirm = null; firewall = null; toast(r.message); return; }
+    if (r.state === 'confirm') { confirm = { ...r.device, seconds: r.seconds_left, message: r.message }; return; }
+    if (r.state === 'adding') { confirm = confirm ? { ...confirm, adding: true, message: r.message } : null; return; }
+    confirm = null;
+    qr = { ...qr, countdown: r.countdown };
+  }
+  // Accept admits the device only if both screens show the same code; Decline (or no answer) refuses it.
+  async function decide(accept) {
+    if (!qr || !confirm || confirm.adding) return;
+    const id = qr.offer_id;
+    if (accept) confirm = { ...confirm, adding: true };
+    const r = await call('sync_qr_poll', id, accept ? 'accept' : 'decline');
+    if (!r.ok) { okOrToast(r); confirm = null; return; }
+    if (qr?.offer_id === id) showQrState(r);
   }
   function stopQr() { clearInterval(qrTimer); qrTimer = null; }
   async function closeQr() {
     const id = qr?.offer_id;
-    stopQr(); qr = null; firewall = null;
+    stopQr(); qr = null; confirm = null; firewall = null;
     if (id) await call('sync_qr_close', id);
   }
   async function copyQr() {
@@ -336,6 +353,23 @@
   </div>
 {/if}
 
+{#if qr && confirm}
+  <div class="scrim" role="alertdialog" aria-modal="true" aria-label="Accept this device?">
+    <div class="sheet-form glass">
+      <h2>Add {confirm.name}?</h2>
+      <p class="muted">{confirm.message}</p>
+      <p class="code verify" aria-label="Verification code">{confirm.code}</p>
+      <p class="muted small">Choose Accept only if the other device shows this same code. Otherwise choose Decline.</p>
+      {#if confirm.fingerprint}<p class="muted small">Key fingerprint: {confirm.fingerprint}</p>{/if}
+      {#if !confirm.adding && confirm.seconds != null}<p class="muted small" role="status">Declines by itself in {confirm.seconds} s.</p>{/if}
+      <footer>
+        <Button label="Decline" disabled={confirm.adding} onclick={() => decide(false)} />
+        <Button label="Accept" variant="primary" busy={confirm.adding} busyLabel="Adding…" onclick={() => decide(true)} />
+      </footer>
+    </div>
+  </div>
+{/if}
+
 {#if paired}
   <div class="scrim" role="dialog" aria-modal="true" aria-label="Device paired">
     <div class="sheet-form glass">
@@ -395,6 +429,7 @@
   /* Never blurred: nearest-neighbour scaling only; white behind the image's own quiet zone. */
   .qr-image { flex: 0 0 auto; max-width: none; aspect-ratio: 1; background: #fff; border-radius: 6px; image-rendering: crisp-edges; image-rendering: pixelated; }
   .code { font: 600 18px var(--font-display); margin: 0; }
+  .code.verify { font-size: 30px; letter-spacing: 0.08em; text-align: center; font-variant-numeric: tabular-nums; }
   /* Wide: QR beside the address and hint. Narrow: stacked and centred. */
   .qr-row { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; justify-content: center; width: 100%; }
   .where { flex: 1 1 200px; min-width: 0; display: grid; gap: 4px; text-align: left; }

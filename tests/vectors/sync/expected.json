@@ -10,6 +10,11 @@
         "b2222222-0000-4000-8000-00000000000b": "Laptop (Windows)",
         "c3333333-0000-4000-8000-00000000000c": "Old Tablet"
       },
+      "member_signing_keys": {
+        "a1111111-0000-4000-8000-00000000000a": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+        "b2222222-0000-4000-8000-00000000000b": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=",
+        "c3333333-0000-4000-8000-00000000000c": "pl0XiPYzPZisZtbxoPMJIr7ziyemOHZb4viqbxKdUH4="
+      },
       "password_wrap_key_hex": "771b5dff8997f354151c8267f2e2093143b98c06b1485c3cdcc48be9edb4f69b",
       "record_key_hex": "91289f5aefa7e697a0eff6a1932378552b8fb1894e474f3c71f7ba1ed45a83d0"
     },
@@ -21,6 +26,10 @@
       "member_names": {
         "a1111111-0000-4000-8000-00000000000a": "Desk PC (Windows)",
         "b2222222-0000-4000-8000-00000000000b": "Laptop (Windows)"
+      },
+      "member_signing_keys": {
+        "a1111111-0000-4000-8000-00000000000a": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+        "b2222222-0000-4000-8000-00000000000b": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
       },
       "password_wrap_key_hex": "a4cbca976ec8a52a295885aac2b20b6c32f85bfeb541364e3a18b81217df4720",
       "record_key_hex": "2befd5fd4dc24ca4ec8b0b71b08ca5eb7e59118636e2f0d963ad8ef6654ebffb"

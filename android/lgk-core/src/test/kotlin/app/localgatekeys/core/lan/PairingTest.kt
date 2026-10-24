@@ -147,6 +147,8 @@ class PairingTest {
             assertEquals(str(c.req["transcript_sha256_hex"]), sha(r.transcript))
             assertEquals(c.endpoint, r.endpoint)
             assertEquals(identity("B").deviceId, r.deviceId)
+            assertEquals(str(c.req["name"]), r.name)
+            assertEquals(str(c.req["verification_code"]), r.code)
             val bad = raw.copyOf()
             bad[bad.size - 5] = (bad[bad.size - 5].toInt() xor 1).toByte()
             assertFailsWith<PairingException> { Enrollment.openRequest(o, a, bad) }
@@ -160,7 +162,7 @@ class PairingTest {
         val b = identity("B")
         for (c in cases()) {
             val random = QueueRandom(listOf(Vectors.hex(str(c.req["ephemeral_private_hex"])), Base64Std.decodeStrict(str(c.req["nonce_b64"]))))
-            val raw = Enrollment.buildRequest(o, b, c.endpoint, random, FixedClock(1790000030))
+            val raw = Enrollment.buildRequest(o, b, str(c.req["name"]), c.endpoint, random, FixedClock(1790000030))
             assertTrue(random.isEmpty)
             val vector = lanFile(c.file).readBytes()
             // Ed25519 here is deterministic (RFC 8032), so the whole request is byte-identical.
@@ -177,15 +179,15 @@ class PairingTest {
         }
         assertEquals(
             PairingException.Kind.EXPIRED,
-            kind { Enrollment.buildRequest(o, b, null, QueueRandom(emptyList()), FixedClock(1790000120)) },
+            kind { Enrollment.buildRequest(o, b, "Pixel", null, QueueRandom(emptyList()), FixedClock(1790000120)) },
         )
         assertEquals(
             PairingException.Kind.AUTHENTICATION,
-            kind { Enrollment.buildRequest(o, a, null, QueueRandom(emptyList()), FixedClock(1790000030)) },
+            kind { Enrollment.buildRequest(o, a, "Pixel", null, QueueRandom(emptyList()), FixedClock(1790000030)) },
         )
         assertEquals(
             PairingException.Kind.MALFORMED,
-            kind { Enrollment.buildRequest(o, b, null, QueueRandom(emptyList()), FixedClock(-1)) },
+            kind { Enrollment.buildRequest(o, b, "Pixel", null, QueueRandom(emptyList()), FixedClock(-1)) },
         )
     }
 
@@ -208,26 +210,89 @@ class PairingTest {
         val gk = groupKey()
         for (c in cases()) {
             val raw = lanFile(c.reply).readBytes()
-            assertEquals(gk, Enrollment.openReply(o, b, raw, c.endpoint))
+            val name = str(c.req["name"])
+            assertEquals(gk, Enrollment.openReply(o, b, raw, name, c.endpoint))
             assertEquals(str(c.rep["key_hex"]), Vectors.hexString(gk.key))
-            // The reply is bound to the announced endpoint.
+            // The reply is bound to the announced endpoint and name.
             val other = if (c.endpoint == null) LanEndpoint("192.168.1.31", 48202) else null
-            assertFailsWith<PairingException> { Enrollment.openReply(o, b, raw, other) }
-            assertFailsWith<PairingException> { Enrollment.openReply(o, identity("C"), raw, c.endpoint) }
+            assertFailsWith<PairingException> { Enrollment.openReply(o, b, raw, name, other) }
+            assertFailsWith<PairingException> { Enrollment.openReply(o, b, raw, name + "x", c.endpoint) }
+            assertFailsWith<PairingException> { Enrollment.openReply(o, identity("C"), raw, name, c.endpoint) }
         }
-        val full = assertFailsWith<PairingException> { Enrollment.openReply(o, b, Enrollment.REFUSED_MAGIC + bytes("{\"reason\":\"full\"}")) }
+        val full = assertFailsWith<PairingException> { Enrollment.openReply(o, b, Enrollment.REFUSED_MAGIC + bytes("{\"reason\":\"full\"}"), "Pixel") }
         assertEquals(PairingException.Kind.REFUSED, full.kind)
         assertEquals("full", full.detail)
-        val unknown = assertFailsWith<PairingException> { Enrollment.openReply(o, b, Enrollment.REFUSED_MAGIC + bytes("{\"reason\":\"x\"}")) }
+        val unknown = assertFailsWith<PairingException> { Enrollment.openReply(o, b, Enrollment.REFUSED_MAGIC + bytes("{\"reason\":\"x\"}"), "Pixel") }
         assertEquals(PairingException.Kind.REFUSED, unknown.kind)
         assertEquals("refused", unknown.detail)
-        val junk = assertFailsWith<PairingException> { Enrollment.openReply(o, b, Enrollment.REFUSED_MAGIC + bytes("not json")) }
+        val junk = assertFailsWith<PairingException> { Enrollment.openReply(o, b, Enrollment.REFUSED_MAGIC + bytes("not json"), "Pixel") }
         assertEquals("refused", junk.detail)
-        assertEquals(PairingException.Kind.MALFORMED, kind { Enrollment.openReply(o, b, Enrollment.REPLY_MAGIC + bytes("{}")) })
+        assertEquals(PairingException.Kind.MALFORMED, kind { Enrollment.openReply(o, b, Enrollment.REPLY_MAGIC + bytes("{}"), "Pixel") })
         val f = obj(lan()["framing"])
         assertEquals(str(f["request_magic_hex"]), Vectors.hexString(Enrollment.REQUEST_MAGIC))
         assertEquals(str(f["reply_magic_hex"]), Vectors.hexString(Enrollment.REPLY_MAGIC))
         assertEquals(str(f["refused_magic_hex"]), Vectors.hexString(Enrollment.REFUSED_MAGIC))
+    }
+
+    @Test
+    fun enrollment_v2_name_code_and_refusals() {
+        val o = offer()
+        val b = identity("B")
+        for (c in cases()) {
+            val name = str(c.req["name"])
+            val transcript = bytes(str(c.req["transcript"]))
+            // The transcript carries the name (ASCII canonical JSON escapes non-ASCII as \uXXXX).
+            assertContentEquals(transcript, Enrollment.transcript(o, b.deviceId, b.signingPublicKey, b.exchangePublicKey, c.endpoint, name))
+            assertTrue(transcript.all { it >= 0 })
+            assertEquals(JsonValue.Int(2), obj(CanonicalJson.parse(transcript))["version"])
+            assertEquals(JsonValue.Str(name), obj(CanonicalJson.parse(transcript))["invitee_name"])
+            val code = str(c.req["verification_code"])
+            assertEquals(code, Enrollment.verificationCode(transcript))
+            // The phone can show the code before it sends anything.
+            assertEquals(code, Enrollment.verificationCode(o, b, c.endpoint, name))
+            assertEquals(code.substring(0, 3) + " " + code.substring(3), Enrollment.displayCode(code))
+            val body = obj(CanonicalJson.parse(bytes(str(c.req["plaintext"]))))
+            assertEquals(JsonValue.Int(2), body["version"])
+            assertEquals(JsonValue.Str(name), body["name"])
+        }
+        assertEquals("Ilias\u2019s iPhone \u00e9", str(obj(lan()["request_no_endpoint"])["name"]))
+        // Every refusal reason, byte for byte, and its mapping for the app.
+        val refusals = obj(obj(lan()["framing"])["refusals_hex"])
+        assertEquals(Enrollment.REFUSAL_REASONS, refusals.keys)
+        val issues = mapOf(
+            "refused" to "refused", "used-or-expired" to "offer-used-or-expired", "full" to "too-many-peers",
+            "declined" to "declined", "update-needed" to "update-needed",
+        )
+        for ((reason, hex) in refusals) {
+            val raw = Vectors.hex(str(hex))
+            assertContentEquals(Enrollment.REFUSED_MAGIC + canon(mapOf("reason" to JsonValue.Str(reason))), raw)
+            val e = assertFailsWith<PairingException> { Enrollment.openReply(o, b, raw, "Pixel") }
+            assertEquals(PairingException.Kind.REFUSED, e.kind)
+            assertEquals(reason, e.detail)
+            assertEquals(issues[reason], Enrollment.refusalIssue(e).reason)
+        }
+        assertEquals(Enrollment.DECLINED_MESSAGE, Enrollment.refusalIssue(PairingException(PairingException.Kind.REFUSED, "declined")).detail)
+        assertEquals("refused", Enrollment.refusalIssue(PairingException(PairingException.Kind.AUTHENTICATION, "x")).reason)
+        // The new device waits for the Accept step: 60 s on the inviter plus a margin.
+        assertEquals(60, Enrollment.ACCEPT_TIMEOUT_SECONDS)
+        assertEquals(75, Enrollment.ENROLL_REPLY_SECONDS)
+    }
+
+    @Test
+    fun device_name_rule() {
+        for (ok in listOf("Pixel", "a", "x".repeat(64), "\u00e9".repeat(32), "Ilias\u2019s iPhone", "Pixel \uD83D\uDE00", "~")) {
+            assertEquals(ok, Enrollment.checkDeviceName(ok))
+        }
+        for (bad in listOf("", "x".repeat(65), "\u00e9".repeat(33), "a\u0000b", "tab\tname", "line\n", "del\u007F", "\u001F",
+            "lone\uD83D", "\uDE00lone")) {
+            assertEquals(PairingException.Kind.MALFORMED, kind { Enrollment.checkDeviceName(bad) }, bad)
+        }
+        // A bad name is refused before anything is built.
+        val o = offer()
+        assertEquals(
+            PairingException.Kind.MALFORMED,
+            kind { Enrollment.buildRequest(o, identity("B"), "bad\nname", null, QueueRandom(emptyList()), FixedClock(1790000030)) },
+        )
     }
 
     // ---- LAN addresses ----

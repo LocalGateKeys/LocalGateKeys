@@ -148,14 +148,18 @@ not part of this release.
    text...**. On the first PC choose **Copy code text** and paste it within the
    120 seconds. The copied text is cleared from the clipboard after 120 seconds
    if it is still there.
-3. The new device receives the group key over the connection that the code
-   authenticates. The first device pairs it and syncing starts.
-4. The first device then shows **Paired: Device ...** with the start of the new
-   device's key fingerprint. If you don't recognise it (someone else used the
-   code), choose **Undo**: that removes it like **Remove a device...** (in a
+3. The new device shows a 6-digit code (for example `123 456`) and waits. The
+   first device asks **Add <name>?** with the new device's name and the same
+   code, and **Accept** / **Decline**. Choose **Accept** only if both screens
+   show the same code. Nothing is sent and nobody is added before Accept; with
+   **Decline**, or no answer within 60 seconds, the new device is told
+   "declined" and the code is used up (show a new one to try again).
+4. After Accept the new device receives the group key over the connection that
+   the code authenticates, and syncing starts. The first device shows **Paired:
+   Device ...** with the start of the new device's key fingerprint and still
+   offers **Undo**, which removes it like **Remove a device...** (in a
    cloud-folder group this also changes the sync password, because the device
-   already received the key). There is no Accept step before the key is sent,
-   because the phone waits only a few seconds for the answer.
+   already received the key).
 
 Both devices must be unlocked and on the same network, and the first one must
 be listening (step 0). The code carries the first device's address, so the new
@@ -283,6 +287,8 @@ offer **Reset sync on this PC** where that is the way out.
 | File was replaced by an older copy | Cloud file history put an old version back. It was skipped. |
 | File was rewritten without a new version number | Somebody with folder access may have altered it. It was skipped. |
 | File was written with another sync key | Ignored until that device syncs again. |
+| A device's file is signed with the wrong key, or not signed | Skipped. Someone with folder access may have altered it. |
+| A device has a different signing key in the member list than before | The key file now names another signing key for that device, and this PC follows it. If you did not set that device up again, remove devices you do not trust. |
 | File holds data of a different device, or a device "sent data signed for a different device" | Skipped. Normally a renamed or copied file or a confused peer; it fixes itself when the owner syncs again. |
 | File could not be read | Skipped. Usually the cloud app has not finished downloading it. |
 | Sync folder not available or could not be read | Check that the cloud app is running and the folder exists. |
@@ -322,6 +328,9 @@ Each synced item carries a format number. A device that receives an item written
 | Another device sent data this PC could not understand (bad reply, chunk or message) | Skipped. Update both devices if it repeats. |
 | The other device refused to sync | It does not accept this PC (not paired, removed, or not unlocked). Check pairing on that device. |
 | The other device refused the pairing | Show a new code and try again. |
+| The other device declined, or nobody chose Accept there in time | Show a new code and choose Accept when both screens show the same code. |
+| A device runs an older LocalGateKeys and cannot sync over Wi-Fi with this PC | Update LocalGateKeys on that device. Wi-Fi sync never falls back to the older protocol. |
+| Another device runs a newer Wi-Fi sync | Update LocalGateKeys on this PC. |
 | Not a valid LocalGateKeys pairing code | You pasted something else, or the text was cut off. Copy the code text again. |
 | Peer has no network address; it connects to this PC instead | Normal for a phone. |
 | A paired device has an older sync key | Pair it again with Show QR code. |
@@ -354,8 +363,17 @@ sync group", describe themselves and say what to do next.
   it on the others. If another PC that did not remove it adds the cloud folder,
   the folder uses the key the removed device knows; change the sync password
   afterwards.
-- **No Accept before pairing.** A device that has the code (QR or copied text)
-  receives the key at once; use **Undo** if the paired device is not yours.
+- **The Accept code checks the device, not the person.** Anyone who saw the
+  QR code or the copied text can try to pair while it is shown; compare the
+  6-digit code on both screens before choosing Accept.
+- **Older devices.** Wi-Fi sync and QR pairing changed in this version
+  (session keys with forward secrecy, the Accept step). A device running an
+  older LocalGateKeys cannot sync over Wi-Fi with an updated one and must be
+  updated; an older device that tries is reported on the updated one, while the
+  older device itself only sees "could not be reached".
+- **Signing keys of older members.** Devices that joined the cloud folder with an
+  older version have no signing key in the member list. Their files are checked
+  against the key seen first, as before, until they leave and join again.
 - **A lagging peer can relay a removed device's edits.** A device that has not
   yet seen the removal can still pass on edits the removed device made before it
   was cut off, until it catches up.
@@ -367,3 +385,38 @@ sync group", describe themselves and say what to do next.
 - **Clock skew.** The winner of a concurrent edit follows the devices' own
   clocks, so a PC with a wrong clock may have its edit kept as the copy instead
   of the original. Both versions are still visible.
+
+## Protocol changes in this version (2026-10-24)
+
+For implementers; the shared test vectors in `tests/vectors/sync/` (README there)
+pin every recipe byte for byte.
+
+- **Wi-Fi session protocol version 2.** The session hello has a new field
+  `ephemeral_public` (a fresh X25519 key for each connection); the signing label
+  is `localgatekeys|sync|session-hello|v2|` and `version` is 2 in hellos and
+  sealed frames. Session key = HKDF-SHA256 over X25519(ephemeral, peer
+  ephemeral) followed by X25519(static exchange key, pinned peer exchange key),
+  salt SHA-256(`localgatekeys|sync|session-salt|v2|` + sorted hellos), info
+  `localgatekeys|sync|session-key|v2|` + session id. Each ephemeral private key
+  is used once and erased, so a later leak of a device's exchange key does not
+  open recorded traffic. A hello of another version is answered with the plain
+  frame `{"refused":"version","version":2}`; there is no fallback.
+- **Listener limits (audit R-1).** At most 4 inbound connections, 2 from one
+  address; before a verified hello at most 1 per address and 3 per /24 (IPv4)
+  or /64 (IPv6), and one slot is kept for addresses that completed a verified
+  hello in the last 15 minutes. Connecting waits up to 3 seconds.
+- **QR enrollment version 2.** The request body has `version` 2 and a `name`
+  (1..64 UTF-8 bytes), which is also `invitee_name` in the enrollment
+  transcript. Both screens show the verification code: the first 4 bytes of
+  SHA-256(`localgatekeys|sync|enroll-verify|v2|` + transcript), big-endian, mod
+  10^6, 6 digits. The inviting device answers only after Accept (up to 60
+  seconds); the new device waits up to 75 seconds. New refusal reasons:
+  `declined` and `update-needed` (a version-1 request).
+- **Key file format 2 (audit R-4).** Each member entry also lists
+  `signing_public` (its Ed25519 view-signing key) and `signing_proof` (that key's
+  signature over `localgatekeys|sync|keyring-member|v2|` + group id + `|` +
+  device id + `|` + exchange key + `|` + signing key, base64 text), both null for
+  a member carried over from format 1. The key file MAC covers them. Format 1 is
+  still read; every write is format 2. A device's file signature must carry the
+  key from the member list first, else its Wi-Fi pairing key, else the key seen
+  first; a changed key in the member list replaces the old one and is reported.

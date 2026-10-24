@@ -370,6 +370,8 @@ class PopupWindow:
     def __init__(self, window: Any) -> None:
         self._window = window
         self.disabled = False
+        # Run once when the popup is disabled: the host moves its prompts to the main window.
+        self.on_disable: list[Any] = []
 
     def disable(self) -> None:
         """Never show this window again (its navigation lock could not be installed)."""
@@ -378,10 +380,16 @@ class PopupWindow:
             self._window.hide()
         except Exception:  # noqa: BLE001, S110 - already hidden or gone
             pass
+        for hook in list(self.on_disable):
+            try:
+                hook()
+            except Exception:  # noqa: BLE001 - every hook runs
+                logging.getLogger(__name__).warning("Popup disable hook failed", exc_info=True)
 
-    def show(self) -> None:
+    def show(self) -> bool:
+        """Show and focus the popup; False when it is disabled (the caller raises the main window instead)."""
         if self.disabled:
-            return
+            return False
         window = self._window
         window.show()
 
@@ -394,6 +402,7 @@ class PopupWindow:
             _on_ui_thread(window, run)
         except Exception:  # noqa: BLE001 - focus is a courtesy
             pass
+        return True
 
     def hide(self) -> None:
         self._window.hide()

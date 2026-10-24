@@ -44,9 +44,16 @@ function fakeKv() {
 // Test hooks (fixed clock, fake fetch) are injected as `deps`, never through env.
 const injectedFetch = new WeakMap();
 
+// The in-memory D1 that arbitrates checkout claims (cloudflare/license-issuer/test/fake-d1.mjs).
+let fakeD1;
+test.before(async () => {
+  ({ fakeD1 } = await import(pathToFileURL(path.join(SRC, "..", "test", "fake-d1.mjs")).href));
+});
+
 function makeEnv({ FETCH, ...extra } = {}) {
   const env = {
     LICENSES: fakeKv(),
+    CLAIMS: fakeD1(),
     LICENSE_PRIVATE_KEY: TEST_PRIVATE_PKCS8_B64,
     WEBHOOK_SECRET: SECRET,
     PADDLE_API_KEY: "pdl_test",
@@ -365,12 +372,24 @@ test("license page: pending, ready, escaping, headers and file download", async 
   assert.ok(html.includes("&lt;script&gt;"));
   assert.match(html, /LGK1-[A-Za-z0-9_-]+/);
   assert.ok(html.includes(`/license/${CLAIM}/file`));
-  assert.equal(ready.headers.get("Content-Security-Policy"), "default-src 'none'; style-src 'unsafe-inline'");
+  assert.equal(
+    ready.headers.get("Content-Security-Policy"),
+    "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'",
+  );
   assert.equal(ready.headers.get("X-Content-Type-Options"), "nosniff");
   assert.equal(ready.headers.get("Referrer-Policy"), "no-referrer");
   assert.equal(ready.headers.get("Access-Control-Allow-Origin"), null);
 
   const file = await send(env, `/license/${CLAIM}/file`, { method: "GET" });
+  const recoverPage = await send(env, "/recover", { method: "GET" });
+  const missing = await send(env, "/nope", { method: "GET" });
+  // Scan F3/F4: every response is HTTPS-only (no preload), unindexed, unframed and referrer-free.
+  for (const r of [pending, ready, file, recoverPage, missing]) {
+    assert.equal(r.headers.get("Strict-Transport-Security"), "max-age=63072000; includeSubDomains");
+    assert.equal(r.headers.get("X-Robots-Tag"), "noindex, nofollow");
+    assert.equal(r.headers.get("Referrer-Policy"), "no-referrer");
+    assert.match(r.headers.get("Content-Security-Policy"), /frame-ancestors 'none'/);
+  }
   assert.equal(file.headers.get("Content-Type"), "application/json");
   assert.equal(file.headers.get("Content-Disposition"), 'attachment; filename="LocalGateKeys-Pro.lgklicense"');
   assert.deepEqual(JSON.parse(await file.text()), storedBundle(env));

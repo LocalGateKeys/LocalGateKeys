@@ -4,7 +4,9 @@ extension Keyring {
     static let kdfFields: Set<String> = ["name", "salt", "memory_kib", "iterations", "parallelism"]
     static let pwWrapFields: Set<String> = ["nonce", "ct"]
     static let devWrapFields: Set<String> = ["eph", "nonce", "ct"]
-    static let memberFields: Set<String> = ["device_id", "name_ct", "exchange_public", "added_at"]
+    /// Member fields of format 1, and of format 2 (with the member's signing key and proof).
+    static let memberFieldsV1: Set<String> = ["device_id", "name_ct", "exchange_public", "added_at"]
+    static let memberFields: Set<String> = memberFieldsV1.union(["signing_public", "signing_proof"])
 
     /// Parse keyring bytes strictly (size, UTF-8, duplicate keys, non-finite numbers) and verify
     /// the structure (desktop `parse_keyring` followed by `verify_keyring_structure`).
@@ -30,7 +32,10 @@ extension Keyring {
     /// Shape, bounds, KDF parameters and wrap/member sets; no authentication. Same check order as the desktop.
     static func verifyStructure(_ keyring: JSONValue) throws {
         let ring = try fields(keyring, topFields, "keyring fields")
-        guard int(ring["format"]) == format else { throw KeyringError("bad-format", "unsupported keyring format") }
+        guard let ringFormat = int(ring["format"]), readFormats.contains(ringFormat) else {
+            throw KeyringError("bad-format", "unsupported keyring format")
+        }
+        let memberSet = ringFormat >= 2 ? memberFields : memberFieldsV1
         guard let gid = str(ring["group_id"]), Identifier.isValid(gid) else { throw KeyringError("bad-group-id", "group_id") }
         guard isInt(ring["epoch"], min: 1), let epoch = int(ring["epoch"]) else { throw KeyringError("bad-epoch", "epoch") }
 
@@ -51,7 +56,7 @@ extension Keyring {
         guard members.count <= maxMembers else { throw KeyringError("too-many-members", "members must have at most 16 entries") }
         var ids = Set<String>()
         for m in members {
-            let mo = try fields(m, memberFields, "member fields")
+            let mo = try fields(m, memberSet, "member fields")
             guard let id = str(mo["device_id"]), Identifier.isValid(id) else { throw KeyringError("bad-device-id", "member device_id") }
             guard ids.insert(id).inserted else { throw KeyringError("duplicate-member", "member device ids must be unique") }
             guard (nameCTMin...nameCTMax).contains(try b64any(mo["name_ct"], "member name_ct").count) else {
@@ -59,6 +64,7 @@ extension Keyring {
             }
             guard isInt(mo["added_at"]) else { throw KeyringError("bad-fields", "member added_at") }
             _ = try b64(mo["exchange_public"], 32, "member exchange_public")
+            if ringFormat >= 2 { try checkMemberProof(groupID: gid, mo) }
         }
 
         guard case .object(let wraps)? = ring["device_wraps"], Set(wraps.keys) == ids else {

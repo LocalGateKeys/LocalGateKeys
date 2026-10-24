@@ -2,7 +2,7 @@ import XCTest
 import Foundation
 @testable import LGKCore
 
-/// Audit 2026-10-24 M-6 / M-7 (Kotlin `HardeningTest`, desktop `tests/test_secfix_sync_*.py`).
+/// Audit 2026-10-24 M-6 / M-7 / R-4 (Kotlin `HardeningTest`, desktop `tests/test_secfix_sync_*.py`).
 final class SyncHardeningTests: XCTestCase {
     static let T0 = EngineTests.T0
     static let A = EngineTests.A
@@ -132,6 +132,7 @@ final class SyncHardeningTests: XCTestCase {
 
     func test_unsigned_views_of_older_peers_are_accepted_until_pinned() throws {
         let (folder, store, fs) = try joined()
+        try FolderSyncTests.olderAppMembers(folder, store, [Self.A])   // A joined with an app from before keyring format 2
         _ = try writeA(folder, counter: 8, "a8")
         XCTAssertEqual(issues(fs.runOnce(store: store, random: DetRand("r1"), clock: FixedClock(now: Self.T0 + 1600))), [])
         XCTAssertEqual(store.snapshot.sync?.lastSeen[Self.A], 8)
@@ -149,8 +150,10 @@ final class SyncHardeningTests: XCTestCase {
     }
 
     func test_paired_key_outranks_the_pin_on_first_use() throws {
-        // Desktop `paired_keys.get(dev) or signers.get(dev)`: the key learned at LAN pairing is the only one A may sign with.
+        // Desktop `paired_keys.get(dev) or signers.get(dev)`: for a member whose keyring entry has no key (older
+        // app), the key learned at LAN pairing is the only one A may sign with.
         let (folder, store, _) = try joined()
+        try FolderSyncTests.olderAppMembers(folder, store, [Self.A])
         let keyA = Base64.encode(try KeyringTests.identity("A").signingPublicKey)
         let fs = try FolderSync(access: folder, installID: FolderSyncTests.install, pairedKeys: [Self.A: keyA])
         let raw = try writeA(folder, counter: 8, "a8")
@@ -168,6 +171,7 @@ final class SyncHardeningTests: XCTestCase {
 
     func test_huge_counter_of_an_unpinned_peer_is_refused() throws {
         let (folder, store, fs) = try joined()
+        try FolderSyncTests.olderAppMembers(folder, store, [Self.A])
         _ = try writeA(folder, counter: VersionVector.maxCounter, "amax")
         XCTAssertEqual(issues(fs.runOnce(store: store, random: DetRand("r1"), clock: FixedClock(now: Self.T0 + 1600))),
                        ["implausible-counter"])
@@ -197,6 +201,26 @@ final class SyncHardeningTests: XCTestCase {
         let r = fs.runOnce(store: store, random: DetRand("r1"), clock: FixedClock(now: Self.T0 + 1200))
         XCTAssertTrue(issues(r).contains("counter-exhausted"))
         XCTAssertFalse(r.wrote)
+    }
+
+    func test_keyring_key_outranks_a_paired_key_and_requires_a_signature() throws {
+        // R-4: `keyring > LAN-paired > first-use pin`; a keyring key needs a valid signature even when nothing is pinned.
+        let (folder, store, _) = try joined()
+        let keyA = Base64.encode(try KeyringTests.identity("A").signingPublicKey)
+        XCTAssertEqual(store.snapshot.sync?.viewSigners[Self.A], keyA)   // pinned from the keyring by the first run
+        let wrongPaired = Base64.encode(try KeyringTests.identity("B").signingPublicKey)
+        let fs = try FolderSync(access: folder, installID: FolderSyncTests.install, pairedKeys: [Self.A: wrongPaired])
+        store.snapshot.sync!.viewSigners[Self.A] = nil
+        let raw = try writeA(folder, counter: 8, "a8")
+        XCTAssertEqual(issues(fs.runOnce(store: store, random: DetRand("r1"), clock: FixedClock(now: Self.T0 + 1600))),
+                       ["view-unsigned"])
+        try signA(folder, raw, as: "B")   // the paired key, but not the keyring's
+        XCTAssertEqual(issues(fs.runOnce(store: store, random: DetRand("r2"), clock: FixedClock(now: Self.T0 + 1700))),
+                       ["view-forged"])
+        try signA(folder, raw)
+        XCTAssertEqual(issues(fs.runOnce(store: store, random: DetRand("r3"), clock: FixedClock(now: Self.T0 + 1800))), [])
+        XCTAssertEqual(store.snapshot.sync?.lastSeen[Self.A], 8)
+        XCTAssertEqual(store.snapshot.sync?.viewSigners[Self.A], keyA)
     }
 
     func test_new_epoch_clears_peer_counters_and_keys() throws {

@@ -190,6 +190,20 @@ class EngineTest {
     }
 
     @Test
+    fun equal_vectors_merge_is_idempotent() {
+        // Fuzz finding S-1 (2026-10-24): a no-op upsert and conflict must not repeat every round.
+        val item = JsonValue.Obj(mapOf("updated_at" to JsonValue.Int(0), "v" to JsonValue.Int(0)))
+        val alive = live("item-1", emptyMap(), item)
+        val gone = tomb("item-1", emptyMap(), null)
+        var out = Engine.merge(mapOf("item-1" to alive), listOf(gone))
+        assertTrue(out.upserts.isEmpty() && out.deletes.isEmpty() && out.conflicts.isEmpty() && out.copies.isEmpty())
+        out = Engine.merge(mapOf("item-1" to gone), listOf(alive))
+        assertEquals(listOf(alive), out.upserts)
+        assertEquals(1, out.conflicts.size)
+        assertTrue(Engine.merge(mapOf("item-1" to alive), listOf(alive)).upserts.isEmpty())
+    }
+
+    @Test
     fun edit_beats_delete() {
         val item = JsonValue.Obj(mapOf("updated_at" to JsonValue.Int(5), "x" to JsonValue.Str("live")))
         val local = live("i", mapOf("b" to 1L, "c" to 0L), item)

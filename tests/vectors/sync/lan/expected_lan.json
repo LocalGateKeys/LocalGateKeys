@@ -1,7 +1,14 @@
 {
-  "description": "QR enrollment of device B by device A at epoch 1 (see README.md). Top-level request/reply: B announces its listening endpoint; request_no_endpoint/reply_no_endpoint: B announces none (invitee_endpoint is null in the body and the transcript).",
+  "description": "QR enrollment (version 2: device name, verification code, Accept step) of device B by device A at epoch 1 (see README.md). Top-level request/reply: B announces its listening endpoint; request_no_endpoint/reply_no_endpoint: B announces none (invitee_endpoint is null in the body and the transcript) and a non-ASCII name.",
   "framing": {
     "json": "pairing._canonical: sorted keys, compact, ensure_ascii=True (differs from the sealed-view canonical JSON, which keeps non-ASCII literally)",
+    "refusals_hex": {
+      "declined": "4c474b454e524f4c4c4e4f310a7b22726561736f6e223a226465636c696e6564227d",
+      "full": "4c474b454e524f4c4c4e4f310a7b22726561736f6e223a2266756c6c227d",
+      "refused": "4c474b454e524f4c4c4e4f310a7b22726561736f6e223a2272656675736564227d",
+      "update-needed": "4c474b454e524f4c4c4e4f310a7b22726561736f6e223a227570646174652d6e6565646564227d",
+      "used-or-expired": "4c474b454e524f4c4c4e4f310a7b22726561736f6e223a22757365642d6f722d65787069726564227d"
+    },
     "refused_magic": "LGKENROLLNO1\\n",
     "refused_magic_hex": "4c474b454e524f4c4c4e4f310a",
     "reply_magic": "LGKENROLLOK1\\n",
@@ -29,24 +36,24 @@
   },
   "qr_payload": "lgk-pair:eyJjZXJ0aWZpY2F0ZV9maW5nZXJwcmludCI6IjVjNjQzOTE1NjRkNmY5MzA4ZWJkYTliNGNhNTE2MjkyZTM1NDY4NGI4NzBjMzMwMzI2ZmUxM2E0MTUzYjcxZWUiLCJjb2RlIjoiMDQ4MTczNTIiLCJlbmRwb2ludCI6eyJob3N0IjoiMTkyLjE2OC4xLjIwIiwicG9ydCI6NDgyMDF9LCJleHBpcmVzX2F0IjoxNzkwMDAwMTIwLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsImludml0ZXJfZGV2aWNlX2lkIjoiYTExMTExMTEtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDBhIiwiaW52aXRlcl9leGNoYW5nZV9wdWJsaWMiOiJTc05WY0hmZUtEdmhCanFQUmVNLzRveHZvM295cTVhb3VuN1licFN0b0ZNPSIsImludml0ZXJfc2lnbmluZ19wdWJsaWMiOiI5Q0FFcWdSUVhNYWwxTzFuK3RxTWZxeDlpZEltdTM0aXNmWGZKY2UrSVJVPSIsIm9mZmVyX2lkIjoiZDRlNWY2YTctMGIxYy00ZDJlLThmMzAtNDE1MjYzNzQ4NTk2IiwicGFpcmluZ19zZWNyZXQiOiIwRXdxSmloZUdqQWNadEpzQnFEcDZFQXFHOFNLMUhUUnZQaGtHdE9rdHpJPSIsInRyYW5zY3JpcHRfbm9uY2UiOiI1SjFveTlyY25ZV3Y0VHNYYkFLcVpvV0kyeUs2UjM3TlkrZDdhVmUvV0RZPSIsInZlcnNpb24iOjF9",
   "reply": {
-    "aad_hex": "7b22657068223a226430562b437333522f4a7666306b7562314a4a486b4c4c6d35643143434e443278536943476769795869383d222c226e6f6e6365223a2274426e6f7a52796a50344e696c324c71227dc9727347316ae42e7fbab545da6a1b3c9a089bbecbc8690e478d878fe62ddf2f",
+    "aad_hex": "7b22657068223a226430562b437333522f4a7666306b7562314a4a486b4c4c6d35643143434e443278536943476769795869383d222c226e6f6e6365223a2274426e6f7a52796a50344e696c324c71227d626e143411c62f9ea97882b73329394693d7bde901267d4125a3fa25c37ad460",
     "ephemeral_private_hex": "57c693ccb59d3a86c8c2f36702066684bd2536956893ebfe5d4722c207397954",
     "ephemeral_public_b64": "d0V+Cs3R/Jvf0kub1JJHkLLm5d1CCND2xSiCGgiyXi8=",
     "epoch": 1,
     "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
-    "hkdf_key_hex": "f0a120d6dec5d6075e561915ff1d8abfb7086fa6bb840533e0d2bea45af5259c",
+    "hkdf_key_hex": "873e0f565e5e699b840f61b80f8bb9d98317896e14dc43391ce526383f306e1c",
     "key_b64": "kr8EnkJd3CJc/LAktL1XN8DMENrNQ0d3QH02a4AtfXE=",
     "key_hex": "92bf049e425ddc225cfcb024b4bd5737c0cc10dacd434777407d366b802d7d71",
     "nonce_b64": "tBnozRyjP4Nil2Lq",
     "plaintext": "{\"device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"epoch\":1,\"group_id\":\"5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64\",\"key\":\"kr8EnkJd3CJc/LAktL1XN8DMENrNQ0d3QH02a4AtfXE=\",\"signing_public\":\"hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=\"}"
   },
   "reply_no_endpoint": {
-    "aad_hex": "7b22657068223a222b3236536e3041524d5033496a54483245736844474a6c4a71476f57787077707074653074654b654351343d222c226e6f6e6365223a227250446c5474657163372f706d586c4c227d84e95edf5360fee9da35b47dd83457ed7a5fa6ed66ea167d0b4f2388eb0f2d2c",
+    "aad_hex": "7b22657068223a222b3236536e3041524d5033496a54483245736844474a6c4a71476f57787077707074653074654b654351343d222c226e6f6e6365223a227250446c5474657163372f706d586c4c227d648d4c45ea7fb4a3a792a010ed6b583f4d6fe0df4f4bfb5ec577df3b7b5ac965",
     "ephemeral_private_hex": "195a8e8ee15093b74f7df16dbe397139a964ffca91cf8d422c024e0d31593100",
     "ephemeral_public_b64": "+26Sn0ARMP3IjTH2EshDGJlJqGoWxpwppte0teKeCQ4=",
     "epoch": 1,
     "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
-    "hkdf_key_hex": "aaea201218735ddab641c02e0ab0ccb15b21bc72620fd82888b93352ff114c0a",
+    "hkdf_key_hex": "af154e5e577710a1a9691310c6e24d1cd37ae163a7c6990f4560c8acf8e9f709",
     "key_b64": "kr8EnkJd3CJc/LAktL1XN8DMENrNQ0d3QH02a4AtfXE=",
     "key_hex": "92bf049e425ddc225cfcb024b4bd5737c0cc10dacd434777407d366b802d7d71",
     "nonce_b64": "rPDlTteqc7/pmXlL",
@@ -66,10 +73,12 @@
       "host": "192.168.1.31",
       "port": 48202
     },
+    "name": "Laptop (Windows)",
     "nonce_b64": "t4t1vRFEbRpM3e7O",
-    "plaintext": "{\"device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"endpoint\":{\"host\":\"192.168.1.31\",\"port\":48202},\"exchange_public\":\"/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=\",\"mac\":\"4+lUdb+CpwuMopqm8k1Dz/rjc0AzqTXmc2xK/zk3Dd4=\",\"offer_id\":\"d4e5f6a7-0b1c-4d2e-8f30-415263748596\",\"signature\":\"rcHOjgppwXU7XTHShZpHRgoGaQxAvEbrjIMBvGmNuJantPYTO9dCBkSmLVC+yu752KAKKxryjQDEVXEP2gmnBA==\",\"signing_public\":\"hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=\",\"version\":1}",
-    "transcript": "{\"code\":\"04817352\",\"invitee_device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"invitee_endpoint\":{\"host\":\"192.168.1.31\",\"port\":48202},\"invitee_exchange_public\":\"/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=\",\"invitee_signing_public\":\"hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=\",\"offer\":{\"certificate_fingerprint\":\"5c64391564d6f9308ebda9b4ca516292e354684b870c330326fe13a4153b71ee\",\"endpoint\":{\"host\":\"192.168.1.20\",\"port\":48201},\"expires_at\":1790000120,\"group_id\":\"5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64\",\"inviter_device_id\":\"a1111111-0000-4000-8000-00000000000a\",\"inviter_exchange_public\":\"SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=\",\"inviter_signing_public\":\"9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=\",\"offer_id\":\"d4e5f6a7-0b1c-4d2e-8f30-415263748596\",\"transcript_nonce\":\"5J1oy9rcnYWv4TsXbAKqZoWI2yK6R37NY+d7aVe/WDY=\",\"version\":1},\"protocol\":\"localgatekeys-sync-enrollment\",\"version\":1}",
-    "transcript_sha256_hex": "c9727347316ae42e7fbab545da6a1b3c9a089bbecbc8690e478d878fe62ddf2f"
+    "plaintext": "{\"device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"endpoint\":{\"host\":\"192.168.1.31\",\"port\":48202},\"exchange_public\":\"/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=\",\"mac\":\"vItEIAU3H4wUKGrsw9wxj3K0W3/sXP/xiM5r3GDsQKI=\",\"name\":\"Laptop (Windows)\",\"offer_id\":\"d4e5f6a7-0b1c-4d2e-8f30-415263748596\",\"signature\":\"1gyYP6XXbAVe7NpGncQdKy1ai5wHyXVdOv+pIEguWkdx6nMmx9X8ljOH1unDh2V2hUO3N06yICrmZMw9ziZTCQ==\",\"signing_public\":\"hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=\",\"version\":2}",
+    "transcript": "{\"code\":\"04817352\",\"invitee_device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"invitee_endpoint\":{\"host\":\"192.168.1.31\",\"port\":48202},\"invitee_exchange_public\":\"/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=\",\"invitee_name\":\"Laptop (Windows)\",\"invitee_signing_public\":\"hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=\",\"offer\":{\"certificate_fingerprint\":\"5c64391564d6f9308ebda9b4ca516292e354684b870c330326fe13a4153b71ee\",\"endpoint\":{\"host\":\"192.168.1.20\",\"port\":48201},\"expires_at\":1790000120,\"group_id\":\"5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64\",\"inviter_device_id\":\"a1111111-0000-4000-8000-00000000000a\",\"inviter_exchange_public\":\"SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=\",\"inviter_signing_public\":\"9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=\",\"offer_id\":\"d4e5f6a7-0b1c-4d2e-8f30-415263748596\",\"transcript_nonce\":\"5J1oy9rcnYWv4TsXbAKqZoWI2yK6R37NY+d7aVe/WDY=\",\"version\":1},\"protocol\":\"localgatekeys-sync-enrollment\",\"version\":2}",
+    "transcript_sha256_hex": "626e143411c62f9ea97882b73329394693d7bde901267d4125a3fa25c37ad460",
+    "verification_code": "165432"
   },
   "request_no_endpoint": {
     "aad": "{\"eph\":\"E/OpYiSDebs6Ed/j2FiuiJftgY8ODezTQ5O2qKfe11c=\",\"offer_id\":\"d4e5f6a7-0b1c-4d2e-8f30-415263748596\"}",
@@ -79,9 +88,11 @@
     "ephemeral_public_b64": "E/OpYiSDebs6Ed/j2FiuiJftgY8ODezTQ5O2qKfe11c=",
     "hkdf_key_hex": "81cc8dae33ac362e1974ff58863d92a4ed7d18bbe84167442a552f5f2592a083",
     "invitee_endpoint": null,
+    "name": "Ilias’s iPhone é",
     "nonce_b64": "yCvUC5AekkFnrx07",
-    "plaintext": "{\"device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"endpoint\":null,\"exchange_public\":\"/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=\",\"mac\":\"9KHZxCEbmICpFy/YUwZQ1AbJlSg+0vzV22RoBLCI4Hk=\",\"offer_id\":\"d4e5f6a7-0b1c-4d2e-8f30-415263748596\",\"signature\":\"tIckSED/g7KKbz12V6Ja8SyBK1BFEXi6yaaNTuiybHuu2iQPteRhtdGpDWpdZVFfyUfSUYynu/PGhOYYyDEuDg==\",\"signing_public\":\"hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=\",\"version\":1}",
-    "transcript": "{\"code\":\"04817352\",\"invitee_device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"invitee_endpoint\":null,\"invitee_exchange_public\":\"/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=\",\"invitee_signing_public\":\"hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=\",\"offer\":{\"certificate_fingerprint\":\"5c64391564d6f9308ebda9b4ca516292e354684b870c330326fe13a4153b71ee\",\"endpoint\":{\"host\":\"192.168.1.20\",\"port\":48201},\"expires_at\":1790000120,\"group_id\":\"5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64\",\"inviter_device_id\":\"a1111111-0000-4000-8000-00000000000a\",\"inviter_exchange_public\":\"SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=\",\"inviter_signing_public\":\"9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=\",\"offer_id\":\"d4e5f6a7-0b1c-4d2e-8f30-415263748596\",\"transcript_nonce\":\"5J1oy9rcnYWv4TsXbAKqZoWI2yK6R37NY+d7aVe/WDY=\",\"version\":1},\"protocol\":\"localgatekeys-sync-enrollment\",\"version\":1}",
-    "transcript_sha256_hex": "84e95edf5360fee9da35b47dd83457ed7a5fa6ed66ea167d0b4f2388eb0f2d2c"
+    "plaintext": "{\"device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"endpoint\":null,\"exchange_public\":\"/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=\",\"mac\":\"Nsh1n0QeugmVstb1jBPJ6IgG6ADssRa2wFVYm/wPQUY=\",\"name\":\"Ilias\\u2019s iPhone \\u00e9\",\"offer_id\":\"d4e5f6a7-0b1c-4d2e-8f30-415263748596\",\"signature\":\"O5QDjpHqUlb/Q++cVxPZlDOtHe5wIv2p+oy9P7Dsns7RroUYDjumcg7MnPVcX0PZhzcm9jKPBA9N54BCncHSDA==\",\"signing_public\":\"hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=\",\"version\":2}",
+    "transcript": "{\"code\":\"04817352\",\"invitee_device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"invitee_endpoint\":null,\"invitee_exchange_public\":\"/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=\",\"invitee_name\":\"Ilias\\u2019s iPhone \\u00e9\",\"invitee_signing_public\":\"hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=\",\"offer\":{\"certificate_fingerprint\":\"5c64391564d6f9308ebda9b4ca516292e354684b870c330326fe13a4153b71ee\",\"endpoint\":{\"host\":\"192.168.1.20\",\"port\":48201},\"expires_at\":1790000120,\"group_id\":\"5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64\",\"inviter_device_id\":\"a1111111-0000-4000-8000-00000000000a\",\"inviter_exchange_public\":\"SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=\",\"inviter_signing_public\":\"9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=\",\"offer_id\":\"d4e5f6a7-0b1c-4d2e-8f30-415263748596\",\"transcript_nonce\":\"5J1oy9rcnYWv4TsXbAKqZoWI2yK6R37NY+d7aVe/WDY=\",\"version\":1},\"protocol\":\"localgatekeys-sync-enrollment\",\"version\":2}",
+    "transcript_sha256_hex": "648d4c45ea7fb4a3a792a010ed6b583f4d6fe0df4f4bfb5ec577df3b7b5ac965",
+    "verification_code": "496265"
   }
 }

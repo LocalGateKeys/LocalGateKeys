@@ -4,20 +4,44 @@
 application directory, the current directory and ``PATH`` before System32, so a
 binary dropped next to the app (or in the working directory) would run instead
 of the real tool. Every Windows tool LocalGateKeys launches goes through
-:func:`system32`. ACL grants use :func:`current_user_sid` rather than an
+:func:`system32`, which asks Windows for its folder instead of trusting
+``%SystemRoot%``. ACL grants use :func:`current_user_sid` rather than an
 environment-derived user name, which ``icacls`` may also resolve ambiguously.
 """
 from __future__ import annotations
 
 import os
 
+_DEFAULT_WINDOWS_DIRECTORY = r"C:\Windows"
+
+
+def system_windows_directory() -> str | None:
+    """The system Windows directory from ``GetSystemWindowsDirectoryW``, or ``None``.
+
+    Never read from ``%SystemRoot%`` / ``%windir%``: a process that controls this
+    app's environment could otherwise point an elevated ``netsh`` or the
+    PowerShell behind Authenticode checks at a folder of its own.
+    """
+
+    if os.name != "nt":
+        return None
+    try:
+        import ctypes
+
+        buffer = ctypes.create_unicode_buffer(260)
+        length = ctypes.windll.kernel32.GetSystemWindowsDirectoryW(buffer, 260)
+    except (OSError, AttributeError, ValueError):
+        return None
+    if not length or length >= 260:
+        return None
+    root = buffer.value
+    return root if root and os.path.isabs(root) else None
+
 
 def system32(executable: str) -> str:
     """Absolute path of a System32 tool so search-path entries cannot shadow it."""
 
-    root = os.environ.get("SystemRoot") or os.environ.get("windir") or r"C:\Windows"
-    if not os.path.isabs(root):
-        root = r"C:\Windows"
+    root = system_windows_directory() or _DEFAULT_WINDOWS_DIRECTORY
     return os.path.join(root, "System32", executable)
 
 

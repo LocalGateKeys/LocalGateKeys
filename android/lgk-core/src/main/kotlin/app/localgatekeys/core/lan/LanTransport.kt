@@ -17,7 +17,8 @@ class LanTransportException(val kind: Kind, val detail: String) : Exception("${k
 
 /** Transport constants and frame helpers (desktop `sync.transport`). */
 object LanTransport {
-    const val VERSION: Long = 1
+    /** Protocol version 2: ephemeral session keys (forward secrecy); never falls back to 1. */
+    const val VERSION: Long = 2
     const val MAX_FRAME_PAYLOAD: Int = 1 shl 20
     const val MAX_MESSAGE_BYTES: Int = MAX_FRAME_PAYLOAD - 256
     const val SESSION_ID_BYTES: Int = 16
@@ -49,6 +50,26 @@ object LanTransport {
             throw LanTransportException(LanTransportException.Kind.MALFORMED, "Frame contains trailing or missing bytes")
         }
         return frame.copyOfRange(4, frame.size)
+    }
+
+    /** The plain frame payload a responder sends for a hello of another version: `{"refused":"version","version":2}`. */
+    fun versionRefusal(): ByteArray =
+        canonical(JsonValue.Obj(mapOf("refused" to JsonValue.Str("version"), "version" to JsonValue.Int(VERSION))))
+
+    /**
+     * The version a peer announced in a version refusal (exactly `{"refused":"version","version":n}`,
+     * n an integer 1 ... 2^31-1 other than [VERSION]), or null when [payload] is not one.
+     */
+    fun parseVersionRefusal(payload: ByteArray): Long? {
+        if (payload.size > 256) return null
+        val o = try {
+            (CanonicalJson.parse(payload) as? JsonValue.Obj)?.fields
+        } catch (e: JsonException) {
+            null
+        } ?: return null
+        if (o.keys != setOf("refused", "version") || o["refused"] != JsonValue.Str("version")) return null
+        val v = (o["version"] as? JsonValue.Int)?.v ?: return null
+        return if (v in 1..Int.MAX_VALUE.toLong() && v != VERSION) v else null
     }
 
     internal fun canonical(v: JsonValue): ByteArray {

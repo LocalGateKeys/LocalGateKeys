@@ -75,12 +75,14 @@ final class KeyringTests: XCTestCase {
             ("keyring_epoch1.json", "1", false), ("keyring_epoch2.json", "2", false),
             ("keyring_epoch1_ab.json", "1", false), ("keyring_existing_epoch1.json", "1", true),
             ("keyring_existing_epoch3.json", "3", true), ("keyring_attach.json", "1", true),
+            ("keyring_v1_epoch1.json", "1", false),
         ]
         for (file, e, existing) in cases {
             let raw = Array(try Vectors.data(file))
-            let ring = try Keyring.parse(raw)
+            let ring = try Keyring.parse(raw)   // format 2 files: every member proof verified here
             XCTAssertEqual(try CanonicalJSON.encode(ring, dialect: .utf8), raw, file)
             XCTAssertTrue(Keyring.macOK(ring, key: try Self.epochKey(e, existing: existing)), file)
+            XCTAssertEqual(Self.obj(ring)["format"], .int(file == "keyring_v1_epoch1.json" ? 1 : 2), file)
         }
         let x = try Self.expected()
         for e in ["1", "2"] {
@@ -89,7 +91,12 @@ final class KeyringTests: XCTestCase {
                            Self.str(Self.obj(Self.obj(x["epochs"])[e])["keyring_mac_key_hex"]))
             XCTAssertEqual(Vectors.hexString(Keyring.nameKey(gk)),
                            Self.str(Self.obj(Self.obj(x["epochs"])[e])["member_name_key_hex"]))
+            // Format 2: each member's view-signing key, as expected.json lists it.
+            let want = Self.obj(Self.obj(Self.obj(x["epochs"])[e])["member_signing_keys"]).mapValues { Self.str($0) }
+            XCTAssertEqual(Keyring.memberSigningKeys(try Self.ring("keyring_epoch\(e).json")), want, e)
         }
+        XCTAssertEqual(Keyring.memberSigningKeys(try Self.ring("keyring_epoch1.json"))[Self.A],
+                       Base64.encode(try Self.identity("A").signingPublicKey))
     }
 
     func test_parse_rejects_malformed() throws {
@@ -99,14 +106,136 @@ final class KeyringTests: XCTestCase {
         XCTAssertEqual(reason { try Keyring.parse(Array("[1]".utf8)) }, "bad-keyring")
         XCTAssertEqual(reason { try Keyring.parse(Array("{\"x\":NaN}".utf8)) }, "bad-json")
         XCTAssertEqual(reason { try Keyring.parse([UInt8](repeating: 0x20, count: 256 * 1024 + 1)) }, "too-large")
-        XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"format\":1", with: "\"format\":1.0").utf8)) }, "bad-format")
+        XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"format\":2", with: "\"format\":2.0").utf8)) }, "bad-format")
+        XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"format\":2", with: "\"format\":3").utf8)) }, "bad-format")
+        // Format 1 has no member signing fields.
+        XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"format\":2", with: "\"format\":1").utf8)) }, "bad-fields")
         XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"epoch\":1", with: "\"epoch\":0").utf8)) }, "bad-epoch")
         XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"iterations\":4", with: "\"iterations\":3").utf8)) }, "bad-kdf")
-        XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"format\":1,", with: "\"format\":1,\"extra\":1,").utf8)) }, "bad-fields")
+        XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"format\":2,", with: "\"format\":2,\"extra\":1,").utf8)) }, "bad-fields")
         XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"prev_mac\":null", with: "\"prev_mac\":\"\(Base64.encode([UInt8](repeating: 1, count: 32)))\"").utf8)) }, "bad-fields")
         // Non-canonical base64 of the salt (strip padding).
         let salt = Self.str(Self.obj(Self.obj(try Self.ring("keyring_epoch1.json"))["kdf"])["salt"])
         XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: salt, with: String(salt.dropLast(2))).utf8)) }, "bad-base64")
+    }
+
+    // MARK: format 2 member signing keys (audit R-4)
+
+    /// `ring` with member `index` changed by `edit` (no MAC update).
+    static func editMember(_ ring: JSONValue, _ index: Int, _ edit: (inout [String: JSONValue]) throws -> Void) rethrows -> JSONValue {
+        var o = obj(ring)
+        var members = MergeVectors.arr(o["members"])
+        var m = obj(members[index])
+        try edit(&m)
+        members[index] = .object(m)
+        o["members"] = .array(members)
+        return .object(o)
+    }
+
+    static func memberIndex(_ ring: JSONValue, _ id: String) -> Int {
+        MergeVectors.arr(obj(ring)["members"]).firstIndex { str(obj($0)["device_id"]) == id }!
+    }
+
+    func test_member_proofs_bind_the_key_to_its_device_and_group() throws {
+        let r1 = try Self.ring("keyring_epoch1.json"), g1 = try Self.epochKey("1")
+        let ia = Self.memberIndex(r1, Self.A), ib = Self.memberIndex(r1, Self.B)
+        let b = try Self.identity("B"), c = try Self.identity("C")
+        let mb = Self.obj(MergeVectors.arr(Self.obj(r1)["members"])[ib])
+        func structure(_ ring: JSONValue) -> String? { reason { try Keyring.verifyStructure(ring); return true } }
+        XCTAssertNil(structure(r1))
+        // B's key and proof copied onto A's entry: the proof names B's device id and exchange key.
+        XCTAssertEqual(structure(Self.editMember(r1, ia) { $0["signing_public"] = mb["signing_public"]; $0["signing_proof"] = mb["signing_proof"] }),
+                       "bad-member-proof")
+        // A key B does not hold (no valid proof possible without its private key).
+        XCTAssertEqual(structure(Self.editMember(r1, ib) { $0["signing_public"] = .string(Base64.encode(c.signingPublicKey)) }),
+                       "bad-member-proof")
+        // The proof also signs the exchange key.
+        XCTAssertEqual(structure(Self.editMember(r1, ib) { $0["exchange_public"] = .string(Base64.encode(c.exchangePublicKey)) }),
+                       "bad-member-proof")
+        // Key without proof, proof without key, an all-zero proof.
+        XCTAssertEqual(structure(Self.editMember(r1, ib) { $0["signing_proof"] = .null }), "bad-member-proof")
+        XCTAssertEqual(structure(Self.editMember(r1, ib) { $0["signing_public"] = .null }), "bad-member-proof")
+        XCTAssertEqual(structure(Self.editMember(r1, ib) { $0["signing_proof"] = .string(Base64.encode([UInt8](repeating: 0, count: 64))) }),
+                       "bad-member-proof")
+        XCTAssertEqual(structure(Self.editMember(r1, ib) { $0["signing_proof"] = nil }), "bad-fields")
+        // Both null (a member from an older app) is fine.
+        XCTAssertNil(structure(Self.editMember(r1, ib) { $0["signing_public"] = .null; $0["signing_proof"] = .null }))
+        // A proof made for another group does not verify here.
+        let otherGroup = try Self.editMember(r1, ib) {
+            let msg = Keyring.proofMessage(groupID: "another-group", deviceID: Self.B, exchangePublic: Self.str($0["exchange_public"]),
+                                           signingPublic: Self.str($0["signing_public"]))
+            $0["signing_proof"] = .string(Base64.encode(try b.sign(msg)))
+        }
+        XCTAssertEqual(structure(otherGroup), "bad-member-proof")
+        // The MAC covers the key: a valid entry for another identity (C's key, C's proof) under B's id passes
+        // the structure check but not the MAC.
+        let swapped = try Self.editMember(r1, ib) {
+            let key = Base64.encode(c.signingPublicKey)
+            let msg = Keyring.proofMessage(groupID: g1.groupID, deviceID: Self.B, exchangePublic: Self.str($0["exchange_public"]),
+                                           signingPublic: key)
+            $0["signing_public"] = .string(key); $0["signing_proof"] = .string(Base64.encode(try c.sign(msg)))
+        }
+        XCTAssertNil(structure(swapped))
+        XCTAssertEqual(reason { try Keyring.accept(swapped, trusted: g1, identity: try Self.identity("A")) }, "tampered")
+    }
+
+    func test_format1_keyring_is_read_and_a_join_writes_format2() throws {
+        let v1 = try Self.ring("keyring_v1_epoch1.json"), v2 = try Self.ring("keyring_epoch1.json")
+        let g1 = try Self.epochKey("1")
+        XCTAssertEqual(Self.obj(v1)["format"], .int(1))
+        for m in MergeVectors.arr(Self.obj(v1)["members"]) {
+            XCTAssertEqual(Set(Self.obj(m).keys), ["device_id", "name_ct", "exchange_public", "added_at"])
+        }
+        XCTAssertEqual(MergeVectors.arr(Self.obj(v1)["members"]).map { Self.obj($0)["device_id"] },
+                       MergeVectors.arr(Self.obj(v2)["members"]).map { Self.obj($0)["device_id"] })
+        for who in ["A", "B", "C"] {
+            XCTAssertEqual(try Keyring.accept(v1, trusted: g1, identity: try Self.identity(who)), g1, who)
+            XCTAssertEqual(try Keyring.unwrapDevice(v1, identity: try Self.identity(who)), g1, who)
+        }
+        XCTAssertEqual(try Keyring.unwrap(v1, passwordKey: try Self.pwKey("1")), g1)
+        XCTAssertEqual(Keyring.memberSigningKeys(v1), [:])
+        XCTAssertEqual(Keyring.memberNames(v1, key: g1), try Self.names("1"))
+        // A device joining the older keyring writes format 2: its own key and proof, null for the others.
+        let me = try DeviceIdentity.generate(random: DetRand("swift-join-v1-id"))
+        let (joined, gk) = try Keyring.join(v1, identity: me, name: "iPhone", random: DetRand("swift-join-v1"),
+                                            now: FixedClock(now: 1790000500)) { try Self.pwKey("1") }
+        XCTAssertEqual(gk, g1)
+        let back = try Keyring.parse(try CanonicalJSON.encode(joined, dialect: .utf8))
+        let o = Self.obj(back)
+        XCTAssertEqual(o["format"], .int(2))
+        let members = MergeVectors.arr(o["members"]).map { Self.obj($0) }
+        XCTAssertEqual(members.count, 4)
+        for m in members.prefix(3) {
+            XCTAssertEqual(m["signing_public"], .null); XCTAssertEqual(m["signing_proof"], .null)
+            XCTAssertEqual(Set(m.keys), Keyring.memberFields)
+        }
+        XCTAssertEqual(Keyring.memberSigningKeys(back), [me.deviceID: Base64.encode(me.signingPublicKey)])
+        XCTAssertTrue(Keyring.macOK(back, key: g1))
+        XCTAssertEqual(try Keyring.accept(back, trusted: g1, identity: try Self.identity("A")), g1)
+        XCTAssertEqual(try Keyring.unwrapDevice(back, identity: me), g1)
+        for k in ["password_wrap", "kdf", "prev_mac", "group_id", "epoch"] {
+            XCTAssertEqual(o[k], Self.obj(v1)[k], k)
+        }
+    }
+
+    func test_format1_keyrings_of_other_apps_still_parse() throws {
+        for file in ["from_ios/keyring.lgkkeys", "from_android/keyring.lgkkeys"] {
+            let raw = Array(try Vectors.data(file))
+            let ring = try Keyring.parse(raw)
+            XCTAssertEqual(Self.obj(ring)["format"], .int(1), file)
+            XCTAssertEqual(Keyring.memberSigningKeys(ring), [:], file)
+        }
+    }
+
+    func test_listed_signing_key_of_another_device_is_key_mismatch() throws {
+        // B's device id and exchange key, but another signing key: the keyring is not this device's own.
+        let b = try Self.identity("B"), c = try Self.identity("C")
+        let impostor = try DeviceIdentity(deviceID: Self.B, signingPrivate: c.signingPrivateKey, exchangePrivate: b.exchangePrivateKey)
+        XCTAssertEqual(reason { try Keyring.unwrapDevice(try Self.ring("keyring_epoch1.json"), identity: impostor) }, "key-mismatch")
+        XCTAssertEqual(reason { try Keyring.accept(try Self.ring("keyring_epoch2.json"), trusted: try Self.epochKey("1"), identity: impostor) },
+                       "key-mismatch")
+        // A format-1 entry lists no signing key: only the exchange key is compared.
+        XCTAssertEqual(try Keyring.unwrapDevice(try Self.ring("keyring_v1_epoch1.json"), identity: impostor), try Self.epochKey("1"))
     }
 
     // MARK: password and device unwraps
@@ -220,6 +349,8 @@ final class KeyringTests: XCTestCase {
         XCTAssertEqual(members.count, 3)
         XCTAssertEqual(Array(members.prefix(2)), MergeVectors.arr(old["members"]))
         XCTAssertEqual(Self.obj(members[2])["added_at"], .int(1790000500))
+        XCTAssertEqual(Set(Self.obj(members[2]).keys), Keyring.memberFields)
+        XCTAssertEqual(Keyring.memberSigningKeys(back)[me.deviceID], Base64.encode(me.signingPublicKey))
         XCTAssertEqual(Keyring.memberNames(back, key: g1)[me.deviceID], "iPhone")
         // A second join of the same device is refused before any KDF work.
         XCTAssertEqual(reason { try Keyring.join(back, password: "x", identity: me, name: "iPhone",

@@ -39,7 +39,8 @@ def read_native_message(stream: BinaryIO) -> dict[str, Any] | None:
     payload = _read_exact(stream, length)
     try:
         value = json.loads(payload.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as exc:
+        # RecursionError: Python 3.14's C decoder raises it for deeply nested input.
         raise ProtocolError("Invalid native messaging JSON") from exc
     if not isinstance(value, dict):
         raise ProtocolError("Native message must be a JSON object")
@@ -79,7 +80,7 @@ def recv_local_message(sock: socket.socket) -> dict[str, Any]:
     payload = _recv_exact_socket(sock, length)
     try:
         value = json.loads(payload.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as exc:
         raise ProtocolError("Invalid local agent JSON") from exc
     if not isinstance(value, dict):
         raise ProtocolError("Local message must be a JSON object")

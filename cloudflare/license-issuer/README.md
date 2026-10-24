@@ -9,7 +9,7 @@ LocalGateKeys Pro licences and lets the buyer retrieve them.
 | `POST /webhooks/paddle` | `transaction.completed`, `adjustment.created`, `adjustment.updated`; `Paddle-Signature: ts=...;h1=...`, ts within 5 minutes |
 | `GET /license/<token>` | Page with the `LGK1-` key and a download link (refreshes until the webhook has arrived) |
 | `GET /license/<token>/file` | `LocalGateKeys-Pro.lgklicense` download |
-| `GET /recover`, `POST /recover` | Form: order / transaction id + purchase email -> 303 to that order's licence page |
+| `GET /recover`, `POST /recover` | Form: order / transaction id + purchase email -> 303 to that order's licence page (404 no match, 429 throttled) |
 
 Licences are lifetime: every one is issued with `updates_until` 9999-12-31, so
 every build is covered and Pro removes the free 4-item limit for good.
@@ -23,10 +23,11 @@ buyer to `/license/<token>` after payment.
 - **Own token.** Every order's licence is stored under a token derived from
   the order key with an HMAC keyed by (a hash of) `LICENSE_PRIVATE_KEY`, so only
   the Worker can compute it and duplicate deliveries agree on it.
-- **Claim.** The browser claim is bound to the first order that uses it
-  (`claim:<token>` -> `order:<provider>:<id>`), and the licence is also stored
-  under the claim. A later order with the same claim keeps only its own token,
-  so the first buyer's page keeps showing their licence (audit L-1).
+- **Claim.** The browser claim is bound to the first order that uses it, and
+  the licence is also stored under the claim. A later order with the same
+  claim keeps only its own token (logged as "claim not bound"), so the first
+  buyer's page keeps showing their licence (audit L-1). The binding lives in
+  D1, not KV (see "Claim binding (D1)").
 - **Paddle origin.** A Paddle claim counts only on transactions with
   `origin: "web"` (opened by Paddle.js on /buy). Transactions created through
   the API or dashboard, or renewals, use the own token (audit M-2).
@@ -35,14 +36,33 @@ buyer to `/license/<token>` after payment.
   (the token shown to the buyer) is written last; once present, retries are no-ops.
 - **Recovery.** `/recover` takes the order or transaction id from the receipt
   and the purchase email (case-insensitive) and redirects to the order's own
-  token. Every failure gives the same answer. There is no rate limit in the
-  Worker; add a Cloudflare rate-limiting rule on `/recover` (for example 10
-  requests per minute per IP) when deploying.
+  token. Every failure gives the same answer. A match has to hand over the
+  licence, so a hit (303) and a miss (404) cannot look alike; guessing is held
+  back instead (review R-6):
+  - **Per email:** 5 attempts per hour, counted in KV under
+    `recover-throttle:<HMAC(email)>` (keyed from `LICENSE_PRIVATE_KEY`, so no
+    address is stored). The 6th gets 429 with `Retry-After`, right pair or
+    not. KV counters are not atomic, so a burst across locations can slip a
+    few extra attempts through.
+  - **Per IP:** the zone's rate-limiting rule "Licence recovery limit"
+    (3 requests / 10 s per IP on `/recover`, then a 10 s block). Keep it.
+  - Every order tried costs one HMAC and three KV reads whether it exists, is a pre-own-token
+    order, or has another email, so timing says little beyond the status (scan F8).
 
-KV has no compare-and-set. Two orders that both see an unbound claim within
-KV's propagation delay can both write the claim's page; the last write shows,
-and each buyer still reaches their own licence through `/recover`. A strict
-guarantee would need a Durable Object or D1.
+## Claim binding (D1)
+
+KV has no compare-and-set, so the D1 database `lgk-licence-claims` (binding
+`CLAIMS`, schema in `migrations/0001_claims.sql`) decides which order owns a
+claim (audit L-2). `claim` is the primary key: the Worker runs
+`INSERT ... ON CONFLICT DO NOTHING` and reads the row back, so of two orders
+racing for one claim exactly one wins, and a duplicate delivery of the same
+order reads back its own row and shows the same page. `order_key` is unique,
+so an order binds at most one claim. The licences stay in KV.
+
+Fails closed: if the `CLAIMS` binding is missing or D1 errors, no claim is
+bound (logged); the licence is still stored under the order's own token and
+`/recover` finds it. Claims bound in KV by earlier deploys (`claim:<token>`),
+or with a licence stored under them, count as used.
 
 KV keys in `LICENSES`:
 
@@ -50,10 +70,11 @@ KV keys in `LICENSES`:
 | --- | --- |
 | `order:<provider>:<order id>` | token shown to the buyer (claim or own token) |
 | `order-license:<provider>:<order id>` | the order's `license_id` |
-| `claim:<token>` | order key the claim is bound to |
+| `claim:<token>` | old deploys only: order key the claim was bound to (now in D1) |
 | `license:<token>` | signed licence bundle (JSON) |
 | `adjustment:<provider>:<adjustment id>` | refund / chargeback record (JSON, and as key metadata) |
 | `revoke:<license_id>:<adjustment id>` | same record, listed to build the revocation list |
+| `recover-throttle:<HMAC(email)>` | `/recover` attempts this hour (`{count, reset}`, expires with the window) |
 
 ## Setup
 
@@ -62,6 +83,8 @@ Deploy only once the custom domain exists: `workers_dev` is off and
 
 ```
 npx wrangler kv namespace create LICENSES   # put the id into wrangler.jsonc
+npx wrangler d1 create lgk-licence-claims   # put the database_id into wrangler.jsonc
+npx wrangler d1 migrations apply lgk-licence-claims --remote
 npx wrangler secret put LICENSE_PRIVATE_KEY # PKCS8 DER of the licence key, base64
 npx wrangler secret put WEBHOOK_SECRET      # signing secret from the payment provider
 npx wrangler secret put PADDLE_API_KEY      # Paddle only: reads customers
@@ -156,5 +179,6 @@ no longer 404s. Signing needs the release key, which only the owner holds.
 
 `npm test` from the repository root runs `tests/license-issuer.test.cjs`, which
 also regenerates the cross-language vectors in `tests/vectors/license/`.
-`npm test` in this directory runs `test/*.test.mjs` (claims, recovery,
-idempotency, refunds and the revocation-list script).
+`npm test` in this directory runs `test/*.test.mjs` (claims and the D1
+race, recovery and its throttle, idempotency, refunds and the revocation-list
+script). `test/fake-d1.mjs` is an in-memory D1 for the claim statements.

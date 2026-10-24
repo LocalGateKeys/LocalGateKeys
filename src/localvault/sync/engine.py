@@ -25,7 +25,11 @@ Rules (mirrored by iOS)
   float/bool/None/list/dict values; no lone surrogates).
 * Compare: ``a``/``b`` if one vector dominates, ``equal``, else ``concurrent``.
   Remote dominates -> apply it; local dominates -> nothing.
-* Equal vectors with differing content are treated as concurrent.
+* Equal vectors with differing content are treated as concurrent, except that
+  when the LOCAL state wins nothing is upserted (the merged vector equals the
+  local one, so it would be a no-op) and the pair is reported as a conflict
+  only if a conflict copy is emitted.  A second merge of the same remote after
+  applying the first is therefore empty (idempotent).
 * Concurrent, both deleted: one tombstone, merged vector, deleted_at = max,
   emitted only if it differs from local.  Identical live content: merged vector.
 * Concurrent, one side deleted: the live side wins with the merged vector
@@ -315,18 +319,25 @@ def merge(local: Mapping[str, ItemState], remote: Iterable[ItemState]) -> MergeO
             upserts.append(_with_vv(r, merged, None))
         elif loc.deleted or r.deleted:
             live = r if r.deleted is False else loc
-            upserts.append(_with_vv(live, merged, None))
-            conflicts.append((loc, r))
+            # Equal vectors and the local live state wins: merged == local vector, so
+            # re-upserting it would change nothing and repeat on every round.
+            if live is r or rel != "equal":
+                upserts.append(_with_vv(live, merged, None))
+                conflicts.append((loc, r))
         else:
             win, lose = (r, loc) if _rank(r) > _rank(loc) else (loc, r)
-            upserts.append(_with_vv(win, merged, None))
+            changed = win is r or rel != "equal"
+            if changed:
+                upserts.append(_with_vv(win, merged, None))
             cid = conflict_copy_id(r.item_id, _content_digest(lose.item))
             if cid not in local and cid not in seen:
                 body = {k: v for k, v in lose.item.items() if k != "id"}
                 copies.append(
                     ItemState(cid, dict(lose.vv), False, None, {**body, "id": cid})
                 )
-            conflicts.append((loc, r))
+                changed = True
+            if changed:
+                conflicts.append((loc, r))
 
     return MergeOutcome(tuple(upserts), tuple(deletes), tuple(conflicts), tuple(copies))
 

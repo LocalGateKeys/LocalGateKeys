@@ -23,7 +23,7 @@ from .config import (
     read_json,
 )
 from .distribution import resolve_native_host_path
-from .native_host import _read_native_message, _write_native_message
+from .native_host import NativeBridgeError, _read_native_message, _write_native_message
 from .pipe_transport import ClientPinPolicy, _sha256_file
 from .version import APP_VERSION, PROTOCOL_VERSION
 
@@ -136,7 +136,11 @@ def _ping_host(config: dict[str, Any], *, timeout: float = 12.0) -> dict[str, An
         stdout, _stderr = process.communicate(payload.getvalue(), timeout=timeout)
         # Do not print the raw stdout or stderr; either may contain personal data.
         source = io.BytesIO(stdout)
-        response = _read_native_message(source)
+        try:
+            response = _read_native_message(source)
+        except (NativeBridgeError, EOFError):
+            # Malformed, truncated or pathologically nested replies are a framing failure.
+            return {"status": "failed", "error": "invalid_native_frame"}
         if not response or source.read(1):
             return {"status": "failed", "error": "invalid_native_frame"}
         result = _redacted_ping(response)

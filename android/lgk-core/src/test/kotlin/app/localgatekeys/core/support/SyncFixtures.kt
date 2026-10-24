@@ -4,9 +4,11 @@ import app.localgatekeys.core.engine.ItemState
 import app.localgatekeys.core.engine.PeerView
 import app.localgatekeys.core.group.GroupKey
 import app.localgatekeys.core.group.ViewFile
+import app.localgatekeys.core.group.ViewSignature
 import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.lan.DeviceIdentity
 import app.localgatekeys.core.primitives.Base64Std
+import app.localgatekeys.core.sync.FolderLayout
 import app.localgatekeys.core.support.MergeVectors.obj
 import app.localgatekeys.core.support.MergeVectors.str
 
@@ -55,10 +57,22 @@ object SyncFixtures {
         PeerView(d.id, ViewFile.decode(deviceBytes(d.name), epochKey("1"), d.id).second)
     }
 
-    fun seededFolder(): MemoryFolder {
+    /**
+     * The epoch-1 folder with the A/B/C device files. By default as apps from before keyring format 2
+     * left it: `keyring_v1_epoch1.json` (members without signing keys) and unsigned views, so
+     * first-use pinning applies. [signed]: the format-2 `keyring_epoch1.json` (every member lists its
+     * signing key) and each view signed by its device, as current apps write it.
+     */
+    fun seededFolder(signed: Boolean = false): MemoryFolder {
         val f = MemoryFolder()
-        f.files[KEYRING_PATH] = Vectors.sync("keyring_epoch1.json").readBytes()
-        for (d in devices) f.files[devPath(d.id)] = deviceBytes(d.name)
+        f.files[KEYRING_PATH] = Vectors.sync(if (signed) "keyring_epoch1.json" else "keyring_v1_epoch1.json").readBytes()
+        for (d in devices) {
+            val raw = deviceBytes(d.name)
+            f.files[devPath(d.id)] = raw
+            if (signed) {
+                f.files[FolderLayout.signatureFile(d.id)!!] = ViewSignature.sign(raw, ViewFile.decodeHeader(raw), identity(d.name))
+            }
+        }
         return f
     }
 

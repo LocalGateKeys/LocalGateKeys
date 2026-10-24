@@ -199,13 +199,13 @@ def test_pending_capture_is_scoped_to_its_site_and_update_status_is_preserved(tm
         password="redacted-new-password",
         username="redacted-account",
     )
-    assert captured["status"] == "password_changed"
+    assert captured["status"] == "exists"  # never whether the password changed (audit M-3)
     assert broker.request("pending_browser", origin="https://other-example.test")["pending"] is False
     # A sign-in that lands on a subdomain sees it, named for the origin it is saved for.
     landed = broker.request("pending_browser", origin="https://sub.example.test")
     assert landed["pending"] and landed["origin"] == "https://example.test"
     pending = broker.request("pending_browser")
-    assert pending["pending"] and pending["status"] == "password_changed"
+    assert pending["pending"] and pending["status"] == "exists"
     redacted = json.dumps(pending)
     assert "redacted-old-password" not in redacted
     assert "redacted-new-password" not in redacted

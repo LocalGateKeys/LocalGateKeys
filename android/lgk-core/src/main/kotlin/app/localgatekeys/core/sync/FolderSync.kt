@@ -57,7 +57,8 @@ class FolderSync(
     val licenseKeys: Map<String, ByteArray> = emptyMap(),
     /**
      * Device id -> base64 signing key of every LAN-paired peer (desktop `_paired_keys`): the only key that
-     * peer's view signature may carry, ahead of the signer pinned on first use.
+     * peer's view signature may carry when the keyring lists none for it, ahead of the signer pinned on
+     * first use.
      */
     val pairedKeys: Map<String, String> = emptyMap(),
 ) {
@@ -260,7 +261,11 @@ class FolderSync(
 
     // ---- device files ----
 
-    /** Reads every peer file; never throws for a single bad file. */
+    /**
+     * Reads every peer file; never throws for a single bad file. Signer precedence (desktop `read_peers`):
+     * [keyringKeys] (each member's key from the accepted keyring), then [pairedKeys], then [signers]
+     * (pinned on first use); a peer with a keyring key or a pin must carry a valid signature by it.
+     */
     private fun readPeers(
         gk: GroupKey,
         ownId: String,
@@ -270,7 +275,10 @@ class FolderSync(
         now: Long,
         signers: Map<String, String> = emptyMap(),
         pairedKeys: Map<String, String> = emptyMap(),
+        keyringKeys: Map<String, String> = emptyMap(),
     ): PeerRead {
+        val pins = signers + keyringKeys
+        val expectedKeys = pairedKeys + keyringKeys
         val out = PeerRead()
         val allowed = HashSet<String>()
         for (m in sortedNames(members - ownId)) {
@@ -319,7 +327,7 @@ class FolderSync(
                 out.issues.add(SyncIssue("suspicious-rewrite", "$name: counter $counter reused"))
                 continue
             }
-            val signer = checkSignature(dev, name, raw, view.first, signers, pairedKeys, out.issues)
+            val signer = checkSignature(dev, name, raw, view.first, pins, expectedKeys, out.issues)
             if (signer == REFUSED) continue
             if (counterVerdict(counter, last) != null) {
                 out.issues.add(SyncIssue("implausible-counter", "$name: counter $counter"))
@@ -347,7 +355,10 @@ class FolderSync(
         }
     }
 
-    /** The base64 key of a validly signed view, null for an accepted unsigned one, [REFUSED] to skip it. */
+    /**
+     * The base64 key of a validly signed view, null for an accepted unsigned one, [REFUSED] to skip it.
+     * [pairedKeys] already holds the keyring keys (which win), [signers] the pins and keyring keys.
+     */
     private fun checkSignature(
         dev: String,
         name: String,
@@ -480,10 +491,18 @@ class FolderSync(
         if (members.size > MAX_MEMBERS_SEEN) members = current
 
         if (Identifier.isSafeDeviceFile(state.deviceId)) sweepOwnTempFiles(state.deviceId)
+        val ringKeys = Keyring.memberSigningKeys(ring).filterKeys { it != state.deviceId }
+        for (device in sortedNames(ringKeys.keys)) {
+            val pinned = state.viewSigners[device]
+            if (pinned != null && pinned != ringKeys[device]) {
+                issues.add(SyncIssue("signer-changed", "$device: the keyring lists another signing key"))
+            }
+        }
         val peers = readPeers(
             gk, state.deviceId, members, state.lastSeen, state.peerDigests, now,
             signers = state.viewSigners.filterKeys { it != state.deviceId },
             pairedKeys = pairedKeys.filterKeys { it != state.deviceId },
+            keyringKeys = ringKeys,
         )
         issues.addAll(peers.issues)
         val knownDevices = members + state.lastSeen.keys + state.deviceId
@@ -493,7 +512,8 @@ class FolderSync(
         val ownKey = Base64Std.encode(state.identity.signingPublicKey)
         var lastSeen = state.lastSeen + peers.seen
         var digests = state.peerDigests + peers.digests
-        var signers = state.viewSigners + peers.signers
+        // Keyring keys are pinned at once (re-pinning happens only here, from the accepted keyring).
+        var signers = state.viewSigners + peers.signers + ringKeys
         if (lastSeen.size > MAX_PEERS_SEEN || digests.size > MAX_PEERS_SEEN || signers.size > MAX_PEERS_SEEN) {
             lastSeen = lastSeen.filterKeys { it in members }
             digests = digests.filterKeys { it in members }

@@ -94,17 +94,27 @@ if (Want "kotlin") {
 }
 
 if (Want "worker") {
-    $dir = Join-Path $Root "cloudflare\license-issuer"
-    # The Worker has no dependencies (node:test only), so there may be no lock to install from.
-    if (-not $NoInstall -and (Test-Path -LiteralPath (Join-Path $dir "package-lock.json"))) {
-        Step "worker: npm ci" $dir { npm ci --no-audit --no-fund --loglevel=error }
+    foreach ($w in @(@("license-issuer", "licence Worker"), @("update-feed", "update Worker"))) {
+        $dir = Join-Path $Root "cloudflare\$($w[0])"
+        # The Workers have no dependencies (node:test only), so there may be no lock to install from.
+        if (-not $NoInstall -and (Test-Path -LiteralPath (Join-Path $dir "package-lock.json"))) {
+            Step "worker: npm ci ($($w[0]))" $dir { npm ci --no-audit --no-fund --loglevel=error }
+        }
+        Step "worker: $($w[1]) tests" $dir { npm test }
     }
-    Step "worker: licence Worker tests" $dir { npm test }
 }
 
 if ($Build) {
+    # The build refuses output folders other accounts can write, so use an
+    # owner-only folder (granted by SID: the user and the PC may share a name).
+    $out = Join-Path $env:LOCALAPPDATA "lgk-ci-build"
+    if (-not (Test-Path -LiteralPath $out)) {
+        New-Item -ItemType Directory -Path $out | Out-Null
+        $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+        icacls $out /inheritance:r /grant:r "*${sid}:(OI)(CI)F" "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F" | Out-Null
+    }
     Step "build-smoke: frozen executables" $Root {
-        .\scripts\build_personal_installer.ps1 -SkipInstaller -OutputRoot (Join-Path $env:TEMP "lgk-ci-build")
+        .\scripts\build_personal_installer.ps1 -SkipInstaller -OutputRoot $out
     }
 }
 

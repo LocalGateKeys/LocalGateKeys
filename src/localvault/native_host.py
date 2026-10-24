@@ -61,6 +61,23 @@ def _diagnostic_path() -> Path:
     return path
 
 
+# The browser starts a host per connection, so the log grows without bound
+# unless capped: past this size it moves to native-host.log.1 (replacing the
+# previous one), keeping at most about twice this on disk.
+_LOG_MAX_BYTES = 1024 * 1024
+
+
+def _rotate_log(path: Path) -> None:
+    """Best effort; hosts run concurrently, so a lost race just skips a rotation."""
+
+    try:
+        if path.stat().st_size < _LOG_MAX_BYTES:
+            return
+        os.replace(path, path.with_name(path.name + ".1"))
+    except OSError:
+        pass
+
+
 def _log(event: str, exc: BaseException | None = None) -> None:
     """Best-effort diagnostic logging without credential material."""
 
@@ -75,7 +92,9 @@ def _log(event: str, exc: BaseException | None = None) -> None:
                 number = exc.args[0]
             if type(number) is int and 0 <= number <= 65535:
                 line += f" winerror={number}"
-        with _diagnostic_path().open("a", encoding="utf-8", newline="\n") as handle:
+        path = _diagnostic_path()
+        _rotate_log(path)
+        with path.open("a", encoding="utf-8", newline="\n") as handle:
             handle.write(line[:4000] + "\n")
     except Exception:
         pass
@@ -114,7 +133,8 @@ def _read_native_message(stream: BinaryIO) -> dict[str, Any] | None:
     payload = _read_exact(stream, length)
     try:
         value = json.loads(payload.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as exc:
+        # RecursionError: Python 3.14's C decoder raises it for deeply nested input.
         raise NativeBridgeError("Invalid native message JSON") from exc
     if not isinstance(value, dict):
         raise NativeBridgeError("Native message must be a JSON object")

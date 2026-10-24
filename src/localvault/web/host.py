@@ -58,6 +58,12 @@ class WebAgentHost(BrowserBroker):
         if popup is not None and hasattr(port, "popup_view"):
             view = port.popup_view(on_show=self.show_popup, on_idle=self._popup_idle)
         self.popup_port = view
+        if popup is not None:
+            hooks = getattr(popup, "on_disable", None)
+            if isinstance(hooks, list):
+                hooks.append(self._popup_disabled)
+            if getattr(popup, "disabled", False):
+                self._popup_disabled()
         self.ui = _ReleasingPort(self, view)
         self._holding = threading.local()  # does this thread hold the vault lock through run_on_ui?
         self._bus = bus
@@ -175,10 +181,21 @@ class WebAgentHost(BrowserBroker):
             self.raise_window()
             return
         try:
-            popup.show()
+            shown = popup.show()
         except Exception:  # noqa: BLE001 - fall back to the main window
             _log.debug("Popup could not be shown", exc_info=True)
+            shown = False
+        if shown is False:
+            # A disabled popup (R-9): never let a prompt wait on a window that cannot appear.
             self.raise_window()
+
+    def _popup_disabled(self) -> None:
+        """The popup can never be shown: its prompts go to the main window, which shows them (R-9)."""
+        view = self.popup_port
+        if view is not self._port and hasattr(view, "_surface"):
+            view._surface = None
+            view._on_show = self.raise_window
+            view._on_idle = None
 
     def _popup_idle(self) -> None:
         """Hide the popup once no fill waits for an unlock or an answer in it."""

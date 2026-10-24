@@ -20,6 +20,13 @@ struct PeerRead {
 
 /// The cloud-folder transport (desktop `folder_transport.FolderSync`); see that module's docstring for every rule.
 ///
+/// View signatures (audit M-7, R-4): the key a peer's view must be signed with is, in this order, the
+/// `signing_public` of its entry in the accepted keyring (`Keyring.memberSigningKeys`), else its LAN-paired
+/// key, else the key pinned on first use. A peer with a keyring key or a pin needs a valid signature by that
+/// key (`view-unsigned` / `view-forged`). Every keyring key is pinned at once and a pin changes only through
+/// the keyring (`signer-changed` when it replaces a different pin); first-use pinning remains only for members
+/// whose keyring entry lists no key (format 1, or carried over from it).
+///
 /// Review rule: the store is committed only after every read and check of a run has succeeded, in ONE
 /// `ItemStore.commit`, and only when something changed. A wrong sync password, a keyring that is not
 /// trusted or a corrupt peer file therefore never modifies the store. The reserved own-file counter is part
@@ -66,7 +73,7 @@ public struct FolderSync {
     /// Licence keys this build knows (key id -> raw Ed25519 public key).
     public let licenseKeys: [String: [UInt8]]
     /// Device id -> base64 signing key of every LAN-paired peer (desktop `_paired_keys`): the only key that
-    /// peer's view signature may carry, ahead of the signer pinned on first use.
+    /// peer's view signature may carry when the keyring lists none for it, ahead of the signer pinned on first use.
     public let pairedKeys: [String: String]
 
     public init(access: any FolderAccess, installID: String, licenseKeys: [String: [UInt8]] = [:],
@@ -189,9 +196,16 @@ public struct FolderSync {
     }
 
     /// Reads every peer file; never throws for a single bad file.
+    ///
+    /// `keyringKeys`: each member's key from the accepted keyring (its views must be signed by it);
+    /// `pairedKeys`: the key a LAN-paired device's signature must carry when the keyring lists none;
+    /// `signers`: keys pinned on first use (views must be signed by them). Precedence in that order.
     func readPeers(_ gk: GroupKey, ownID: String, members: Set<String>, lastSeen: [String: Int64],
                    digests: [String: String], now: Int64, signers: [String: String] = [:],
-                   pairedKeys: [String: String] = [:]) -> PeerRead {
+                   pairedKeys: [String: String] = [:], keyringKeys: [String: String] = [:]) -> PeerRead {
+        // Keyring keys win, and a device with one must be signed (as if pinned).
+        let signers = signers.merging(keyringKeys) { $1 }
+        let pairedKeys = pairedKeys.merging(keyringKeys) { $1 }
         var out = PeerRead()
         var allowed = Set<String>()
         for m in members.subtracting([ownID]).sorted() {
@@ -264,6 +278,7 @@ public struct FolderSync {
     }
 
     /// A validly signed view (its base64 key), an accepted unsigned one, or a refusal with its issue.
+    /// `pairedKeys` already holds the keyring keys (which win), `signers` the pins and keyring keys.
     func checkSignature(_ dev: String, name: String, raw: [UInt8], header: ViewHeader,
                         signers: [String: String], pairedKeys: [String: String] = [:]) -> SignatureCheck {
         let expected = pairedKeys[dev] ?? signers[dev]
@@ -364,10 +379,17 @@ public struct FolderSync {
         if members.count > Self.maxMembersSeen { members = current }
 
         if Identifier.isSafeDeviceFile(state.deviceID) { sweepOwnTempFiles(state.deviceID) }
+        // Each member's signing key from the accepted keyring (format 2); a different pin is replaced and reported.
+        let ringKeys = Keyring.memberSigningKeys(ring).filter { $0.key != state.deviceID }
+        for (device, key) in ringKeys.sorted(by: { $0.key < $1.key }) {
+            if let pinned = state.viewSigners[device], pinned != key {
+                issues.append(SyncIssue("signer-changed", "\(device): the keyring lists another signing key"))
+            }
+        }
         let peers = readPeers(gk, ownID: state.deviceID, members: members, lastSeen: state.lastSeen,
                               digests: state.peerDigests, now: now,
                               signers: state.viewSigners.filter { $0.key != state.deviceID },
-                              pairedKeys: pairedKeys.filter { $0.key != state.deviceID })
+                              pairedKeys: pairedKeys.filter { $0.key != state.deviceID }, keyringKeys: ringKeys)
         issues += peers.issues
         let knownDevices = members.union(state.lastSeen.keys).union([state.deviceID])
         var report = SyncRunner.run(store: snapshot, views: peers.views, device: state.deviceID, now: now,
@@ -377,7 +399,8 @@ public struct FolderSync {
         let ownKey = Base64.encode(state.identity.signingPublicKey)
         var lastSeen = state.lastSeen.merging(peers.seen) { $1 }
         var digests = state.peerDigests.merging(peers.digests) { $1 }
-        var signers = state.viewSigners.merging(peers.signers) { $1 }
+        // Keyring keys are pinned at once (re-pinning happens only here, from the accepted keyring).
+        var signers = state.viewSigners.merging(peers.signers) { $1 }.merging(ringKeys) { $1 }
         if lastSeen.count > Self.maxPeersSeen || digests.count > Self.maxPeersSeen || signers.count > Self.maxPeersSeen {
             lastSeen = lastSeen.filter { members.contains($0.key) }
             digests = digests.filter { members.contains($0.key) }

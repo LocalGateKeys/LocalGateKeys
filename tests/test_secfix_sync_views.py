@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric import ed25519
-from test_sync_folder_transport import CHEAP, NOW, PW2, _group, _web, kinds
+from test_sync_folder_transport import CHEAP, NOW, PW2, _group, _older_app_members, _ring_path, _web, kinds
 
 from localvault.sync import folder_transport as ft
 from localvault.sync.engine import ItemState
@@ -50,6 +50,10 @@ def _forge(m, victim, eid: str, counter: int, value: str = "attacker-chosen") ->
             s = ItemState(s.item_id, vv, False, None, item)
         states.append(s)
     victim.own_file.write_bytes(encode_view(gk, victim.device_id, counter, states, NOW + 1))
+
+
+def b64key(dev) -> str:
+    return base64.b64encode(dev.state.identity().signing_public_key).decode()
 
 
 def _unpin(*devs) -> None:
@@ -140,6 +144,7 @@ def test_unpinned_forgery_with_huge_counter_cannot_freeze_the_victim(root: Path,
     eid = _web(a, "bank")
     for d in (a, b, m):
         d.sync(NOW)
+    _older_app_members(root, a, b)
     _unpin(a)  # a has only ever seen unsigned views (b on an older app)
     _sig_file(root, b).unlink()
     _forge(m, b, eid, MAX)
@@ -161,6 +166,7 @@ def test_unpinned_small_forgery_is_followed_by_the_victim(root: Path, tmp_path: 
     eid = _web(a, "bank")
     for d in (a, b, m):
         d.sync(NOW)
+    _older_app_members(root, a, b)
     _unpin(a)
     _sig_file(root, b).unlink()
     forged = b.state.own_counter + 3
@@ -195,7 +201,9 @@ def test_rotation_resets_peer_counters(root: Path, tmp_path: Path) -> None:
     ft.rotate_folder_group(root, a.session, a.lease, PW2, remove=[m.device_id], keep=[b.device_id],
                            install_id=a.install, now=NOW + 2, _kdf_override=CHEAP)
     assert a.state.last_seen == {} and a.state.peer_digests == {}
-    assert set(a.state.view_signers) == {a.device_id}
+    # pins of the old epoch are gone; only the new keyring's members are pinned again, from the keyring
+    assert set(a.state.view_signers) <= {a.device_id, b.device_id}
+    assert a.state.view_signers.get(b.device_id, b64key(b)) == b64key(b)
     b.sync(NOW + 3)
     assert b.state.last_seen.get(m.device_id) is None
     b.session.update_entry_fields(eid, password="after-rotation")
@@ -206,6 +214,7 @@ def test_rotation_resets_peer_counters(root: Path, tmp_path: Path) -> None:
 
 def test_counter_jump_is_refused(root: Path, tmp_path: Path) -> None:
     a, b = _group(tmp_path, root, 2)
+    _older_app_members(root, a, b)
     _unpin(a)
     _sig_file(root, b).unlink()
     gk = b.gk()
@@ -222,6 +231,7 @@ def test_counter_jump_is_refused(root: Path, tmp_path: Path) -> None:
 
 def test_unsigned_views_of_older_peers_still_sync(root: Path, tmp_path: Path) -> None:
     a, b = _group(tmp_path, root, 2)
+    _older_app_members(root, a, b)  # b joined with an app from before keyring format 2
     _unpin(a)
     eid = _web(b, "legacy")
     original = ft.FolderSync.write_own
@@ -256,7 +266,9 @@ def test_signed_peer_is_pinned_and_another_key_is_refused(root: Path, tmp_path: 
 
 
 def test_lan_paired_key_is_the_only_accepted_signer(root: Path, tmp_path: Path) -> None:
+    """For a member whose keyring entry has no key (older app), the LAN-paired key wins over the pin."""
     a, b = _group(tmp_path, root, 2)
+    _older_app_members(root, a, b)
     st = a.state
     other = base64.b64encode(ed25519.Ed25519PrivateKey.generate().public_key().public_bytes_raw()).decode()
     entry = {"device_id": b.device_id, "group_id": st.group_id, "signing_public": other,
@@ -295,3 +307,56 @@ def test_new_issue_kinds_have_user_copy(kind: str) -> None:
     assert ui.issue_severity(kind) == ("error" if kind == "counter-exhausted" else "warning")
     if kind == "implausible-vv":
         assert "Laptop" in text
+
+
+# --- R-4: the keyring anchors each member's signing key -------------------------------------------
+
+
+def test_keyring_key_is_pinned_at_once_and_wins_over_a_paired_key(root: Path, tmp_path: Path) -> None:
+    a, b = _group(tmp_path, root, 2)
+    assert a.state.view_signers[b.device_id] == b64key(b)
+    st = a.state
+    other = base64.b64encode(ed25519.Ed25519PrivateKey.generate().public_key().public_bytes_raw()).decode()
+    entry = {"device_id": b.device_id, "group_id": st.group_id, "signing_public": other,
+             "exchange_public": other, "fingerprint": "0" * 64, "endpoint": None}
+    save_sync_state(a.session, dataclasses.replace(st, lan_peers=(entry,), view_signers={}))
+    eid = _web(b, "anchored")
+    b.sync(NOW + 1)
+    assert kinds(a.sync(NOW + 2)) == []  # the keyring's key (b's real one) wins over the paired one
+    assert a.entry(eid)["label"] == "anchored" and a.state.view_signers[b.device_id] == b64key(b)
+
+
+def test_a_member_that_never_wrote_cannot_be_pinned_to_a_forger(root: Path, tmp_path: Path) -> None:
+    """Before R-4 the first signed view pinned its key: someone with G could sign first for a new member."""
+    a, b = _group(tmp_path, root, 2)
+    _unpin(a)  # a never saw b's view yet
+    _sig_file(root, b).write_bytes(sign_view(b.own_file.read_bytes(), ed25519.Ed25519PrivateKey.generate()))
+    _web(b, "z")
+    b.sync(NOW + 1)
+    _sig_file(root, b).write_bytes(sign_view(b.own_file.read_bytes(), ed25519.Ed25519PrivateKey.generate()))
+    assert kinds(a.sync(NOW + 2)) == ["view-forged"]
+    assert a.state.view_signers[b.device_id] == b64key(b)  # pinned from the keyring, not from the forgery
+    # an unsigned file is refused too: a keyring key means "must be signed"
+    _sig_file(root, b).unlink()
+    assert kinds(a.sync(NOW + 3)) == ["view-unsigned"]
+
+
+def test_a_changed_keyring_key_replaces_the_pin_and_is_reported(root: Path, tmp_path: Path) -> None:
+    from localvault.sync import keyring as kr
+
+    a, b = _group(tmp_path, root, 2)
+    old_pin = a.state.view_signers[b.device_id]
+    # someone holding G lists a new key (with a valid proof by that key) for b
+    new = ed25519.Ed25519PrivateKey.generate()
+    new_b64 = base64.b64encode(new.public_key().public_bytes_raw()).decode()
+    path = _ring_path(root)
+    ring = kr.parse_keyring(path.read_bytes())
+    for m in ring["members"]:
+        if m["device_id"] == b.device_id:
+            m["signing_public"] = new_b64
+            m["signing_proof"] = base64.b64encode(new.sign(kr._proof_message(
+                ring["group_id"], m["device_id"], m["exchange_public"], new_b64))).decode()
+    path.write_bytes(kr.canonical_json(kr._finish(ring, a.gk(), None, ring["prev_mac"])))
+    report = a.sync(NOW + 1)
+    assert "signer-changed" in kinds(report) and old_pin != new_b64
+    assert a.state.view_signers[b.device_id] == new_b64

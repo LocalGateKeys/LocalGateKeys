@@ -212,12 +212,16 @@ def newer_format(bundle: object, keys: Mapping[str, str] | None = None) -> bool:
         return False
     try:
         _check_signature(lic, sig, keys)
-    except (LicenseError, TypeError, ValueError):
+    except (LicenseError, TypeError, ValueError, KeyError, AttributeError):
         return False
     return True
 
 
 def _check_signature(lic: dict, sig: dict, keys: Mapping[str, str]) -> None:
+    # Callers check the block's shape first; a block missing a field is still a
+    # LicenseError here (never a KeyError) so no caller can leak a lookup error.
+    if not isinstance(sig, dict) or set(sig) != _SIGNATURE_FIELDS:
+        raise _fail("license-shape")
     if sig["alg"] != "Ed25519":
         raise _fail("bad-alg")
     key_id, encoded_sig = sig["key_id"], sig["signature"]

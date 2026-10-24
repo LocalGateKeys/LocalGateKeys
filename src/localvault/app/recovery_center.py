@@ -1,7 +1,6 @@
 """Backup and recovery controller, phrase recovery and result summaries (no UI toolkit)."""
 from __future__ import annotations
 
-import os
 import secrets
 import shutil
 import tempfile
@@ -528,31 +527,34 @@ class RecoveryCenter:
 
 @contextmanager
 def _backup_snapshot(source: Path, destination_parent: Path, expected_sha256: str) -> Iterator[Path]:
-    """Copy an authenticated backup to a private writable scratch directory."""
+    """Copy an authenticated backup to a private writable scratch directory.
+
+    The copy is made inside a new directory created owner-only (``mkdtemp``
+    uses mode 0o700, which Python 3.13+ turns into an owner-only ACL on
+    Windows), never as a bare file in a shared folder such as %TEMP%, whose
+    inherited ACL could let another (for example sandboxed) process replace
+    the copy between the hash check and its use (pentest #8).
+    """
     last_error: OSError | None = None
     parents = dict.fromkeys((destination_parent, source.parent, Path(tempfile.gettempdir())))
     for parent in parents:
-        snapshot: Path | None = None
-        descriptor: int | None = None
+        scratch: Path | None = None
         try:
-            descriptor, name = tempfile.mkstemp(prefix=".lgk-restore-source-", suffix=".lgk", dir=parent)
-            snapshot = Path(name)
-            with source.open("rb") as original, os.fdopen(descriptor, "wb") as copy:
-                descriptor = None
+            scratch = Path(tempfile.mkdtemp(prefix=".lgk-restore-source-", dir=parent))
+            snapshot = scratch / "backup.lgk"
+            with source.open("rb") as original, snapshot.open("xb") as copy:
                 shutil.copyfileobj(original, copy)
             if sha256_file(snapshot) != expected_sha256:
-                snapshot.unlink(missing_ok=True)
+                shutil.rmtree(scratch, ignore_errors=True)
                 raise RecoveryError("This backup changed while restore was starting. Nothing was restored.")
         except OSError as exc:
             last_error = exc
-            if descriptor is not None:
-                os.close(descriptor)
-            if snapshot is not None:
-                snapshot.unlink(missing_ok=True)
+            if scratch is not None:
+                shutil.rmtree(scratch, ignore_errors=True)
             continue
         try:
             yield snapshot
         finally:
-            snapshot.unlink(missing_ok=True)
+            shutil.rmtree(scratch, ignore_errors=True)
         return
     raise RecoveryError("Could not prepare the selected backup") from last_error

@@ -18,11 +18,17 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * Password- and device-wrapped group keyring (desktop `localvault.sync.keyring`, format 1).
- * Keyrings are handled as [JsonValue] so an untouched keyring re-encodes byte-identically.
+ * Password- and device-wrapped group keyring (desktop `localvault.sync.keyring`). Format 2 adds each
+ * member's Ed25519 view-signing key (`signing_public`) and its `signing_proof`; format 1 is still
+ * read, every write is format 2. Keyrings are handled as [JsonValue] so an untouched keyring
+ * re-encodes byte-identically.
  */
 object Keyring {
-    const val FORMAT: Long = 1
+    /** The format every write produces. */
+    const val FORMAT: Long = 2
+
+    /** The formats a keyring may have to be read (1: members without signing keys). */
+    val READ_FORMATS: Set<Long> = setOf(1L, 2L)
     const val KDF_NAME = "argon2id"
     const val KDF_MEMORY_KIB: Long = 131072
     const val KDF_ITERATIONS: Long = 4
@@ -35,6 +41,7 @@ object Keyring {
     const val KEY_LEN = 32
     const val WRAP_CT_LEN = 48
     const val MAC_LEN = 32
+    const val PROOF_LEN = 64
     const val NAME_CT_MIN = 12 + 1 + 16
     const val NAME_CT_MAX = 12 + 64 + 16
     const val MAX_INT: Long = (1L shl 53) - 1
@@ -48,6 +55,7 @@ object Keyring {
     internal val NAME_AAD = ascii("lgk-keyring-member-name-v1|")
     internal val NAME_INFO = ascii("localgatekeys|sync|member-name|v1|")
     internal val BAR = byteArrayOf(0x7C)
+    private val MEMBER_PROOF_LABEL = ascii("localgatekeys|sync|keyring-member|v2|")
 
     // ---- JSON access (only on structurally verified keyrings unless noted) ----
 
@@ -153,6 +161,28 @@ object Keyring {
         throw KeyringException("bad-group-key", e.toString())
     }
 
+    // ---- member signing keys (format 2) ----
+
+    /** What `signing_proof` signs: label + group id | device id | exchange_public | signing_public (both base64 text). */
+    internal fun proofMessage(groupId: String, deviceId: String, exchangePublic: String, signingPublic: String): ByteArray =
+        MEMBER_PROOF_LABEL + ascii(groupId) + BAR + ascii(deviceId) + BAR + ascii(exchangePublic) + BAR + ascii(signingPublic)
+
+    /**
+     * `member_signing_keys`: `{device_id: base64 Ed25519 key}` of every member whose entry lists its
+     * view-signing key. Call it only on an accepted keyring (the structure check verified each
+     * listed key's proof). Members without a key (format 1, or carried over from it) are absent.
+     */
+    fun memberSigningKeys(ring: JsonValue): Map<String, String> {
+        val out = LinkedHashMap<String, String>()
+        for (m in arr(obj(ring)["members"])) {
+            val mo = obj(m)
+            val id = str(mo["device_id"]) ?: continue
+            val key = str(mo["signing_public"]) ?: continue
+            out[id] = key
+        }
+        return out
+    }
+
     // ---- password wrap ----
 
     internal fun argon2(password: String, salt: ByteArray, kdf: Map<String, JsonValue>): ByteArray {
@@ -220,6 +250,10 @@ object Keyring {
             if (str(mo["device_id"]) == identity.deviceId) {
                 if (str(mo["exchange_public"]) != Base64Std.encode(identity.exchangePublicKey)) {
                     throw KeyringException("key-mismatch", "device key differs from the registered member")
+                }
+                val signing = mo["signing_public"]
+                if (signing != null && signing != JsonValue.Null && str(signing) != Base64Std.encode(identity.signingPublicKey)) {
+                    throw KeyringException("key-mismatch", "signing key differs from the registered member")
                 }
                 return mo
             }

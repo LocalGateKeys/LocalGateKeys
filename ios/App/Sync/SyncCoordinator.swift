@@ -166,6 +166,9 @@ final class SyncCoordinator {
     private(set) var actionOffersSettings = false
     /// The address a QR join is dialling (spinner text); nil otherwise.
     private(set) var connecting: LanEndpoint?
+    /// The 6-digit verification code of the QR join in flight, shown while the inviting device waits for its
+    /// user's Accept (the same code is shown there); nil otherwise.
+    private(set) var verificationCode: String?
 
     @ObservationIgnored let store: any ItemStore
     @ObservationIgnored let gate = SessionGate()
@@ -440,12 +443,18 @@ final class SyncCoordinator {
         let onConnected: @Sendable () -> Void = { [weak self] in
             Task { @MainActor in if self?.joinSerial == serial { self?.connecting = nil } }
         }
+        // Only while this join is still running: a late hop never shows the code of a finished join.
+        let onCode: @Sendable (String) -> Void = { [weak self] code in
+            Task { @MainActor in
+                if let self, self.joinSerial == serial, self.phase == .joining, self.joinTask != nil { self.verificationCode = code }
+            }
+        }
         let store = store, deps = deps
-        let task = Task { try await Self.enroll(text: text, store: store, deps: deps, onConnected: onConnected) }
+        let task = Task { try await Self.enroll(text: text, store: store, deps: deps, onConnected: onConnected, onCode: onCode) }
         joinTask = task
         do {
             try await task.value
-            joinTask = nil; connecting = nil
+            joinTask = nil; connecting = nil; verificationCode = nil
             phase = .idle
             syncAfterAction = false   // the first sync below includes any edit made meanwhile
             actionInfo = "This iPhone joined the sync group. The first sync is running."
@@ -453,14 +462,14 @@ final class SyncCoordinator {
             await sync(.manual)
             return true
         } catch let e as EnrollConnectError where e.failure == .cancelled {
-            joinTask = nil; connecting = nil
+            joinTask = nil; connecting = nil; verificationCode = nil
             phase = .idle
             actionInfo = "Pairing was cancelled."
             refreshMembership()
             runPendingSync()
             return false
         } catch {
-            joinTask = nil; connecting = nil
+            joinTask = nil; connecting = nil; verificationCode = nil
             fail(error)
             return false
         }
@@ -473,8 +482,11 @@ final class SyncCoordinator {
         joinTask?.cancel()
     }
 
+    /// `onCode` receives the 6-digit verification code before the request is sent (desktop `on_code`): the
+    /// inviting device shows the same code next to Accept and answers only after Accept (or `declined`).
     nonisolated static func enroll(text: String, store: any ItemStore, deps: SyncDependencies,
-                                   onConnected: @escaping @Sendable () -> Void = {}) async throws {
+                                   onConnected: @escaping @Sendable () -> Void = {},
+                                   onCode: @escaping @Sendable (String) -> Void = { _ in }) async throws {
         let snapshot = try store.load()
         guard snapshot.sync == nil else { throw SyncActionError("already-joined") }
         let offer: PairingOffer
@@ -484,9 +496,13 @@ final class SyncCoordinator {
         guard LanAddress.isLAN(offer.endpoint.host) else { throw SyncActionError("bad-offer") }
         let identity = try deps.newIdentity(deps.random)
         let request: [UInt8]
+        let code: String
         do {
-            // A phone never listens: it announces no endpoint and always initiates.
-            request = try Enrollment.buildRequest(offer: offer, identity: identity, endpoint: nil, random: deps.random, now: deps.clock)
+            // A phone never listens: it announces no endpoint and always initiates. The name is the generic one
+            // it also gives itself in the keyring; the inviting device shows it on its Accept prompt.
+            request = try Enrollment.buildRequest(offer: offer, identity: identity, endpoint: nil, name: deps.deviceName,
+                                                  random: deps.random, now: deps.clock)
+            code = try Enrollment.verificationCode(offer: offer, identity: identity, endpoint: nil, name: deps.deviceName)
         } catch PairingError.expired {
             throw SyncActionError("offer-used-or-expired")
         } catch {
@@ -495,6 +511,9 @@ final class SyncCoordinator {
         // Read before dialling: an address outside this Wi-Fi is still tried (it may be routed), but if
         // the dial fails the message says which address the PC should put in its code.
         let offSubnet = IPv4Subnet.mismatch(host: offer.endpoint.host, subnet: deps.localSubnet())
+        onCode(code)
+        // The reply comes once the user chose Accept on the inviting device: the connection waits up to
+        // `Enrollment.replySeconds` (75 s) for it (`NWLanDialer.enrollReplyTimeout`).
         let reply: [UInt8]
         do { reply = try await deps.lan.enroll(endpoint: offer.endpoint, request: request, onConnected: onConnected) } catch {
             let kind = (error as? LanSocketError)?.kind ?? .other
@@ -502,10 +521,12 @@ final class SyncCoordinator {
             throw EnrollConnectError(failure: failure, endpoint: offer.endpoint, offSubnet: offSubnet)
         }
         let groupKey: GroupKey
-        do { groupKey = try Enrollment.openReply(offer: offer, identity: identity, raw: reply, endpoint: nil) }
+        do { groupKey = try Enrollment.openReply(offer: offer, identity: identity, raw: reply, endpoint: nil, name: deps.deviceName) }
         catch PairingError.refused(let reason) {
             if reason == "used-or-expired" { throw SyncActionError("offer-used-or-expired") }
             if reason == "full" { throw SyncActionError("too-many-peers") }
+            if reason == "declined" { throw SyncActionError("declined") }   // Decline, or no Accept within 60 s
+            if reason == "update-needed" { throw SyncActionError("update-needed") }   // this iPhone sent an older request
             throw SyncActionError("refused")
         } catch {
             throw SyncActionError("refused")

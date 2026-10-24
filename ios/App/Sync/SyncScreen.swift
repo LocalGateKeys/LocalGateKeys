@@ -69,6 +69,18 @@ struct SyncScreen: View {
             if coordinator.connecting != nil {
                 Button("Cancel", role: .cancel) { coordinator.cancelJoin() }
             }
+            if let code = coordinator.verificationCode {
+                // QR join waiting for Accept on the inviting device, which shows the same code.
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(SyncWording.verificationCodeText(code))
+                        .font(.system(.largeTitle, design: .monospaced).weight(.semibold))
+                        .foregroundStyle(Palette.text)
+                        .accessibilityLabel("Verification code \(code.map { String($0) }.joined(separator: " "))")
+                    Text(SyncWording.verificationCodeHint)
+                        .font(.footnote).foregroundStyle(Palette.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
             if let e = coordinator.actionError ?? localError {
                 Text(e).foregroundStyle(Palette.danger).fixedSize(horizontal: false, vertical: true)
                 if coordinator.actionError != nil && coordinator.actionOffersSettings {
@@ -90,6 +102,7 @@ struct SyncScreen: View {
         case .syncing: return "Syncing…"
         case .joining:
             if let ep = coordinator.connecting { return "Connecting to \(SyncWording.hostPort(ep))…" }
+            if coordinator.verificationCode != nil { return "Waiting for Accept on the other device…" }
             return "Joining…"
         case .idle:
             guard coordinator.membership.joined else { return "Sync is not set up on this iPhone." }

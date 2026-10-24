@@ -64,6 +64,12 @@
   // Optional message from the background shown in the save panel (Safari:
   // "saved" and "vault full"). The desktop never sends one.
   function noticeOf(response){const n=response?.notice;return typeof n==="string" && !!n.trim() && n.length<=500?n:"";}
+  // What the save panel may know about a captured login: new or exists, never
+  // whether its password matches (audit M-3). A desktop app from before that
+  // change still answers "exact" / "password_changed"; both are shown as the
+  // same neutral "exists" prompt, so a page sees identical DOM for a right and
+  // a wrong password guess. The desktop app compares after the Save click.
+  function saveStatus(status){return status==="exact"||status==="password_changed"?"exists":status;}
   // ---- Broker gesture nonces. begin_browser / begin_totp_browser /
   // begin_gesture_browser mint a single-use nonce (32 hex) that lives
   // gesture_expires_in (30 s) seconds and is bound to this origin + document
@@ -864,14 +870,14 @@
     const check=await msg("check_browser",{username,password},op);
     if(savedGeneration!==generation || href!==location.href || !field.isConnected || field.value!==password)return;
     applyFeatures(check);
-    if(!explicit && (!check.ok || check.match || check.prompt===false))return;
-    const update=check.status === "password_changed";
-    // Safari: "exists" says only that the account is saved, never whether the
-    // password matches; the app compares at import.
-    const exists=check.status === "exists";
-    const notice=noticeOf(check), full=check.status==="full" && !!notice;
-    panel(exists?"Save / update in LocalGateKeys?":(update?"Update saved password?":"Save this login?"),`${username||"No username"}\n${notice||"Changes are confirmed in the desktop app."}`,[
-      ...(full?[]:[{label:exists?"Save / update":(update?"Update":"Save"),primary:true,run:async()=>{
+    // check.match is ignored: it says nothing a page may learn (audit M-3).
+    if(!explicit && (!check.ok || check.prompt===false))return;
+    // "exists" says only that the account is saved, never whether the
+    // password matches; the desktop app compares after the Save click.
+    const status=saveStatus(check.status), exists=status==="exists";
+    const notice=noticeOf(check), full=status==="full" && !!notice;
+    panel(exists?"Save / update in LocalGateKeys?":"Save this login?",`${username||"No username"}\n${notice||"Changes are confirmed in the desktop app."}`,[
+      ...(full?[]:[{label:exists?"Save / update":"Save",primary:true,run:async()=>{
         if(savedGeneration!==generation || href!==location.href || !S.onTop(field) || field.value!==password){hidePanel();return;}
         // The Save click is the trusted gesture: mint a nonce for this same
         // operation (same context) and present it with save_browser.
@@ -1017,19 +1023,19 @@
     // A capture made while the vault was locked has no trustworthy account
     // classification yet.  The native save path reclassifies after unlock;
     // keep that deferred state visible instead of calling it a new login.
-    const deferred=response.status==="deferred" || response.status==="unknown";
-    const update=!deferred && response.status==="password_changed";
-    const exists=!deferred && response.status==="exists";
+    const status=saveStatus(response.status);
+    const deferred=status==="deferred" || status==="unknown";
+    const exists=!deferred && status==="exists";
     const uncertain=outcome==="uncertain";
     // Safari: a full free vault answers status "full" with a notice; the
     // panel then shows the notice and offers no Save button.
-    const notice=noticeOf(response), full=response.status==="full" && !!notice;
+    const notice=noticeOf(response), full=status==="full" && !!notice;
     // A sign-in that moved to another subdomain of the same site: the login
     // is saved for the origin it was typed on, so the panel names that one.
     const savedFor=typeof response.origin==="string" && /^https?:\/\/[^/]+$/.test(response.origin) && response.origin.length<=300?response.origin:origin();
     const title=deferred
       ? "Unlock to review this login"
-      : full?"Save this login?":(uncertain?"Did you just sign in?":(exists?"Save / update in LocalGateKeys?":(update?"Update saved password?":"Save this login?")));
+      : full?"Save this login?":(uncertain?"Did you just sign in?":(exists?"Save / update in LocalGateKeys?":"Save this login?"));
     const who=handoff?`A login typed on ${savedFor}`:(response.username||"No username");
     const text=notice
       ? `${who}\n${notice}`
@@ -1041,7 +1047,7 @@
           ? `${who}\nThis account is already in LocalGateKeys. Send this sign-in to the app? It shows whether anything changed before saving.`
           : `${who}\nLogin completed. Save it in your local encrypted vault?`;
     panel(title,text,[
-      ...(full?[]:[{label:deferred?"Unlock to review":(exists?"Save / update":(update?"Update":"Save login")),primary:true,run:async()=>{
+      ...(full?[]:[{label:deferred?"Unlock to review":(exists?"Save / update":"Save login"),primary:true,run:async()=>{
         // One operation id for begin_gesture_browser and save_pending_browser:
         // the nonce is bound to the request context, which includes it.
         const saved=await gestured("save_pending_browser",{pending_token:token},{id:newId()});

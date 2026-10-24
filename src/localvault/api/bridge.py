@@ -698,7 +698,13 @@ class Api:
 
     @guarded
     def face_disable(self) -> dict[str, Any]:
-        return ok(**self._face.disable())
+        result = self._face.disable()
+        phrase = result.pop("new_recovery_phrase", None)
+        notes = result.pop("phrase_notes", None)
+        if phrase:
+            # Removing camera verification replaced the recovery phrase (L-4): the page shows it once.
+            result["phrase_card"] = self._recovery.phrase_card(phrase, notes)
+        return ok(**result)
 
     @guarded
     def face_cancel(self) -> dict[str, Any]:
@@ -919,8 +925,14 @@ class Api:
         return ok(**self._sync.qr_show())
 
     @guarded
-    def sync_qr_poll(self, offer_id: Any) -> dict[str, Any]:
-        return ok(**self._sync.qr_poll(_text(offer_id, "offer", 128)))
+    def sync_qr_poll(self, offer_id: Any, decision: Any = None) -> dict[str, Any]:
+        """Poll the shown QR offer; *decision* ``"accept"``/``"decline"`` first answers its Accept prompt."""
+        offer = _text(offer_id, "offer", 128)
+        if decision is not None:
+            if decision not in ("accept", "decline"):
+                raise ApiError("invalid", "Choose Accept or Decline.")
+            self._sync.qr_decide(offer, decision == "accept")
+        return ok(**self._sync.qr_poll(offer))
 
     @guarded
     def sync_qr_copy(self, offer_id: Any) -> dict[str, Any]:

@@ -435,10 +435,16 @@ def enrollment_present(session: VaultSession) -> bool:
 def rotation_on_disable(session: VaultSession) -> bool:
     """Whether disabling camera unlock re-encrypts the vault under a new key.
 
-    Only when camera unlock is set up and the vault has no recovery phrase:
-    rotating would invalidate the phrase.
+    Whenever camera unlock is (or was half) set up.  With a recovery phrase
+    the rotation also replaces the phrase (L-4, owner decision "rotate + new
+    phrase"): the old phrase stops working and the new one is shown once.
     """
-    return enrollment_present(session) and not session.has_recovery_phrase()
+    return enrollment_present(session)
+
+
+def replaces_recovery_phrase_on_disable(session: VaultSession) -> bool:
+    """Whether disabling camera unlock issues a new recovery phrase (the old one stops working)."""
+    return rotation_on_disable(session) and session.has_recovery_phrase()
 
 
 def disable_enrollment(session: VaultSession, current_password: Any = None) -> dict[str, Any] | None:
@@ -447,20 +453,25 @@ def disable_enrollment(session: VaultSession, current_password: Any = None) -> d
     The sidecar holds the data key under DPAPI only, so any copy of it taken
     while camera unlock was on (backup, shadow copy, undeleted file) would
     keep opening the vault for anyone signed in to this Windows account.
-    With ``current_password`` the data key is therefore rotated first
-    (``rotate_data_key``), which leaves every old sidecar wrapping a retired
-    key; the rotation result is returned.
+    With ``current_password`` the data key is therefore rotated first, which
+    leaves every old sidecar wrapping a retired key; the rotation result is
+    returned.
 
     A rotation cannot re-wrap the recovery phrase (its words are not
-    available), so it is skipped while the vault has one: losing the
-    phrase silently is worse than the residual risk, which needs a copy of
-    the old sidecar *and* this Windows account (or its password and user
-    files).  Without a password, or with a phrase, only the binding and the
+    available), so with a phrase the rotation issues a new one through
+    ``create_recovery_phrase``: the result then carries it under
+    ``new_recovery_phrase`` for the caller to show once, and the old phrase
+    no longer opens the vault.  Without a password only the binding and the
     sidecar are removed and ``None`` is returned.
     """
     result = None
     if rotation_on_disable(session) and current_password is not None:
-        result = session.rotate_data_key(current_password)
+        if session.has_recovery_phrase():
+            phrase = session.create_recovery_phrase(current_password)
+            change = getattr(session, "last_recovery_phrase_change", None) or {}
+            result = {**change, "new_recovery_phrase": phrase}
+        else:
+            result = session.rotate_data_key(current_password)
     if session.face_binding():
         session.set_face_binding(None)
     try:

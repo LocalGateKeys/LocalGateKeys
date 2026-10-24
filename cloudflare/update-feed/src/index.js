@@ -25,7 +25,39 @@ const RELEASE_PATH =
 const BASE_HEADERS = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "no-referrer",
+  // No `preload` until the owner decides on it.
+  "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
 };
+
+// One byte range ("bytes=a-b", "bytes=a-", "bytes=-n"). Anything else (several
+// ranges, other units, garbage) is ignored and the whole file is sent, as
+// RFC 9110 allows.
+const SINGLE_RANGE = /^bytes=(?:(\d{1,15})-(\d{0,15})|-(\d{1,15}))$/;
+
+function parseRange(header) {
+  const match = SINGLE_RANGE.exec((header ?? "").trim());
+  if (match === null) return null;
+  if (match[3] !== undefined) {
+    const suffix = Number(match[3]);
+    return suffix === 0 ? "unsatisfiable" : { suffix };
+  }
+  const offset = Number(match[1]);
+  if (match[2] === "") return { offset };
+  const last = Number(match[2]);
+  if (last < offset) return null; // invalid: ignored
+  return { offset, length: last - offset + 1 };
+}
+
+// The [start, end] a range covers in an object of `size` bytes, or null if
+// none of it exists (416).
+function rangeBounds(range, size) {
+  if (range.suffix !== undefined) {
+    return size === 0 ? null : [Math.max(0, size - range.suffix), size - 1];
+  }
+  if (range.offset >= size) return null;
+  const end = range.length === undefined ? size - 1 : Math.min(size - 1, range.offset + range.length - 1);
+  return [range.offset, end];
+}
 
 function plain(status, message, extra = {}) {
   return new Response(`${message}\n`, {
@@ -66,6 +98,75 @@ function resolve(pathname) {
   };
 }
 
+function objectHeaders(target, object) {
+  const headers = {
+    ...BASE_HEADERS,
+    "Content-Type": target.contentType,
+    "Content-Length": String(object.size),
+    "Cache-Control": target.cacheControl,
+    ETag: object.httpEtag,
+  };
+  if (target.filename !== undefined) {
+    headers["Content-Disposition"] = `attachment; filename="${target.filename}"`;
+    headers["Accept-Ranges"] = "bytes";
+  }
+  return headers;
+}
+
+// Release files: byte ranges (resumed downloads) and conditional requests
+// (If-None-Match and friends) go to R2, which applies them (scan F6).
+async function serveRelease(request, env, target) {
+  const range = parseRange(request.headers.get("Range"));
+  const rangeOf = (size) => (range === null ? undefined : range === "unsatisfiable" ? null : rangeBounds(range, size));
+  const unsatisfiable = (size) =>
+    plain(416, "Range not satisfiable", { "Content-Range": `bytes */${size}`, "Accept-Ranges": "bytes" });
+
+  if (request.method === "HEAD") {
+    const object = await env.RELEASES.head(target.key);
+    if (object === null) return plain(404, "Not found");
+    return new Response(null, { status: 200, headers: objectHeaders(target, object) });
+  }
+
+  const options = { onlyIf: request.headers };
+  if (range !== null && range !== "unsatisfiable") options.range = range;
+  let object;
+  try {
+    object = range === "unsatisfiable" ? null : await env.RELEASES.get(target.key, options);
+  } catch (error) {
+    // R2 rejects a range past the end; anything else is a real failure.
+    if (options.range === undefined) throw error;
+    object = null;
+  }
+  if (object === null || (range !== null && object.size !== undefined && rangeOf(object.size) === null)) {
+    // Missing object, or a range R2 refused: tell them apart with a HEAD.
+    const head = await env.RELEASES.head(target.key);
+    if (head === null) return plain(404, "Not found");
+    const bounds = range === null ? null : rangeOf(head.size);
+    if (range !== null && bounds === null) return unsatisfiable(head.size);
+    if (bounds === null) throw new Error(`R2 get failed for ${target.key}`);
+    // A range running past the end, if R2 refused it: ask again for what exists.
+    object = await env.RELEASES.get(target.key, { ...options, range: { offset: bounds[0], length: bounds[1] - bounds[0] + 1 } });
+    if (object === null) return plain(404, "Not found");
+  }
+
+  const headers = objectHeaders(target, object);
+  if (!("body" in object) || object.body === undefined || object.body === null) {
+    // A precondition failed: If-None-Match / If-Modified-Since mean "you have
+    // it" (304); If-Match / If-Unmodified-Since mean "it changed" (412).
+    delete headers["Content-Length"];
+    delete headers["Content-Disposition"];
+    const strict = request.headers.has("If-Match") || request.headers.has("If-Unmodified-Since");
+    if (strict) return plain(412, "Precondition failed", { ETag: object.httpEtag });
+    return new Response(null, { status: 304, headers });
+  }
+  const bounds = rangeOf(object.size);
+  if (bounds === undefined) return new Response(object.body, { status: 200, headers });
+  const [start, end] = bounds;
+  headers["Content-Length"] = String(end - start + 1);
+  headers["Content-Range"] = `bytes ${start}-${end}/${object.size}`;
+  return new Response(object.body, { status: 206, headers });
+}
+
 export default {
   async fetch(request, env) {
     if (request.method !== "GET" && request.method !== "HEAD") {
@@ -80,6 +181,10 @@ export default {
       return plain(404, "Not found");
     }
 
+    if (target.filename !== undefined) {
+      return serveRelease(request, env, target);
+    }
+
     const object =
       request.method === "HEAD" ? await env.RELEASES.head(target.key) : await env.RELEASES.get(target.key);
     if (object === null) {
@@ -91,16 +196,7 @@ export default {
       return plain(500, "Feed object is larger than clients accept");
     }
 
-    const headers = {
-      ...BASE_HEADERS,
-      "Content-Type": target.contentType,
-      "Content-Length": String(object.size),
-      "Cache-Control": target.cacheControl,
-      ETag: object.httpEtag,
-    };
-    if (target.filename !== undefined) {
-      headers["Content-Disposition"] = `attachment; filename="${target.filename}"`;
-    }
+    const headers = objectHeaders(target, object);
     return new Response(request.method === "HEAD" ? null : object.body, { status: 200, headers });
   },
 };

@@ -4,6 +4,8 @@ import sys
 
 ROOT = Path(SPECPATH).resolve()
 sys.path.insert(0, str(ROOT / 'src'))
+sys.path.insert(0, str(ROOT / 'build-personal'))
+from lgk_version_info import version_info  # noqa: E402
 
 # The native host only forwards framed messages between the browser and the
 # running app, and the browser starts it for every message. Bundle only what
@@ -14,6 +16,7 @@ NATIVE_MODULES = [
     'localvault', 'localvault.version', 'localvault.native_host', 'localvault.protocol',
     'localvault.pipe_transport', 'localvault.bridge_status', 'localvault.browser_ancestry',
     'localvault.config', 'localvault.distribution', 'localvault.signature', 'localvault.winpaths',
+    'localvault.process_hardening',
 ]
 hiddenimports = NATIVE_MODULES + [
     'win32api', 'win32con', 'win32crypt', 'win32file', 'win32pipe', 'win32security',
@@ -26,6 +29,7 @@ EXCLUDES = [
     'tkinter', '_tkinter', 'PIL', 'pystray', 'webview', 'pywinauto', 'comtypes',
     'ssl', '_ssl', 'asyncio', '_asyncio', 'sqlite3', '_sqlite3', 'unittest', 'pydoc', 'xmlrpc',
     'cryptography', 'argon2', 'cffi', 'pyotp', 'qrcode',
+    'pythonwin', 'win32ui', 'win32uiole', 'dde',  # MFC-based; needs mfc140u.dll, unused here
 ]
 
 
@@ -63,6 +67,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=[str(ROOT / 'assets' / 'icons' / 'localgatekeys.ico')],
+    version=version_info(description='LocalGateKeys browser bridge', original_filename='LocalGateKeysNativeHost.exe'),
 )
 coll = COLLECT(
     exe,

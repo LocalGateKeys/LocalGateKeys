@@ -199,6 +199,11 @@ def _is_loopback(host: str) -> bool:
 _FORBIDDEN_HOST_CHARS = frozenset("#/:<>?@[\\]^|%\x7f")
 
 
+# U+3002 IDEOGRAPHIC FULL STOP, U+FF0E FULLWIDTH FULL STOP, U+FF61 HALFWIDTH
+# IDEOGRAPHIC FULL STOP: UTS-46 maps each onto ".".
+_IDEOGRAPHIC_DOTS = str.maketrans({"。": ".", "．": ".", "｡": "."})
+
+
 def _check_host_chars(host: str) -> None:
     if any(ord(char) < 32 or char.isspace() or char in _FORBIDDEN_HOST_CHARS for char in host):
         raise OriginError("Host contains a character that browsers do not allow")
@@ -213,7 +218,9 @@ def _ascii_host(host: str) -> str:
     Hosts with a WHATWG forbidden domain code point or whitespace, and hosts
     ending in more than one dot, are refused.
     """
-    host = host.lower()
+    # UTS-46 (and browsers) treat these as label separators; map them first so
+    # the trailing-dot rules below see them and canonicalisation is idempotent.
+    host = host.lower().translate(_IDEOGRAPHIC_DOTS)
     if host.endswith("."):
         host = host[:-1]
     if not host:
@@ -232,6 +239,9 @@ def _ascii_host(host: str) -> str:
         # idna.IDNAError is a UnicodeError; a missing package fails closed.
         raise OriginError("Invalid internationalized host name") from exc
     _check_host_chars(result)  # UTS-46 maps e.g. fullwidth forms onto ASCII
+    if not result or result.endswith("."):
+        # Any other mapping onto a trailing dot would make the result non-canonical.
+        raise OriginError("Invalid internationalized host name")
     return result
 
 

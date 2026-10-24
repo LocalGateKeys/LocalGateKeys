@@ -57,6 +57,56 @@ describe('SyncPage', () => {
     expect(a.sync_qr_close).toHaveBeenCalledWith('o1');
   });
 
+  it('asks Accept or Decline with the verification code before a scanned device joins', async () => {
+    let decided = null;
+    const confirm = { ok: true, state: 'confirm', seconds_left: 58, message: 'Ilias iPhone wants to join.',
+      device: { id: 'd1', name: 'Ilias iPhone', code: '123 456', fingerprint: 'abcd ef01 2345 6789' } };
+    const pairedState = { ok: true, state: 'paired', device: { id: 'd1', name: 'd1…', fingerprint: 'abcd ef01 2345 6789' },
+      message: 'Paired: d1….' };
+    const poll = vi.fn(async (_id, decision) => {
+      if (decision) decided = decision;
+      return decided === 'accept' ? pairedState : confirm;
+    });
+    api({
+      sync_qr_show: vi.fn().mockResolvedValue({ ok: true, offer_id: 'o1', code: '123-456', image: 'data:image/png;base64,AA', countdown: '2:00' }),
+      sync_qr_poll: poll,
+      sync_qr_close: vi.fn().mockResolvedValue({ ok: true }),
+      sync_firewall_status: vi.fn().mockResolvedValue({ ok: true, supported: false }),
+    });
+    render(SyncPage, { onclose: vi.fn() });
+    await fireEvent.click(await screen.findByRole('button', { name: 'Show pairing code' }));
+    const prompt = await screen.findByRole('alertdialog', { name: 'Accept this device?' }, { timeout: 3000 });
+    expect(within(prompt).getByText('Add Ilias iPhone?')).toBeInTheDocument();
+    expect(within(prompt).getByText('123 456')).toBeInTheDocument();
+    await fireEvent.click(within(prompt).getByRole('button', { name: 'Accept' }));
+    await waitFor(() => expect(poll).toHaveBeenCalledWith('o1', 'accept'));
+    expect(await screen.findByText('Paired: d1…')).toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog', { name: 'Accept this device?' })).not.toBeInTheDocument();
+  });
+
+  it('Decline answers the prompt and closes the code', async () => {
+    let decided = null;
+    const poll = vi.fn(async (_id, decision) => {
+      if (decision) decided = decision;
+      return decided === 'decline'
+        ? { ok: true, state: 'declined', message: 'Declined. The device was not added.' }
+        : { ok: true, state: 'confirm', seconds_left: 30, message: 'PC wants to join.', device: { id: 'd2', name: 'PC', code: '654 321', fingerprint: '' } };
+    });
+    api({
+      sync_qr_show: vi.fn().mockResolvedValue({ ok: true, offer_id: 'o2', code: '1', image: 'data:image/png;base64,AA', countdown: '2:00' }),
+      sync_qr_poll: poll,
+      sync_qr_close: vi.fn().mockResolvedValue({ ok: true }),
+      sync_firewall_status: vi.fn().mockResolvedValue({ ok: true, supported: false }),
+    });
+    render(SyncPage, { onclose: vi.fn() });
+    await fireEvent.click(await screen.findByRole('button', { name: 'Show pairing code' }));
+    const prompt = await screen.findByRole('alertdialog', { name: 'Accept this device?' }, { timeout: 3000 });
+    await fireEvent.click(within(prompt).getByRole('button', { name: 'Decline' }));
+    await waitFor(() => expect(poll).toHaveBeenCalledWith('o2', 'decline'));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Pair a device' })).not.toBeInTheDocument());
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+  });
+
   it('re-reads the view when sync publishes a status', async () => {
     const a = api();
     render(SyncPage, { onclose: vi.fn() });

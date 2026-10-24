@@ -27,6 +27,8 @@ jobs:
         python-version: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
@@ -63,6 +65,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -92,11 +96,10 @@ jobs:
     name: Swift (LGKCore package, iOS app tests)
     runs-on: macos-15
     timeout-minutes: 60
-    env:
-      HOMEBREW_NO_AUTO_UPDATE: "1"
-      HOMEBREW_NO_INSTALL_CLEANUP: "1"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       # The app uses iOS 26 APIs (Liquid Glass behind #available), so it needs
       # the Xcode 26 SDK. Pick the newest non-beta Xcode 26 on the image.
@@ -114,12 +117,24 @@ jobs:
       - name: swift test (LGKCore)
         run: swift test --package-path ios/LGKCore
 
+      # XcodeGen from its GitHub release, pinned by version and by the sha256
+      # GitHub publishes for the asset (not Homebrew, which floats). Bumping it:
+      # change both lines to the new release's xcodegen.zip version and digest.
       - name: Generate the Xcode project (XcodeGen)
         if: hashFiles('ios/project.yml') != ''
+        env:
+          XCODEGEN_VERSION: "2.46.0"
+          XCODEGEN_SHA256: "4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806"
         run: |
-          brew install xcodegen
+          zip="$RUNNER_TEMP/xcodegen.zip"
+          curl -fsSL --retry 3 -o "$zip" "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip"
+          echo "${XCODEGEN_SHA256}  $zip" | shasum -a 256 -c -
+          rm -rf "$RUNNER_TEMP/xcodegen"
+          unzip -q "$zip" -d "$RUNNER_TEMP"
+          xcodegen="$RUNNER_TEMP/xcodegen/bin/xcodegen"
+          "$xcodegen" --version
           cd ios
-          xcodegen generate
+          "$xcodegen" generate
 
       # Device names change with every Xcode (iPhone 16, 17, ...), so pick the
       # first available iPhone on the newest installed iOS runtime by UDID.
@@ -158,6 +173,8 @@ jobs:
     needs: [python]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:

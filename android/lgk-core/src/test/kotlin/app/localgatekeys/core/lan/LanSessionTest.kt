@@ -8,6 +8,7 @@ import app.localgatekeys.core.json.Dialect
 import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.primitives.Base64Std
 import app.localgatekeys.core.primitives.SystemRandomSource
+import app.localgatekeys.core.primitives.X25519
 import app.localgatekeys.core.support.FixedClock
 import app.localgatekeys.core.support.FixedRandom
 import app.localgatekeys.core.support.MemoryCounterStore
@@ -19,6 +20,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
@@ -63,6 +65,12 @@ class LanSessionTest {
 
     // ---- session handshake ----
 
+    /** The recorded hello of [side] re-made with its recorded nonce and ephemeral key (so it can derive once). */
+    private fun remade(side: Map<String, JsonValue>, sid: ByteArray): SessionHello = SessionHello.make(
+        identity(str(side["device"])), groupId, sid, (side["counter"] as JsonValue.Int).v,
+        QueueRandom(listOf(Vectors.hex(str(side["nonce_hex"])), Vectors.hex(str(side["ephemeral_private_hex"])))),
+    )
+
     /** Checks one recorded connection (session.json or messages.json entry) and returns its key. */
     private fun checkConnection(s: Map<String, JsonValue>): ByteArray {
         val hello = obj(s["hello"])
@@ -72,6 +80,8 @@ class LanSessionTest {
         val resId = identity(str(res["device"]))
         val hi = SessionHello.parse(bytes(str(ini["text"])))
         val hr = SessionHello.parse(bytes(str(res["text"])))
+        assertEquals(str(ini["ephemeral_public_hex"]), Vectors.hexString(hi.ephemeralPublic))
+        assertEquals(str(res["ephemeral_public_hex"]), Vectors.hexString(hr.ephemeralPublic))
         assertContentEquals(bytes(str(ini["text"])), hi.toBytes())
         assertContentEquals(bytes(str(res["text"])), hr.toBytes())
         assertEquals(str(ini["signing_input_hex"]), Vectors.hexString(hi.signingBytes()))
@@ -89,17 +99,31 @@ class LanSessionTest {
         assertEquals(str(s["sorted_first"]), if (startsWithInitiator) "initiator" else "responder")
         val shared = iniId.exchange(resId.exchangePublicKey)
         assertEquals(str(s["shared_secret_hex"]), Vectors.hexString(shared))
+        val ephemeral = X25519.agree(Vectors.hex(str(ini["ephemeral_private_hex"])), hr.ephemeralPublic)
+        assertContentEquals(ephemeral, X25519.agree(Vectors.hex(str(res["ephemeral_private_hex"])), hi.ephemeralPublic))
+        assertEquals(str(s["ephemeral_shared_secret_hex"]), Vectors.hexString(ephemeral))
+        val ikm = ephemeral + shared
+        assertEquals(str(s["ikm_hex"]), Vectors.hexString(ikm))
         assertEquals(str(s["salt"]), Vectors.hexString(SecureChannel.salt(transcript)))
         assertEquals(str(s["info_hex"]), Vectors.hexString(SecureChannel.info(sid)))
-        val key = SecureChannel.deriveKey(shared, sid, transcript)
+        val key = SecureChannel.deriveKey(ikm, sid, transcript)
         assertEquals(str(s["key"]), Vectors.hexString(key))
         assertEquals(str(s["prefix_initiator"]), Vectors.hexString(SecureChannel.prefix(key, SecureChannel.Role.INITIATOR)))
         assertEquals(str(s["prefix_responder"]), Vectors.hexString(SecureChannel.prefix(key, SecureChannel.Role.RESPONDER)))
-        // Both sides derive the same key from the recorded hellos.
-        val ci = SecureChannel(iniId, pinned(str(res["device"])), groupId, sid, SecureChannel.Role.INITIATOR, hi, hr)
-        val cr = SecureChannel(resId, pinned(str(ini["device"])), groupId, sid, SecureChannel.Role.RESPONDER, hr, hi)
+        // Both sides derive the same key from hellos re-made with the recorded ephemeral keys.
+        val mi = remade(ini, sid)
+        val mr = remade(res, sid)
+        assertEquals(hi, mi)
+        assertEquals(hr, mr)
+        val ci = SecureChannel(iniId, pinned(str(res["device"])), groupId, sid, SecureChannel.Role.INITIATOR, mi, hr)
+        val cr = SecureChannel(resId, pinned(str(ini["device"])), groupId, sid, SecureChannel.Role.RESPONDER, mr, hi)
         assertContentEquals(key, ci.key)
         assertContentEquals(key, cr.key)
+        // A parsed hello holds no ephemeral private key: it can never derive.
+        assertEquals(
+            "Local session hello has no ephemeral key",
+            transportKind { SecureChannel(iniId, pinned(str(res["device"])), groupId, sid, SecureChannel.Role.INITIATOR, hi, hr) }.second,
+        )
         return key
     }
 
@@ -160,7 +184,7 @@ class LanSessionTest {
         val recorded = SessionHello.parse(bytes(str(ini["text"])))
         val mine = SessionHello.make(
             identity("A"), groupId, Vectors.hex(str(s["session_id"])), 9,
-            QueueRandom(listOf(Vectors.hex(str(ini["nonce_hex"])))),
+            QueueRandom(listOf(Vectors.hex(str(ini["nonce_hex"])), Vectors.hex(str(ini["ephemeral_private_hex"])))),
         )
         assertContentEquals(Vectors.hex(str(ini["signing_input_hex"])), mine.signingBytes())
         assertEquals(recorded.unsignedJson, mine.unsignedJson)
@@ -195,11 +219,11 @@ class LanSessionTest {
             val out = ArrayList<ByteArray>()
             out.add(canon(o + ("extra" to JsonValue.Int(1))))
             for (k in o.keys) out.add(canon(o - k))
-            for (v in listOf(JsonValue.Bool(true), JsonValue.Float(1.0), JsonValue.Str("1"), JsonValue.Int(2))) {
+            for (v in listOf(JsonValue.Bool(true), JsonValue.Float(2.0), JsonValue.Str("2"), JsonValue.Int(1), JsonValue.Int(3))) {
                 out.add(canon(o + ("version" to v)))
             }
             val text = String(canon(o), Charsets.UTF_8)
-            out.add(bytes(text.dropLast(1) + ",\"version\":1}")) // duplicate key
+            out.add(bytes(text.dropLast(1) + ",\"version\":2}")) // duplicate key
             return out
         }
         SessionHello.parse(canon(hello))
@@ -343,6 +367,7 @@ class LanSessionTest {
         val pinnedA: PinnedPeer,
         val counter: Long,
         val nonce: ByteArray?,
+        val ephemeral: ByteArray? = null,
         val answer: (ByteArray) -> ByteArray,
     ) : LanConnection {
         var clientHello: SessionHello? = null
@@ -354,7 +379,10 @@ class LanSessionTest {
             if (ch == null) {
                 val h = SessionHello.parse(LanTransport.decodeFrame(frame))
                 SessionHello.verify(h, pinnedA, groupId)
-                val mine = SessionHello.make(b, groupId, h.sessionId, counter, FixedRandom(nonce ?: SystemRandomSource().bytes(32)))
+                val rnd = SystemRandomSource()
+                val mine = SessionHello.make(
+                    b, groupId, h.sessionId, counter, QueueRandom(listOf(nonce ?: rnd.bytes(32), ephemeral ?: rnd.bytes(32))),
+                )
                 clientHello = h
                 localHello = mine
                 channel = SecureChannel(b, pinnedA, groupId, h.sessionId, SecureChannel.Role.RESPONDER, mine, h)
@@ -390,11 +418,19 @@ class LanSessionTest {
             val hello = obj(c["hello"])
             val client = LanClient(
                 a, groupKey(), HelloCounterSource(MemoryCounterStore(), FixedClock(0)),
-                QueueRandom(listOf(Vectors.hex(str(c["session_id"])), Vectors.hex(str(obj(hello["initiator"])["nonce_hex"])))),
+                QueueRandom(
+                    listOf(
+                        Vectors.hex(str(c["session_id"])), Vectors.hex(str(obj(hello["initiator"])["nonce_hex"])),
+                        Vectors.hex(str(obj(hello["initiator"])["ephemeral_private_hex"])),
+                    ),
+                ),
                 FixedClock(0),
             )
             var seen = ByteArray(0)
-            val conn = FakeConnection(b, pinned("A"), 1, Vectors.hex(str(obj(hello["responder"])["nonce_hex"]))) {
+            val conn = FakeConnection(
+                b, pinned("A"), 1, Vectors.hex(str(obj(hello["responder"])["nonce_hex"])),
+                Vectors.hex(str(obj(hello["responder"])["ephemeral_private_hex"])),
+            ) {
                 seen = it
                 response
             }
@@ -650,5 +686,152 @@ class LanSessionTest {
         }
         assertEquals("peer-rejoin-required", syncReason { client.sync(pinned("B"), emptyList(), 0, refusing) })
         assertNotEquals(0, refusing.opened.size)
+    }
+
+    // ---- protocol version 2: ephemeral session keys ----
+
+    private fun sha256(b: ByteArray): ByteArray = MessageDigest.getInstance("SHA-256").digest(b)
+
+    @Test
+    fun static_keys_alone_do_not_give_the_session_key() {
+        // Forward secrecy: someone who later learns both static exchange keys (and recorded both hellos)
+        // cannot rebuild the key, with the v1 or the v2 labels.
+        for (sv in arr(vec("session.json")["sessions"])) {
+            val s = obj(sv)
+            val hello = obj(s["hello"])
+            val hi = SessionHello.parse(bytes(str(obj(hello["initiator"])["text"])))
+            val hr = SessionHello.parse(bytes(str(obj(hello["responder"])["text"])))
+            val transcript = SecureChannel.transcript(hi.toBytes(), hr.toBytes())
+            val sid = Vectors.hex(str(s["session_id"]))
+            val static = identity("A").exchange(identity("B").exchangePublicKey)
+            for ((salt, info) in listOf("session-salt|" to "session-key|", "session-salt|v2|" to "session-key|v2|")) {
+                val guess = app.localgatekeys.core.primitives.CryptoBox.hkdf(
+                    static, sha256(bytes("localgatekeys|sync|$salt") + transcript), bytes("localgatekeys|sync|$info") + sid, 32,
+                )
+                assertNotEquals(str(s["key"]), Vectors.hexString(guess))
+            }
+            // The 64-byte ikm is required.
+            assertFailsWith<LanTransportException> { SecureChannel.deriveKey(static, sid, transcript) }
+        }
+    }
+
+    @Test
+    fun ephemeral_key_is_fresh_per_hello_and_single_use() {
+        val a = identity("A")
+        val b = identity("B")
+        val sid = ByteArray(16) { 0x73 }
+        val keys = HashSet<String>()
+        for (round in 0 until 2) {
+            val ha = SessionHello.make(a, groupId, sid, 1, QueueRandom(listOf(ByteArray(32) { 0x6E })))
+            val hb = SessionHello.make(b, groupId, sid, 1, QueueRandom(listOf(ByteArray(32) { 0x6D })))
+            assertFalse(ha.ephemeralPublic.contentEquals(hb.ephemeralPublic))
+            assertFalse(ha.ephemeralPublic.contentEquals(a.exchangePublicKey))
+            val ca = SecureChannel(a, pinned("B"), groupId, sid, SecureChannel.Role.INITIATOR, ha, hb)
+            val cb = SecureChannel(b, pinned("A"), groupId, sid, SecureChannel.Role.RESPONDER, hb, ha)
+            assertContentEquals(bytes("hi"), cb.open(ca.seal(bytes("hi"))))
+            assertTrue(ha.ephemeralSecret!!.used && hb.ephemeralSecret!!.used)
+            keys.add(Vectors.hexString(ca.key))
+            // The same local hello cannot derive a second key (its ephemeral private key is zeroed).
+            assertEquals(
+                LanTransportException.Kind.AUTHENTICATION to "Session ephemeral key was already used or wiped",
+                transportKind { SecureChannel(a, pinned("B"), groupId, sid, SecureChannel.Role.INITIATOR, ha, hb) },
+            )
+            assertEquals("EphemeralSecret(<redacted>)", ha.ephemeralSecret.toString())
+        }
+        assertEquals(2, keys.size) // same session id, nonces and counters: only the ephemeral keys differ
+    }
+
+    @Test
+    fun ephemeral_private_bytes_are_zeroed_after_use() {
+        val raw = ByteArray(32) { (it + 1).toByte() }
+        val secret = EphemeralSecret(raw)
+        var seen: ByteArray? = null
+        secret.take { seen = it }
+        assertTrue(seen!!.all { it.toInt() == 0 })
+        assertTrue(secret.used)
+        assertFailsWith<LanTransportException> { secret.take { it } }
+        val unused = EphemeralSecret(raw)
+        unused.wipe()
+        assertTrue(unused.used)
+        assertFailsWith<LanTransportException> { unused.take { it } }
+    }
+
+    @Test
+    fun zero_or_static_ephemeral_key_is_refused() {
+        val b = identity("B")
+        val sid = ByteArray(16) { 1 }
+        for (eph in listOf(ByteArray(32), b.exchangePublicKey)) {
+            val unsigned = SessionHello(sid, groupId, b.deviceId, b.signingPublicKey, b.exchangePublicKey, eph, ByteArray(32) { 2 }, 3, ByteArray(0))
+            val hello = SessionHello(
+                sid, groupId, b.deviceId, b.signingPublicKey, b.exchangePublicKey, eph, ByteArray(32) { 2 }, 3, b.sign(unsigned.signingBytes()),
+            )
+            assertEquals(hello, SessionHello.parse(hello.toBytes()))
+            assertEquals(
+                LanTransportException.Kind.AUTHENTICATION to "Session ephemeral key is malformed",
+                transportKind { SessionHello.verify(hello, pinned("B"), groupId) },
+            )
+        }
+    }
+
+    @Test
+    fun version_refusal_and_legacy_hello() {
+        val session = vec("session.json")
+        assertContentEquals(bytes(str(session["version_refusal"])), LanTransport.versionRefusal())
+        assertEquals(null, LanTransport.parseVersionRefusal(LanTransport.versionRefusal())) // our own version
+        assertEquals(1L, LanTransport.parseVersionRefusal(bytes("{\"refused\":\"version\",\"version\":1}")))
+        assertEquals(3L, LanTransport.parseVersionRefusal(bytes("{\"refused\":\"version\",\"version\":3}")))
+        for (bad in listOf(
+            "{\"refused\":\"version\",\"version\":0}", "{\"refused\":\"version\",\"version\":1.0}",
+            "{\"refused\":\"other\",\"version\":1}", "{\"refused\":\"version\",\"version\":1,\"x\":1}",
+            "{\"refused\":\"version\"}", "{\"refused\":\"version\",\"version\":1,\"version\":1}", "[1]", "nope",
+            "{\"refused\":\"version\",\"version\":2147483648}",
+        )) {
+            assertEquals(null, LanTransport.parseVersionRefusal(bytes(bad)), bad)
+        }
+        // A signed version-1 hello is never parsed as a hello; it is recognised only to report "update needed".
+        val legacy = bytes(str(obj(session["legacy_hello"])["text"]))
+        assertFailsWith<LanTransportException> { SessionHello.parse(legacy) }
+        assertEquals(1L, SessionHello.otherVersion(legacy))
+        val current = bytes(str(obj(obj(obj(arr(session["sessions"])[0])["hello"])["responder"])["text"]))
+        assertEquals(null, SessionHello.otherVersion(current))
+        assertEquals(null, SessionHello.otherVersion(bytes("{\"version\":1}"))) // unsigned: not a hello
+    }
+
+    /** Answers the client's hello with one fixed plain frame payload. */
+    private class AnswerConnection(val payload: ByteArray) : LanConnection {
+        var hello: SessionHello? = null
+        var calls = 0
+
+        override fun exchange(frame: ByteArray): ByteArray {
+            calls++
+            hello = SessionHello.parse(LanTransport.decodeFrame(frame))
+            return LanTransport.encodeFrame(payload)
+        }
+    }
+
+    @Test
+    fun client_stops_with_update_needed_and_never_falls_back() {
+        val legacy = bytes(str(obj(vec("session.json")["legacy_hello"])["text"]))
+        val cases = listOf(
+            bytes("{\"refused\":\"version\",\"version\":1}") to "peer-update-needed",
+            bytes("{\"refused\":\"version\",\"version\":3}") to "lan-update-needed",
+            legacy to "peer-update-needed",
+        )
+        for ((payload, want) in cases) {
+            val client = LanClient(
+                identity("A"), groupKey(), HelloCounterSource(MemoryCounterStore(), FixedClock(0)), SystemRandomSource(), FixedClock(0),
+            )
+            val conns = ArrayList<AnswerConnection>()
+            val connector = ScriptConnector { AnswerConnection(payload).also { conns.add(it) } }
+            val e = assertFailsWith<LanSyncException> { client.sync(pinned("B"), emptyList(), 0, connector) }
+            assertEquals(want, e.reason)
+            assertTrue(e.detail.startsWith("update needed: "), e.detail)
+            // One connection, one version-2 hello: no retry, no other version.
+            assertEquals(1, conns.size)
+            assertEquals(1, conns[0].calls)
+            assertEquals(1, connector.opened.size)
+        }
+        assertTrue(LanClient.versionMismatch(1).detail.contains("the other device runs an older LocalGateKeys"))
+        assertTrue(LanClient.versionMismatch(3).detail.contains("this device runs an older LocalGateKeys"))
     }
 }

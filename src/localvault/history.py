@@ -250,6 +250,7 @@ class HistoryService:
             return next(row["snapshot_id"] for row in rows
                         if row.get("item_id") == item_id and row.get("revision") == clean["revision"])
         per_item = [row for row in rows if row.get("item_id") == item_id]
+        oldest: dict[str, Any] | None = None
         if len(per_item) >= self.max_versions:
             # Retain the newest bounded set, dropping the oldest before
             # checking the global quota.  A caller can therefore continue to
@@ -274,10 +275,12 @@ class HistoryService:
             # Put a removed oldest row back only when quota rejected.  This
             # gives callers a failure that leaves the pre-mutation payload
             # untouched, matching the vault's save rollback invariant.
-            if per_item and oldest not in rows:
+            if oldest is not None and oldest not in rows:
                 rows.append(oldest)
             raise HistoryQuotaError("Typed history quota would be exceeded")
         if len(rows) >= MAX_HISTORY_ROWS:
+            if oldest is not None and oldest not in rows:
+                rows.append(oldest)
             raise HistoryQuotaError("Typed history row limit would be exceeded")
         rows.append(row)
         payload["history"] = rows

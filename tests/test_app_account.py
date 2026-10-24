@@ -309,3 +309,44 @@ def test_old_build_reminder_is_offline_and_snoozes(env, monkeypatch):
     assert env.controller.settings.update_reminder_snoozed_until == "2026-11-17"
     assert service.reminder() == {"due": False}
     assert UpdatesService(env.controller, env.port, configuration=lambda: None).reminder() == {"due": False}
+
+
+def test_camera_unlock_refusal_comes_before_the_confirm_and_the_lock(env):
+    from localvault.face_unlock import envelope_path
+    from localvault.profiles import CAMERA_UNLOCK_BLOCKS_DELETE
+
+    service = ProfilesService(env.controller, env.port, Dialogs())
+    other = service.create("Second")["profile"]["id"]
+    profiles = env.controller.profiles
+    active = profiles.active_profile().id
+    for profile_id in (active, other):
+        envelope_path(profiles.vault_path(profile_id)).write_bytes(b"{}")
+        assert profiles.camera_unlock_blocks_delete(profile_id)
+        with pytest.raises(ApiError) as refused:
+            service.delete(profile_id)
+        assert refused.value.code == "invalid"
+        assert refused.value.message == CAMERA_UNLOCK_BLOCKS_DELETE
+        assert env.controller.is_unlocked()
+        assert env.port.asked == []
+        assert profile_id in [p.id for p in profiles.list_profiles()]
+    assert profiles.active_profile().id == active
+
+
+def test_camera_unlock_set_up_while_the_confirm_is_open_is_refused_before_the_lock(env):
+    from localvault.face_unlock import envelope_path
+
+    service = ProfilesService(env.controller, env.port, Dialogs())
+    service.create("Second")
+    profiles = env.controller.profiles
+    active = profiles.active_profile().id
+
+    class SidecarAppears(Port):
+        def confirm(self, title, message):
+            envelope_path(profiles.vault_path(active)).write_bytes(b"{}")
+            return super().confirm(title, message)
+
+    service = ProfilesService(env.controller, SidecarAppears(), Dialogs())
+    with pytest.raises(ApiError):
+        service.delete(active)
+    assert env.controller.is_unlocked()
+    assert profiles.active_profile().id == active

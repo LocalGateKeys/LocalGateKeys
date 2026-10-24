@@ -33,6 +33,7 @@ from localvault.attachments import (
 )
 from localvault.transfer import export_transfer, import_transfer
 from localvault.vault import create_vault
+from localvault.winpaths import system32
 
 MASTER = "synthetic file secfix master password"
 TEST_KDF = {"time_cost": 1, "memory_cost_kib": 8192, "parallelism": 1, "hash_len": 32}
@@ -108,7 +109,7 @@ def test_save_a_copy_has_mark_of_the_web_and_an_owner_only_acl(case_dir: Path) -
     destination = store.export(attachment_id, out_dir / "statement.pdf")
     assert destination.read_bytes() == b"%PDF-1.4 synthetic statement"
     assert "ZoneId=3" in (_zone_identifier(destination) or "")
-    acl = subprocess.run([export_module._system32("icacls.exe"), str(destination)], capture_output=True, text=True,
+    acl = subprocess.run([system32("icacls.exe"), str(destination)], capture_output=True, text=True,
                          check=True).stdout
     assert "(I)" not in acl, acl  # nothing inherited from the folder
     assert "APPLICATION PACKAGES" not in acl.upper()
@@ -183,18 +184,24 @@ def test_attachment_key_and_plaintext_buffers_are_zeroed(case_dir: Path, monkeyp
 
     class SpyAESGCM:
         def __init__(self, key: Any) -> None:
-            if isinstance(key, bytearray):
-                keys.append(key)
+            self._key = key
             self._inner = real(bytes(key))
 
         def encrypt(self, *args: Any) -> bytes:
             return self._inner.encrypt(*args)
 
         def decrypt_into(self, nonce: bytes, data: Any, aad: bytes, buffer: bytearray) -> int:
+            # Only attachment decryptions: the vault's own save also builds an AESGCM (with the live data key).
+            if isinstance(self._key, bytearray):
+                keys.append(self._key)
             buffers.append(buffer)
             return self._inner.decrypt_into(nonce, data, aad, buffer)
 
     monkeypatch.setattr(attachments_module, "AESGCM", SpyAESGCM)
+    # Reads decrypt through the vault helper (R-7: it falls back when decrypt_into is missing).
+    from localvault import vault as vault_module
+
+    monkeypatch.setattr(vault_module, "AESGCM", SpyAESGCM)
     assert store.read_bytes(attachment_id) == b"synthetic secret document"
     store.export(attachment_id, case_dir / "copy.txt")
     assert len(keys) == 2 and len(buffers) == 2

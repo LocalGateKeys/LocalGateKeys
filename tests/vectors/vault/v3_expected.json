@@ -1,0 +1,45 @@
+{
+  "catalog_aad_b64": "bG9jYWxnYXRla2V5c3x2YXVsdHx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImNpcGhlciI6eyJuYW1lIjoiYWVzLTI1Ni1nY20ifSwiZm9ybWF0IjoibG9jYWxnYXRla2V5cy12YXVsdC12MyIsImdlbmVyYXRpb24iOjMsImtleV9nZW5lcmF0aW9uIjoxLCJ2YXVsdF9pZCI6ImExNjFiNjU5NjBkOTdhNTlmMDNjMmRkYjQ0ZDBkNzk3IiwidmVyc2lvbiI6M30=",
+  "data_key_hex": "0e35912dff0eb79c969b4fcf044360846ae6392c9b5694f2ee2ec450e228f2de",
+  "generation": 3,
+  "kdf": {
+    "hash_len": 32,
+    "memory_cost_kib": 8192,
+    "name": "argon2id",
+    "parallelism": 1,
+    "salt": "bSOlKkC3v93ANRy/fqMDtQ==",
+    "time_cost": 1
+  },
+  "kek_hex": "8b950311141fb4ea2e411a1c8ff1cc996f2d4ac18a51d8b7df9e6182934a7546",
+  "password": "correct horse battery staple 42",
+  "payload": {
+    "attachments": [],
+    "catalog": "localgatekeys-catalog",
+    "collections": [],
+    "created_at": 1790000000,
+    "entries": [],
+    "events": [],
+    "generation": 3,
+    "history": [],
+    "items": [],
+    "ocr_derivatives": [],
+    "relationships": [],
+    "reminders": [],
+    "smart_views": [],
+    "sync_protocol_state": {
+      "item_revisions": {},
+      "next_counter": 1
+    },
+    "sync_receipts": [],
+    "templates": [],
+    "updated_at": 1790000000,
+    "version": 2
+  },
+  "rejected": {
+    "v3_edited_generation.json": "header generation +1 (bound by the catalog AAD)",
+    "v3_edited_key_generation.json": "key_generation +1 (bound by the wrapper and catalog AAD)",
+    "v3_edited_vault_id.json": "vault_id changed (bound by the wrapper and catalog AAD)"
+  },
+  "vault_id": "a161b65960d97a59f03c2ddb44d0d797",
+  "wrapper_aad_b64": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2RmIjp7Imhhc2hfbGVuIjozMiwibWVtb3J5X2Nvc3Rfa2liIjo4MTkyLCJuYW1lIjoiYXJnb24yaWQiLCJwYXJhbGxlbGlzbSI6MSwic2FsdCI6ImJTT2xLa0MzdjkzQU5SeS9mcU1EdFE9PSIsInRpbWVfY29zdCI6MX19LCJ2YXVsdF9pZCI6ImExNjFiNjU5NjBkOTdhNTlmMDNjMmRkYjQ0ZDBkNzk3IiwidmVyc2lvbiI6Mywid3JhcHBlciI6InBhc3N3b3JkIn0="
+}

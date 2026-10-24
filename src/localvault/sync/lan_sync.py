@@ -20,13 +20,18 @@ Enrollment (spec "LAN enrollment")
    offer, at most 5 failures counted only for requests that decrypt, 120 s TTL;
    a device id already in ``lan_peers``, the keyring members or the inviter's own
    is refused as a failure; a full peer list is refused before anything is
-   consumed; a used or expired offer gets a clear refusal), pins the new device in its
-   ``lan_peers`` (with the optional listening endpoint) and answers with
-   (group_id, epoch, G) sealed to the new device and signed by the inviter.  The
-   reply goes out at once: the iPhone app waits only about 5 seconds for it and the
-   request carries no device name, so there is no "Accept" step before it; the
-   inviter's screen names the device (id and key fingerprint) with an Undo, which
-   removes it again (``remove_lan_peer``, or a rotation in a cloud-folder group).
+   consumed; a used or expired offer gets a clear refusal).  Then it asks: the
+   screen shows the new device's name and the 6-digit verification code
+   (``pairing.verification_code``) that the new device shows too, with Accept and
+   Decline (``LanResponder.pending``, ``LanResponder.decide``).  Only Accept pins
+   the new device in ``lan_peers`` (with the optional listening endpoint) and
+   answers with (group_id, epoch, G) sealed to the new device and signed by the
+   inviter; Decline, or no answer within ``ACCEPT_TIMEOUT_SECONDS``, answers
+   ``declined`` and the offer stays used up.  The new device waits up to
+   ``ENROLL_REPLY_SECONDS`` for the answer.  The wait holds no sync gate.  After
+   Accept the screen still offers Undo, which removes the device again
+   (``remove_lan_peer``, or a rotation in a cloud-folder group).  A version-1
+   request (an app without the Accept step) gets ``update-needed``.
    Frames for no armed offer, an expired one or another offer id are answered by
    :meth:`LanResponder.enroll_prefilter` without the sync gate.
 4. The new device verifies the reply against the QR-pinned inviter key, checks it
@@ -87,11 +92,14 @@ from typing import Any
 
 from .group import MAX_BYTES, GroupKey, SyncFormatError, View, decode_view, encode_view
 from .pairing import (
+    DEFAULT_ENROLL_NAME,
     ENROLL_REQUEST_MAGIC,
     MAX_ENROLL_BYTES,
     PAIRING_TTL_SECONDS,
     DeviceIdentity,
+    EnrollmentOutdated,
     EnrollmentRefused,
+    EnrollmentRequest,
     PairedDevice,
     PairingError,
     PairingExpired,
@@ -105,6 +113,7 @@ from .pairing import (
     open_enrollment_reply,
     parse_qr_payload,
     seal_enrollment_reply,
+    verification_code,
 )
 from .runner import RunReport, SyncIssue, run_merge
 from .state import SyncState, SyncStateError
@@ -112,6 +121,7 @@ from .transport import (
     MAX_MESSAGE_BYTES,
     LANEndpoint,
     PeerNotAnswering,
+    PeerVersionMismatch,
     SyncTransport,
     TransportError,
 )
@@ -139,6 +149,10 @@ MAX_TRANSFERS = 2
 CHUNK_RETRY_DELAY = 0.05
 #: Hello counters reserved per vault save.
 HELLO_COUNTER_BLOCK = 64
+#: How long the inviting device waits for Accept or Decline before it declines on its own.
+ACCEPT_TIMEOUT_SECONDS = 60.0
+#: How long the new device waits for the inviter's answer (the Accept prompt plus the network).
+ENROLL_REPLY_SECONDS = ACCEPT_TIMEOUT_SECONDS + 15.0
 
 _FIELDS = {
     "view": frozenset({"type", "group_id", "epoch", "transfer", "seq", "total", "size", "view"}),
@@ -164,6 +178,8 @@ _REPLY_ISSUES = {
 
 
 USED_OR_EXPIRED_MESSAGE = "This pairing code was used up or expired. Show a new code."
+DECLINED_MESSAGE = ("The other device declined, or nobody chose Accept there in time. "
+                    "Show a new code and choose Accept when the codes match.")
 
 
 class LanSyncError(ValueError):
@@ -270,19 +286,30 @@ def _group_key(state: SyncGroupState) -> GroupKey:
 # --- stored LAN peers ---------------------------------------------------------------------------
 
 
-def peer_to_entry(peer: PairedDevice, *, endpoint: LANEndpoint | tuple[str, int] | None = None) -> dict[str, Any]:
-    """The ``SyncGroupState.lan_peers`` entry for *peer* (``endpoint`` None: the peer always initiates)."""
+def peer_to_entry(peer: PairedDevice, *, endpoint: LANEndpoint | tuple[str, int] | None = None,
+                  name: str | None = None) -> dict[str, Any]:
+    """The ``SyncGroupState.lan_peers`` entry for *peer* (``endpoint`` None: the peer always initiates).
+
+    *name* is the name the device gave when it enrolled (display only, not authenticated by a key).
+    """
     if isinstance(endpoint, tuple):
         endpoint = LANEndpoint(*endpoint)
     where = None if endpoint is None else {"host": endpoint.host, "port": endpoint.port}
-    return {**peer.to_dict(), "endpoint": where}
+    entry = {**peer.to_dict(), "endpoint": where}
+    if name is not None:
+        entry["name"] = name
+    return entry
+
+
+#: Fields of a ``lan_peers`` entry that are not part of the ``PairedDevice`` record.
+_ENTRY_EXTRAS = frozenset({"endpoint", "name"})
 
 
 def peer_from_entry(entry: Mapping[str, Any]) -> PairedDevice:
     if not isinstance(entry, Mapping):
         raise LanSyncError("bad-peer", "stored LAN peer is malformed")
     try:
-        return PairedDevice.from_dict({k: v for k, v in entry.items() if k != "endpoint"})
+        return PairedDevice.from_dict({k: v for k, v in entry.items() if k not in _ENTRY_EXTRAS})
     except PairingError as exc:
         raise LanSyncError("bad-peer", str(exc)) from exc
 
@@ -438,13 +465,20 @@ def begin_pairing(session: Any, lease: Any, host: str, port: int, *, install_id:
 
 def enroll_from_qr(qr: str | Mapping[str, Any], session: Any, lease: Any, *, install_id: str,
                    endpoint: LANEndpoint | None = None, now: float | None = None,
-                   timeout: float | None = None, transport: SyncTransport | None = None) -> SyncGroupState:
+                   timeout: float | None = None, transport: SyncTransport | None = None,
+                   name: str = DEFAULT_ENROLL_NAME,
+                   on_code: Callable[[str], None] | None = None) -> SyncGroupState:
     """New-device side: enroll with a scanned offer and store the delivered group.
 
     *endpoint* is this device's own listening endpoint, if it has one (a phone
-    passes None and always initiates).  Raises ``LanSyncError`` with reason
-    ``already-joined``, ``bad-offer``, ``unreachable``, ``offer-used-or-expired``
-    (message ``USED_OR_EXPIRED_MESSAGE``), ``too-many-peers`` or ``refused``.
+    passes None and always initiates).  *name* is shown on the inviting device's
+    Accept prompt; *on_code* receives the 6-digit verification code before the
+    request is sent (show it: the inviting device shows the same code next to
+    Accept).  *timeout* defaults to ``ENROLL_REPLY_SECONDS``.  Raises
+    ``LanSyncError`` with reason ``already-joined``, ``bad-offer``,
+    ``unreachable``, ``offer-used-or-expired`` (message
+    ``USED_OR_EXPIRED_MESSAGE``), ``too-many-peers``, ``declined``,
+    ``update-needed`` or ``refused``.
     """
     _check_install(install_id)
     _check_lease(session, lease)
@@ -459,28 +493,35 @@ def enroll_from_qr(qr: str | Mapping[str, Any], session: Any, lease: Any, *, ins
     identity = DeviceIdentity.generate()
     own = None if endpoint is None else (endpoint.host, endpoint.port)
     try:
-        request = build_enrollment_request(offer, identity, endpoint=own, now=when)
+        request = build_enrollment_request(offer, identity, endpoint=own, name=name, now=when)
     except PairingExpired as exc:
         raise LanSyncError("offer-used-or-expired", USED_OR_EXPIRED_MESSAGE) from exc
     except PairingError as exc:
         raise LanSyncError("bad-offer", str(exc)) from exc
+    pinned = enrollment_transcript(offer, identity.device_id, identity.signing_public_key,
+                                   identity.exchange_public_key, own, name)
+    if on_code is not None:
+        on_code(verification_code(pinned))
     sender = transport if transport is not None else SyncTransport()
     try:
-        reply = sender.enroll(LANEndpoint(offer.endpoint_host, offer.endpoint_port), request, timeout=timeout)
+        reply = sender.enroll(LANEndpoint(offer.endpoint_host, offer.endpoint_port), request,
+                              timeout=ENROLL_REPLY_SECONDS if timeout is None else timeout)
     except (TransportError, OSError) as exc:
         raise LanSyncError("unreachable", f"{type(exc).__name__}: {exc}") from exc
     try:
-        group_id, epoch, key = open_enrollment_reply(offer, identity, reply, endpoint=own)
+        group_id, epoch, key = open_enrollment_reply(offer, identity, reply, endpoint=own, name=name)
     except EnrollmentRefused as exc:
         if exc.reason == "used-or-expired":
             raise LanSyncError("offer-used-or-expired", USED_OR_EXPIRED_MESSAGE) from exc
         if exc.reason == "full":
             raise LanSyncError("too-many-peers", "The other device already has the most paired devices.") from exc
+        if exc.reason == "declined":
+            raise LanSyncError("declined", DECLINED_MESSAGE) from exc
+        if exc.reason == "update-needed":
+            raise LanSyncError("update-needed", "Update LocalGateKeys on this device to pair with the other one.") from exc
         raise LanSyncError("refused", str(exc)) from exc
     except PairingError as exc:
         raise LanSyncError("refused", str(exc)) from exc
-    pinned = enrollment_transcript(offer, identity.device_id, identity.signing_public_key,
-                                   identity.exchange_public_key, own)
     inviter = PairedDevice(offer.inviter_device_id, offer.group_id, offer.inviter_signing_public,
                            offer.inviter_exchange_public, offer.certificate_fingerprint, when,
                            identity.sign(pinned))
@@ -697,12 +738,56 @@ def _outer_offer_id(raw: object) -> str | None:
     return offer_id if isinstance(offer_id, str) else None
 
 
+@dataclass
+class PendingEnrollment:
+    """A verified enrollment request waiting for the user's Accept or Decline on the inviting device.
+
+    ``name`` and ``code`` are what the screen shows (the new device shows the same
+    code); ``deadline`` is the ``time.monotonic()`` at which it declines on its own.
+    """
+
+    offer: PairingOffer
+    peer: PairedDevice
+    request: EnrollmentRequest
+    deadline: float
+    accepted: bool | None = None
+    _event: threading.Event = field(default_factory=threading.Event, repr=False)
+
+    @property
+    def offer_id(self) -> str:
+        return self.offer.offer_id
+
+    @property
+    def name(self) -> str:
+        return self.request.name
+
+    @property
+    def code(self) -> str:
+        return self.request.code
+
+    @property
+    def fingerprint(self) -> str:
+        return self.peer.fingerprint
+
+    def seconds_left(self) -> float:
+        return max(0.0, self.deadline - time.monotonic())
+
+    def decide(self, accept: bool) -> bool:
+        """Record the user's answer once; False when it was already decided (or timed out)."""
+        if self._event.is_set():
+            return False
+        self.accepted = bool(accept)
+        self._event.set()
+        return True
+
+
 class LanResponder:
     """Peer-aware transport handler: ``SyncTransport.set_peer_request_handler(responder)``.
 
     ``last_report`` is the report of the last request that merged or refused a
     view (issues such as ``epoch-behind`` or ``rejoin-required`` on this side).
-    :meth:`start_enrollment` arms the transport for one QR enrollment.
+    :meth:`start_enrollment` arms the transport for one QR enrollment; a verified
+    request waits in ``pending`` for :meth:`decide` (Accept or Decline).
 
     An offer's lifetime is also measured on *monotonic* (seconds), so setting
     the wall clock back cannot extend it; :meth:`expire_enrollment` (called by
@@ -712,7 +797,9 @@ class LanResponder:
 
     def __init__(self, session: Any, lease: Any, *, install_id: str,
                  clock: Callable[[], int] | None = None,
-                 monotonic: Callable[[], float] | None = None) -> None:
+                 monotonic: Callable[[], float] | None = None,
+                 accept_timeout: float = ACCEPT_TIMEOUT_SECONDS,
+                 on_pending: Callable[[PendingEnrollment], None] | None = None) -> None:
         self.session = session
         self.lease = lease
         self.install_id = _check_install(install_id)
@@ -722,6 +809,13 @@ class LanResponder:
         self.last_report: RunReport | None = None
         self.pairing: PairingSession | None = None
         self.enrolled: PairedDevice | None = None
+        #: Offer id of the last enrollment accepted (``enrolled``) and of the last one declined.
+        self.enrolled_offer: str | None = None
+        self.declined_offer: str | None = None
+        self.pending: PendingEnrollment | None = None
+        self.accept_timeout = float(accept_timeout)
+        #: Called (on the transport thread) when a request starts waiting for Accept, e.g. to refresh the screen.
+        self.on_pending = on_pending
         self._transport: SyncTransport | None = None
         self._deadline = 0.0  # monotonic expiry of the armed offer
         self._refuse_until = 0.0  # monotonic end of the "used up or expired" grace period
@@ -744,8 +838,10 @@ class LanResponder:
         state = _joined_state(self.session, self.lease, self.install_id)
         if offer.group_id != state.group_id or offer.inviter_device_id != state.device_id:
             raise LanSyncError("not-our-offer", "the offer belongs to another group or device")
+        self._decline_pending()
         self.pairing = PairingSession(offer, clock=self.clock)
         self.enrolled = None
+        self.enrolled_offer = self.declined_offer = None
         self._transport = transport
         mono = self.monotonic()
         self._deadline = mono + max(0.0, float(offer.expires_at) - float(self.clock()))
@@ -754,11 +850,29 @@ class LanResponder:
         return self.pairing
 
     def stop_enrollment(self) -> None:
+        """Disarm the offer; a request waiting for Accept is declined."""
+        self._decline_pending()
         if self._transport is not None:
             self._transport.set_enrollment_handler(None)
         self.pairing = None
         self._transport = None
         self._deadline = self._refuse_until = 0.0
+
+    def _decline_pending(self) -> None:
+        pending = self.pending
+        if pending is not None:
+            pending.decide(False)
+
+    def decide(self, offer_id: str, accept: bool) -> bool:
+        """The user's Accept (True) or Decline (False) for the request waiting on *offer_id*.
+
+        Returns False when no request waits for that offer (already answered or timed out).
+        Needs no gate: it only wakes the waiting transport thread.
+        """
+        pending = self.pending
+        if pending is None or pending.offer_id != offer_id:
+            return False
+        return pending.decide(accept)
 
     def _offer_expired(self, pairing: PairingSession, now: int) -> bool:
         return now >= pairing.offer.expires_at or self.monotonic() >= self._deadline
@@ -808,12 +922,22 @@ class LanResponder:
         return False, None
 
     def enroll(self, raw: bytes) -> bytes | None:
-        """Transport enrollment handler: verify, pin the new device, reply with the sealed group key.
+        """Transport enrollment handler: verify, ask Accept/Decline, then pin and reply (or decline).
 
-        The reply goes out at once (the iPhone app waits only about 5 seconds for
-        it, and the request carries no device name), so there is no "Accept" step
-        before it.  Instead the screen shows the enrolled device with an Undo
-        (``enrolled``; see ``app/sync.py`` ``qr_poll``) that removes it again.
+        The three steps are :meth:`enroll_verify`, :meth:`await_decision` and
+        :meth:`enroll_finish`; the sync service runs the first and the last inside
+        its gate and the wait outside it (``service._GatedEnrollment``).
+        """
+        first = self.enroll_verify(raw)
+        if not isinstance(first, PendingEnrollment):
+            return first
+        return self.enroll_finish(first, self.await_decision(first))
+
+    def enroll_verify(self, raw: bytes) -> bytes | PendingEnrollment | None:
+        """Verify one request; returns the reply for a refusal, or the ``PendingEnrollment`` to ask about.
+
+        A request that verifies consumes the offer (``PairingSession``) but pins
+        nothing yet: the device is admitted only by :meth:`enroll_finish` after Accept.
         """
         pairing = self.pairing
         if pairing is None:
@@ -833,26 +957,66 @@ class LanResponder:
             return enrollment_refusal()
         if len(state.lan_peers) >= MAX_LAN_PEERS:
             return enrollment_refusal("full")  # checked before anything is consumed
+        try:
+            peer, request = pairing.accept_enrollment(state.identity(), raw, now=now,
+                                                      reserved_ids=self._reserved_ids(state))
+        except EnrollmentOutdated:
+            return enrollment_refusal("update-needed")
+        except (PairingReplayError, PairingExpired):
+            return enrollment_refusal("used-or-expired")
+        except PairingError:
+            return enrollment_refusal()
+        pending = PendingEnrollment(offer, peer, request, time.monotonic() + self.accept_timeout)
+        self._decline_pending()
+        self.pending = pending
+        if self.on_pending is not None:
+            with contextlib.suppress(Exception):
+                self.on_pending(pending)
+        return pending
+
+    def await_decision(self, pending: PendingEnrollment) -> bool:
+        """Wait (no gate held) for Accept or Decline; False on Decline, timeout or a disarmed offer."""
+        pending._event.wait(max(0.0, pending.deadline - time.monotonic()))
+        pending.decide(False)  # a timeout declines (no effect once answered)
+        return pending.accepted is True
+
+    def enroll_finish(self, pending: PendingEnrollment, accepted: bool) -> bytes:
+        """After the decision: pin the device and seal the group key to it, or answer ``declined``."""
+        if self.pending is pending:
+            self.pending = None
+        if not accepted:
+            self.declined_offer = pending.offer_id
+            return enrollment_refusal("declined")
+        offer, peer, request = pending.offer, pending.peer, pending.request
+        try:
+            state = _joined_state(self.session, self.lease, self.install_id)
+        except LanSyncError:
+            return enrollment_refusal()
+        if offer.group_id != state.group_id or offer.inviter_device_id != state.device_id:
+            return enrollment_refusal()
+        if len(state.lan_peers) >= MAX_LAN_PEERS:
+            return enrollment_refusal("full")
+        if peer.device_id in self._reserved_ids(state):
+            return enrollment_refusal()  # the id was taken while the prompt was open
+        endpoint = None if request.endpoint is None else LANEndpoint(*request.endpoint)
+        new_state = _with_peer(state, peer_to_entry(peer, endpoint=endpoint, name=request.name))
+        _check_lease(self.session, self.lease)
+        save_sync_state(self.session, new_state)
+        tstate = getattr(self._transport, "state", None)
+        if isinstance(tstate, SyncState):
+            tstate.trust_peer(peer)  # the new device can open sessions right away
+        self.enrolled = peer
+        self.enrolled_offer = pending.offer_id
+        return seal_enrollment_reply(state.identity(), offer, request, state.group_id, state.epoch, state.key)
+
+    def _reserved_ids(self, state: SyncGroupState) -> set[str]:
+        """Device ids a new device may not take: listed peers, keyring members, this device, revoked ids."""
         reserved = ({p.get("device_id") for p in state.lan_peers} | set(state.members)
                     | {state.device_id}) - {None}
         tstate = getattr(self._transport, "state", None)
         if isinstance(tstate, SyncState):
             reserved |= set(tstate.revoked_devices)  # a removed peer cannot come back under its old id
-        identity = state.identity()
-        try:
-            peer, request = pairing.accept_enrollment(identity, raw, now=now, reserved_ids=reserved)
-        except (PairingReplayError, PairingExpired):
-            return enrollment_refusal("used-or-expired")
-        except PairingError:
-            return enrollment_refusal()
-        endpoint = None if request.endpoint is None else LANEndpoint(*request.endpoint)
-        new_state = _with_peer(state, peer_to_entry(peer, endpoint=endpoint))
-        _check_lease(self.session, self.lease)
-        save_sync_state(self.session, new_state)
-        if isinstance(tstate, SyncState):
-            tstate.trust_peer(peer)  # the new device can open sessions right away
-        self.enrolled = peer
-        return seal_enrollment_reply(identity, offer, request, state.group_id, state.epoch, state.key)
+        return reserved
 
 
 # --- initiator ------------------------------------------------------------------------------------
@@ -901,11 +1065,14 @@ def sync_with(transport: SyncTransport, peer_id: str, session: Any, lease: Any, 
 
         ``PeerNotAnswering`` means nothing was sent, so repeating is safe.  It
         covers the peer's listener still busy with the previous chunk's handler.
+        The first request is repeated only when the connection was made and then
+        dropped (a listener refusing a slot); a peer that cannot be reached at all
+        is reported at once.
         """
         try:
             raw = transport.request(target, encode_message(message), peer_id=peer_id, timeout=timeout)
-        except PeerNotAnswering:
-            if not retry:
+        except PeerNotAnswering as exc:
+            if not retry and not exc.connected:
                 raise
             time.sleep(CHUNK_RETRY_DELAY)
             raw = transport.request(target, encode_message(message), peer_id=peer_id, timeout=timeout)
@@ -930,6 +1097,10 @@ def sync_with(transport: SyncTransport, peer_id: str, session: Any, lease: Any, 
     except LanSyncError as exc:
         return RunReport(issues=(SyncIssue("bad-reply" if exc.reason == "bad-message" else exc.reason,
                                            str(exc)),))
+    except PeerVersionMismatch as exc:
+        # Never a fallback to the older protocol: the user updates the older device.
+        return RunReport(issues=(SyncIssue("peer-update-needed" if exc.peer_older else "lan-update-needed",
+                                           f"{peer_id}: {exc}"),))
     except (TransportError, SyncStateError, OSError) as exc:
         return RunReport(issues=(SyncIssue("unreachable", f"{type(exc).__name__}: {exc}"),))
 
@@ -964,8 +1135,8 @@ def _receive_reply_view(call: Callable[[Mapping[str, Any]], dict[str, Any]], rep
 
 
 __all__ = [
-    "CHUNK_BYTES", "CHUNK_LIMIT", "ERROR_REASONS", "MAX_CHUNKS", "MAX_TRANSFERS", "MAX_VIEW_BYTES", "LanInbox", "LanResponder",
-    "LanSyncError", "RunReport", "begin_pairing", "create_lan_group", "encode_message", "enroll_from_qr",
+    "ACCEPT_TIMEOUT_SECONDS", "CHUNK_BYTES", "CHUNK_LIMIT", "ENROLL_REPLY_SECONDS", "ERROR_REASONS", "MAX_CHUNKS",
+    "MAX_TRANSFERS", "MAX_VIEW_BYTES", "LanInbox", "LanResponder", "LanSyncError", "PendingEnrollment", "RunReport", "begin_pairing", "create_lan_group", "encode_message", "enroll_from_qr",
     "parse_message", "peer_endpoint", "peer_entry", "peer_from_entry", "peer_to_entry", "remove_lan_peer",
     "serve_request", "split_view", "sync_with", "transport_state",
 ]

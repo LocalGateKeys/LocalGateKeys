@@ -11,7 +11,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from localvault import face_unlock as face
 from localvault import vault as V
 from localvault.app import unlock_methods
-from localvault.profiles import ProfileManager
+from localvault.profiles import ProfileError, ProfileManager
 from tests.test_app_unlock_methods import MASTER as APP_MASTER
 from tests.test_app_unlock_methods import env  # noqa: F401 - pytest fixture
 from tests.test_face_unlock import KDF, MASTER, PROFILE, embeddings, protector
@@ -91,15 +91,21 @@ def test_disable_with_wrong_password_keeps_camera_unlock(vault) -> None:
     assert vault.face_binding()
 
 
-def test_deleted_profile_archive_has_no_camera_sidecar(tmp_path: Path) -> None:
+def test_profile_with_camera_unlock_is_not_deleted_until_camera_unlock_is_removed(tmp_path: Path) -> None:
+    # L-4: removing only the sidecar would leave earlier copies of it opening the archive; removing camera
+    # verification first rotates the data key (and replaces any recovery phrase).
     profiles = ProfileManager(tmp_path / "data")
     first = profiles.ensure_profile()
     profiles.create_profile("Second")
     vault_path = profiles.vault_path(first.id)
     session = V.create_vault(vault_path, MASTER, kdf_overrides=KDF)
     _enroll(session)
-    session.lock()
     assert face.envelope_path(vault_path).exists()
+    with pytest.raises(ProfileError, match="remove camera verification first"):
+        profiles.delete_profile(first.id)
+    assert vault_path.exists() and any(p.id == first.id for p in profiles.list_profiles())
+    assert face.disable_enrollment(session, MASTER) is not None
+    session.lock()
     profiles.delete_profile(first.id)
     archived = list((tmp_path / "data" / "DeletedProfiles").glob(f"*-{first.id}"))
     assert len(archived) == 1
@@ -134,29 +140,55 @@ def test_settings_disable_wrong_password_changes_nothing(env) -> None:  # noqa: 
     assert refused.value.code == "not_authorized" and session.face_binding() == "a" * 32
 
 
-def test_disable_keeps_the_key_and_the_recovery_phrase_when_one_exists(vault) -> None:
-    phrase = vault.create_recovery_phrase(MASTER)
+def test_disable_with_a_phrase_rotates_and_issues_a_new_phrase(vault) -> None:
+    # L-4 owner decision "rotate + new phrase": the old phrase stops working, the new one opens the vault.
+    old_phrase = vault.create_recovery_phrase(MASTER)
     _enroll(vault)
+    stolen = json.loads(face.envelope_path(vault.path).read_text())
     generation = vault._header["key_generation"]
-    assert face.rotation_on_disable(vault) is False
-    assert face.disable_enrollment(vault, MASTER) is None
-    assert vault._header["key_generation"] == generation
+    assert face.rotation_on_disable(vault) is True
+    assert face.replaces_recovery_phrase_on_disable(vault) is True
+    result = face.disable_enrollment(vault, MASTER)
+    new_phrase = result["new_recovery_phrase"]
+    assert new_phrase and new_phrase != old_phrase and len(new_phrase.split()) == 24
+    assert result["operation"] == "replace" and result["recovery_phrase_invalidated"] is not None
+    assert vault._header["key_generation"] == generation + 1
+    assert vault.has_recovery_phrase()
     assert not vault.face_binding() and not face.envelope_path(vault.path).exists()
     vault.lock()
-    opened = V.unlock_with_recovery_phrase(vault.path, phrase)
+    assert not _opens_current(vault.path, _key_from_sidecar(stolen))
+    with pytest.raises(V.VaultError):
+        V.unlock_with_recovery_phrase(vault.path, old_phrase)
+    V._reset_unlock_throttle_state_for_tests()
+    opened = V.unlock_with_recovery_phrase(vault.path, new_phrase)
     assert opened.is_unlocked
     opened.lock()
 
 
-def test_settings_disable_with_a_phrase_explains_the_kept_key(env) -> None:  # noqa: F811 - the imported fixture
+def test_disable_with_a_phrase_and_a_wrong_password_keeps_everything(vault) -> None:
+    phrase = vault.create_recovery_phrase(MASTER)
+    _enroll(vault)
+    generation = vault._header["key_generation"]
+    with pytest.raises(V.InvalidMasterPassword):
+        face.disable_enrollment(vault, "not the master password")
+    assert vault.face_binding() and vault._header["key_generation"] == generation
+    vault.lock()
+    V._reset_unlock_throttle_state_for_tests()
+    opened = V.unlock_with_recovery_phrase(vault.path, phrase)
+    opened.lock()
+
+
+def test_settings_disable_with_a_phrase_shows_a_new_phrase_once(env) -> None:  # noqa: F811 - the imported fixture
     session = env.controller.session
     env.port.passwords = [APP_MASTER]
-    session.create_recovery_phrase(APP_MASTER)
+    old_phrase = session.create_recovery_phrase(APP_MASTER)
     session.set_face_binding("a" * 32)
     generation = session._header.get("key_generation")
     env.port.passwords = [APP_MASTER]
-    message = env.face.disable()["message"]
-    assert session._header.get("key_generation") == generation
+    result = env.face.disable()
+    assert session._header.get("key_generation") == generation + 1
     assert session.has_recovery_phrase() and not session.face_binding()
-    assert unlock_methods.FACE_DISABLE_KEPT_KEY_NOTE in message
-    assert "Windows account or its password" in message
+    assert "Your old recovery phrase no longer works" in result["message"]
+    assert result["new_recovery_phrase"] != old_phrase and len(result["new_recovery_phrase"].split()) == 24
+    assert any("previous recovery phrase no longer opens" in note for note in result["phrase_notes"])
+    assert env.port.asked == ["Remove camera verification", "Remove camera verification?"]

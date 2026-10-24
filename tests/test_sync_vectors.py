@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import ast
 import base64
+import dataclasses
 import hashlib
 import importlib.util
 import ipaddress
@@ -44,6 +45,7 @@ from localvault.sync.pairing import (
 )
 from localvault.sync.transport import (
     AuthenticationError,
+    EphemeralSecret,
     SecureChannel,
     SessionHello,
     verify_session_hello,
@@ -355,6 +357,10 @@ def test_lan_files_decode_and_match_expected_lan():
         want_req, want_rep = expected[req_key], expected[rep_key]
         peer, request = PairingSession(offer).accept_enrollment(inviter, request_raw, now=expected["now"])
         assert request.device_id == invitee.device_id == want_req["device_id"]
+        assert request.name == want_req["name"] and f'"invitee_name":' in want_req["transcript"]
+        # both screens show this code (the Accept step): recomputed from the documented recipe
+        digest = hashlib.sha256(b"localgatekeys|sync|enroll-verify|v2|" + request.transcript).digest()
+        assert f"{int.from_bytes(digest[:4], 'big') % 10**6:06d}" == want_req["verification_code"] == request.code
         if suffix:
             assert request.endpoint is None and want_req["invitee_endpoint"] is None
             assert '"invitee_endpoint":null' in want_req["transcript"]
@@ -365,8 +371,10 @@ def test_lan_files_decode_and_match_expected_lan():
         assert peer.fingerprint == invitee.fingerprint
         body = json.loads(want_req["plaintext"])
         assert set(body) == {"version", "offer_id", "device_id", "signing_public", "exchange_public",
-                             "endpoint", "signature", "mac"}
-        group_id, epoch, key = open_enrollment_reply(offer, invitee, reply_raw, endpoint=request.endpoint)
+                             "endpoint", "name", "signature", "mac"}
+        assert body["version"] == 2 and body["name"] == want_req["name"]
+        group_id, epoch, key = open_enrollment_reply(offer, invitee, reply_raw, endpoint=request.endpoint,
+                                                     name=request.name)
         assert (group_id, epoch) == (want_rep["group_id"], want_rep["epoch"])
         assert key == _group_key(1).key and key.hex() == want_rep["key_hex"]
         assert base64.b64encode(key).decode() == want_rep["key_b64"]
@@ -375,6 +383,11 @@ def test_lan_files_decode_and_match_expected_lan():
             "device_id": invitee.device_id, "signing_public": b64(invitee.signing_public_key),
         }
         assert len(bytes.fromhex(want_req["hkdf_key_hex"])) == len(bytes.fromhex(want_rep["hkdf_key_hex"])) == 32
+    assert "\\u2019" in expected["request_no_endpoint"]["plaintext"]  # ASCII canonical JSON escapes the name
+    refusals = framing["refusals_hex"]
+    assert set(refusals) == {"refused", "used-or-expired", "full", "declined", "update-needed"}
+    for reason, raw in refusals.items():
+        assert bytes.fromhex(raw) == b"LGKENROLLNO1\n" + ('{"reason":"%s"}' % reason).encode()
 
 
 def _paired(name: str) -> PairedDevice:
@@ -402,7 +415,10 @@ def _check_session(session: dict, group_id: str) -> tuple[bytes, SessionHello, S
         assert hello.to_bytes().decode("ascii") == entry["text"]
         assert hello.signing_bytes().hex() == entry["signing_input_hex"]
         assert hello.nonce.hex() == entry["nonce_hex"] and len(hello.nonce) == 32
-        assert hello.counter == entry["counter"]
+        assert hello.counter == entry["counter"] and hello.version == 2
+        eph = x25519.X25519PrivateKey.from_private_bytes(bytes.fromhex(entry["ephemeral_private_hex"]))
+        assert eph.public_key().public_bytes_raw() == hello.ephemeral_public
+        assert hello.ephemeral_public.hex() == entry["ephemeral_public_hex"]
         assert hello.session_id.hex() == session["session_id"]
         # the signature, checked with the raw Ed25519 public key over the published signing input
         ed25519.Ed25519PublicKey.from_public_bytes(hello.signing_public).verify(
@@ -416,16 +432,27 @@ def _check_session(session: dict, group_id: str) -> tuple[bytes, SessionHello, S
     assert transcript.hex() == session["transcript_sorted_hex"]
     first = "initiator" if sorted(texts)[0] == texts[0] else "responder"
     assert first == session["sorted_first"]
-    salt = hashlib.sha256(b"localgatekeys|sync|session-salt|" + transcript).digest()
+    salt = hashlib.sha256(b"localgatekeys|sync|session-salt|v2|" + transcript).digest()
     assert salt.hex() == session["salt"]
     shared = _identity(session["initiator_device"]).exchange_key.exchange(
         x25519.X25519PublicKey.from_public_bytes(_identity(session["responder_device"]).exchange_public_key))
     assert shared.hex() == session["shared_secret_hex"]
+    # ephemeral-ephemeral, the same from both sides
+    eph = {role: x25519.X25519PrivateKey.from_private_bytes(bytes.fromhex(session["hello"][role]["ephemeral_private_hex"]))
+           for role in ("initiator", "responder")}
+    ephemeral = eph["initiator"].exchange(x25519.X25519PublicKey.from_public_bytes(hellos["responder"].ephemeral_public))
+    assert ephemeral == eph["responder"].exchange(
+        x25519.X25519PublicKey.from_public_bytes(hellos["initiator"].ephemeral_public))
+    assert ephemeral.hex() == session["ephemeral_shared_secret_hex"]
+    ikm = ephemeral + shared
+    assert ikm.hex() == session["ikm_hex"]
     sid = bytes.fromhex(session["session_id"])
-    info = b"localgatekeys|sync|session-key|" + sid
+    info = b"localgatekeys|sync|session-key|v2|" + sid
     assert info.hex() == session["info_hex"]
-    key = HKDF(algorithm=hashes.SHA256(), length=32, salt=salt, info=info).derive(shared)
+    key = HKDF(algorithm=hashes.SHA256(), length=32, salt=salt, info=info).derive(ikm)
     assert key.hex() == session["key"]
+    # the static keys alone (the version-1 recipe) give another key
+    assert HKDF(algorithm=hashes.SHA256(), length=32, salt=salt, info=info).derive(shared) != key
     for role in ("initiator", "responder"):
         assert hashlib.sha256(key + b"send|" + role.encode()).digest()[:4].hex() == session["prefix_" + role]
     return key, hellos["initiator"], hellos["responder"]
@@ -454,6 +481,9 @@ def _channel(role: str, sid: bytes, group_id: str, hello_i: SessionHello, hello_
     device = session[role + "_device"]
     other = session[("responder" if role == "initiator" else "initiator") + "_device"]
     local, remote = (hello_i, hello_r) if role == "initiator" else (hello_r, hello_i)
+    # a parsed hello has no ephemeral private key: give it the published one (one derivation)
+    private = x25519.X25519PrivateKey.from_private_bytes(bytes.fromhex(session["hello"][role]["ephemeral_private_hex"]))
+    local = dataclasses.replace(local, ephemeral_secret=EphemeralSecret(private))
     return SecureChannel.from_paired_identities(
         _identity(device), _paired(other), group_id=group_id, session_id=sid, role=role,
         local_hello=local, remote_hello=remote)

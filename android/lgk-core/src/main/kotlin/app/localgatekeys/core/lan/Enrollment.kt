@@ -42,15 +42,95 @@ object Enrollment {
     val REPLY_MAGIC: ByteArray get() = REPLY_MAGIC_BYTES.copyOf()
     val REFUSED_MAGIC: ByteArray get() = REFUSED_MAGIC_BYTES.copyOf()
     const val MAX_BYTES = 16 * 1024
-    val REFUSAL_REASONS: Set<String> = setOf("refused", "used-or-expired", "full")
+
+    /** Enrollment version 2: the request carries the device `name` and both screens show a verification code. */
+    const val VERSION: Long = 2
+
+    /** The longest device name (UTF-8 bytes) a request may carry. */
+    const val MAX_NAME_BYTES = 64
+
+    /** How long the inviting device waits for its user to choose Accept (desktop `ACCEPT_TIMEOUT_SECONDS`). */
+    const val ACCEPT_TIMEOUT_SECONDS = 60
+
+    /**
+     * How long the new device must wait for the reply frame after sending its request (desktop
+     * `ENROLL_REPLY_SECONDS`): the Accept timeout plus a margin. The app's enrollment socket read
+     * timeout is this, not the short LAN read timeout.
+     */
+    const val ENROLL_REPLY_SECONDS = ACCEPT_TIMEOUT_SECONDS + 15
+
+    /**
+     * Refusal reasons the inviter may state: generic, offer used up or expired, peer list full, declined
+     * on the inviting device (or no answer in time), and a request of an older version.
+     */
+    val REFUSAL_REASONS: Set<String> = setOf("refused", "used-or-expired", "full", "declined", "update-needed")
+
+    /** Desktop `lan_sync.USED_OR_EXPIRED_MESSAGE`. */
+    const val USED_OR_EXPIRED_MESSAGE = "This pairing code was used up or expired. Show a new code."
+
+    /** Desktop `lan_sync.DECLINED_MESSAGE`. */
+    const val DECLINED_MESSAGE = "The other device declined, or nobody chose Accept there in time. " +
+        "Show a new code and choose Accept when the codes match."
 
     private val REQUEST_INFO = ascii("localgatekeys|sync|enroll-request|v1|")
     private val REPLY_INFO = ascii("localgatekeys|sync|enroll-reply|v1|")
     private val MAC_LABEL = ascii("localgatekeys|sync|enroll-mac|v1|")
     private val SIG_LABEL = ascii("localgatekeys|sync|enroll-sig|v1|")
     private val REPLY_SIG_LABEL = ascii("localgatekeys|sync|enroll-reply-sig|v1|")
-    private val REQUEST_FIELDS = setOf("version", "offer_id", "device_id", "signing_public", "exchange_public", "endpoint", "signature", "mac")
+    private val VERIFY_LABEL = ascii("localgatekeys|sync|enroll-verify|v2|")
+    private val REQUEST_FIELDS = setOf(
+        "version", "offer_id", "device_id", "signing_public", "exchange_public", "endpoint", "name", "signature", "mac",
+    )
     private val REPLY_FIELDS = setOf("group_id", "epoch", "key", "device_id", "signing_public")
+
+    /**
+     * `check_device_name`: the name shown on the inviter's Accept prompt, 1..64 UTF-8 bytes, no
+     * character below U+0020 and no U+007F. Returns [name] unchanged.
+     */
+    fun checkDeviceName(name: String): String {
+        if (name.any { it < ' ' || it == '\u007F' }) throw malformed("Device name is malformed")
+        // A lone surrogate has no UTF-8 form (Python raises UnicodeEncodeError).
+        for ((i, c) in name.withIndex()) {
+            if (c.isHighSurrogate() && (i + 1 >= name.length || !name[i + 1].isLowSurrogate())) throw malformed("Device name is malformed")
+            if (c.isLowSurrogate() && (i == 0 || !name[i - 1].isHighSurrogate())) throw malformed("Device name is malformed")
+        }
+        if (name.toByteArray(Charsets.UTF_8).size !in 1..MAX_NAME_BYTES) throw malformed("Device name must be 1..64 UTF-8 bytes")
+        return name
+    }
+
+    /**
+     * `verification_code`: the 6-digit code both screens show for one enrollment, first 4 bytes of
+     * SHA-256(`enroll-verify|v2|` + transcript) as a big-endian unsigned integer mod 1 000 000.
+     */
+    fun verificationCode(transcript: ByteArray): String {
+        val d = sha256(VERIFY_LABEL + transcript)
+        val n = ((d[0].toLong() and 0xFF) shl 24) or ((d[1].toLong() and 0xFF) shl 16) or
+            ((d[2].toLong() and 0xFF) shl 8) or (d[3].toLong() and 0xFF)
+        return (n % 1_000_000).toString().padStart(6, '0')
+    }
+
+    /**
+     * The verification code of this device's request for [offer] (the same inputs as [buildRequest]):
+     * the phone shows it before and while it waits for the reply.
+     */
+    fun verificationCode(offer: PairingOffer, identity: DeviceIdentity, endpoint: LanEndpoint?, name: String): String =
+        verificationCode(transcript(offer, identity.deviceId, identity.signingPublicKey, identity.exchangePublicKey, revalidated(endpoint), name))
+
+    /** A code shown as "123 456". */
+    fun displayCode(code: String): String = if (code.length == 6) code.substring(0, 3) + " " + code.substring(3) else code
+
+    /**
+     * Desktop `join_lan_group`'s refusal mapping: a [PairingException.Kind.REFUSED] reply as the
+     * [LanSyncException] the app shows (`offer-used-or-expired`, `too-many-peers`, `declined`,
+     * `update-needed`, else `refused`).
+     */
+    fun refusalIssue(e: PairingException): LanSyncException = when (if (e.kind == PairingException.Kind.REFUSED) e.detail else "") {
+        "used-or-expired" -> LanSyncException("offer-used-or-expired", USED_OR_EXPIRED_MESSAGE)
+        "full" -> LanSyncException("too-many-peers", "The other device already has the most paired devices.")
+        "declined" -> LanSyncException("declined", DECLINED_MESSAGE)
+        "update-needed" -> LanSyncException("update-needed", "Update LocalGateKeys on this device to pair with the other one.")
+        else -> LanSyncException("refused", e.message ?: "")
+    }
 
     /** The verified content of an enrollment request (inviter side). */
     class Request(
@@ -58,6 +138,7 @@ object Enrollment {
         signingPublic: ByteArray,
         exchangePublic: ByteArray,
         val endpoint: LanEndpoint?,
+        val name: String,
         transcript: ByteArray,
         body: ByteArray,
     ) {
@@ -73,28 +154,39 @@ object Enrollment {
         /** The decrypted body as received. */
         val body: ByteArray get() = bodyBytes.copyOf()
 
+        /** The verification code the new device shows. */
+        val code: String get() = verificationCode(transcriptBytes)
+
         override fun equals(other: Any?): Boolean =
             other is Request && deviceId == other.deviceId && signing.contentEquals(other.signing) &&
-                exchange.contentEquals(other.exchange) && endpoint == other.endpoint &&
+                exchange.contentEquals(other.exchange) && endpoint == other.endpoint && name == other.name &&
                 transcriptBytes.contentEquals(other.transcriptBytes) && bodyBytes.contentEquals(other.bodyBytes)
 
         override fun hashCode(): Int = deviceId.hashCode() * 31 + signing.contentHashCode()
     }
 
-    /** `enrollment_transcript`. */
-    fun transcript(offer: PairingOffer, deviceId: String, signingPublic: ByteArray, exchangePublic: ByteArray, endpoint: LanEndpoint?): ByteArray {
+    /** `enrollment_transcript` (version 2: with `invitee_name`). */
+    fun transcript(
+        offer: PairingOffer,
+        deviceId: String,
+        signingPublic: ByteArray,
+        exchangePublic: ByteArray,
+        endpoint: LanEndpoint?,
+        name: String,
+    ): ByteArray {
         if (!Identifier.isValid(deviceId)) throw malformed("invitee device id is malformed")
         return Pairing.canonical(
             JsonValue.Obj(
                 mapOf(
                     "protocol" to JsonValue.Str("localgatekeys-sync-enrollment"),
-                    "version" to JsonValue.Int(1),
+                    "version" to JsonValue.Int(VERSION),
                     "offer" to offer.publicJson,
                     "code" to JsonValue.Str(offer.code),
                     "invitee_device_id" to JsonValue.Str(deviceId),
                     "invitee_signing_public" to JsonValue.Str(Base64Std.encode(signingPublic)),
                     "invitee_exchange_public" to JsonValue.Str(Base64Std.encode(exchangePublic)),
                     "invitee_endpoint" to (endpoint?.json ?: JsonValue.Null),
+                    "invitee_name" to JsonValue.Str(checkDeviceName(name)),
                 ),
             ),
         )
@@ -110,22 +202,32 @@ object Enrollment {
 
     /**
      * The new device's one request for a scanned offer: `LGKENROLL1\n` + canonical JSON.
+     * [name] is this device's display name for the inviter's Accept prompt ([checkDeviceName]); show
+     * [verificationCode] for the same inputs while waiting up to [ENROLL_REPLY_SECONDS] for the reply.
      * Randomness: the 32-byte ephemeral X25519 private key, then the 12-byte nonce.
      */
-    fun buildRequest(offer: PairingOffer, identity: DeviceIdentity, endpoint: LanEndpoint? = null, random: RandomSource, now: UnixClock): ByteArray {
+    fun buildRequest(
+        offer: PairingOffer,
+        identity: DeviceIdentity,
+        name: String,
+        endpoint: LanEndpoint? = null,
+        random: RandomSource,
+        now: UnixClock,
+    ): ByteArray {
         offer.check(now.now)
         if (identity.deviceId == offer.inviterDeviceId) throw authentication("A distinct invitee device identity is required")
         val ep = revalidated(endpoint)
-        val transcript = transcript(offer, identity.deviceId, identity.signingPublicKey, identity.exchangePublicKey, ep)
+        val transcript = transcript(offer, identity.deviceId, identity.signingPublicKey, identity.exchangePublicKey, ep, name)
         val body = Pairing.canonical(
             JsonValue.Obj(
                 mapOf(
-                    "version" to JsonValue.Int(1),
+                    "version" to JsonValue.Int(VERSION),
                     "offer_id" to JsonValue.Str(offer.offerId),
                     "device_id" to JsonValue.Str(identity.deviceId),
                     "signing_public" to JsonValue.Str(Base64Std.encode(identity.signingPublicKey)),
                     "exchange_public" to JsonValue.Str(Base64Std.encode(identity.exchangePublicKey)),
                     "endpoint" to (ep?.json ?: JsonValue.Null),
+                    "name" to JsonValue.Str(name),
                     "signature" to JsonValue.Str(Base64Std.encode(identity.sign(SIG_LABEL + transcript))),
                     "mac" to JsonValue.Str(Base64Std.encode(mac(offer, transcript))),
                 ),
@@ -184,7 +286,14 @@ object Enrollment {
             throw authentication("Enrollment request authentication failed")
         }
         val body = (Pairing.strictJson(plain) as? JsonValue.Obj)?.fields
-        if (body == null || body.keys != REQUEST_FIELDS || body["version"] != JsonValue.Int(1) || body["offer_id"] != JsonValue.Str(offer.offerId)) {
+        val bodyVersion = (body?.get("version") as? JsonValue.Int)?.v
+        if (bodyVersion != null && bodyVersion < VERSION && body?.get("offer_id") == JsonValue.Str(offer.offerId)) {
+            // Desktop `EnrollmentOutdated`: the inviter answers `update-needed`.
+            throw malformed("The new device needs an update (enrollment version 1)")
+        }
+        if (body == null || body.keys != REQUEST_FIELDS || body["version"] != JsonValue.Int(VERSION) ||
+            body["offer_id"] != JsonValue.Str(offer.offerId)
+        ) {
             throw malformed("Enrollment request is malformed")
         }
         val deviceId = Pairing.ident(body["device_id"], "invitee device id")
@@ -200,19 +309,21 @@ object Enrollment {
             }
             else -> throw malformed("Enrollment endpoint is malformed")
         }
-        val transcript = transcript(offer, deviceId, signing, exchange, endpoint)
+        val name = checkDeviceName((body["name"] as? JsonValue.Str)?.v ?: throw malformed("Device name is malformed"))
+        val transcript = transcript(offer, deviceId, signing, exchange, endpoint, name)
         val mac = Pairing.b64(body["mac"], 32, "enrollment mac")
         if (!MessageDigest.isEqual(mac, mac(offer, transcript))) throw authentication("Enrollment does not prove the pairing secret")
         val sig = Pairing.b64(body["signature"], 64, "enrollment signature")
         if (!DeviceIdentity.verify(sig, SIG_LABEL + transcript, signing)) throw authentication("Enrollment signature is invalid")
-        return Request(deviceId, signing, exchange, endpoint, transcript, plain)
+        return Request(deviceId, signing, exchange, endpoint, name, transcript, plain)
     }
 
     /**
      * New-device side: verify the inviter's reply against the QR-pinned key and return the group key.
-     * [endpoint] is the one this device announced in its request.
+     * [endpoint] and [name] are the ones this device announced in its request. A refusal throws
+     * [PairingException.Kind.REFUSED] with its reason ([refusalIssue] maps it for the app).
      */
-    fun openReply(offer: PairingOffer, identity: DeviceIdentity, raw: ByteArray, endpoint: LanEndpoint? = null): GroupKey {
+    fun openReply(offer: PairingOffer, identity: DeviceIdentity, raw: ByteArray, name: String, endpoint: LanEndpoint? = null): GroupKey {
         if (raw.startsWithBytes(REFUSED_MAGIC_BYTES)) {
             var reason = "refused"
             val parsed = try {
@@ -228,7 +339,7 @@ object Enrollment {
         val outer = (Pairing.strictJson(raw.copyOfRange(REPLY_MAGIC_BYTES.size, raw.size)) as? JsonValue.Obj)?.fields
         if (outer == null || outer.keys != setOf("eph", "nonce", "ct", "sig")) throw malformed("Enrollment reply is malformed")
         val ep = revalidated(endpoint)
-        val transcript = transcript(offer, identity.deviceId, identity.signingPublicKey, identity.exchangePublicKey, ep)
+        val transcript = transcript(offer, identity.deviceId, identity.signingPublicKey, identity.exchangePublicKey, ep, name)
         val bound = sha256(transcript)
         val header = Pairing.canonical(JsonValue.Obj(mapOf("eph" to outer.getValue("eph"), "nonce" to outer.getValue("nonce"))))
         val eph = Pairing.b64(outer["eph"], 32, "reply key")

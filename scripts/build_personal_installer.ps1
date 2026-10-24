@@ -78,6 +78,70 @@ if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
     New-Item -ItemType Directory -Force -Path $requestedOutput | Out-Null
     $OutputBase = (Resolve-Path -LiteralPath $requestedOutput -ErrorAction Stop).Path
 }
+# Another account that can write the output folder could swap a DLL or an exe
+# between PyInstaller writing it and Inno Setup / signtool packaging it, and the
+# result ships to users. Folders created directly under C:\ inherit
+# "Authenticated Users: Modify", so refuse any folder where an account other
+# than this user, SYSTEM or Administrators has a write-type allow entry
+# (inherit-only entries count: the generated children receive them) or is the
+# owner. AppContainer and capability SIDs (S-1-15-*) are skipped: they only
+# narrow what this user's own sandboxed processes may do and grant no other
+# account anything (the access check still requires the user's own entry).
+function Get-ForeignWriters([string]$Path) {
+    $acl = Get-Acl -LiteralPath $Path
+    $me = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $trusted = @($me, "S-1-5-18", "S-1-5-32-544", "S-1-3-0",
+        "S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464")  # CREATOR OWNER (becomes us), TrustedInstaller
+    $writeRights = [Security.AccessControl.FileSystemRights](
+        [int][Security.AccessControl.FileSystemRights]::WriteData -bor
+        [int][Security.AccessControl.FileSystemRights]::AppendData -bor
+        [int][Security.AccessControl.FileSystemRights]::WriteExtendedAttributes -bor
+        [int][Security.AccessControl.FileSystemRights]::WriteAttributes -bor
+        [int][Security.AccessControl.FileSystemRights]::DeleteSubdirectoriesAndFiles -bor
+        [int][Security.AccessControl.FileSystemRights]::Delete -bor
+        [int][Security.AccessControl.FileSystemRights]::ChangePermissions -bor
+        [int][Security.AccessControl.FileSystemRights]::TakeOwnership)
+    $genericWrite = 0x40000000 -bor 0x10000000  # GENERIC_WRITE | GENERIC_ALL (raw values on inherit-only entries)
+    $found = New-Object System.Collections.Generic.List[string]
+    $owner = $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value
+    if ($trusted -notcontains $owner) { [void]$found.Add("owner $owner") }
+    foreach ($rule in $acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier])) {
+        if ($rule.AccessControlType -ne [Security.AccessControl.AccessControlType]::Allow) { continue }
+        $sid = $rule.IdentityReference.Value
+        if ($trusted -contains $sid -or $sid.StartsWith("S-1-15-")) { continue }
+        $rights = [int64][int]$rule.FileSystemRights
+        if (($rights -band [int64][int]$writeRights) -ne 0 -or ($rights -band [int64]$genericWrite) -ne 0) {
+            $name = $sid
+            try { $name = "$($rule.IdentityReference.Translate([Security.Principal.NTAccount]).Value) ($sid)" } catch { }
+            [void]$found.Add("$name : $($rule.FileSystemRights)")
+        }
+    }
+    return $found.ToArray()
+}
+
+function Assert-PrivateBuildFolder([string]$Path) {
+    $me = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $writers = @(Get-ForeignWriters $Path)
+    if ($writers.Count -gt 0) {
+        throw ("Build output folder $Path can be written by other accounts:`n  " + ($writers -join "`n  ") +
+            "`nUse a folder only you can write, e.g. -OutputRoot `"$env:LOCALAPPDATA\LocalGateKeys-build`", " +
+            "or make it private (SIDs, since a user name can resolve to the computer's own account): " +
+            "icacls `"$Path`" /inheritance:r /grant:r `"*${me}:(OI)(CI)F`" /grant:r `"*S-1-5-18:(OI)(CI)F`" " +
+            "/grant:r `"*S-1-5-32-544:(OI)(CI)F`"")
+    }
+}
+Assert-PrivateBuildFolder $OutputBase
+# The checkout is packaged too (assets\, browser-extension\, the webui build in
+# src\). Only a warning: a shared or sandboxed checkout is common in development.
+if ($OutputBase.TrimEnd('\') -ne $Root.TrimEnd('\')) {
+    $sourceWriters = @(Get-ForeignWriters $Root)
+    if ($sourceWriters.Count -gt 0) {
+        $message = "The source checkout $Root can be written by other accounts: $($sourceWriters -join '; ')."
+        if ($Release -or $CertificateThumbprint -or $PfxPath) { throw "$message Build a release from a checkout only you can write." }
+        Write-Warning $message
+    }
+}
+
 $BuildRoot = Join-Path $OutputBase "build-personal"
 $DistRoot = Join-Path $OutputBase "dist-personal"
 $InstallerRoot = Join-Path $OutputBase "dist-installer"

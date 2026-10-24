@@ -55,12 +55,12 @@ FACE_DISABLE_CONFIRM = ("This revokes camera unlocking for this profile. Your ma
 FACE_DISABLE_ROTATE_CONFIRM = ("This revokes camera unlocking for this profile and re-encrypts the vault under a new "
                                "key, so no earlier copy of the camera setup can open it. Your master password is "
                                "unchanged. Windows Hello, if configured, must be set up again.")
-FACE_DISABLE_KEEP_KEY_CONFIRM = ("This revokes camera unlocking for this profile and deletes its camera file. The vault "
-                                 "keeps its key so your recovery phrase keeps working. Your master password and "
-                                 "Windows Hello, if configured, are unchanged.")
-FACE_DISABLE_KEPT_KEY_NOTE = ("The vault key was kept so your recovery phrase still works. A copy of the old camera "
-                              "file made elsewhere could still open the vault, but only together with this Windows "
-                              "account or its password.")
+FACE_DISABLE_NEW_PHRASE_CONFIRM = ("This revokes camera unlocking for this profile and re-encrypts the vault under a "
+                                   "new key, so no earlier copy of the camera setup can open it. Your recovery "
+                                   "phrase is replaced: the old phrase stops working and a new one is shown once. "
+                                   "Your master password is unchanged. Windows Hello, if configured, must be set up "
+                                   "again.")
+FACE_DISABLE_NEW_PHRASE_NOTE = "Your old recovery phrase no longer works. Write down the new one shown below."
 MASTER_REQUIRED = ("Use your master password this time. Windows Hello and camera verification stay off until a "
                    "master-password unlock.")
 
@@ -447,27 +447,32 @@ class FaceService(_Methods):
                 self._port.notify("error", "Not authorized", "Master password did not match, or the vault changed.")
                 raise ApiError("not_authorized", "Master password did not match, or the vault changed.") from None
             self._controller.touch()
-            present = face_unlock.enrollment_present(session)
-            # With a recovery phrase the key is kept: a rotation would destroy the phrase.
+            # Rotating with a recovery phrase replaces the phrase too (L-4): the old phrase stops working.
             rotate = face_unlock.rotation_on_disable(session)
+            new_phrase = rotate and session.has_recovery_phrase()
             hello_record = session.hello_binding() if rotate else ""
-            text = (FACE_DISABLE_ROTATE_CONFIRM if rotate else
-                    FACE_DISABLE_KEEP_KEY_CONFIRM if present else FACE_DISABLE_CONFIRM)
+            text = (FACE_DISABLE_NEW_PHRASE_CONFIRM if new_phrase else
+                    FACE_DISABLE_ROTATE_CONFIRM if rotate else FACE_DISABLE_CONFIRM)
             if not self._port.confirm("Remove camera verification?", text):
                 raise ApiError("cancelled", "Cancelled.")
             self._controller.require_lease(lease)
             try:
-                result = session.rotate_data_key(password) if rotate else None
-                face_unlock.disable_enrollment(session)
+                result = face_unlock.disable_enrollment(session, password if rotate else None)
             except Exception as exc:  # noqa: BLE001
                 raise ApiError("face_failed", str(exc) or "Camera verification could not be removed.") from None
         finally:
             if password is not None:
                 password.wipe()
         notes = []
-        if present and result is None:
-            notes.append(FACE_DISABLE_KEPT_KEY_NOTE)
+        phrase = None
+        phrase_notes: list[str] = []
         if result is not None:
+            phrase = result.pop("new_recovery_phrase", None)
+            if phrase:
+                from .recovery_center import recovery_phrase_change_warnings
+
+                notes.append(FACE_DISABLE_NEW_PHRASE_NOTE)
+                phrase_notes = recovery_phrase_change_warnings(result)
             if hello_record:
                 # The rotation revoked Windows Hello too; its OS key only wraps the retired data key.
                 try:
@@ -477,7 +482,12 @@ class FaceService(_Methods):
                 notes.append("Set up Windows Hello again if you use it.")
         self._controller.touch()
         self._controller._extras_cache = None
-        return {"message": " ".join(["Camera verification removed.", *notes])}
+        response: dict[str, Any] = {"message": " ".join(["Camera verification removed.", *notes])}
+        if phrase:
+            # Shown once by the page's recovery-phrase card (the bridge turns it into a card); never stored.
+            response["new_recovery_phrase"] = phrase
+            response["phrase_notes"] = phrase_notes
+        return response
 
     def unlock(self) -> dict[str, Any]:
         profile = self._profile()

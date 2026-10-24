@@ -10,6 +10,12 @@ AppId={{31F3995E-BE92-4AF6-AD15-73F835E67ED7}
 AppName={#AppName}
 AppVersion={#AppVersion}
 DefaultDirName={localappdata}\Programs\LocalGateKeys
+; Always this per-user folder: a folder chosen elsewhere (e.g. directly under the system drive, where
+; Authenticated Users may modify) would let another account replace the app or
+; the native host the browser starts, and [UninstallDelete] would wipe a chosen
+; existing folder. [Code] below also refuses /DIR= and any other location.
+DisableDirPage=yes
+UsePreviousAppDir=no
 DefaultGroupName=LocalGateKeys
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=
@@ -102,9 +108,50 @@ begin
   Result := False;
 end;
 
+// The only accepted install folder (see DisableDirPage above). Compared as text,
+// case-insensitively; a different spelling of the same folder (8.3 names, a
+// junction) is refused too, which fails safe.
+function DefaultAppDir(): String;
+begin
+  Result := ExpandConstant('{localappdata}\Programs\LocalGateKeys');
+end;
+
+function IsAllowedAppDir(const Dir: String): Boolean;
+begin
+  Result := (Pos('..', Dir) = 0) and
+    (CompareText(RemoveBackslashUnlessRoot(Dir), RemoveBackslashUnlessRoot(DefaultAppDir())) = 0);
+end;
+
+function AppDirRefusal(const Dir: String): String;
+begin
+  Result := 'LocalGateKeys can only be installed in ' + DefaultAppDir() + '.' + #13#10 + #13#10 +
+    'Setup refused: ' + Dir;
+end;
+
+function InitializeSetup(): Boolean;
+var
+  RequestedDir: String;
+begin
+  Result := True;
+  // /DIR= on the command line (DisableDirPage does not stop it).
+  RequestedDir := ExpandConstant('{param:DIR|}');
+  if (RequestedDir <> '') and (not IsAllowedAppDir(RequestedDir)) then
+  begin
+    SuppressibleMsgBox(AppDirRefusal(RequestedDir), mbCriticalError, MB_OK, IDOK);
+    Result := False;
+  end;
+end;
+
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 begin
   Result := '';
+  // Final gate on the resolved {app}, whatever set it (wizard, /DIR=, /LOADINF=).
+  // NextButtonClick is not used: it never runs for the disabled directory page.
+  if not IsAllowedAppDir(ExpandConstant('{app}')) then
+  begin
+    Result := AppDirRefusal(ExpandConstant('{app}'));
+    exit;
+  end;
   if IsProcessRunning('LocalGateKeys.exe') then
   begin
     if (not WizardSilent) and

@@ -72,6 +72,7 @@ class Dev:
     transport: SyncTransport | None = None
     responder: lan.LanResponder | None = None
     port_hold: socket.socket | None = None
+    accept: bool = True
 
     @property
     def state(self):
@@ -93,7 +94,9 @@ class Dev:
     def listen(self, state: SyncState, clock=lambda: NOW) -> None:
         if self.transport is not None:
             self.transport.stop()
-        self.responder = lan.LanResponder(self.session, self.lease, install_id=self.install, clock=clock)
+        # The user chooses Accept on every prompt unless a test says otherwise (``accept``).
+        self.responder = lan.LanResponder(self.session, self.lease, install_id=self.install, clock=clock,
+                                          on_pending=lambda pending: pending.decide(self.accept))
         self.transport = SyncTransport(state)
         self.transport.set_peer_request_handler(self.responder)
         self._release_port()
@@ -349,10 +352,10 @@ def test_forged_or_missing_mac_is_rejected_and_counted(devs) -> None:
     # A body without the MAC field.
     ident = pairing.DeviceIdentity.generate()
     transcript = pairing.enrollment_transcript(offer, ident.device_id, ident.signing_public_key,
-                                               ident.exchange_public_key, None)
-    body = {"version": 1, "offer_id": offer.offer_id, "device_id": ident.device_id,
+                                               ident.exchange_public_key, None, "Test PC")
+    body = {"version": 2, "offer_id": offer.offer_id, "device_id": ident.device_id,
             "signing_public": pairing._b64e(ident.signing_public_key),
-            "exchange_public": pairing._b64e(ident.exchange_public_key), "endpoint": None,
+            "exchange_public": pairing._b64e(ident.exchange_public_key), "endpoint": None, "name": "Test PC",
             "signature": pairing._b64e(ident.sign(pairing._SIG_LABEL + transcript))}
     assert sender.enroll(a.endpoint, _custom_request(offer, body)).startswith(pairing.ENROLL_REFUSED_MAGIC)
     # A valid MAC over a different transcript (endpoint swapped after MACing).
@@ -768,12 +771,12 @@ def test_enrollment_cannot_take_over_an_existing_device_id(devs) -> None:
     assert kinds(b.sync_with(a)) == []  # the real B is not locked out
 
 
-def _body(offer: pairing.PairingOffer, ident: pairing.DeviceIdentity) -> dict:
+def _body(offer: pairing.PairingOffer, ident: pairing.DeviceIdentity, name: str = "Test PC") -> dict:
     transcript = pairing.enrollment_transcript(offer, ident.device_id, ident.signing_public_key,
-                                               ident.exchange_public_key, None)
-    return {"version": 1, "offer_id": offer.offer_id, "device_id": ident.device_id,
+                                               ident.exchange_public_key, None, name)
+    return {"version": 2, "offer_id": offer.offer_id, "device_id": ident.device_id,
             "signing_public": pairing._b64e(ident.signing_public_key),
-            "exchange_public": pairing._b64e(ident.exchange_public_key), "endpoint": None,
+            "exchange_public": pairing._b64e(ident.exchange_public_key), "endpoint": None, "name": name,
             "signature": pairing._b64e(ident.sign(pairing._SIG_LABEL + transcript)),
             "mac": pairing._b64e(pairing._mac(offer, transcript))}
 
@@ -919,8 +922,8 @@ def _hello_variant(hello, **change) -> bytes:
 
 
 @pytest.mark.parametrize("change", [
-    {"extra": 1}, {"version": True}, {"version": 1.0}, {"version": "1"}, {"version": 2},
-    {"version": ...}, {"nonce": ...}, {"signature": ...}])
+    {"extra": 1}, {"version": True}, {"version": 2.0}, {"version": "2"}, {"version": 1}, {"version": 3},
+    {"version": ...}, {"nonce": ...}, {"signature": ...}, {"ephemeral_public": ...}])
 def test_hello_requires_the_exact_field_set_and_integer_version(change) -> None:
     from localvault.sync.transport import SessionHello
 
@@ -981,3 +984,231 @@ def test_attach_keeps_identity_and_lan_peers(devs, tmp_path: Path) -> None:
     other = _web(b, "bravo")
     assert kinds(b.sync_with(a)) == []
     assert a.entry(other)["label"] == "bravo"
+
+
+# --- protocol version 2: ephemeral session keys --------------------------------------------------
+
+
+def test_session_key_mixes_fresh_ephemeral_keys_and_uses_each_once() -> None:
+    """Forward secrecy: the static keys alone no longer give the session key; an ephemeral key is single use."""
+    import hashlib
+
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.asymmetric import x25519
+    from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+
+    from localvault.sync.transport import AuthenticationError
+
+    a, b, peer_a, peer_b, hello_a, hello_b = _hello_pair()
+    assert hello_a.ephemeral_public != hello_b.ephemeral_public
+    assert hello_a.ephemeral_public not in (a.exchange_public_key, b.exchange_public_key)
+    chan_a = SecureChannel.from_paired_identities(a, peer_b, group_id="group-1", session_id=b"s" * 16,
+                                                  role="initiator", local_hello=hello_a, remote_hello=hello_b)
+    chan_b = SecureChannel.from_paired_identities(b, peer_a, group_id="group-1", session_id=b"s" * 16,
+                                                  role="responder", local_hello=hello_b, remote_hello=hello_a)
+    assert chan_b.open(chan_a.seal(b"hi")) == b"hi"
+    assert hello_a.ephemeral_secret.used and hello_b.ephemeral_secret.used
+    # Someone who later learns both static exchange keys (and records both hellos) cannot rebuild the key.
+    transcript = b"".join(sorted((hello_a.to_bytes(), hello_b.to_bytes())))
+    static = a.exchange_key.exchange(x25519.X25519PublicKey.from_public_bytes(b.exchange_public_key))
+    for salt_label, info_label in ((b"localgatekeys|sync|session-salt|", b"localgatekeys|sync|session-key|"),
+                                   (b"localgatekeys|sync|session-salt|v2|", b"localgatekeys|sync|session-key|v2|")):
+        guess = HKDF(algorithm=hashes.SHA256(), length=32, salt=hashlib.sha256(salt_label + transcript).digest(),
+                     info=info_label + b"s" * 16).derive(static)
+        assert guess != chan_a._key
+    # The same local hello cannot derive a second key (its ephemeral private key is gone).
+    with pytest.raises(AuthenticationError):
+        SecureChannel.from_paired_identities(a, peer_b, group_id="group-1", session_id=b"s" * 16,
+                                             role="initiator", local_hello=hello_a, remote_hello=hello_b)
+
+
+def test_two_sessions_of_the_same_devices_get_different_keys() -> None:
+    from localvault.sync.transport import create_session_hello
+
+    a, b, peer_a, peer_b, _ha, _hb = _hello_pair()
+    keys = set()
+    for _ in range(2):
+        ha, hb = create_session_hello(a, "group-1", b"s" * 16, _nonce=b"n" * 32), create_session_hello(
+            b, "group-1", b"s" * 16, _nonce=b"m" * 32)
+        keys.add(SecureChannel.from_paired_identities(a, peer_b, group_id="group-1", session_id=b"s" * 16,
+                                                      role="initiator", local_hello=ha, remote_hello=hb)._key)
+    assert len(keys) == 2  # same session id, nonces and counters: only the ephemeral keys differ
+
+
+def test_a_low_order_ephemeral_key_is_refused() -> None:
+    from localvault.sync.transport import AuthenticationError, SessionHello, verify_session_hello
+
+    a, b, peer_a, peer_b, hello_a, hello_b = _hello_pair()
+    zero = dataclasses.replace(hello_b, ephemeral_public=bytes(32), ephemeral_secret=None)
+    zero = dataclasses.replace(zero, signature=b.sign(zero.signing_bytes()))
+    assert SessionHello.from_bytes(zero.to_bytes()) == zero
+    with pytest.raises(AuthenticationError):
+        verify_session_hello(zero, "group-1", peer_b)
+
+
+def _legacy_hello(dev: Dev, counter: int = 10**12) -> bytes:
+    """A signed version-1 hello (no ephemeral key) of *dev*, as an older app sends it."""
+    st = dev.state
+    ident = st.identity()
+    unsigned = {"version": 1, "session_id": base64.b64encode(b"o" * 16).decode(), "group_id": st.group_id,
+                "device_id": ident.device_id, "signing_public": base64.b64encode(ident.signing_public_key).decode(),
+                "exchange_public": base64.b64encode(ident.exchange_public_key).decode(),
+                "nonce": base64.b64encode(b"n" * 32).decode(), "counter": counter}
+    canonical = json.dumps(unsigned, ensure_ascii=True, separators=(",", ":"), sort_keys=True).encode()
+    signature = ident.sign(b"localgatekeys|sync|session-hello|v1|" + canonical)
+    return json.dumps({**unsigned, "signature": base64.b64encode(signature).decode()}, ensure_ascii=True,
+                      separators=(",", ":"), sort_keys=True).encode()
+
+
+def test_an_old_version_peer_gets_update_needed_and_never_a_session(devs) -> None:
+    from localvault.sync import transport as tr
+
+    a, b = _group_ab(devs)
+    assert kinds(b.sync_with(a)) == []  # 127.0.0.1 verified at A: the two raw connections below are not capped
+    counter_before = a.state.hello_counter
+    with socket.create_connection((a.endpoint.host, a.endpoint.port), timeout=5) as sock:
+        sock.sendall(tr.encode_frame(_legacy_hello(b)))
+        header = sock.recv(4)
+        body = b""
+        while len(body) < int.from_bytes(header, "big"):
+            body += sock.recv(4096)
+    # A plain refusal naming the version this device speaks; no hello, no counter, no key.
+    assert body == tr.version_refusal() == b'{"refused":"version","version":2}'
+    assert tr.parse_version_refusal(body) is None  # our own version is not a mismatch
+    assert a.transport.take_outdated_peers() == [b.device_id]  # B's v1 signature verified: B needs the update
+    assert a.transport.take_outdated_peers() == []
+    assert a.state.hello_counter == counter_before
+    # A version-1 hello that does not verify under the pinned key is refused without naming anyone.
+    stranger = devs("c")
+    lan.create_lan_group(stranger.session, stranger.lease, install_id=stranger.install)
+    forged = json.loads(_legacy_hello(b))
+    forged["signature"] = json.loads(_legacy_hello(stranger))["signature"]
+    with socket.create_connection((a.endpoint.host, a.endpoint.port), timeout=5) as sock:
+        sock.sendall(tr.encode_frame(json.dumps(forged, separators=(",", ":"), sort_keys=True).encode()))
+        assert sock.recv(64)[4:] == tr.version_refusal()
+    assert a.transport.take_outdated_peers() == []
+
+
+def test_a_peer_announcing_another_version_gives_an_update_issue(devs, monkeypatch) -> None:
+    from localvault.sync import transport as tr
+
+    a, b = _group_ab(devs)
+    # B's listener answers like an older device that already knows version refusals (version 1).
+    monkeypatch.setattr(tr, "version_refusal", lambda: b'{"refused":"version","version":1}')
+    real = SyncTransport._handle_inbound
+
+    def old(self, client):
+        if self is b.transport:
+            try:
+                self._read_socket_frame(client, time.monotonic() + 2)
+                self._send_all(client, tr.encode_frame(tr.version_refusal()), time.monotonic() + 2)
+            finally:
+                self._release_inbound(client)
+                self._close_socket(client)
+            return
+        return real(self, client)
+
+    monkeypatch.setattr(SyncTransport, "_handle_inbound", old)
+    report = a.sync_with(b)
+    assert kinds(report) == ["peer-update-needed"]
+    assert "older LocalGateKeys" in report.issues[0].detail
+    # A newer peer (version 3) means this device needs the update.
+    monkeypatch.setattr(tr, "version_refusal", lambda: b'{"refused":"version","version":3}')
+    assert kinds(a.sync_with(b)) == ["lan-update-needed"]
+
+
+# --- pairing Accept step ---------------------------------------------------------------------------
+
+
+def test_pairing_waits_for_accept_and_both_screens_show_the_same_code(devs) -> None:
+    a = devs("a", group=True)
+    b = devs("b")
+    seen: dict = {}
+
+    def on_pending(pending) -> None:
+        seen.update(name=pending.name, code=pending.code, fingerprint=pending.fingerprint,
+                    pending_in_vault=any(p.get("device_id") == pending.peer.device_id for p in a.state.lan_peers))
+        pending.decide(True)
+
+    a.responder.on_pending = on_pending
+    _offer, text = _offer_for(a)
+    codes: list[str] = []
+    lan.enroll_from_qr(text, b.session, b.lease, install_id=b.install, now=NOW, name="Laptop é",
+                       on_code=codes.append)
+    assert seen["name"] == "Laptop é" and codes == [seen["code"]] and len(seen["code"]) == 6
+    assert seen["pending_in_vault"] is False  # nothing is pinned before Accept
+    entry = lan.peer_entry(a.state, b.device_id)
+    assert entry is not None and entry["name"] == "Laptop é"
+    assert seen["fingerprint"] == entry["fingerprint"]
+    assert a.responder.enrolled_offer == _offer.offer_id and a.responder.pending is None
+
+
+def test_decline_or_no_answer_admits_nothing(devs) -> None:
+    a = devs("a", group=True)
+    b = devs("b")
+    a.accept = False
+    offer, text = _offer_for(a)
+    with pytest.raises(lan.LanSyncError) as err:
+        lan.enroll_from_qr(text, b.session, b.lease, install_id=b.install, now=NOW)
+    assert err.value.reason == "declined"
+    assert a.state.lan_peers == () and b.state is None
+    assert a.responder.declined_offer == offer.offer_id and a.responder.enrolled is None
+    # The offer was used up by that request: a second try needs a new code.
+    with pytest.raises(lan.LanSyncError) as err:
+        lan.enroll_from_qr(text, b.session, b.lease, install_id=b.install, now=NOW)
+    assert err.value.reason == "offer-used-or-expired"
+    # Nobody answers: the inviter declines on its own after the Accept timeout.
+    a.responder.on_pending = None
+    a.responder.accept_timeout = 0.3
+    _offer2, text2 = _offer_for(a)
+    started = time.monotonic()
+    with pytest.raises(lan.LanSyncError) as err:
+        lan.enroll_from_qr(text2, b.session, b.lease, install_id=b.install, now=NOW)
+    assert err.value.reason == "declined" and time.monotonic() - started < 5
+    assert a.state.lan_peers == ()
+
+
+def test_closing_the_code_declines_a_waiting_request(devs) -> None:
+    a = devs("a", group=True)
+    b = devs("b")
+    a.responder.on_pending = lambda pending: threading.Timer(0.2, a.responder.stop_enrollment).start()
+    _offer, text = _offer_for(a)
+    with pytest.raises(lan.LanSyncError) as err:
+        lan.enroll_from_qr(text, b.session, b.lease, install_id=b.install, now=NOW)
+    assert err.value.reason == "declined" and a.state.lan_peers == ()
+
+
+def test_decide_answers_only_the_waiting_offer_once(devs) -> None:
+    a = devs("a", group=True)
+    b = devs("b")
+    answered: list = []
+
+    def on_pending(pending) -> None:
+        assert not a.responder.decide("another-offer", True)
+        answered.append(a.responder.decide(pending.offer_id, True))
+        answered.append(a.responder.decide(pending.offer_id, False))  # already answered: ignored
+
+    a.responder.on_pending = on_pending
+    _offer, text = _offer_for(a)
+    lan.enroll_from_qr(text, b.session, b.lease, install_id=b.install, now=NOW)
+    assert answered == [True, False] and lan.peer_entry(a.state, b.device_id) is not None
+
+
+def test_a_version_one_enrollment_request_gets_update_needed(devs) -> None:
+    a = devs("a", group=True)
+    offer, _text = _offer_for(a)
+    ident = pairing.DeviceIdentity.generate()
+    body = dict(_body(offer, ident), version=1)
+    del body["name"]
+    reply = SyncTransport().enroll(a.endpoint, _custom_request(offer, body))
+    assert reply == pairing.enrollment_refusal("update-needed")
+    assert a.state.lan_peers == ()
+
+
+def test_enrollment_names_are_checked() -> None:
+    for bad in ("", "x" * 65, "tab\there", "nul\x00", "del\x7f", "é" * 33):
+        with pytest.raises(pairing.PairingError):
+            pairing.check_device_name(bad)
+    assert pairing.check_device_name("é" * 32) == "é" * 32
+    assert pairing.verification_code(b"x") == pairing.verification_code(b"x")
+    assert len(pairing.verification_code(b"y")) == 6

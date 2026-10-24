@@ -136,6 +136,19 @@ final class EngineTests: XCTestCase {
         }
     }
 
+    func test_equal_vectors_merge_is_idempotent() throws {
+        // Fuzz finding S-1 (2026-10-24): a no-op upsert and conflict must not repeat every round.
+        let item: JSONValue = .object(["updated_at": .int(0), "v": .int(0)])
+        let alive = try ItemState(itemID: "item-1", vv: [:], deleted: false, deletedAt: nil, item: item)
+        let gone = try ItemState(itemID: "item-1", vv: [:], deleted: true, deletedAt: nil, item: nil)
+        var out = try Engine.merge(local: ["item-1": alive], remote: [gone])
+        XCTAssertTrue(out.upserts.isEmpty && out.deletes.isEmpty && out.conflicts.isEmpty && out.copies.isEmpty)
+        out = try Engine.merge(local: ["item-1": gone], remote: [alive])
+        XCTAssertEqual(out.upserts, [alive])
+        XCTAssertEqual(out.conflicts.count, 1)
+        XCTAssertTrue(try Engine.merge(local: ["item-1": alive], remote: [alive]).upserts.isEmpty)
+    }
+
     func test_edit_beats_delete() throws {
         let item: JSONValue = .object(["updated_at": .int(5), "x": .string("live")])
         let local = try ItemState(itemID: "i", vv: ["b": 1, "c": 0], deleted: false, deletedAt: nil, item: item)

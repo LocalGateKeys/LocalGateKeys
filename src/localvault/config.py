@@ -170,29 +170,71 @@ def _local_appdata() -> Path:
     return Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
 
 
-def data_dir() -> Path:
+# Written into a LOCALGATEKEYS_DATA_DIR folder the app itself created: only such
+# a folder (or the default one) has its ACL replaced (R-3).
+OWNED_MARKER = ".localgatekeys-owned"
+
+
+def _data_root() -> tuple[Path, bool]:
+    """The data folder and whether it is a LOCALGATEKEYS_DATA_DIR override."""
     override = os.environ.get("LOCALGATEKEYS_DATA_DIR")
     if override:
-        root = Path(override).expanduser().resolve()
-    elif os.name == "nt":
-        root = _local_appdata() / APP_DIR_NAME
-    else:
-        root = _local_appdata() / "localgatekeys"
-    root.mkdir(parents=True, exist_ok=True)
-    if root not in _ACL_APPLIED:
-        # Once per process: a folder that already existed (older release, a
-        # folder someone loosened) gets the same ACL as a new one.
-        _ACL_APPLIED.add(root)
+        return Path(override).expanduser().resolve(), True
+    if os.name == "nt":
+        return _local_appdata() / APP_DIR_NAME, False
+    return _local_appdata() / "localgatekeys", False
+
+
+def data_dir() -> Path:
+    """The data folder, created owner-only when missing.
+
+    No ACL rewrite of an existing folder happens here: every browser message
+    starts a new native-host process, and rewriting the whole tree's ACL on
+    each one was slow and raced the app's atomic saves (R-2). The main app
+    calls ``secure_data_dir_once`` at startup instead.
+    """
+    root, override = _data_root()
+    if not root.is_dir():
+        root.mkdir(parents=True, exist_ok=True)
+        if override:
+            try:
+                (root / OWNED_MARKER).write_text("LocalGateKeys created this folder.\n", encoding="utf-8")
+            except OSError:
+                pass
+        # A folder just created is empty: the owner-only ACL is cheap here and races nothing.
         _restrict_data_dir(root)
     _restrict_path(root, is_dir=True)
     return root
 
 
-# Data folders whose owner-only ACL was (re)applied by this process.
-_ACL_APPLIED: set[Path] = set()
+def _acl_may_be_replaced(root: Path, override: bool) -> bool:
+    """The default folder, or an override folder this app created (it holds the marker)."""
+    return not override or (root / OWNED_MARKER).is_file()
 
 
-def _restrict_data_dir(path: Path) -> None:
+def secure_data_dir_once() -> bool:
+    """Main app startup only: give an existing data folder the owner-only ACL (I-24).
+
+    Never called from the native host or the pipe helpers. Skips a folder the
+    app did not create (a LOCALGATEKEYS_DATA_DIR pointed at an existing
+    folder, R-3) and a folder whose DACL already is the owner-only protected
+    one, so a normal start does not rewrite every file's ACL. Returns True
+    when the ACL was (re)applied.
+    """
+    if os.name != "nt":
+        return False
+    root, override = _data_root()
+    if not root.is_dir() or not _acl_may_be_replaced(root, override):
+        return False
+    try:
+        if has_owner_only_acl(root):
+            return False
+    except Exception:  # noqa: BLE001 - unreadable: try to apply it
+        pass
+    return _restrict_data_dir(root)
+
+
+def _restrict_data_dir(path: Path) -> bool:
     """Give the data folder an owner-only ACL on Windows, new or existing.
 
     chmod cannot express a Windows ACL, so a folder created outside the
@@ -204,16 +246,16 @@ def _restrict_data_dir(path: Path) -> None:
     as before, and startup continues.
     """
     if os.name != "nt":
-        return
+        return False
     try:
         apply_owner_only_acl(path)
+        return True
     except Exception:  # noqa: BLE001 - best-effort; the current ACL stays
         logging.getLogger(__name__).warning("Could not apply the owner-only ACL to the data folder.")
+        return False
 
 
-def apply_owner_only_acl(path: Path) -> None:
-    """Replace ``path``'s DACL with a protected one: full control for the current user and SYSTEM only."""
-    import ntsecuritycon as con  # type: ignore[import-not-found]
+def _owner_only_sids() -> tuple[Any, Any]:
     import win32api  # type: ignore[import-not-found]
     import win32security  # type: ignore[import-not-found]
 
@@ -222,7 +264,42 @@ def apply_owner_only_acl(path: Path) -> None:
         user = win32security.GetTokenInformation(token, win32security.TokenUser)[0]
     finally:
         win32api.CloseHandle(token)
-    system = win32security.CreateWellKnownSid(win32security.WinLocalSystemSid)
+    return user, win32security.CreateWellKnownSid(win32security.WinLocalSystemSid)
+
+
+def has_owner_only_acl(path: Path) -> bool:
+    """Whether ``path``'s DACL already is the protected user + SYSTEM one ``apply_owner_only_acl`` writes."""
+    import ntsecuritycon as con  # type: ignore[import-not-found]
+    import win32security  # type: ignore[import-not-found]
+
+    descriptor = win32security.GetNamedSecurityInfo(
+        str(path), win32security.SE_FILE_OBJECT, win32security.DACL_SECURITY_INFORMATION)
+    control, _revision = descriptor.GetSecurityDescriptorControl()
+    if not control & win32security.SE_DACL_PROTECTED:
+        return False
+    dacl = descriptor.GetSecurityDescriptorDacl()
+    if dacl is None:
+        return False
+    user, system = _owner_only_sids()
+    expected = {str(user), str(system)}
+    inherit = con.OBJECT_INHERIT_ACE | con.CONTAINER_INHERIT_ACE
+    seen: set[str] = set()
+    for index in range(dacl.GetAceCount()):
+        (ace_type, flags), mask, sid = dacl.GetAce(index)
+        if ace_type != win32security.ACCESS_ALLOWED_ACE_TYPE or str(sid) not in expected:
+            return False
+        if mask != con.FILE_ALL_ACCESS or flags & inherit != inherit:
+            return False
+        seen.add(str(sid))
+    return seen == expected
+
+
+def apply_owner_only_acl(path: Path) -> None:
+    """Replace ``path``'s DACL with a protected one: full control for the current user and SYSTEM only."""
+    import ntsecuritycon as con  # type: ignore[import-not-found]
+    import win32security  # type: ignore[import-not-found]
+
+    user, system = _owner_only_sids()
     inherit = con.OBJECT_INHERIT_ACE | con.CONTAINER_INHERIT_ACE
     dacl = win32security.ACL()
     for sid in (user, system):

@@ -81,16 +81,21 @@ def test_new_wrappers_carry_no_created_at_and_old_ones_still_open(tmp_path: Path
 
 # ------------------------------------------------------------- I-24 data folder ACL
 
-def test_existing_data_folder_gets_the_owner_only_acl_once(tmp_path: Path, monkeypatch):
+def test_existing_data_folder_gets_the_owner_only_acl_at_main_app_start(tmp_path: Path, monkeypatch):
+    # R-2: data_dir() no longer rewrites an existing folder's ACL (the native host calls it per message);
+    # the main app's secure_data_dir_once does, and only for a folder the app owns (R-3 marker).
     folder = tmp_path / "existing"
     folder.mkdir()
+    (folder / config.OWNED_MARKER).write_text("x", encoding="utf-8")
     applied = []
     monkeypatch.setenv("LOCALGATEKEYS_DATA_DIR", str(folder))
     monkeypatch.setattr(config.os, "name", "nt")
     monkeypatch.setattr(config, "apply_owner_only_acl", applied.append)
-    monkeypatch.setattr(config, "_ACL_APPLIED", set())
+    monkeypatch.setattr(config, "has_owner_only_acl", lambda path: False)
     assert config.data_dir() == folder.resolve()
     config.data_dir()
+    assert applied == []
+    assert config.secure_data_dir_once() is True
     assert applied == [folder.resolve()]
 
 
@@ -98,11 +103,11 @@ def test_acl_failure_does_not_stop_startup(tmp_path: Path, monkeypatch, caplog):
     def fail(path):
         raise OSError("access denied")
 
-    monkeypatch.setenv("LOCALGATEKEYS_DATA_DIR", str(tmp_path))
+    folder = tmp_path / "new"
+    monkeypatch.setenv("LOCALGATEKEYS_DATA_DIR", str(folder))
     monkeypatch.setattr(config.os, "name", "nt")
     monkeypatch.setattr(config, "apply_owner_only_acl", fail)
-    monkeypatch.setattr(config, "_ACL_APPLIED", set())
-    assert config.data_dir() == tmp_path.resolve()
+    assert config.data_dir() == folder.resolve()
     assert "owner-only ACL" in caplog.text
 
 

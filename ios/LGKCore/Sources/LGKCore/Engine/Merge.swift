@@ -109,19 +109,27 @@ public enum Engine {
             if same {
                 upserts.append(r.with(vv: merged, deletedAt: nil))
             } else if loc.deleted || r.deleted {
-                let live = r.deleted ? loc : r
-                upserts.append(live.with(vv: merged, deletedAt: nil))
-                conflicts.append((loc, r))
+                let remoteLive = !r.deleted
+                let live = remoteLive ? r : loc
+                // Equal vectors and the local live state wins: the upsert would be a no-op that
+                // repeats on every round, so nothing is reported (merge stays idempotent).
+                if remoteLive || rel != .equal {
+                    upserts.append(live.with(vv: merged, deletedAt: nil))
+                    conflicts.append((loc, r))
+                }
             } else {
-                let (win, lose) = try outranks(r, loc) ? (r, loc) : (loc, r)
-                upserts.append(win.with(vv: merged, deletedAt: nil))
+                let remoteWins = try outranks(r, loc)
+                let (win, lose) = remoteWins ? (r, loc) : (loc, r)
+                var changed = remoteWins || rel != .equal
+                if changed { upserts.append(win.with(vv: merged, deletedAt: nil)) }
                 let cid = try ConflictCopy.id(itemID: r.itemID, contentDigest: ConflictCopy.contentDigest(lose.item!))
                 if local[cid] == nil && !seen.contains(cid) {
                     guard case .object(var body) = lose.item! else { throw EngineError("item must be a dict") }
                     body["id"] = .string(cid)
                     copies.append(try ItemState(itemID: cid, vv: lose.vv, deleted: false, deletedAt: nil, item: .object(body)))
+                    changed = true
                 }
-                conflicts.append((loc, r))
+                if changed { conflicts.append((loc, r)) }
             }
         }
         return MergeOutcome(upserts: upserts, deletes: deletes, conflicts: conflicts, copies: copies)

@@ -6,6 +6,7 @@ import app.localgatekeys.core.keyring.Keyring.b64
 import app.localgatekeys.core.keyring.Keyring.b64any
 import app.localgatekeys.core.keyring.Keyring.int
 import app.localgatekeys.core.keyring.Keyring.str
+import app.localgatekeys.core.lan.DeviceIdentity
 import app.localgatekeys.core.primitives.Identifier
 
 internal object KeyringParse {
@@ -13,7 +14,8 @@ internal object KeyringParse {
     private val kdfFields = setOf("name", "salt", "memory_kib", "iterations", "parallelism")
     private val pwWrapFields = setOf("nonce", "ct")
     private val devWrapFields = setOf("eph", "nonce", "ct")
-    private val memberFields = setOf("device_id", "name_ct", "exchange_public", "added_at")
+    private val memberFieldsV1 = setOf("device_id", "name_ct", "exchange_public", "added_at")
+    private val memberFields = memberFieldsV1 + setOf("signing_public", "signing_proof")
 
     /** Parse strictly (size, UTF-8, duplicate keys, non-finite numbers), then verify the structure. */
     fun parse(data: ByteArray): JsonValue {
@@ -43,7 +45,9 @@ internal object KeyringParse {
     /** Shape, bounds, KDF parameters and wrap/member sets; no authentication. Same check order as the desktop. */
     fun verifyStructure(keyring: JsonValue) {
         val ring = fields(keyring, topFields, "keyring fields")
-        if (int(ring["format"]) != Keyring.FORMAT) throw KeyringException("bad-format", "unsupported keyring format")
+        val format = int(ring["format"])
+        if (format == null || format !in Keyring.READ_FORMATS) throw KeyringException("bad-format", "unsupported keyring format")
+        val wantMember = if (format >= 2) memberFields else memberFieldsV1
         val gid = str(ring["group_id"])
         if (gid == null || !Identifier.isValid(gid)) throw KeyringException("bad-group-id", "group_id")
         if (!isInt(ring["epoch"], 1)) throw KeyringException("bad-epoch", "epoch")
@@ -69,7 +73,7 @@ internal object KeyringParse {
         if (members.size > Keyring.MAX_MEMBERS) throw KeyringException("too-many-members", "members must have at most 16 entries")
         val ids = HashSet<String>()
         for (m in members) {
-            val mo = fields(m, memberFields, "member fields")
+            val mo = fields(m, wantMember, "member fields")
             val id = str(mo["device_id"])
             if (id == null || !Identifier.isValid(id)) throw KeyringException("bad-device-id", "member device_id")
             if (!ids.add(id)) throw KeyringException("duplicate-member", "member device ids must be unique")
@@ -78,6 +82,7 @@ internal object KeyringParse {
             }
             if (!isInt(mo["added_at"])) throw KeyringException("bad-fields", "member added_at")
             b64(mo["exchange_public"], 32, "member exchange_public")
+            if (format >= 2) checkMemberProof(gid, mo)
         }
 
         val wraps = (ring["device_wraps"] as? JsonValue.Obj)?.fields
@@ -95,5 +100,21 @@ internal object KeyringParse {
             b64(ring["prev_mac"], Keyring.MAC_LEN, "prev_mac")
         }
         b64(ring["mac"], Keyring.MAC_LEN, "mac")
+    }
+
+    /** `_check_member_proof`: `signing_public` and `signing_proof` both null, or a key with its member's valid proof. */
+    private fun checkMemberProof(groupId: String, m: Map<String, JsonValue>) {
+        val key = m["signing_public"]
+        val proof = m["signing_proof"]
+        if (key == JsonValue.Null && proof == JsonValue.Null) return
+        if (key == JsonValue.Null || proof == JsonValue.Null) {
+            throw KeyringException("bad-member-proof", "signing_public and signing_proof must both be set or both null")
+        }
+        val rawKey = b64(key, 32, "member signing_public")
+        val rawProof = b64(proof, Keyring.PROOF_LEN, "member signing_proof")
+        val message = Keyring.proofMessage(groupId, str(m["device_id"])!!, str(m["exchange_public"])!!, str(key)!!)
+        if (!DeviceIdentity.verify(rawProof, message, rawKey)) {
+            throw KeyringException("bad-member-proof", "member ${str(m["device_id"])}: signing proof does not verify")
+        }
     }
 }

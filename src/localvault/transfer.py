@@ -204,7 +204,7 @@ def _read_package(source: Path) -> dict[str, Any]:
         # Strict UTF-8 first: json.loads(bytes) would accept lone surrogates
         # that _canonical() later cannot re-encode.
         envelope = json.loads(raw.decode("utf-8"))
-    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+    except (TypeError, ValueError, json.JSONDecodeError, RecursionError) as exc:
         raise TransferError("Transfer package is not valid JSON") from exc
     if not isinstance(envelope, dict):
         raise TransferError("Transfer package header must be an object")
@@ -721,7 +721,7 @@ def _decrypt_payload(envelope: dict[str, Any], password: str) -> dict[str, Any]:
         raise TransferError("Transfer plaintext exceeds the bound")
     try:
         payload = json.loads(raw.decode("utf-8"))
-    except (TypeError, ValueError, json.JSONDecodeError):
+    except (TypeError, ValueError, json.JSONDecodeError, RecursionError):
         raise TransferError("Transfer payload is malformed") from None
     if not isinstance(payload, dict) or payload.get("version") != TRANSFER_VERSION:
         raise TransferError("Unsupported transfer payload version")

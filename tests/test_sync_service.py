@@ -633,9 +633,11 @@ def _lan_group(session) -> SyncGroupState:
     return lan.create_lan_group(session, FakeLease(), install_id=INSTALL)
 
 
-def _enroll(responder, offer, identity=None):
+def _enroll(responder, offer, identity=None, *, accept=True):
+    """One enrollment request; the user answers the Accept prompt with *accept* at once."""
     identity = identity or DeviceIdentity.generate()
     raw = pairing.build_enrollment_request(offer, identity, endpoint=("127.0.0.1", 45872), now=NOW)
+    responder.on_pending = lambda pending: pending.decide(accept)
     return identity, responder.enroll(raw)
 
 
@@ -1105,7 +1107,8 @@ def test_idle_lan_peer_causes_no_vault_writes_and_no_self_triggered_runs(tmp_pat
         # A's pairing listener (stands in for the app's QR screen).
         t_a = SyncTransport(lan.transport_state(load_sync_state(a), a, lease_a))
         transports.append(t_a)
-        r_a = lan.LanResponder(a, lease_a, install_id="install-a", clock=lambda: NOW)
+        r_a = lan.LanResponder(a, lease_a, install_id="install-a", clock=lambda: NOW,
+                               on_pending=lambda pending: pending.decide(True))
         t_a.set_peer_request_handler(r_a)
         hold_a.close()
         t_a.start(ep_a)

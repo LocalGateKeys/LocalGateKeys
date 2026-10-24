@@ -19,7 +19,14 @@ import {
   verifyLemonSqueezy,
   verifyPaddle,
 } from "./providers.js";
-import { buildLicense, encodePaste, fallbackTokenForOrder, issueBundle, licenseIdForOrder } from "./sign.js";
+import {
+  buildLicense,
+  encodePaste,
+  fallbackTokenForOrder,
+  issueBundle,
+  licenseIdForOrder,
+  recoveryThrottleKey,
+} from "./sign.js";
 
 const PENDING_GIVE_UP_SECONDS = 10 * 60;
 // KV caches reads at the edge, "not found" included, for 60 s by default. The
@@ -31,10 +38,18 @@ const MAX_FORM_BYTES = 4 * 1024;
 const TOKEN_PATH = /^\/license\/([A-Za-z0-9_-]{43})(\/file)?$/;
 const RECOVER_PATH = "/recover";
 const ORDER_ID = /^[A-Za-z0-9_-]{1,64}$/;
+// Per-email /recover throttle (review R-6), on top of the Cloudflare rule
+// "Licence recovery limit" (3 requests / 10 s per IP) on the zone.
+const RECOVER_MAX_ATTEMPTS = 5;
+const RECOVER_WINDOW_SECONDS = 60 * 60;
+// On every response: licence pages are never framed, indexed or cached, and
+// the host is HTTPS-only (no `preload` until the owner decides on it).
 const PAGE_HEADERS = {
-  "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'",
+  "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'",
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "no-referrer",
+  "X-Robots-Tag": "noindex, nofollow",
+  "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
   "Cache-Control": "no-store",
 };
 const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
@@ -79,29 +94,55 @@ function nowMs(deps) {
 // KV keys (namespace LICENSES):
 //   order:<provider>:<order id>          -> the token the buyer is shown (claim or own token)
 //   order-license:<provider>:<order id>  -> license_id of that order
-//   claim:<token>                        -> the order key a browser claim is bound to
+//   claim:<token>                        -> (old deploys only) the order key a claim was bound to
 //   license:<token>                      -> signed licence bundle (JSON), under the order's
 //                                           own token and, if it won it, the claim
 //   adjustment:<provider>:<id>           -> refund / chargeback record (JSON, also as metadata)
 //   revoke:<license_id>:<adjustment id>  -> the same record, listed by the operator to revoke
+//   recover-throttle:<HMAC(email)>       -> /recover attempts for that email this hour (JSON)
 //
-// KV has no compare-and-set, so the claim binding is written before the
-// licence and read back; an order that bound the claim first (as far as KV
-// shows it) keeps it and a later order uses its own token. Two orders that both
-// see an unbound claim within KV's propagation delay can still both write the
-// claim's page (the last write shows); each keeps its licence under its own
-// token, which /recover finds. Strict exclusion would need a Durable Object or D1.
+// D1 (binding CLAIMS, migrations/0001_claims.sql) decides which order owns a
+// browser claim: `claim` is the primary key, so of two orders racing for one
+// claim exactly one INSERT lands (audit L-2). KV has no compare-and-set, so it
+// is never used to arbitrate.
 
-// Returns the claim if this order may use it, else null.
-async function bindClaim(env, orderKey, claim) {
-  if (claim === null) return null;
-  const bindingKey = `claim:${claim}`;
-  const bound = await env.LICENSES.get(bindingKey);
-  if (bound !== null) return bound === orderKey ? claim : null;
-  // Licences issued before claims were bound: a stored licence means "used".
-  if ((await env.LICENSES.get(`license:${claim}`)) !== null) return null;
-  await env.LICENSES.put(bindingKey, orderKey);
-  return (await env.LICENSES.get(bindingKey)) === orderKey ? claim : null;
+const CLAIM_SELECT = "SELECT order_key FROM claims WHERE claim = ?1";
+const CLAIM_INSERT =
+  "INSERT INTO claims (claim, order_key, licence_id, created_at) VALUES (?1, ?2, ?3, ?4) ON CONFLICT DO NOTHING";
+
+async function claimOwner(env, claim) {
+  const row = await env.CLAIMS.prepare(CLAIM_SELECT).bind(claim).first();
+  return row === null ? null : row.order_key;
+}
+
+// Claims taken before D1 arbitrated them: a KV binding or a stored licence.
+async function usedBeforeD1(env, orderKey, claim) {
+  const bound = await env.LICENSES.get(`claim:${claim}`);
+  if (bound !== null) return bound !== orderKey;
+  return (await env.LICENSES.get(`license:${claim}`)) !== null;
+}
+
+// Returns true if this order owns the claim. Fails closed: no claim without
+// D1 (missing binding, outage); the licence is still under the order's own token.
+async function bindClaim(env, deps, orderKey, licenseId, claim) {
+  if (!env.CLAIMS) {
+    console.error(`license-issuer: D1 binding CLAIMS missing; ${orderKey} uses its own token, not its claim`);
+    return false;
+  }
+  try {
+    const owner = await claimOwner(env, claim);
+    if (owner !== null) return owner === orderKey; // a duplicate delivery reads back its own row
+    if (await usedBeforeD1(env, orderKey, claim)) {
+      // A concurrent delivery of this order may have bound it and written the licence since.
+      return (await claimOwner(env, claim)) === orderKey;
+    }
+    const createdAt = Math.floor(nowMs(deps) / 1000);
+    await env.CLAIMS.prepare(CLAIM_INSERT).bind(claim, orderKey, licenseId, createdAt).run();
+    return (await claimOwner(env, claim)) === orderKey;
+  } catch (error) {
+    console.error(`license-issuer: D1 claim binding failed for ${orderKey}; using its own token: ${error}`);
+    return false;
+  }
 }
 
 const orderLicenseKey = (orderKey) => `order-license:${orderKey.slice("order:".length)}`;
@@ -114,16 +155,19 @@ async function storeLicense(env, deps, orderKey, claim, buyer) {
   const license = buildLicense({ name: buyer.name, email: buyer.email, issuedAt, licenseId });
   const bundle = JSON.stringify(await issueBundle(license, env.LICENSE_PRIVATE_KEY));
   // Every order's licence is always stored under its own token, which only
-  // this Worker can compute; recovery (POST /recover) leads there, so a lost
-  // claim race never loses the licence. A claim this order won is an alias.
+  // this Worker can compute; recovery (POST /recover) leads there, so an order
+  // that loses its claim never loses the licence. A claim this order won is an alias.
   const own = await fallbackTokenForOrder(orderKey, env.LICENSE_PRIVATE_KEY);
   await env.LICENSES.put(`license:${own}`, bundle);
   let token = own;
-  if ((await bindClaim(env, orderKey, claim)) !== null) {
-    await env.LICENSES.put(`license:${claim}`, bundle);
-    // Read the binding again: if another order took the claim meanwhile, point
-    // this order at its own token rather than at a page the other order owns.
-    if ((await env.LICENSES.get(`claim:${claim}`)) === orderKey) token = claim;
+  if (claim !== null) {
+    if (await bindClaim(env, deps, orderKey, licenseId, claim)) {
+      await env.LICENSES.put(`license:${claim}`, bundle);
+      token = claim;
+    } else {
+      // Flag it: the buyer's checkout page will not show this licence; /recover will.
+      console.warn(`license-issuer: claim not bound to ${orderKey} (licence ${licenseId}); buyer needs /recover`);
+    }
   }
   await env.LICENSES.put(orderLicenseKey(orderKey), licenseId);
   // Written last: its presence means "issued", so a retry after a partial write finishes the job.
@@ -261,11 +305,17 @@ async function licensePage(token, wantFile, env, deps, url) {
 // The order id from the receipt plus the email it was bought with lead back to
 // it. Every failure gives the same answer, so the form says nothing about which
 // part was wrong. The form posts to itself only.
+//
+// A match must hand over the licence, so it cannot look like a miss: 303 to the
+// licence page vs 404 stays. Guessing is held back instead (review R-6): every
+// attempt counts against the email (5 per hour, keyed by an HMAC of it), the
+// lookup does the same reads whether or not the order exists, and the zone's
+// rate-limit rule caps each IP.
 const RECOVER_HEADERS = {
   "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'",
 };
 
-function recoverForm(message = "", status = 200) {
+function recoverForm(message = "", status = 200, extra = {}) {
   const note = message ? `<p role="alert">${escapeHtml(message)}</p>` : "";
   return page(
     "Find your LocalGateKeys Pro licence",
@@ -277,7 +327,7 @@ function recoverForm(message = "", status = 200) {
       `<p><label>Email<br><input name="email" type="email" required maxlength="254" autocomplete="email"></label></p>` +
       `<p><button type="submit">Show my licence</button></p></form>`,
     "",
-    RECOVER_HEADERS,
+    { ...RECOVER_HEADERS, ...extra },
     status,
   );
 }
@@ -287,7 +337,62 @@ function providersFor(env, orderId) {
   return orderId.startsWith("txn_") ? ["paddle"] : ["lemonsqueezy", "paddle"];
 }
 
-async function recover(request, env) {
+// Counts this attempt; returns the seconds to wait if the email is over its
+// limit, else 0. KV increments are not atomic and reads may lag between
+// locations, so a burst can slip a few extra attempts in; the per-IP rule
+// bounds bursts. The record expires with its window.
+async function throttleRecovery(env, deps, email) {
+  const key = await recoveryThrottleKey(email, env.LICENSE_PRIVATE_KEY);
+  const nowSec = Math.floor(nowMs(deps) / 1000);
+  let state = null;
+  try {
+    state = JSON.parse((await env.LICENSES.get(key)) ?? "null");
+  } catch {
+    state = null;
+  }
+  if (!state || !Number.isFinite(state.reset) || !Number.isFinite(state.count) || state.reset <= nowSec) {
+    state = { count: 0, reset: nowSec + RECOVER_WINDOW_SECONDS };
+  }
+  if (state.count >= RECOVER_MAX_ATTEMPTS) return state.reset - nowSec;
+  state.count += 1;
+  // KV needs an expiration at least 60 s ahead.
+  await env.LICENSES.put(key, JSON.stringify(state), { expiration: Math.max(state.reset, nowSec + 60) });
+  return 0;
+}
+
+function holderOf(stored) {
+  if (stored === null) return "";
+  try {
+    return String(JSON.parse(stored)?.license?.email ?? "").trim().toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+// The licence page an order id + email pair leads to, or null. Every provider
+// tried costs the same whether or not the order exists (scan F8): one HMAC
+// (the order's own token), three KV reads and one parse. The third read is the
+// pre-own-token licence for old orders and a repeat of the own-token key
+// otherwise, so an unknown order id and a known one with the wrong email do
+// the same work. Only a match returns early, and a match is a 303 anyway.
+async function findLicenceToken(env, orderId, email) {
+  for (const provider of providersFor(env, orderId)) {
+    const orderKey = `order:${provider}:${orderId}`;
+    const own = await fallbackTokenForOrder(orderKey, env.LICENSE_PRIVATE_KEY);
+    const [indexed, ownStored] = await Promise.all([env.LICENSES.get(orderKey), env.LICENSES.get(`license:${own}`)]);
+    // The order's own token first (always its own licence); orders issued
+    // before own tokens existed have only the indexed one.
+    const legacy = indexed !== null && ownStored === null;
+    const token = legacy ? indexed : own;
+    const third = await env.LICENSES.get(`license:${token}`);
+    const stored = indexed === null ? null : legacy ? third : ownStored;
+    const holder = holderOf(stored ?? third);
+    if (stored !== null && holder === email) return token;
+  }
+  return null;
+}
+
+async function recover(request, env, deps) {
   const notFound = () =>
     recoverForm("No licence matches that order number and email. Check both, or contact support.", 404);
   const body = await readBody(request, MAX_FORM_BYTES);
@@ -295,25 +400,19 @@ async function recover(request, env) {
   const form = new URLSearchParams(body);
   const orderId = (form.get("order") ?? "").trim();
   const email = (form.get("email") ?? "").trim().toLowerCase();
-  if (!ORDER_ID.test(orderId) || !email.includes("@")) return notFound();
-  for (const provider of providersFor(env, orderId)) {
-    const orderKey = `order:${provider}:${orderId}`;
-    const indexed = await env.LICENSES.get(orderKey);
-    if (indexed === null) continue;
-    // The order's own token first (always its own licence); orders issued
-    // before own tokens existed have only the indexed one.
-    const own = await fallbackTokenForOrder(orderKey, env.LICENSE_PRIVATE_KEY);
-    for (const token of [own, indexed]) {
-      const stored = await env.LICENSES.get(`license:${token}`);
-      if (stored === null) continue;
-      const holder = String(JSON.parse(stored)?.license?.email ?? "").trim().toLowerCase();
-      if (holder === email) {
-        return respond(303, "", "text/plain; charset=utf-8", { Location: `/license/${token}` });
-      }
-      break;
-    }
+  if (!email.includes("@") || email.length > 254) return notFound();
+  const wait = await throttleRecovery(env, deps, email);
+  if (wait > 0) {
+    return recoverForm(
+      "Too many attempts for this email address. Try again in an hour, or contact support.",
+      429,
+      { "Retry-After": String(wait) },
+    );
   }
-  return notFound();
+  if (!ORDER_ID.test(orderId)) return notFound();
+  const token = await findLicenceToken(env, orderId, email);
+  if (token === null) return notFound();
+  return respond(303, "", "text/plain; charset=utf-8", { Location: `/license/${token}` });
 }
 
 export async function handle(request, env, deps = {}) {
@@ -323,7 +422,7 @@ export async function handle(request, env, deps = {}) {
     return webhook(pathname.slice("/webhooks/".length), request, env, deps);
   }
   if (pathname === RECOVER_PATH) {
-    if (request.method === "POST") return recover(request, env);
+    if (request.method === "POST") return recover(request, env, deps);
     if (request.method === "GET" || request.method === "HEAD") return recoverForm();
   }
   const match = TOKEN_PATH.exec(pathname);

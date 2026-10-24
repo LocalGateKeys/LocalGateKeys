@@ -121,7 +121,7 @@ Your licence contains a random licence ID, the edition, your name, your email ad
 
 ### 5.4 Issuing and retrieving your licence
 
-After payment, {{MERCHANT_OF_RECORD}} notifies our licence service, which runs on Cloudflare Workers. The service asks {{MERCHANT_OF_RECORD}} for your name and email address, creates your licence, and stores it in Cloudflare's key-value storage under a random link that only your browser knows, so the page you are sent to after checkout can show it. We keep issued licences there for {{LICENCE_RETENTION}} so we can show or resend them, and an index from your order number to the licence so the same order is never issued twice.
+After payment, {{MERCHANT_OF_RECORD}} notifies our licence service, which runs on Cloudflare Workers. The service asks {{MERCHANT_OF_RECORD}} for your name and email address, creates your licence, and stores it in Cloudflare's key-value storage under a random link that only your browser knows, so the page you are sent to after checkout can show it. We keep issued licences there for {{LICENCE_RETENTION}} so we can show or resend them, and an index from your order number to the licence so the same order is never issued twice. A separate record in Cloudflare's D1 database links that random link to your order number and licence ID, so one link can only ever show one order's licence; it holds no name, email or payment details and is kept as long as the licence.
 
 ### 5.5 Retention
 

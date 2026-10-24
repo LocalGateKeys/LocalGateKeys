@@ -118,6 +118,13 @@ def paired_fingerprint(value: Any) -> str:
     return " ".join(head[i:i + 4] for i in range(0, len(head), 4))
 
 
+def format_verification_code(code: Any) -> str:
+    """A 6-digit pairing verification code as ``123 456`` (display only; empty when malformed)."""
+    if not isinstance(code, str) or len(code) != 6 or not code.isascii() or not code.isdigit():
+        return ""
+    return f"{code[:3]} {code[3:]}"
+
+
 def not_listening_text(address: str, issue: Any) -> str:
     """Why no QR code is shown: nothing accepts connections on *address*."""
     kind = str(getattr(issue, "kind", "") or "lan-not-listening")
@@ -737,19 +744,42 @@ class SyncWebService:
         if device_id is not None:
             offers.pop(offer_id, None)
             service.run_now()
-            # The inviter answers at once (the phone waits only ~5 s), so instead of an Accept step the page shows
-            # who paired, with an Undo that removes it (Remove a device).
+            # Accepted on this page; Undo still removes it again (Remove a device).
             peer = getattr(service, "enrollment_peer", lambda _o: None)(offer_id)
             fingerprint = paired_fingerprint(getattr(peer, "fingerprint", ""))
             name = short_id(str(device_id))
             detail = f" (key {fingerprint})" if fingerprint else ""
             return {"state": "paired", "device": {"id": str(device_id), "name": name, "fingerprint": fingerprint},
                     "message": f"Paired: {name}{detail}. If you don't recognise it, choose Undo."}
+        pending = getattr(service, "pending_enrollment", lambda _o: None)(offer_id)
+        if pending is not None and pending.accepted is True:
+            return {"state": "adding", "message": f"Adding {pending.name}…"}
+        if pending is not None and pending.accepted is None:
+            # A device proved it scanned this code; it joins only after Accept here.
+            code = format_verification_code(pending.code)
+            fingerprint = paired_fingerprint(pending.fingerprint)
+            return {"state": "confirm",
+                    "device": {"id": str(pending.peer.device_id), "name": pending.name, "fingerprint": fingerprint,
+                               "code": code},
+                    "seconds_left": int(pending.seconds_left()),
+                    "message": f"{pending.name} wants to join. Choose Accept only if it shows the code {code}."}
+        if getattr(service, "enrollment_declined", lambda _o: False)(offer_id):
+            offers.pop(offer_id, None)
+            return {"state": "declined", "message": "Declined. The device was not added. Show a new code to try again."}
         left = float(offer.expires_at) - time.time()
         if left <= 0:
             offers.pop(offer_id, None)
             return {"state": "expired", "countdown": "Expired"}
         return {"state": "waiting", "countdown": countdown_text(left)}
+
+    def qr_decide(self, offer_id: str, accept: bool) -> dict[str, Any]:
+        """Accept or Decline the device waiting on *offer_id* (the ``confirm`` state of ``qr_poll``)."""
+        service = self.service
+        if offer_id not in self._offers or service is None:
+            return {"state": "closed"}
+        if not service.decide_enrollment(offer_id, bool(accept)):
+            raise ApiError("invalid", "That request is no longer waiting. Show a new code to try again.")
+        return {}
 
     def qr_copy(self, offer_id: str) -> dict[str, Any]:
         entry = self._offers.get(offer_id)
@@ -777,7 +807,14 @@ class SyncWebService:
             host, _, port = value.rpartition(":")
             endpoint = LANEndpoint(host.strip("[]"), int(port))
         self._confirm_handover()  # the paired device receives this PC's items on the first sync
-        self._run(enroll_job(str(text).strip(), service.install_id, endpoint), "Pairing…")
+
+        def show_code(code: str) -> None:
+            # The other device shows the same code next to Accept; this text replaces "Pairing…" while it waits.
+            self._busy_text = (f"Code {format_verification_code(code)}. Choose Accept on the other device if it "
+                               "shows this code.")
+            self._bus.emit("sync.status", {})
+
+        self._run(enroll_job(str(text).strip(), service.install_id, endpoint, on_code=show_code), "Pairing…")
         return {"message": "This PC joined the other device's sync.", **self.refresh()}
 
     # ---------------------------------------------------------------- Wi-Fi

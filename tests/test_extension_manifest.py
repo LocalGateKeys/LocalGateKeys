@@ -94,7 +94,8 @@ def test_browser_extension_supports_multi_account_selection_and_update_detection
     root = Path(__file__).resolve().parents[1]
     content = (root / "browser-extension" / "content.js").read_text(encoding="utf-8")
     background = (root / "browser-extension" / "background.js").read_text(encoding="utf-8")
-    assert 'check.status === "password_changed"' in content
+    # Update detection moved to the desktop app (audit M-3): the page shows one neutral prompt.
+    assert 'status==="exists"' in content and 'Update saved password?' not in content
     assert 'pending_token' in content and 'loginOutcome' in content and 'Did you just sign in?' in content
     assert 'check_pending_save' in content and 'document.addEventListener("focusout"' not in content
     assert 'onDOMContentLoaded?.addListener(nudgePendingSave)' in background

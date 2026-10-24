@@ -97,15 +97,23 @@ public final class LanClient: Sendable {
         self.random = random; self.clock = clock; self.retryDelayNanos = retryDelayNanos; self.sleep = sleep
     }
 
-    /// One connection: send a hello (fresh 16-byte session id, then a 32-byte hello nonce from
-    /// `random`), check the responder's hello (pinned keys, same session id, increasing counter),
-    /// send one sealed request and open the one sealed response.
+    /// One connection: send a hello (fresh 16-byte session id, then a 32-byte hello nonce and a 32-byte
+    /// ephemeral X25519 key from `random`), check the responder's hello (pinned keys, same session id,
+    /// increasing counter), send one sealed request and open the one sealed response. A responder of
+    /// another protocol version (its version refusal, or its own signed hello of another version) throws
+    /// `LanSyncError` `peer-update-needed` (it is older) or `lan-update-needed` (this device is older);
+    /// nothing is derived and no other version is ever tried.
     public func request(_ plaintext: [UInt8], peer: PinnedPeer, connection: any LanConnection) async throws -> [UInt8] {
         let sessionID = random.bytes(count: LanTransport.sessionIDBytes)
         let localHello = try SessionHello.make(identity: identity, groupID: groupKey.groupID, sessionID: sessionID,
                                                counter: try counters.nextCounter(), random: AnyRandom(random))
+        defer { localHello.ephemeralSecret?.wipe() }   // unused after a failed handshake: dropped all the same
         let helloFrame = try await connection.exchange(try LanTransport.encodeFrame(try localHello.toBytes()))
-        let remoteHello = try SessionHello.parse(try LanTransport.decodeFrame(helloFrame))
+        let helloPayload = try LanTransport.decodeFrame(helloFrame)
+        if let announced = LanTransport.parseVersionRefusal(helloPayload) ?? SessionHello.otherVersion(helloPayload) {
+            throw Self.versionMismatch(announced, peer: peer)
+        }
+        let remoteHello = try SessionHello.parse(helloPayload)
         guard remoteHello.deviceID == peer.deviceID else {
             throw LanTransportError.authentication("Session peer is not the expected paired device")
         }
@@ -133,6 +141,16 @@ public final class LanClient: Sendable {
         do { return try LanMessages.parse(raw) } catch let e as LanSyncError {
             throw LanSyncError(e.reason == "bad-message" ? "bad-reply" : e.reason)
         }
+    }
+
+    /// Desktop `PeerVersionMismatch` as its sync issue (`lan_sync.sync_with`): the peer announced
+    /// another LAN protocol version. Lower: the peer needs an update; higher: this device does.
+    static func versionMismatch(_ announced: Int64, peer: PinnedPeer) -> LanSyncError {
+        let older = announced < LanTransport.version
+        let who = older ? "the other device" : "this device"
+        return LanSyncError(older ? "peer-update-needed" : "lan-update-needed",
+                            "\(peer.deviceID): update needed: \(who) runs an older LocalGateKeys (Wi-Fi sync version "
+                                + "\(min(announced, LanTransport.version)) instead of \(max(announced, LanTransport.version)))")
     }
 
     /// `_reply_issue`: a responder error or an unexpected message.

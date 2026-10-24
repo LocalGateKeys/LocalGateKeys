@@ -1,6 +1,7 @@
 """Protocol v2: metadata first, explicit selected release, revocable session grants."""
 from __future__ import annotations
 
+import hmac
 import json
 import secrets
 import time
@@ -422,6 +423,20 @@ class BrowserBroker(PasskeyBrokerMixin):
             "profile": {"name": self.active_profile.name, "color": self.active_profile.color},
         }
 
+    @staticmethod
+    def _session_id_matches(supplied: Any, lease: Any) -> bool:
+        """The extension's ``session_id`` names this lease (constant-time compare).
+
+        A missing, empty or non-string value never matches: it cannot pass a
+        check that a real but stale session id would fail.
+        """
+        if not isinstance(supplied, str) or not supplied:
+            return False
+        token = getattr(lease, "token", "")
+        if not isinstance(token, str) or not token:
+            return False
+        return hmac.compare_digest(supplied.encode("utf-8"), token.encode("utf-8"))
+
     def _identity_request(self, request, origin, context) -> tuple[Any, dict[str, Any], tuple[str, ...], Any]:
         entry_id = request.get("entry_id")
         revision = request.get("revision")
@@ -432,8 +447,7 @@ class BrowserBroker(PasskeyBrokerMixin):
         view = self.session.item_service.identity_release_view(entry_id, expected_revision=revision)
         if set(fields) - set(view["fields"]):
             raise StaleSession("The selected identity fields changed")
-        expected_session = request.get("session_id")
-        if expected_session is not None and expected_session != lease.token:
+        if not self._session_id_matches(request.get("session_id"), lease):
             raise StaleSession("The identity session changed")
         return lease, view, fields, entry_id
 
@@ -561,8 +575,7 @@ class BrowserBroker(PasskeyBrokerMixin):
         view = self.session.item_service.card_fill_view(entry_id, expected_revision=revision)
         if any(not view["fields"].get(field) for field in fields):
             raise StaleSession("The selected card fields changed")
-        expected_session = request.get("session_id")
-        if expected_session is not None and expected_session != lease.token:
+        if not self._session_id_matches(request.get("session_id"), lease):
             raise StaleSession("The card session changed")
         return lease, view, fields, entry_id
 
@@ -784,20 +797,17 @@ class BrowserBroker(PasskeyBrokerMixin):
             if not self._probe_allowed(origin):
                 password = ""
                 return self._probe_limited()
-            from .app.catalog import _classify_browser_submission
             entries = self.session.find_web(origin)
-            result = _classify_browser_submission(entries, username, password)
-            status = result["status"]
-            prompt = all(normalized_policy(e.get("policy"))["save_prompts"] for e in entries if e["username"] == username)
-            if result["match"]:
-                # Signing in with an already-saved login is the moment to pick
-                # up its site icon; no prompt is shown in that case.
+            try:
+                status = self._account_status(entries, username)
+                prompt = all(normalized_policy(e.get("policy"))["save_prompts"]
+                             for e in entries if e["username"] == username)
+            finally:
                 for entry in entries:
-                    if entry.get("username") == username and not entry.get("site_icon"):
-                        self._store_site_icon(entry["id"], request)
-            for entry in entries:
-                entry.clear()
-            if result["match"] or not prompt:
+                    entry.clear()
+            # Not whether the password matches (audit M-3): the page gets the
+            # same reply, and the same prompt, for a right and a wrong guess.
+            if not prompt:
                 password = ""
                 return {"ok": True, "stored": False, "status": status}
         token = secrets.token_urlsafe(24)
@@ -845,6 +855,47 @@ class BrowserBroker(PasskeyBrokerMixin):
         self._clear_pending_for_context(origin, context)
         return {"ok": True}
 
+    @staticmethod
+    def _account_status(entries: list[dict[str, Any]], username: str) -> str:
+        """``exists`` when a login with this username is saved for the origin, else ``new``.
+
+        All a page may learn about a submitted login (audit M-3, the Safari
+        model): never whether its password matches the stored one. That
+        comparison runs only in ``_submission_status``, after the user clicked
+        Save in the page, and its answer is shown only in the desktop app.
+        """
+        wanted = username.encode("utf-8")
+        found = False
+        for entry in entries:
+            if hmac.compare_digest(str(entry.get("username", "")).encode("utf-8"), wanted):
+                found = True
+        return "exists" if found else "new"
+
+    def _already_saved(self, origin: str, username: str, request: dict[str, Any]) -> dict[str, Any]:
+        """The Save click sent a login that is stored unchanged: say so in the app, write nothing.
+
+        The page gets the same ``ok`` reply as after a save, so the panel
+        closes the same way for a right and a wrong password.
+        """
+        entries = self.session.find_web(origin)
+        try:
+            missing_icon = [str(e["id"]) for e in entries
+                            if e.get("username") == username and e.get("id") and not e.get("site_icon")]
+        finally:
+            for entry in entries:
+                entry.clear()
+        for entry_id in missing_icon:
+            # Signing in with an already-saved login is the moment to pick up its site icon.
+            self._store_site_icon(entry_id, request)
+        try:
+            self.ui.notify("info", "Already saved",
+                           f"{username or '(no username)'} on {origin} is already saved with this password "
+                           f"in profile {self.active_profile.name}. Nothing was changed.")
+        except Exception as exc:  # noqa: BLE001 - a missing notice must not fail the reply
+            from .error_log import log_exception
+            log_exception("browser-save", exc)
+        return {"ok": True, "status": "existing"}
+
     def _submission_status(self, origin: str, username: str, password: str) -> str:
         """exact / password_changed / new for a submitted login, without keeping decrypted entries around."""
         from .app.catalog import _classify_browser_submission
@@ -891,7 +942,7 @@ class BrowserBroker(PasskeyBrokerMixin):
         if status == "exact":
             item["password"] = ""
             store.pop(key, None)
-            return {"ok": True, "status": "existing"}
+            return self._already_saved(origin, username, request)
         updating = status == "password_changed"
         if not updating:
             full = self._item_limit_full()
@@ -944,9 +995,10 @@ class BrowserBroker(PasskeyBrokerMixin):
             "Save this login from the browser in LocalGateKeys?"))
 
     # -- password-guess oracle limits ---------------------------------------
-    # check_browser / capture_browser compare a page-supplied password with
-    # the stored one and need no gesture (they run on form submit), so bound
-    # how often they answer: they must not become a guessing oracle.
+    # check_browser / capture_browser need no gesture (they run on form
+    # submit). They no longer compare the password (they answer only new /
+    # exists, audit M-3), but they still reveal whether a username is saved
+    # for the origin, so bound how often they answer.
     #
     # Limits are per origin and per registrable domain (one site with many
     # subdomains), so one site cannot use up the budget of the others. The
@@ -997,15 +1049,17 @@ class BrowserBroker(PasskeyBrokerMixin):
     def _check_browser(self, request, origin, context):
         if not self._session_available(): return {"ok": True, "locked": True, "status": "locked", "match": False}
         if not self._probe_allowed(origin): return self._probe_limited()
-        from .app.catalog import _classify_browser_submission
         username = self._validate_remote_text(request.get("username"), "username", 512, True)
-        password = self._validate_remote_text(request.get("password"), "password", 4096, False)
+        # Validated like before, but never compared here (audit M-3): only the desktop save compares.
+        self._validate_remote_text(request.get("password"), "password", 4096, False)
         entries = self.session.find_web(origin)
-        result = _classify_browser_submission(entries, username, password)
-        show = all(normalized_policy(e.get("policy"))["save_prompts"] for e in entries if e["username"] == username)
-        for entry in entries: entry.clear()
-        return {"ok": True, "locked": False, "match": bool(result["match"]), "status": result["status"],
-                "prompt": show}
+        try:
+            status = self._account_status(entries, username)
+            show = all(normalized_policy(e.get("policy"))["save_prompts"] for e in entries if e["username"] == username)
+        finally:
+            for entry in entries: entry.clear()
+        # ``match`` stays in the reply for older extensions and is always false.
+        return {"ok": True, "locked": False, "match": False, "status": status, "prompt": show}
 
     def _store_site_icon(self, entry_id, request) -> None:
         """Keep the page icon the extension read from the browser's own cache.
@@ -1031,16 +1085,16 @@ class BrowserBroker(PasskeyBrokerMixin):
         username = self._validate_remote_text(request.get("username"), "username", 512, True)
         password = self._validate_remote_text(request.get("password"), "password", 4096, False)
         # A stale page save banner may not silently unlock another person's vault.
-        expected_session = request.get("session_id")
-        if expected_session:
-            lease = self.guard.lease()
-            if lease.token != expected_session: raise StaleSession()
+        # The extension's manual save sends no session_id; one that is sent,
+        # even an empty one, must name the current lease.
+        if request.get("session_id") is not None:
+            if not self._session_id_matches(request.get("session_id"), self.guard.lease()): raise StaleSession()
         if not self.ensure_unlocked(): return {"ok": False, "error": "user_cancelled"}
         lease = self.guard.lease()
         status = self._submission_status(origin, username, password)
         if status == "exact":
             self._clear_pending_for_context(origin, context)
-            return {"ok": True, "status": "existing"}
+            return self._already_saved(origin, username, request)
         updating = status == "password_changed"
         if not updating:
             full = self._item_limit_full()

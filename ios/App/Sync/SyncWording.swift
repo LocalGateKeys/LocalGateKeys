@@ -44,6 +44,7 @@ enum SyncWording {
         "write-failed": "This PC could not write its sync file. Check that the folder is available and not read-only.",
         "too-large": "The sync data is over the sync limit (20,000 items or 64 MB). Some changes were not sent.",
         "counter-resynced": "This vault was restored from an older copy; sync caught up automatically.",
+        "signer-changed": "{subject} has a different signing key in the sync folder's member list than before. If you did not set that device up again, remove devices you do not trust.",
         // merging
         "trash-full": "Sync could not move deleted items to the trash because the trash is full. Empty the trash, then sync again.",
         "history-quota": "Sync could not keep item history because the history limit was reached. Clear old history, then sync again.",
@@ -59,6 +60,8 @@ enum SyncWording {
         "peer-epoch-behind": "{subject} has an older sync key. Pair it again with Show QR code.",
         "offer-used-or-expired": "This pairing code was used up or expired. Show a new code.",
         "too-many-peers": "The other device already has the most paired devices. Remove one there first.",
+        "peer-update-needed": "{subject} runs an older LocalGateKeys and cannot sync over Wi-Fi with this PC. Update LocalGateKeys on that device.",
+        "lan-update-needed": "Another device runs a newer Wi-Fi sync. Update LocalGateKeys on this PC.",
         "lan-not-listening": "Wi-Fi sync is not listening yet.",
         "listen-failed": "Wi-Fi sync could not start listening. Check the address and port, and that no other app uses that port.",
         "no-endpoint": "{subject} has no network address; it connects to this PC instead.",
@@ -87,7 +90,8 @@ enum SyncWording {
     static let fileKinds: Set<String> = ["corrupt", "rollback", "suspicious-rewrite", "epoch-mismatch", "device-mismatch",
                                          "unreadable", "stale-device"]
     static let deviceKinds: Set<String> = ["member-dropped", "bad-name", "bad-peer-data", "bad-peer-record", "epoch-behind",
-                                           "peer-epoch-behind", "no-endpoint", "peer-revoked", "peer-mismatch", "group-mismatch"]
+                                           "peer-epoch-behind", "no-endpoint", "peer-revoked", "peer-mismatch", "group-mismatch",
+                                           "peer-update-needed", "signer-changed"]
     /// Issues that stop sync until the user acts; the screen offers Reset sync.
     static let resetKinds: Set<String> = ["folder-has-other-group", "rotation-conflict", "removed-or-conflict", "state-corrupt",
                                           "keyring-corrupt", "tampered", "identity-mismatch", "keyring-rollback"]
@@ -125,6 +129,8 @@ enum SyncWording {
         "offer-used-or-expired": "This pairing code was used up or expired. Show a new code.",
         "unreachable": "The other device could not be reached. Check that both are on the same Wi-Fi and that the other device shows its code.",
         "too-many-peers": "The other device already has the most paired devices. Remove one there first.",
+        "declined": "The other device declined, or nobody chose Accept there in time. Show a new code there and choose Accept when both screens show the same code.",
+        "update-needed": "Update LocalGateKeys on this PC to pair with that device.",
         "bad-offer": "That is not a valid LocalGateKeys pairing code.",
         "refused": "The other device refused the pairing. Show a new code and try again.",
         "not-our-offer": "This pairing code belongs to another sync group. Show a new code.",
@@ -146,7 +152,16 @@ enum SyncWording {
     static func resetResultText(_ cleared: Bool) -> String { cleared ? "Sync was reset on this PC." : "There was nothing to reset." }
     static let passwordBackoffText = "Too many wrong sync passwords. Wait 30 seconds, then try again."
 
-    // MARK: Wi-Fi pairing failures (phone only: "the PC" here is the inviting desktop, never rewritten)
+    // MARK: Wi-Fi pairing (phone only: "the PC" here is the inviting desktop, never rewritten)
+
+    /// Shown under the verification code while the inviting device waits for its user's Accept.
+    static let verificationCodeHint = "Check that the other device shows this code, then choose Accept there."
+
+    /// The 6-digit verification code as both screens show it: "123 456".
+    static func verificationCodeText(_ code: String) -> String {
+        guard code.count == 6 else { return code }
+        return String(code.prefix(3)) + " " + String(code.suffix(3))
+    }
 
     /// `host:port`, IPv6 in brackets.
     static func hostPort(_ e: LanEndpoint) -> String { e.host.contains(":") ? "[\(e.host)]:\(e.port)" : "\(e.host):\(e.port)" }

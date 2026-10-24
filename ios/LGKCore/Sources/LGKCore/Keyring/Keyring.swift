@@ -8,10 +8,19 @@ public struct KeyringError: Error, Equatable, Sendable, CustomStringConvertible 
     public var description: String { detail.isEmpty ? reason : "\(reason): \(detail)" }
 }
 
-/// Password- and device-wrapped group keyring (desktop `localvault.sync.keyring`, format 1).
-/// Keyrings are handled as `JSONValue` so an untouched keyring re-encodes byte-identically.
+/// Password- and device-wrapped group keyring (desktop `localvault.sync.keyring`, format 2; format 1 is
+/// still read). Keyrings are handled as `JSONValue` so an untouched keyring re-encodes byte-identically.
+///
+/// Format 2 (audit R-4): each member entry also lists its Ed25519 view-signing key `signing_public` and
+/// `signing_proof`, the member's own signature over `keyring-member|v2|` + group id + `|` + device id + `|`
+/// + `exchange_public` + `|` + `signing_public` (both keys as the entry's base64 text). Both are null for
+/// a member carried over from format 1, else both set; the structure check verifies every proof
+/// (`bad-member-proof`). Every write (join, attach) produces format 2.
 public enum Keyring {
-    static let format: Int64 = 1
+    /// The format every write produces.
+    static let format: Int64 = 2
+    /// The formats this version reads (format 1 has no member signing keys).
+    static let readFormats: Set<Int64> = [1, 2]
     static let kdfName = "argon2id"
     static let kdfMemoryKiB: Int64 = 131072
     static let kdfIterations: Int64 = 4
@@ -34,6 +43,8 @@ public enum Keyring {
     static let macInfo = Array("localgatekeys|sync|keyring-mac|v1|".utf8)
     static let nameAAD = Array("lgk-keyring-member-name-v1|".utf8)
     static let nameInfo = Array("localgatekeys|sync|member-name|v1|".utf8)
+    static let memberProofLabel = Array("localgatekeys|sync|keyring-member|v2|".utf8)
+    static let proofLen = 64
 
     // MARK: JSON access (only on structurally verified keyrings unless noted)
 
@@ -164,6 +175,8 @@ public enum Keyring {
 
     // MARK: device wrap
 
+    /// This device's entry: `not-member`, or `key-mismatch` when its exchange key, or a listed signing key,
+    /// is not this device's own.
     static func member(_ ring: JSONValue, _ identity: DeviceIdentity) throws -> [String: JSONValue] {
         for m in arr(obj(ring)["members"]) {
             let mo = obj(m)
@@ -171,10 +184,51 @@ public enum Keyring {
                 guard str(mo["exchange_public"]) == Base64.encode(identity.exchangePublicKey) else {
                     throw KeyringError("key-mismatch", "device key differs from the registered member")
                 }
+                if let listed = str(mo["signing_public"]), listed != Base64.encode(identity.signingPublicKey) {
+                    throw KeyringError("key-mismatch", "signing key differs from the registered member")
+                }
                 return mo
             }
         }
         throw KeyringError("not-member", "device is not a member of this keyring")
+    }
+
+    // MARK: member signing keys (format 2)
+
+    /// What `signing_proof` signs (`_proof_message`; the two keys as the entry's base64 text).
+    static func proofMessage(groupID: String, deviceID: String, exchangePublic: String, signingPublic: String) -> [UInt8] {
+        memberProofLabel + Array(groupID.utf8) + bar + Array(deviceID.utf8) + bar
+            + Array(exchangePublic.utf8) + bar + Array(signingPublic.utf8)
+    }
+
+    /// `_check_member_proof`: `signing_public` and `signing_proof` both null, or a 32-byte key with its
+    /// member's valid 64-byte proof (`bad-member-proof`).
+    static func checkMemberProof(groupID: String, _ m: [String: JSONValue]) throws {
+        let key = m["signing_public"], proof = m["signing_proof"]
+        if key == .null && proof == .null { return }
+        guard key != .null, proof != .null else {
+            throw KeyringError("bad-member-proof", "signing_public and signing_proof must both be set or both null")
+        }
+        let rawKey = try b64(key, 32, "member signing_public")
+        let rawProof = try b64(proof, proofLen, "member signing_proof")
+        let id = str(m["device_id"]) ?? ""
+        let message = proofMessage(groupID: groupID, deviceID: id, exchangePublic: str(m["exchange_public"]) ?? "",
+                                   signingPublic: str(key) ?? "")
+        guard DeviceIdentity.verify(signature: rawProof, message: message, publicKey: rawKey) else {
+            throw KeyringError("bad-member-proof", "member \(id): signing proof does not verify")
+        }
+    }
+
+    /// `member_signing_keys`: device id -> base64 Ed25519 view-signing key of every member whose entry lists
+    /// one. Call it only on an accepted keyring (the structure check verified each listed key's proof);
+    /// members without a key (format 1, or carried over from it) are absent.
+    public static func memberSigningKeys(_ ring: JSONValue) -> [String: String] {
+        var out: [String: String] = [:]
+        for m in arr(obj(ring)["members"]) {
+            let mo = obj(m)
+            if let id = str(mo["device_id"]), let key = str(mo["signing_public"]) { out[id] = key }
+        }
+        return out
     }
 
     /// Open this device's wrap (structure must be verified): `not-member`, `key-mismatch`, `device-wrap`.

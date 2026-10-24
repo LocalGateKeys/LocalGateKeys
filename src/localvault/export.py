@@ -36,6 +36,7 @@ from .importers import ImportedRecord
 from .importers import kdbx as _kdbx
 from .importers._source import iso_timestamp
 from .importers.bitwarden import BITWARDEN_CSV_COLUMNS
+from .winpaths import system32
 
 EXPORT_FORMATS: dict[str, str] = {
     "csv": "Bitwarden-compatible CSV (plaintext)",
@@ -244,11 +245,6 @@ def _records_from(source: Any) -> tuple[list[ImportedRecord], list[str]]:
 
 
 # --------------------------------------------------------------------------- writing
-def _system32(executable: str) -> str:
-    """Absolute path of a Windows tool so PATH entries cannot shadow it."""
-    return os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", executable)
-
-
 def _current_user_sid() -> str | None:
     """Return the current Windows account SID (names can be ambiguous for icacls)."""
     try:
@@ -286,7 +282,7 @@ def _current_user_sid() -> str | None:
     except (OSError, AttributeError, ValueError):
         pass
     try:
-        output = subprocess.run([_system32("whoami.exe"), "/user", "/fo", "csv", "/nh"], check=True, capture_output=True,  # noqa: S603 - fixed System32 path, constant arguments
+        output = subprocess.run([system32("whoami.exe"), "/user", "/fo", "csv", "/nh"], check=True, capture_output=True,  # noqa: S603 - fixed System32 path, constant arguments
                                 text=True, timeout=30, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)).stdout
         row = next(csv.reader(io.StringIO(output.strip())), None)
         if row and len(row) >= 2 and row[1].startswith("S-1-"):
@@ -314,7 +310,7 @@ def _restrict_permissions(path: Path) -> bool:
 
 def _icacls(path: Path, *arguments: str) -> None:
     flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-    subprocess.run([_system32("icacls.exe"), str(path), *arguments], check=True, stdout=subprocess.DEVNULL,  # noqa: S603 - fixed System32 path, no shell
+    subprocess.run([system32("icacls.exe"), str(path), *arguments], check=True, stdout=subprocess.DEVNULL,  # noqa: S603 - fixed System32 path, no shell
                    stderr=subprocess.DEVNULL, creationflags=flags, timeout=30)
 
 

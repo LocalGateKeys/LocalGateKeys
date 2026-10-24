@@ -249,7 +249,7 @@ def test_face_enable_and_disable(env, monkeypatch):
     env.capture.result = [[0.2] * 128 for _ in range(8)]
     monkeypatch.setattr("localvault.face_unlock.prepare_enrollment", lambda pid, ctx, samples, **kw: calls.append(len(samples)) or "prepared")
     monkeypatch.setattr("localvault.face_unlock.commit_enrollment", lambda session, prepared: calls.append(prepared))
-    monkeypatch.setattr("localvault.face_unlock.disable_enrollment", lambda session: calls.append("off"))
+    monkeypatch.setattr("localvault.face_unlock.disable_enrollment", lambda session, password=None: calls.append("off"))
     env.port.passwords = [MASTER]
     assert env.face.enable()["message"] == "Camera verification enabled. Lock the vault and test it before relying on it."
     assert env.port.asked == ["Authorize camera verification setup", "Enable ordinary-webcam verification?"]

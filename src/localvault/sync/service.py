@@ -624,15 +624,29 @@ class _GatedEnrollment:
         if handler is None:
             self._inner.set_enrollment_handler(None)
             return
-        gated = self._gate.wrap(handler)
-        prefilter = getattr(getattr(handler, "__self__", None), "enroll_prefilter", None)
+        owner = getattr(handler, "__self__", None)
+        prefilter = getattr(owner, "enroll_prefilter", None)
+        verify, wait, finish = (getattr(owner, name, None)
+                                for name in ("enroll_verify", "await_decision", "enroll_finish"))
+        if callable(verify) and callable(wait) and callable(finish):
+            # Verify and admit inside the gate; the wait for Accept (up to a minute) holds no gate,
+            # so sync runs and other requests go on while the prompt is open.
+            gated_verify, gated_finish = self._gate.wrap(verify), self._gate.wrap(finish)
+
+            def run(raw: bytes) -> bytes | None:
+                first = gated_verify(raw)
+                if isinstance(first, bytes) or first is None:
+                    return first
+                return gated_finish(first, wait(first))
+        else:
+            run = self._gate.wrap(handler)
 
         def enroll(raw: bytes) -> bytes | None:
             if callable(prefilter):
                 answered, reply = prefilter(raw)
                 if answered:
                     return reply
-            return gated(raw)
+            return run(raw)
 
         self._inner.set_enrollment_handler(enroll)
 
@@ -818,6 +832,11 @@ class LanAdapter:
             issues.extend(responder.last_report.issues)  # problems seen while serving peers
             licenses.extend(responder.last_report.licenses)  # licences received from peers we served
             responder.last_report = None
+        take_outdated = getattr(transport, "take_outdated_peers", None)
+        if callable(take_outdated):
+            # Paired devices whose signed hello was of an older protocol (refused, never downgraded).
+            for peer_id in take_outdated():
+                issues.append(SyncIssue("peer-update-needed", f"{peer_id}: older Wi-Fi sync version"))
         return RunReport(applied=applied, deleted=deleted, conflicts=conflicts, skipped=tuple(sorted(skipped)),
                          issues=tuple(issues), own_states=own, wrote=wrote, licenses=tuple(licenses))
 
@@ -1239,23 +1258,43 @@ class SyncService:
 
         A plain attribute read (no gate), so the Tk thread may poll it.
         """
+        enrolled = self.enrollment_peer(offer_id)
+        return None if enrolled is None else enrolled.device_id
+
+    def _lan_responder(self) -> Any:
         lan = next((t for t in self._transports if hasattr(t, "start_enrollment")), None)
-        responder = getattr(lan, "responder", None)
-        pairing = getattr(responder, "pairing", None)
-        enrolled = getattr(responder, "enrolled", None)
-        if enrolled is None or pairing is None or getattr(pairing.offer, "offer_id", None) != offer_id:
-            return None
-        return enrolled.device_id
+        return getattr(lan, "responder", None)
 
     def enrollment_peer(self, offer_id: str) -> Any:
-        """The ``PairedDevice`` that enrolled with *offer_id* (id and fingerprint for the screen), or None."""
-        lan = next((t for t in self._transports if hasattr(t, "start_enrollment")), None)
-        responder = getattr(lan, "responder", None)
-        pairing = getattr(responder, "pairing", None)
+        """The ``PairedDevice`` accepted with *offer_id* (id and fingerprint for the screen), or None."""
+        responder = self._lan_responder()
         enrolled = getattr(responder, "enrolled", None)
-        if enrolled is None or pairing is None or getattr(pairing.offer, "offer_id", None) != offer_id:
+        if enrolled is None or getattr(responder, "enrolled_offer", None) != offer_id:
             return None
         return enrolled
+
+    def pending_enrollment(self, offer_id: str) -> Any:
+        """The ``lan_sync.PendingEnrollment`` waiting for Accept on *offer_id* (name, code), or None.
+
+        A plain attribute read (no gate), like ``enrollment_result``.
+        """
+        pending = getattr(self._lan_responder(), "pending", None)
+        if pending is None or getattr(pending, "offer_id", None) != offer_id:
+            return None
+        return pending
+
+    def enrollment_declined(self, offer_id: str) -> bool:
+        """True once the request for *offer_id* was declined (by the user or the Accept timeout)."""
+        return getattr(self._lan_responder(), "declined_offer", None) == offer_id
+
+    def decide_enrollment(self, offer_id: str, accept: bool) -> bool:
+        """Accept or Decline the request waiting on *offer_id*; False when none waits (answered or timed out).
+
+        Needs no gate: it wakes the transport thread, which admits the device inside the gate.
+        """
+        responder = self._lan_responder()
+        decide = getattr(responder, "decide", None)
+        return bool(decide(offer_id, accept)) if callable(decide) else False
 
     def cancel_enrollment(self, offer_id: str) -> bool:
         """Disarm the armed offer *offer_id* now (the QR window was closed), through a gated worker job.

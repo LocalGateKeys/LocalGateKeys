@@ -26,16 +26,23 @@ Format rules (version 1; the iOS app implements these byte for byte)
   bundle JSON, at most 1200 characters.  A reader rejects other prefixes, padding, other
   characters, non-canonical base64 and JSON that is not byte-identical to its own canonical form.
 * Enrollment transcript = canonical JSON of ``{"protocol":"localgatekeys-sync-enrollment",
-  "version":1,"offer":public_dict,"code":code,"invitee_device_id","invitee_signing_public"
-  (base64),"invitee_exchange_public" (base64),"invitee_endpoint":null|{"host","port"}}``.
+  "version":2,"offer":public_dict,"code":code,"invitee_device_id","invitee_signing_public"
+  (base64),"invitee_exchange_public" (base64),"invitee_endpoint":null|{"host","port"},
+  "invitee_name"}`` (``ENROLL_VERSION``; version 1 had no ``invitee_name``).  ``invitee_name`` is
+  the new device's name for the inviter's Accept prompt: 1..64 UTF-8 bytes, no control
+  character (U+0000..U+001F, U+007F).
+* Verification code (``verification_code``): the first 4 bytes of SHA-256(
+  ``b"localgatekeys|sync|enroll-verify|v2|"`` + transcript) as a big-endian unsigned integer,
+  modulo 10**6, as 6 ASCII digits.  The new device shows it while it waits; the inviter shows it
+  next to the device name with Accept and Decline, and answers only after Accept.
 * Request (new device -> inviter): ``b"LGKENROLL1\\n"`` + canonical JSON ``{"offer_id","eph",
   "nonce","ct"}`` with ``eph`` the base64 of a fresh X25519 public key (32 raw), ``nonce`` 12 random
   bytes.  Key = ``HKDF(SHA256, 32, salt=transcript_nonce (raw 32),
   info=b"localgatekeys|sync|enroll-request|v1|" + offer_id).derive(X25519(eph_private,
   inviter_exchange_public))``.  ``ct`` = AES-256-GCM(key, nonce, plaintext, AAD) (ciphertext
   followed by the 16-byte tag, base64), AAD = canonical JSON ``{"offer_id","eph"}``.  The
-  plaintext is canonical JSON of ``{"version":1,"offer_id","device_id","signing_public",
-  "exchange_public","endpoint":null|{"host","port"},"signature","mac"}`` with ``signature`` =
+  plaintext is canonical JSON of ``{"version":2,"offer_id","device_id","signing_public",
+  "exchange_public","endpoint":null|{"host","port"},"name","signature","mac"}`` with ``signature`` =
   Ed25519(invitee signing key) over ``b"localgatekeys|sync|enroll-sig|v1|" + transcript`` (base64
   of 64 bytes) and ``mac`` = HMAC-SHA256(pairing_secret raw,
   ``b"localgatekeys|sync|enroll-mac|v1|" + transcript``) (base64 of 32 bytes).  The endpoint
@@ -50,7 +57,9 @@ Format rules (version 1; the iOS app implements these byte for byte)
   ``sig`` = Ed25519(inviter signing key) over ``b"localgatekeys|sync|enroll-reply-sig|v1|" + bound
   + canonical(header) + ct`` (``ct`` as raw bytes), checked against the signing key pinned by the QR.
 * Refusal: ``b"LGKENROLLNO1\\n"`` + canonical JSON ``{"reason"}`` with a reason from
-  ``REFUSAL_REASONS``.  Requests and replies are at most 16 KiB.
+  ``REFUSAL_REASONS``: ``declined`` (the user chose Decline, or did not answer within the
+  Accept timeout), ``update-needed`` (a version-1 request: the new device needs an update).
+  Requests and replies are at most 16 KiB.
 """
 from __future__ import annotations
 
@@ -671,13 +680,44 @@ _REPLY_INFO = b"localgatekeys|sync|enroll-reply|v1|"
 _MAC_LABEL = b"localgatekeys|sync|enroll-mac|v1|"
 _SIG_LABEL = b"localgatekeys|sync|enroll-sig|v1|"
 _REPLY_SIG_LABEL = b"localgatekeys|sync|enroll-reply-sig|v1|"
+_VERIFY_LABEL = b"localgatekeys|sync|enroll-verify|v2|"
+#: Version of the enrollment request body and transcript (2 added the device name and the Accept step).
+ENROLL_VERSION = 2
 _REQUEST_FIELDS = frozenset({"version", "offer_id", "device_id", "signing_public", "exchange_public",
-                             "endpoint", "signature", "mac"})
+                             "endpoint", "name", "signature", "mac"})
 _REPLY_FIELDS = frozenset({"group_id", "epoch", "key", "device_id", "signing_public"})
+#: Longest device name in an enrollment request, in UTF-8 bytes (the keyring's member name rule).
+MAX_ENROLL_NAME_BYTES = 64
+#: The name this desktop gives itself when it joins by QR (no host name: see keyring.DEFAULT_DEVICE_NAME_PC).
+DEFAULT_ENROLL_NAME = "Windows PC"
 
 
-#: Refusal reasons the inviter may state: generic, offer used up or expired, peer list full.
-REFUSAL_REASONS = frozenset({"refused", "used-or-expired", "full"})
+#: Refusal reasons the inviter may state: generic, offer used up or expired, peer list full,
+#: declined on the inviting device (or no answer in time), and a request of an older version.
+REFUSAL_REASONS = frozenset({"refused", "used-or-expired", "full", "declined", "update-needed"})
+
+
+def check_device_name(name: Any) -> str:
+    """A device name for the Accept prompt: 1..64 UTF-8 bytes, no C0 control character and no DEL."""
+    if not isinstance(name, str) or any(ord(char) < 0x20 or ord(char) == 0x7F for char in name):
+        raise PairingError("Device name is malformed")
+    try:
+        size = len(name.encode("utf-8"))
+    except UnicodeEncodeError as exc:
+        raise PairingError("Device name is malformed") from exc
+    if not 1 <= size <= MAX_ENROLL_NAME_BYTES:
+        raise PairingError("Device name must be 1..64 UTF-8 bytes")
+    return name
+
+
+def verification_code(transcript: bytes) -> str:
+    """The 6-digit code both screens show for one enrollment (see the module docstring)."""
+    digest = hashlib.sha256(_VERIFY_LABEL + transcript).digest()
+    return f"{int.from_bytes(digest[:4], 'big') % 10**6:06d}"
+
+
+class EnrollmentOutdated(PairingError):
+    """A request that decrypted but has the version-1 body: the new device needs an update."""
 
 
 class EnrollmentRefused(PairingAuthenticationError):
@@ -702,6 +742,12 @@ class EnrollmentRequest:
     exchange_public: bytes
     endpoint: tuple[str, int] | None
     transcript: bytes = field(repr=False)
+    name: str = DEFAULT_ENROLL_NAME
+
+    @property
+    def code(self) -> str:
+        """The verification code the new device shows (``verification_code``)."""
+        return verification_code(self.transcript)
 
 
 def _hkdf(shared: bytes, salt: bytes, info: bytes) -> bytes:
@@ -729,16 +775,18 @@ def _parse_endpoint(value: Any) -> tuple[str, int] | None:
 
 
 def enrollment_transcript(offer: PairingOffer, device_id: str, signing_public: bytes,
-                          exchange_public: bytes, endpoint: tuple[str, int] | None) -> bytes:
+                          exchange_public: bytes, endpoint: tuple[str, int] | None,
+                          name: str = DEFAULT_ENROLL_NAME) -> bytes:
     return _canonical({
         "protocol": "localgatekeys-sync-enrollment",
-        "version": PAIRING_PROTOCOL_VERSION,
+        "version": ENROLL_VERSION,
         "offer": offer.public_dict(),
         "code": offer.code,
         "invitee_device_id": _ident(device_id, "invitee device id"),
         "invitee_signing_public": _b64e(signing_public),
         "invitee_exchange_public": _b64e(exchange_public),
         "invitee_endpoint": _endpoint_dict(endpoint),
+        "invitee_name": check_device_name(name),
     })
 
 
@@ -748,13 +796,14 @@ def _mac(offer: PairingOffer, transcript: bytes) -> bytes:
 
 def build_enrollment_request(offer: PairingOffer, identity: DeviceIdentity, *,
                              endpoint: tuple[str, int] | None = None,
+                             name: str = DEFAULT_ENROLL_NAME,
                              now: float | int | None = None,
                              _eph_seed: bytes | None = None,
                              _nonce: bytes | None = None) -> bytes:
     """New-device side: the one enrollment request for a scanned *offer*.
 
-    ``_eph_seed`` (32-byte X25519 private key) and ``_nonce`` (12 bytes) exist only for the
-    deterministic test vectors.
+    *name* is shown on the inviting device's Accept prompt.  ``_eph_seed`` (32-byte
+    X25519 private key) and ``_nonce`` (12 bytes) exist only for the deterministic test vectors.
     """
     _check_offer(offer, now)
     if not isinstance(identity, DeviceIdentity) or identity.device_id == offer.inviter_device_id:
@@ -762,12 +811,12 @@ def build_enrollment_request(offer: PairingOffer, identity: DeviceIdentity, *,
     if endpoint is not None:
         endpoint = _private_lan_endpoint(*endpoint)
     transcript = enrollment_transcript(offer, identity.device_id, identity.signing_public_key,
-                                       identity.exchange_public_key, endpoint)
+                                       identity.exchange_public_key, endpoint, name)
     body = {
-        "version": PAIRING_PROTOCOL_VERSION, "offer_id": offer.offer_id, "device_id": identity.device_id,
+        "version": ENROLL_VERSION, "offer_id": offer.offer_id, "device_id": identity.device_id,
         "signing_public": _b64e(identity.signing_public_key),
         "exchange_public": _b64e(identity.exchange_public_key),
-        "endpoint": _endpoint_dict(endpoint),
+        "endpoint": _endpoint_dict(endpoint), "name": name,
         "signature": _b64e(identity.sign(_SIG_LABEL + transcript)),
         "mac": _b64e(_mac(offer, transcript)),
     }
@@ -834,8 +883,11 @@ def _verify_enrollment_body(offer: PairingOffer, plain: bytes,
                             reserved_ids: frozenset[str]) -> EnrollmentRequest:
     """Checks after a successful decrypt (the sender holds the QR); failures count as attempts."""
     body = _strict_json(plain)
-    if (not isinstance(body, dict) or set(body) != _REQUEST_FIELDS
-            or body["version"] != PAIRING_PROTOCOL_VERSION or body["offer_id"] != offer.offer_id):
+    if (isinstance(body, dict) and type(body.get("version")) is int and body["version"] < ENROLL_VERSION
+            and body.get("offer_id") == offer.offer_id):
+        raise EnrollmentOutdated("The new device needs an update (enrollment version 1)")
+    if (not isinstance(body, dict) or set(body) != _REQUEST_FIELDS or type(body["version"]) is not int
+            or body["version"] != ENROLL_VERSION or body["offer_id"] != offer.offer_id):
         raise PairingError("Enrollment request is malformed")
     device_id = _ident(body["device_id"], "invitee device id")
     if device_id == offer.inviter_device_id or device_id in reserved_ids:
@@ -843,7 +895,8 @@ def _verify_enrollment_body(offer: PairingOffer, plain: bytes,
     signing = _b64d(body["signing_public"], length=32, field="invitee signing key")
     exchange = _b64d(body["exchange_public"], length=32, field="invitee exchange key")
     endpoint = _parse_endpoint(body["endpoint"])
-    transcript = enrollment_transcript(offer, device_id, signing, exchange, endpoint)
+    name = check_device_name(body["name"])
+    transcript = enrollment_transcript(offer, device_id, signing, exchange, endpoint, name)
     mac = _b64d(body["mac"], length=32, field="enrollment mac")
     if not hmac.compare_digest(mac, _mac(offer, transcript)):
         raise PairingCodeError("Enrollment does not prove the pairing secret")
@@ -852,7 +905,7 @@ def _verify_enrollment_body(offer: PairingOffer, plain: bytes,
             _b64d(body["signature"], length=64, field="enrollment signature"), _SIG_LABEL + transcript)
     except (InvalidSignature, ValueError) as exc:
         raise PairingAuthenticationError("Enrollment signature is invalid") from exc
-    return EnrollmentRequest(device_id, signing, exchange, endpoint, transcript)
+    return EnrollmentRequest(device_id, signing, exchange, endpoint, transcript, name)
 
 
 def seal_enrollment_reply(inviter: DeviceIdentity, offer: PairingOffer, request: EnrollmentRequest,
@@ -882,7 +935,8 @@ def seal_enrollment_reply(inviter: DeviceIdentity, offer: PairingOffer, request:
 
 
 def open_enrollment_reply(offer: PairingOffer, identity: DeviceIdentity, raw: Any, *,
-                          endpoint: tuple[str, int] | None = None) -> tuple[str, int, bytes]:
+                          endpoint: tuple[str, int] | None = None,
+                          name: str = DEFAULT_ENROLL_NAME) -> tuple[str, int, bytes]:
     """New-device side: verify the inviter's reply and return (group_id, epoch, key)."""
     if isinstance(raw, bytes) and raw.startswith(ENROLL_REFUSED_MAGIC):
         reason = "refused"
@@ -901,7 +955,7 @@ def open_enrollment_reply(offer: PairingOffer, identity: DeviceIdentity, raw: An
     if endpoint is not None:
         endpoint = _private_lan_endpoint(*endpoint)
     transcript = enrollment_transcript(offer, identity.device_id, identity.signing_public_key,
-                                       identity.exchange_public_key, endpoint)
+                                       identity.exchange_public_key, endpoint, name)
     bound = hashlib.sha256(transcript).digest()
     header = {"eph": outer["eph"], "nonce": outer["nonce"]}
     eph = _b64d(outer["eph"], length=32, field="reply key")

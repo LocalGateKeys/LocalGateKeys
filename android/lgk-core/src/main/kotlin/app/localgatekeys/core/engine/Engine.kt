@@ -96,17 +96,23 @@ object Engine {
                 upserts.add(r.with(merged, null))
             } else if (loc.deleted || r.deleted) {
                 val live = if (r.deleted) loc else r
-                upserts.add(live.with(merged, null))
-                conflicts.add(loc to r)
+                // Equal vectors and the local live state wins: the upsert would be a no-op that
+                // repeats on every round, so nothing is reported (merge stays idempotent).
+                if (live === r || rel != VersionVector.Relation.EQUAL) {
+                    upserts.add(live.with(merged, null))
+                    conflicts.add(loc to r)
+                }
             } else {
                 val (win, lose) = if (outranks(r, loc)) r to loc else loc to r
-                upserts.add(win.with(merged, null))
+                var changed = win === r || rel != VersionVector.Relation.EQUAL
+                if (changed) upserts.add(win.with(merged, null))
                 val cid = ConflictCopy.id(r.itemId, ConflictCopy.contentDigest(lose.item!!))
                 if (local[cid] == null && cid !in seen) {
                     val body = (lose.item as? JsonValue.Obj) ?: throw EngineException("item must be a dict")
                     copies.add(ItemState(cid, lose.vv, false, null, JsonValue.Obj(body.fields + ("id" to JsonValue.Str(cid)))))
+                    changed = true
                 }
-                conflicts.add(loc to r)
+                if (changed) conflicts.add(loc to r)
             }
         }
         return MergeOutcome(upserts, deletes, conflicts, copies)

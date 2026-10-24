@@ -13,6 +13,17 @@
       "id": "9ca65df7adf240379d94780669358143"
     }
   ],
+  // Claim arbitration (audit L-2). Create with `npx wrangler d1 create lgk-licence-claims`,
+  // put its id here, then `npx wrangler d1 migrations apply lgk-licence-claims --remote`.
+  // Without this binding the Worker binds no claims (licences stay recoverable).
+  "d1_databases": [
+    {
+      "binding": "CLAIMS",
+      "database_name": "lgk-licence-claims",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
   // Non-secret settings go in "vars" (never `secret put`); see README.md:
   //   PRODUCT_IDS (required: unset/empty makes every webhook 500), PROVIDER,
   //   ALLOW_TEST_MODE, SUPPORT_EMAIL

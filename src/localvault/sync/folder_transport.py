@@ -89,16 +89,21 @@ One run (``FolderSync.run_once``)
    than ``MAX_COUNTER_JUMP`` (2**24) above the last one accepted, is
    ``implausible-counter`` and skipped: the device's own next write could
    otherwise never get past it.
-   Signatures (audit M-7): every view written by this version carries a
-   signature file (``group.sign_view``).  A peer whose signed view verified once
-   is pinned (``SyncGroupState.view_signers``, key kept per device id); from
-   then on its view needs a valid signature by that key, else it is skipped as
-   ``view-unsigned`` (no signature for this write: in flight, or written by
-   someone else) or ``view-forged`` (a signature for this counter that does not
-   match the file, or another key).  A LAN-paired peer's signing key (pinned by
-   its QR pairing) is the only key its signature may carry.  Views of devices
-   that never signed (older apps, the iPhone TestFlight build) are accepted
-   unsigned, as before.
+   Signatures (audit M-7, R-4): every view written by this version carries a
+   signature file (``group.sign_view``).  The key a peer's signature must carry
+   is, in this order: the ``signing_public`` of its entry in the accepted
+   keyring (format 2, covered by the keyring MAC and by the member's own proof;
+   ``keyring.member_signing_keys``), else its LAN-paired key (pinned by its QR
+   pairing), else the key pinned on first use (``SyncGroupState.view_signers``).
+   A peer with a keyring key or a pin needs a valid signature by that key, else
+   its view is skipped as ``view-unsigned`` (no signature for this write: in
+   flight, or written by someone else) or ``view-forged`` (a signature for this
+   counter that does not match the file, or another key).  Every keyring key is
+   pinned at once, and a pin changes only through the keyring: a keyring key
+   that replaces a different pin is reported as ``signer-changed``.  First-use
+   pinning remains only for members whose keyring entry has no key (a keyring
+   or member from before format 2); views of devices that never signed (older
+   apps) are accepted unsigned, as before.
 6. Stale files: a peer file whose header ``written_at`` is more than
    ``TOMBSTONE_MAX_AGE_DAYS`` (365) days before ``now`` is skipped ENTIRELY
    (live states and tombstones).  Its owner has not written for a year, so
@@ -215,6 +220,7 @@ from .keyring import (
     create_group,
     join_with_password,
     member_names,
+    member_signing_keys,
     open_with_device_wrap,
     parse_keyring,
     rotate,
@@ -574,14 +580,17 @@ class FolderSync:
 
     def read_peers(self, gk: GroupKey, own_id: str, members: Iterable[str], last_seen: Mapping[str, int],
                    digests: Mapping[str, str], *, now: int, signers: Mapping[str, str] | None = None,
-                   paired_keys: Mapping[str, str] | None = None) -> PeerRead:
+                   paired_keys: Mapping[str, str] | None = None,
+                   keyring_keys: Mapping[str, str] | None = None) -> PeerRead:
         """Read every peer file; never raises for a single bad file (see module docstring).
 
-        *signers*: pinned signing keys (base64) of devices whose views must be signed;
-        *paired_keys*: the only key a device's signature may carry (LAN pairing), signed or not.
+        *keyring_keys*: each member's key from the accepted keyring (its views must be signed by it);
+        *paired_keys*: the key a LAN-paired device's signature must carry when the keyring lists none;
+        *signers*: keys pinned on first use (views must be signed by them).  Precedence in that order.
         """
-        signers = signers or {}
-        paired_keys = paired_keys or {}
+        keyring_keys = keyring_keys or {}
+        signers = {**(signers or {}), **keyring_keys}
+        paired_keys = {**(paired_keys or {}), **keyring_keys}
         issues: list[SyncIssue] = []
         allowed: set[str] = set()
         for member in sorted(set(members) - {own_id}):
@@ -652,7 +661,10 @@ class FolderSync:
 
     def _check_signature(self, dev: str, name: str, raw: bytes, view: View, signers: Mapping[str, str],
                          paired_keys: Mapping[str, str], issues: list[SyncIssue]) -> str | bool | None:
-        """The signing key (base64) of a validly signed view, None for an accepted unsigned one, False to skip."""
+        """The signing key (base64) of a validly signed view, None for an accepted unsigned one, False to skip.
+
+        *paired_keys* already holds the keyring keys (which win), *signers* the pins and keyring keys.
+        """
         expected = paired_keys.get(dev) or signers.get(dev)
         sig = self._read_signature(dev)
         why = "no signature file"
@@ -784,9 +796,14 @@ class FolderSync:
         if is_safe_device_id(state.device_id):
             self._sweep_own_temp_files(state.device_id)
         self._sweep_keyring_temp_files(now)
+        ring_keys = {d: k for d, k in member_signing_keys(ring).items() if d != state.device_id}
+        for device_id, key in sorted(ring_keys.items()):
+            pinned = state.view_signers.get(device_id)
+            if pinned is not None and pinned != key:
+                issues.append(SyncIssue("signer-changed", f"{device_id}: the keyring lists another signing key"))
         peers = self.read_peers(gk, state.device_id, members, state.last_seen, state.peer_digests, now=now,
                                 signers={d: k for d, k in state.view_signers.items() if d != state.device_id},
-                                paired_keys=_paired_keys(state))
+                                paired_keys=_paired_keys(state), keyring_keys=ring_keys)
         issues.extend(peers.issues)
         report = run_merge(session, lease, device_id=state.device_id, views=peers.views, now=now)
         issues.extend(report.issues)
@@ -795,7 +812,8 @@ class FolderSync:
         own_key = base64.b64encode(identity.signing_public_key).decode("ascii")
         last_seen = {**state.last_seen, **peers.seen}
         digests = {**state.peer_digests, **peers.digests}
-        signers = {**state.view_signers, **peers.signers}
+        # Keyring keys are pinned at once (re-pinning happens only here, from the accepted keyring).
+        signers = {**state.view_signers, **peers.signers, **ring_keys}
         if len(last_seen) > MAX_PEERS_SEEN or len(digests) > MAX_PEERS_SEEN or len(signers) > MAX_PEERS_SEEN:
             last_seen = {d: c for d, c in last_seen.items() if d in members}
             digests = {d: h for d, h in digests.items() if d in members}

@@ -15,7 +15,9 @@ import app.localgatekeys.core.primitives.UnixClock
 internal object KeyringJoin {
     /**
      * [ring] (authenticated under [gk]) plus [identity] and its wrap; `prev_mac` carried over.
-     * Draws the device wrap (eph 32, nonce 12), then the name nonce (12).
+     * Written as format 2: the new entry lists this device's signing key and proof, a format-1
+     * member gets null `signing_public` / `signing_proof`. Draws the device wrap (eph 32, nonce 12),
+     * then the name nonce (12); the proof (Ed25519) draws nothing.
      */
     private fun withMember(
         ring: JsonValue,
@@ -29,19 +31,33 @@ internal object KeyringJoin {
         if (addedAt < 0 || addedAt > Keyring.MAX_INT) throw KeyringException("bad-fields", "added_at")
         val body = LinkedHashMap(obj(ring))
         val wrap = Keyring.wrapDevice(gk, identity.deviceId, identity.exchangePublicKey, random)
+        val exchange = Base64Std.encode(identity.exchangePublicKey)
+        val signing = Base64Std.encode(identity.signingPublicKey)
+        val proof = identity.sign(Keyring.proofMessage(gk.groupId, identity.deviceId, exchange, signing))
         val entry = JsonValue.Obj(
             mapOf(
                 "device_id" to JsonValue.Str(identity.deviceId),
                 "name_ct" to JsonValue.Str(MemberNames.sealName(gk, identity.deviceId, name, random)),
-                "exchange_public" to JsonValue.Str(Base64Std.encode(identity.exchangePublicKey)),
+                "exchange_public" to JsonValue.Str(exchange),
+                "signing_public" to JsonValue.Str(signing),
+                "signing_proof" to JsonValue.Str(Base64Std.encode(proof)),
                 "added_at" to JsonValue.Int(addedAt),
             ),
         )
-        body["members"] = JsonValue.Arr(arr(body["members"]) + entry)
+        body["format"] = JsonValue.Int(Keyring.FORMAT) // a format-1 keyring is written back as format 2
+        body["members"] = JsonValue.Arr(arr(body["members"]).map(::asFormat2) + entry)
         val wraps = LinkedHashMap(obj(body["device_wraps"]))
         wraps[identity.deviceId] = wrap
         body["device_wraps"] = JsonValue.Obj(wraps)
         return Keyring.finish(body, gk)
+    }
+
+    /** A member entry in format 2 (a format-1 entry gets null `signing_public` and `signing_proof`). */
+    private fun asFormat2(member: JsonValue): JsonValue {
+        val m = LinkedHashMap(obj(member))
+        if ("signing_public" !in m) m["signing_public"] = JsonValue.Null
+        if ("signing_proof" !in m) m["signing_proof"] = JsonValue.Null
+        return JsonValue.Obj(m)
     }
 
     private fun checkIdentity(identity: DeviceIdentity) {

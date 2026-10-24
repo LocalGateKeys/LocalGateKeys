@@ -47,11 +47,45 @@ final class FolderSyncTests: XCTestCase {
     static let keyringPath = "LocalGateKeys Sync/keyring.lgkkeys"
     static func devPath(_ id: String) -> String { "LocalGateKeys Sync/devices/\(id).lgksync" }
 
+    /// The epoch-1 group: the keyring (format 2: it lists A, B and C's signing keys), their views and the
+    /// views' signatures (A's from the vector, B's and C's made here), as their apps leave the folder.
     static func seededFolder() throws -> MemoryFolder {
         let f = MemoryFolder()
         f.files[keyringPath] = Array(try Vectors.data("keyring_epoch1.json"))
-        for d in GroupTests.devices { f.files[devPath(d.id)] = Array(try Vectors.data("devices/\(d.name).lgksync")) }
+        for d in GroupTests.devices {
+            f.files[devPath(d.id)] = Array(try Vectors.data("devices/\(d.name).lgksync"))
+            if d.name == "A" {
+                f.files[FolderLayout.signatureFile(d.id)!] = Array(try Vectors.data("signatures/A.lgksig"))
+            } else {
+                try sign(f, d.name)
+            }
+        }
         return f
+    }
+
+    /// Signs the view file of vector device `who` in `folder` with `signer`'s identity (default: its own).
+    static func sign(_ folder: MemoryFolder, _ who: String, as signer: String? = nil) throws {
+        let id = try KeyringTests.identity(who).deviceID
+        let raw = try XCTUnwrap(folder.files[devPath(id)])
+        folder.files[FolderLayout.signatureFile(id)!] = try ViewSignature.sign(
+            raw, header: try ViewFile.decodeHeader(raw), identity: try KeyringTests.identity(signer ?? who))
+    }
+
+    /// Rewrites the keyring (MAC under the epoch-1 key) as if `ids` joined with an app from before keyring
+    /// format 2: their entries list no signing key, their signature files are gone and nothing is pinned for
+    /// them, so only first-use pinning covers their views (desktop `_older_app_members`).
+    static func olderAppMembers(_ folder: MemoryFolder, _ store: MemoryStore, _ ids: Set<String>) throws {
+        guard case .object(var o) = try Keyring.parse(try XCTUnwrap(folder.files[keyringPath])) else { return XCTFail() }
+        o["members"] = .array(MergeVectors.arr(o["members"]).map { (m: JSONValue) -> JSONValue in
+            var mo = MergeVectors.obj(m)
+            if let id = MergeVectors.str(mo["device_id"]), ids.contains(id) { mo["signing_public"] = .null; mo["signing_proof"] = .null }
+            return .object(mo)
+        })
+        folder.files[keyringPath] = try CanonicalJSON.encode(try Keyring.finish(o, key: try epoch1()), dialect: .utf8)
+        for id in ids {
+            folder.files[FolderLayout.signatureFile(id)!] = nil
+            store.snapshot.sync?.viewSigners[id] = nil
+        }
     }
 
     static func epoch1() throws -> GroupKey { try KeyringTests.epochKey("1") }
@@ -145,10 +179,11 @@ final class FolderSyncTests: XCTestCase {
         r = fs.runOnce(store: store, random: DetRand("r2"), clock: FixedClock(now: Self.T0 + 1100))
         XCTAssertEqual(issues(r), ["suspicious-rewrite"])
         XCTAssertEqual(store.commits, commits)
-        // A higher counter is accepted again.
+        // A higher counter (signed by A, whose key the keyring lists) is accepted again.
         folder.files[Self.devPath(EngineTests.A)] = try ViewFile.encode(key: Self.epoch1(), deviceID: EngineTests.A, counter: 8,
                                                                         states: a.states, now: FixedClock(now: Self.T0 + 1050),
                                                                         random: DetRand("ok"))
+        try Self.sign(folder, "A")
         r = fs.runOnce(store: store, random: DetRand("r3"), clock: FixedClock(now: Self.T0 + 1100))
         XCTAssertEqual(r.issues, [])
         XCTAssertEqual(store.snapshot.sync?.lastSeen[EngineTests.A], 8)
@@ -175,6 +210,7 @@ final class FolderSyncTests: XCTestCase {
         folder.files[Self.devPath(EngineTests.B)] = try ViewFile.encode(key: Self.epoch1(), deviceID: EngineTests.B, counter: 5,
                                                                         states: b.states, now: FixedClock(now: Self.T0 + 950),
                                                                         random: DetRand("stale"))
+        try Self.sign(folder, "B")
         let r = fs.runOnce(store: store, random: DetRand("r"), clock: FixedClock(now: late))
         XCTAssertTrue(issues(r).contains("stale-device"))
         XCTAssertEqual(store.snapshot.sync?.lastSeen[EngineTests.B], 5)
@@ -299,6 +335,85 @@ final class FolderSyncTests: XCTestCase {
         XCTAssertEqual(r.issues, [SyncIssue("bad-name", EngineTests.B)])
     }
 
+    // MARK: keyring signing keys (audit R-4)
+
+    func test_keyring_keys_are_pinned_at_once_and_win_over_a_paired_key() throws {
+        let (folder, store, _, report) = try joined()
+        XCTAssertEqual(report.issues, [])
+        let keyB = Base64.encode(try KeyringTests.identity("B").signingPublicKey)
+        for who in ["A", "B", "C"] {   // every keyring key pinned by the first run
+            let i = try KeyringTests.identity(who)
+            XCTAssertEqual(store.snapshot.sync?.viewSigners[i.deviceID], Base64.encode(i.signingPublicKey), who)
+        }
+        // A paired key and a pin that disagree with the keyring: the keyring's key (B's real one) wins.
+        let other = Base64.encode(try KeyringTests.identity("C").signingPublicKey)
+        let fs = try FolderSync(access: folder, installID: Self.install, pairedKeys: [EngineTests.B: other])
+        store.snapshot.sync!.viewSigners[EngineTests.B] = nil
+        let b = try ViewFile.decode(folder.files[Self.devPath(EngineTests.B)]!, key: Self.epoch1(), expectedDeviceID: EngineTests.B)
+        folder.files[Self.devPath(EngineTests.B)] = try ViewFile.encode(key: Self.epoch1(), deviceID: EngineTests.B, counter: 5,
+                                                                        states: b.states, now: FixedClock(now: Self.T0 + 1050),
+                                                                        random: DetRand("b5"))
+        try Self.sign(folder, "B")
+        let r = fs.runOnce(store: store, random: DetRand("r1"), clock: FixedClock(now: Self.T0 + 1100))
+        XCTAssertEqual(r.issues, [])
+        XCTAssertEqual(store.snapshot.sync?.lastSeen[EngineTests.B], 5)
+        XCTAssertEqual(store.snapshot.sync?.viewSigners[EngineTests.B], keyB)
+    }
+
+    func test_a_member_that_never_wrote_cannot_be_pinned_to_a_forger() throws {
+        // Before R-4 the first signed view pinned its key: someone with G could sign first for a member.
+        let (folder, store, fs, _) = try joined()
+        store.snapshot.sync!.viewSigners[EngineTests.B] = nil   // as if B's view was never seen
+        let b = try ViewFile.decode(folder.files[Self.devPath(EngineTests.B)]!, key: Self.epoch1(), expectedDeviceID: EngineTests.B)
+        folder.files[Self.devPath(EngineTests.B)] = try ViewFile.encode(key: Self.epoch1(), deviceID: EngineTests.B, counter: 5,
+                                                                        states: b.states, now: FixedClock(now: Self.T0 + 1050),
+                                                                        random: DetRand("b5"))
+        try Self.sign(folder, "B", as: "C")
+        XCTAssertEqual(issues(fs.runOnce(store: store, random: DetRand("r1"), clock: FixedClock(now: Self.T0 + 1100))), ["view-forged"])
+        XCTAssertEqual(store.snapshot.sync?.lastSeen[EngineTests.B], 4)
+        // Pinned from the keyring, not from the forgery.
+        XCTAssertEqual(store.snapshot.sync?.viewSigners[EngineTests.B], Base64.encode(try KeyringTests.identity("B").signingPublicKey))
+        // An unsigned file is refused too: a keyring key means "must be signed".
+        folder.files[FolderLayout.signatureFile(EngineTests.B)!] = nil
+        XCTAssertEqual(issues(fs.runOnce(store: store, random: DetRand("r2"), clock: FixedClock(now: Self.T0 + 1200))), ["view-unsigned"])
+    }
+
+    func test_a_changed_keyring_key_replaces_the_pin_and_is_reported() throws {
+        let (folder, store, fs, _) = try joined()
+        let oldPin = try XCTUnwrap(store.snapshot.sync?.viewSigners[EngineTests.B])
+        // Someone holding G lists a new key (with a valid proof by that key) for B.
+        let mallory = try DeviceIdentity.generate(random: DetRand("mallory"))
+        let newKey = Base64.encode(mallory.signingPublicKey)
+        let ring = try Keyring.parse(folder.files[Self.keyringPath]!)
+        let edited = try KeyringTests.editMember(ring, KeyringTests.memberIndex(ring, EngineTests.B)) {
+            let msg = Keyring.proofMessage(groupID: try Self.epoch1().groupID, deviceID: EngineTests.B,
+                                           exchangePublic: KeyringTests.str($0["exchange_public"]), signingPublic: newKey)
+            $0["signing_public"] = .string(newKey); $0["signing_proof"] = .string(Base64.encode(try mallory.sign(msg)))
+        }
+        folder.files[Self.keyringPath] = try CanonicalJSON.encode(try Keyring.finish(Keyring.obj(edited), key: Self.epoch1()), dialect: .utf8)
+        let r = fs.runOnce(store: store, random: DetRand("r1"), clock: FixedClock(now: Self.T0 + 1100))
+        XCTAssertTrue(r.issues.contains(SyncIssue("signer-changed", "\(EngineTests.B): the keyring lists another signing key")), "\(r.issues)")
+        XCTAssertNotEqual(oldPin, newKey)
+        XCTAssertEqual(store.snapshot.sync?.viewSigners[EngineTests.B], newKey)
+        // B's view (signed by B's real key) no longer matches the listed key.
+        XCTAssertTrue(issues(r).contains("view-forged"))
+        // Reported once: the pin now matches the keyring.
+        XCTAssertFalse(issues(fs.runOnce(store: store, random: DetRand("r2"), clock: FixedClock(now: Self.T0 + 1200))).contains("signer-changed"))
+    }
+
+    func test_unsigned_views_of_format1_members_are_accepted_until_pinned() throws {
+        let (folder, store, fs, _) = try joined()
+        try Self.olderAppMembers(folder, store, [EngineTests.C])
+        let c = try ViewFile.decode(folder.files[Self.devPath(EngineTests.C)]!, key: Self.epoch1(), expectedDeviceID: EngineTests.C)
+        folder.files[Self.devPath(EngineTests.C)] = try ViewFile.encode(key: Self.epoch1(), deviceID: EngineTests.C, counter: 4,
+                                                                        states: c.states, now: FixedClock(now: Self.T0 + 1050),
+                                                                        random: DetRand("c4"))
+        XCTAssertEqual(fs.runOnce(store: store, random: DetRand("r1"), clock: FixedClock(now: Self.T0 + 1100)).issues, [])
+        XCTAssertEqual(store.snapshot.sync?.lastSeen[EngineTests.C], 4)
+        XCTAssertNil(store.snapshot.sync?.viewSigners[EngineTests.C])   // no keyring key, no signature: nothing to pin
+        XCTAssertNotNil(store.snapshot.sync?.viewSigners[EngineTests.A])   // the others stay pinned from the keyring
+    }
+
     // MARK: from_ios vectors (read by the desktop in Task 11)
 
     static let phoneLogin = "f1050000-0000-4000-8000-000000000101"
@@ -346,11 +461,19 @@ final class FolderSyncTests: XCTestCase {
         return (folder.files[keyringPath]!, id, folder.files[devPath(id)]!, store)
     }
 
+    /// The keyring without the phone's `signing_proof` (CryptoKit signs Ed25519 with hedged randomness, so the
+    /// proof differs between runs; it is verified by `Keyring.parse` instead).
+    static func withoutProof(_ keyring: [UInt8], of id: String) throws -> JSONValue {
+        let ring = try Keyring.parse(keyring)
+        return KeyringTests.editMember(ring, KeyringTests.memberIndex(ring, id)) { $0["signing_proof"] = .null }
+    }
+
     func test_writes_from_ios_vectors() throws {
         let out = try Self.fromIOSFlow()
-        // Reproducible: the same flow gives the same bytes.
+        // Reproducible: the same flow gives the same bytes (the keyring up to the phone's hedged proof).
         let again = try Self.fromIOSFlow()
-        XCTAssertEqual(again.keyring, out.keyring)
+        XCTAssertEqual(try Self.withoutProof(again.keyring, of: again.deviceID), try Self.withoutProof(out.keyring, of: out.deviceID))
+        XCTAssertEqual(Keyring.memberSigningKeys(try Keyring.parse(again.keyring)), Keyring.memberSigningKeys(try Keyring.parse(out.keyring)))
         XCTAssertEqual(again.file, out.file)
         XCTAssertEqual(again.deviceID, out.deviceID)
         XCTAssertEqual(out.deviceID, "bcc03464-25ca-4262-a442-c73dcd26f5c5")
@@ -359,6 +482,8 @@ final class FolderSyncTests: XCTestCase {
         let gk = try Self.epoch1()
         let ring = try Keyring.parse(out.keyring)
         XCTAssertEqual(try Keyring.accept(ring, trusted: gk, identity: KeyringTests.identity("B")), gk)
+        XCTAssertEqual(Keyring.obj(ring)["format"], .int(2))
+        XCTAssertEqual(Keyring.memberSigningKeys(ring)[out.deviceID], Base64.encode(out.store.snapshot.sync!.identity.signingPublicKey))
         let view = try ViewFile.decode(out.file, key: gk, expectedDeviceID: out.deviceID)
         XCTAssertEqual(view.header.counter, 2)
         let received = Dictionary(uniqueKeysWithValues: try MergeVectors.arr(MergeVectors.expectedMerge()["bridge_stored_states"])

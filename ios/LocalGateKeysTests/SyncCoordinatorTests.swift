@@ -246,9 +246,14 @@ final class SyncCoordinatorTests: XCTestCase {
         var d = SyncDependencies(keychain: keychain, folders: folders, lan: lan, autoFill: autoFill, random: FixedRandom(),
                                  clock: clock, licenseKeys: [:])
         if let identity { d.newIdentity = { _ in identity } }
+        d.deviceName = Self.vectorDeviceName
         d.sleep = sleeper.fn
         return d
     }
+
+    /// The name B announces in the vector enrollment: `lan/enroll_reply_no_endpoint.bin` is bound to it,
+    /// so a QR join with any other name fails to open the reply (scripts/make_sync_vectors.py).
+    static let vectorDeviceName = "Ilias\u{2019}s iPhone \u{00E9}"
 
     /// The desktop's inviter (A) side of the vector enrollment: checks B's request, answers with the recorded reply.
     func inviterAnswers() throws {
@@ -434,7 +439,9 @@ final class SyncCoordinatorTests: XCTestCase {
     }
 
     func test_join_by_folder_with_password() async throws {
-        folder.files["LocalGateKeys Sync/keyring.lgkkeys"] = try SyncVectors.data("keyring_epoch1.json")
+        // Format 1 with unsigned views, as apps before keyring format 2 left the folder: the format-2
+        // keyring_epoch1.json lists every member's signing key, so A/B/C's unsigned views would be refused.
+        folder.files["LocalGateKeys Sync/keyring.lgkkeys"] = try SyncVectors.data("keyring_v1_epoch1.json")
         for (who, name) in [("A", "A"), ("B", "B"), ("C", "C")] {
             let id = try SyncVectors.identity(who).deviceID
             folder.files["LocalGateKeys Sync/devices/\(id).lgksync"] = try SyncVectors.data("devices/\(name).lgksync")
@@ -621,8 +628,10 @@ final class SyncCoordinatorTests: XCTestCase {
         XCTAssertFalse(c.issues.isEmpty)
     }
 
+    /// The epoch-1 folder as apps before keyring format 2 left it: `keyring_v1_epoch1.json` (members
+    /// without signing keys) and unsigned A/B/C views, like Android's `SyncFixtures.seededFolder()`.
     func seedEpoch1Folder() throws {
-        folder.files["LocalGateKeys Sync/keyring.lgkkeys"] = try SyncVectors.data("keyring_epoch1.json")
+        folder.files["LocalGateKeys Sync/keyring.lgkkeys"] = try SyncVectors.data("keyring_v1_epoch1.json")
         for who in ["A", "B", "C"] {
             let id = try SyncVectors.identity(who).deviceID
             folder.files["LocalGateKeys Sync/devices/\(id).lgksync"] = try SyncVectors.data("devices/\(who).lgksync")

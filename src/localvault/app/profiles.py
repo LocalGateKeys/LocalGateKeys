@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..api.result import ApiError
-from ..profiles import ProfileError
+from ..profiles import CAMERA_UNLOCK_BLOCKS_DELETE, ProfileError
 
 REMOVE_TEXT = ("Remove {name!r} from LocalGateKeys?\n\nIts encrypted data will be moved to the local DeletedProfiles "
                "archive rather than erased immediately.")
@@ -101,15 +101,23 @@ class ProfilesService:
         record = self._profiles.set_profile_photo(profile_id, None)
         return {"profile": self._row(record, getattr(self._profiles.active_profile(), "id", None))}
 
+    def _refuse_camera_unlock(self, profile_id: str) -> None:
+        if self._profiles.camera_unlock_blocks_delete(profile_id):
+            raise ApiError("invalid", CAMERA_UNLOCK_BLOCKS_DELETE)
+
     def delete(self, profile_id: str) -> dict[str, Any]:
         self._unlocked()
         record = self._find(profile_id)
         if len(self._profiles.list_profiles()) <= 1:
             raise ApiError("invalid", "Create another profile before deleting the only profile")
+        # delete_profile refuses a profile with camera unlock; say so before
+        # asking, and above all before locking the vault for nothing.
+        self._refuse_camera_unlock(profile_id)
         lease = self._controller.guard.lease()
         if not self._port.confirm("Remove profile", REMOVE_TEXT.format(name=record.name)):
             raise ApiError("cancelled", "Cancelled.")
         self._controller.require_lease(lease)  # locked or switched while the confirm was open
+        self._refuse_camera_unlock(profile_id)
         active = self._profiles.active_profile()
         was_active = active is not None and active.id == profile_id
         if was_active:

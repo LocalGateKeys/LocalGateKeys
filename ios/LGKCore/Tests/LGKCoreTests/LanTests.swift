@@ -99,6 +99,15 @@ final class LanTests: XCTestCase {
             XCTAssertEqual(sha(r.transcript), str(c.req["transcript_sha256_hex"]))
             XCTAssertEqual(r.endpoint, c.endpoint)
             XCTAssertEqual(r.deviceID, try identity("B").deviceID)
+            // Version 2: the body and the transcript carry B's name; both screens show the verification code.
+            XCTAssertEqual(r.name, str(c.req["name"]))
+            XCTAssertTrue(str(c.req["transcript"]).contains(#""invitee_name":"#))
+            XCTAssertEqual(obj(try CanonicalJSON.parse(r.body))["version"], .int(2))
+            XCTAssertEqual(obj(try CanonicalJSON.parse(r.body))["name"], .string(str(c.req["name"])))
+            XCTAssertEqual(r.code, str(c.req["verification_code"]))
+            XCTAssertEqual(Enrollment.verificationCode(transcript: r.transcript), str(c.req["verification_code"]))
+            XCTAssertEqual(try Enrollment.verificationCode(offer: o, identity: try identity("B"), endpoint: c.endpoint,
+                                                            name: str(c.req["name"])), str(c.req["verification_code"]))
             // tampered ciphertext
             var bad = raw; bad[bad.count - 5] ^= 1
             XCTAssertThrowsError(try Enrollment.openRequest(offer: o, inviter: a, raw: bad))
@@ -109,8 +118,8 @@ final class LanTests: XCTestCase {
         let o = try offer(), a = try identity("A"), b = try identity("B")
         for c in try enrollmentCases() {
             let random = QueueRandom([Vectors.hex(str(c.req["ephemeral_private_hex"])), try Base64.decodeStrict(str(c.req["nonce_b64"]))])
-            let raw = try Enrollment.buildRequest(offer: o, identity: b, endpoint: c.endpoint, random: random,
-                                                  now: FixedClock(now: 1790000030))
+            let raw = try Enrollment.buildRequest(offer: o, identity: b, endpoint: c.endpoint, name: str(c.req["name"]),
+                                                  random: random, now: FixedClock(now: 1790000030))
             XCTAssertTrue(random.isEmpty)
             let vector = Array(try Vectors.data(c.file))
             // Outer JSON: everything but `ct` is byte-identical (ct carries the hedged signature).
@@ -137,12 +146,14 @@ final class LanTests: XCTestCase {
         let o = try offer(), b = try identity("B"), gk = try groupKey()
         for c in try enrollmentCases() {
             let raw = Array(try Vectors.data(c.reply))
-            XCTAssertEqual(try Enrollment.openReply(offer: o, identity: b, raw: raw, endpoint: c.endpoint), gk)
+            let name = str(c.req["name"])
+            XCTAssertEqual(try Enrollment.openReply(offer: o, identity: b, raw: raw, endpoint: c.endpoint, name: name), gk)
             XCTAssertEqual(Vectors.hexString(gk.key), str(c.rep["key_hex"]))
-            // The reply is bound to the announced endpoint.
+            // The reply is bound to the announced endpoint and name.
             let other: LanEndpoint? = c.endpoint == nil ? LanEndpoint(host: "192.168.1.31", port: 48202) : nil
-            XCTAssertThrowsError(try Enrollment.openReply(offer: o, identity: b, raw: raw, endpoint: other))
-            XCTAssertThrowsError(try Enrollment.openReply(offer: o, identity: try identity("C"), raw: raw, endpoint: c.endpoint))
+            XCTAssertThrowsError(try Enrollment.openReply(offer: o, identity: b, raw: raw, endpoint: other, name: name))
+            XCTAssertThrowsError(try Enrollment.openReply(offer: o, identity: b, raw: raw, endpoint: c.endpoint, name: name + "x"))
+            XCTAssertThrowsError(try Enrollment.openReply(offer: o, identity: try identity("C"), raw: raw, endpoint: c.endpoint, name: name))
         }
         XCTAssertThrowsError(try Enrollment.openReply(offer: o, identity: b, raw: Enrollment.refusedMagic + bytes(#"{"reason":"full"}"#))) {
             XCTAssertEqual($0 as? PairingError, .refused("full"))
@@ -151,9 +162,42 @@ final class LanTests: XCTestCase {
             XCTAssertEqual($0 as? PairingError, .refused("refused"))
         }
         let f = obj(try lan()["framing"])
+        // Every refusal reason, as the inviter sends it; each reads back as that reason.
+        let refusals = obj(f["refusals_hex"])
+        XCTAssertEqual(Set(refusals.keys), Enrollment.refusalReasons)
+        XCTAssertEqual(Enrollment.refusalReasons, ["refused", "used-or-expired", "full", "declined", "update-needed"])
+        for (reason, hex) in refusals {
+            XCTAssertEqual(try Enrollment.refusal(reason), Vectors.hex(str(hex)), reason)
+            XCTAssertThrowsError(try Enrollment.openReply(offer: o, identity: b, raw: Vectors.hex(str(hex)))) {
+                XCTAssertEqual($0 as? PairingError, .refused(reason))
+            }
+        }
+        XCTAssertThrowsError(try Enrollment.refusal("x"))
         XCTAssertEqual(Vectors.hexString(Enrollment.requestMagic), str(f["request_magic_hex"]))
         XCTAssertEqual(Vectors.hexString(Enrollment.replyMagic), str(f["reply_magic_hex"]))
         XCTAssertEqual(Vectors.hexString(Enrollment.refusedMagic), str(f["refused_magic_hex"]))
+    }
+
+    func test_enrollment_name_rule_and_code_format() throws {
+        XCTAssertEqual(try Enrollment.checkName("iPhone"), "iPhone")
+        XCTAssertEqual(try Enrollment.checkName(String(repeating: "é", count: 32)), String(repeating: "é", count: 32))  // 64 bytes
+        for bad in ["", String(repeating: "é", count: 33), "a\u{1F}b", "a\u{7F}", "line\nbreak", "\u{0}"] {
+            XCTAssertThrowsError(try Enrollment.checkName(bad), bad)
+        }
+        XCTAssertEqual(Enrollment.replySeconds, 75)
+        XCTAssertEqual(Enrollment.acceptTimeoutSeconds, 60)
+        // The documented recipe: first 4 bytes of SHA-256(label + transcript), big-endian, mod 10^6, 6 digits.
+        for t in [bytes(""), bytes("x"), bytes(str(obj(try lan()["request"])["transcript"]))] {
+            let d = Array(SHA256.hash(data: bytes("localgatekeys|sync|enroll-verify|v2|") + t))
+            let n = (Int(d[0]) << 24 | Int(d[1]) << 16 | Int(d[2]) << 8 | Int(d[3])) % 1_000_000
+            let code = Enrollment.verificationCode(transcript: t)
+            XCTAssertEqual(code.count, 6)
+            XCTAssertEqual(Int(code), n)
+        }
+        // A request with a bad name is never built.
+        let o = try offer()
+        XCTAssertThrowsError(try Enrollment.buildRequest(offer: o, identity: try identity("B"), name: "",
+                                                         random: SystemRandomSource(), now: FixedClock(now: 1790000030)))
     }
 
     // MARK: session handshake
@@ -164,6 +208,10 @@ final class LanTests: XCTestCase {
         let ini = obj(hello["initiator"]), res = obj(hello["responder"])
         let iniID = try identity(str(ini["device"])), resID = try identity(str(res["device"]))
         let hi = try SessionHello.parse(bytes(str(ini["text"]))), hr = try SessionHello.parse(bytes(str(res["text"])))
+        XCTAssertNil(hi.ephemeralSecret); XCTAssertNil(hr.ephemeralSecret)   // a parsed hello never carries one
+        let ephI = Vectors.hex(str(ini["ephemeral_private_hex"])), ephR = Vectors.hex(str(res["ephemeral_private_hex"]))
+        XCTAssertEqual(Vectors.hexString(hi.ephemeralPublic), str(ini["ephemeral_public_hex"]))
+        XCTAssertEqual(Vectors.hexString(hr.ephemeralPublic), str(res["ephemeral_public_hex"]))
         XCTAssertEqual(try hi.toBytes(), bytes(str(ini["text"])))
         XCTAssertEqual(Vectors.hexString(try hi.signingBytes()), str(ini["signing_input_hex"]))
         XCTAssertEqual(Vectors.hexString(try hr.signingBytes()), str(res["signing_input_hex"]))
@@ -177,18 +225,40 @@ final class LanTests: XCTestCase {
         XCTAssertEqual(transcript.starts(with: try hi.toBytes()) ? "initiator" : "responder", str(s["sorted_first"]))
         let shared = try iniID.exchange(with: resID.exchangePublicKey)
         XCTAssertEqual(Vectors.hexString(shared), str(s["shared_secret_hex"]))
+        // Ephemeral-ephemeral, the same from both sides; each private key belongs to its hello's public key.
+        let (ephShared, ephPubI) = try DeviceIdentity.x25519(privateKey: ephI, peerPublic: hr.ephemeralPublic)
+        let (ephSharedR, ephPubR) = try DeviceIdentity.x25519(privateKey: ephR, peerPublic: hi.ephemeralPublic)
+        XCTAssertEqual(ephPubI, hi.ephemeralPublic); XCTAssertEqual(ephPubR, hr.ephemeralPublic)
+        XCTAssertEqual(ephShared, ephSharedR)
+        XCTAssertEqual(Vectors.hexString(ephShared), str(s["ephemeral_shared_secret_hex"]))
+        XCTAssertEqual(Vectors.hexString(ephShared + shared), str(s["ikm_hex"]))
         XCTAssertEqual(Vectors.hexString(SecureChannel.salt(transcript: transcript)), str(s["salt"]))
         XCTAssertEqual(Vectors.hexString(SecureChannel.info(sessionID: sid)), str(s["info_hex"]))
-        let key = try SecureChannel.deriveKey(shared: shared, sessionID: sid, transcript: transcript)
+        let key = try SecureChannel.deriveKey(ephemeralShared: ephShared, staticShared: shared, sessionID: sid, transcript: transcript)
         XCTAssertEqual(Vectors.hexString(key), str(s["key"]))
+        // The static keys alone (the version-1 recipe) give another key.
+        XCTAssertNotEqual(CryptoBox.hkdf(ikm: shared, salt: SecureChannel.salt(transcript: transcript),
+                                         info: SecureChannel.info(sessionID: sid), length: 32), key)
         XCTAssertEqual(Vectors.hexString(SecureChannel.prefix(key: key, role: .initiator)), str(s["prefix_initiator"]))
         XCTAssertEqual(Vectors.hexString(SecureChannel.prefix(key: key, role: .responder)), str(s["prefix_responder"]))
-        // Both sides derive the same key from the recorded hellos.
+        // Both sides derive the same key from the recorded hellos and their published ephemeral keys.
+        let hiE = try hi.withEphemeral(privateKey: ephI), hrE = try hr.withEphemeral(privateKey: ephR)
+        XCTAssertThrowsError(try hi.withEphemeral(privateKey: ephR))   // not the key of that hello
         let ci = try SecureChannel(local: iniID, remote: try pinned(str(res["device"])), groupID: Self.groupID, sessionID: sid,
-                                   role: .initiator, localHello: hi, remoteHello: hr)
+                                   role: .initiator, localHello: hiE, remoteHello: hr)
         let cr = try SecureChannel(local: resID, remote: try pinned(str(ini["device"])), groupID: Self.groupID, sessionID: sid,
-                                   role: .responder, localHello: hr, remoteHello: hi)
+                                   role: .responder, localHello: hrE, remoteHello: hi)
         XCTAssertEqual(ci.key, key); XCTAssertEqual(cr.key, key)
+        // Each ephemeral key served exactly one derivation; a parsed hello (no ephemeral key) derives nothing.
+        XCTAssertEqual(hiE.ephemeralSecret?.used, true)
+        XCTAssertThrowsError(try SecureChannel(local: iniID, remote: try pinned(str(res["device"])), groupID: Self.groupID, sessionID: sid,
+                                               role: .initiator, localHello: hiE, remoteHello: hr)) {
+            XCTAssertEqual($0 as? LanTransportError, .authentication("Session ephemeral key was already used or wiped"))
+        }
+        XCTAssertThrowsError(try SecureChannel(local: iniID, remote: try pinned(str(res["device"])), groupID: Self.groupID, sessionID: sid,
+                                               role: .initiator, localHello: hi, remoteHello: hr)) {
+            XCTAssertEqual($0 as? LanTransportError, .authentication("Local session hello has no ephemeral key"))
+        }
         return key
     }
 
@@ -232,16 +302,42 @@ final class LanTests: XCTestCase {
         let s = obj(arr(try vec("lan/session.json")["sessions"])[2])  // counters 9 and 10
         let ini = obj(obj(s["hello"])["initiator"])
         let recorded = try SessionHello.parse(bytes(str(ini["text"])))
+        let random = QueueRandom([Vectors.hex(str(ini["nonce_hex"])), Vectors.hex(str(ini["ephemeral_private_hex"]))])
         let mine = try SessionHello.make(identity: try identity("A"), groupID: Self.groupID, sessionID: Vectors.hex(str(s["session_id"])),
-                                         counter: 9, random: QueueRandom([Vectors.hex(str(ini["nonce_hex"]))]))
+                                         counter: 9, random: random)
+        XCTAssertTrue(random.isEmpty)   // the nonce, then the ephemeral key
         XCTAssertEqual(try mine.signingBytes(), Vectors.hex(str(ini["signing_input_hex"])))
         XCTAssertEqual(mine.unsignedJSON, recorded.unsignedJSON)
+        XCTAssertEqual(Vectors.hexString(mine.ephemeralPublic), str(ini["ephemeral_public_hex"]))
+        XCTAssertEqual(mine.ephemeralSecret?.used, false)
+        XCTAssertEqual(mine, try SessionHello.parse(try mine.toBytes()))   // the secret is not part of equality
         try SessionHello.verify(mine, pinned: try pinned("A"), groupID: Self.groupID)
         XCTAssertThrowsError(try SessionHello.verify(mine, pinned: try pinned("B"), groupID: Self.groupID))
         let wrongExchange = PinnedPeer(deviceID: mine.deviceID, groupID: Self.groupID, signingPublic: mine.signingPublic,
                                        exchangePublic: try identity("B").exchangePublicKey, endpoint: nil)
         XCTAssertThrowsError(try SessionHello.verify(mine, pinned: wrongExchange, groupID: Self.groupID))
         XCTAssertThrowsError(try SessionHello.verify(recorded, pinned: try pinned("A"), groupID: "other-group"))
+        // An ephemeral key that is all zero or equal to the exchange key is refused before the signature.
+        for bad in [[UInt8](repeating: 0, count: 32), recorded.exchangePublic] {
+            let h = SessionHello(sessionID: recorded.sessionID, groupID: recorded.groupID, deviceID: recorded.deviceID,
+                                 signingPublic: recorded.signingPublic, exchangePublic: recorded.exchangePublic, ephemeralPublic: bad,
+                                 nonce: recorded.nonce, counter: recorded.counter, signature: recorded.signature)
+            XCTAssertThrowsError(try SessionHello.verify(h, pinned: try pinned("A"), groupID: Self.groupID)) {
+                XCTAssertEqual($0 as? LanTransportError, .authentication("Session ephemeral key is malformed"))
+            }
+        }
+        // A low-order peer ephemeral key (all-zero X25519 output) is refused, and the local key is used up.
+        let k = Curve25519.KeyAgreement.PrivateKey()
+        let secret = EphemeralSecret(k)
+        XCTAssertThrowsError(try SecureChannel.ephemeralShared(secret: secret, ownPublic: Array(k.publicKey.rawRepresentation),
+                                                               peerPublic: [UInt8](repeating: 0, count: 32)))
+        XCTAssertTrue(secret.used)
+        // wipe() forgets an unused key.
+        let unused = EphemeralSecret(Curve25519.KeyAgreement.PrivateKey())
+        unused.wipe()
+        XCTAssertTrue(unused.used)
+        XCTAssertThrowsError(try unused.take())
+        XCTAssertEqual("\(unused)", "EphemeralSecret(<redacted>)")
     }
 
     func test_hello_and_frame_parsers_are_strict() throws {
@@ -252,7 +348,7 @@ final class LanTests: XCTestCase {
             var out: [[UInt8]] = []
             var extra = o; extra["extra"] = .int(1); out.append(try! CanonicalJSON.encode(.object(extra), dialect: .ascii))
             for k in o.keys { var m = o; m[k] = nil; out.append(try! CanonicalJSON.encode(.object(m), dialect: .ascii)) }
-            for v: JSONValue in [.bool(true), .float(1.0), .string("1"), .int(2)] {
+            for v: JSONValue in [.bool(true), .float(2.0), .string("2"), .int(1), .int(3)] {
                 var m = o; m["version"] = v; out.append(try! CanonicalJSON.encode(.object(m), dialect: .ascii))
             }
             let text = String(decoding: try! CanonicalJSON.encode(.object(o), dialect: .ascii), as: UTF8.self)
@@ -266,7 +362,78 @@ final class LanTests: XCTestCase {
         XCTAssertThrowsError(try SessionHello.parse(try CanonicalJSON.encode(.object(neg), dialect: .ascii)))
         var short = hello; short["nonce"] = .string(Base64.encode([1, 2, 3]))
         XCTAssertThrowsError(try SessionHello.parse(try CanonicalJSON.encode(.object(short), dialect: .ascii)))
+        var shortEph = hello; shortEph["ephemeral_public"] = .string(Base64.encode([1, 2, 3]))
+        XCTAssertThrowsError(try SessionHello.parse(try CanonicalJSON.encode(.object(shortEph), dialect: .ascii)))
         XCTAssertThrowsError(try LanTransport.decodeFrame([0, 0, 0, 2, 1]))
+        XCTAssertEqual(hello["version"], .int(2))
+        XCTAssertEqual(frame["version"], .int(2))
+    }
+
+    // MARK: other protocol versions (no downgrade)
+
+    func test_version_refusal_and_legacy_hello() throws {
+        let sv = try vec("lan/session.json")
+        XCTAssertEqual(LanTransport.version, 2)
+        XCTAssertEqual(try LanTransport.versionRefusal(), bytes(str(sv["version_refusal"])))
+        XCTAssertNil(LanTransport.parseVersionRefusal(try LanTransport.versionRefusal()))   // our own version is no refusal
+        XCTAssertEqual(LanTransport.parseVersionRefusal(bytes(#"{"refused":"version","version":1}"#)), 1)
+        XCTAssertEqual(LanTransport.parseVersionRefusal(bytes(#"{"refused":"version","version":3}"#)), 3)
+        for bad in [#"{"refused":"version","version":0}"#, #"{"refused":"version","version":1.0}"#, #"{"refused":"version","version":"1"}"#,
+                    #"{"refused":"other","version":1}"#, #"{"refused":"version","version":1,"x":1}"#, #"{"refused":"version"}"#,
+                    #"{"refused":"version","version":true}"#, #"{"refused":"version","version":2147483648}"#, "not json"] {
+            XCTAssertNil(LanTransport.parseVersionRefusal(bytes(bad)), bad)
+        }
+        // B's signed version-1 hello: recognised as another version, never parsed for a key.
+        let legacy = bytes(str(obj(sv["legacy_hello"])["text"]))
+        XCTAssertEqual(SessionHello.otherVersion(legacy), 1)
+        XCTAssertThrowsError(try SessionHello.parse(legacy))
+        XCTAssertNil(SessionHello.otherVersion(bytes(str(obj(obj(obj(arr(sv["sessions"])[0])["hello"])["initiator"])["text"]))))
+    }
+
+    /// Answers the client's hello with `reply` (a version refusal, or another version's hello) and nothing else.
+    final class RefusingConnection: LanConnection, @unchecked Sendable {
+        let reply: [UInt8]
+        var calls = 0
+        init(_ reply: [UInt8]) { self.reply = reply }
+        func exchange(_ frame: [UInt8]) async throws -> [UInt8] {
+            calls += 1
+            XCTAssertNoThrow(try SessionHello.parse(try LanTransport.decodeFrame(frame)))   // the client sent a version-2 hello
+            return try LanTransport.encodeFrame(reply)
+        }
+    }
+
+    func test_client_reports_update_needed_and_never_falls_back() async throws {
+        let sv = try vec("lan/session.json")
+        let legacy = bytes(str(obj(sv["legacy_hello"])["text"]))
+        let cases: [([UInt8], String)] = [
+            (bytes(#"{"refused":"version","version":1}"#), "peer-update-needed"),
+            (bytes(#"{"refused":"version","version":3}"#), "lan-update-needed"),
+            (legacy, "peer-update-needed"),
+        ]
+        for (reply, kind) in cases {
+            let sleeps = Sleeps()
+            let client = LanClient(identity: try identity("A"), groupKey: try groupKey(),
+                                   counters: HelloCounterSource(store: MemoryCounterStore(), clock: FixedClock(now: 0)),
+                                   random: SystemRandomSource(), clock: FixedClock(now: 0), sleep: sleeps.fn)
+            let conn = RefusingConnection(reply)
+            do {
+                _ = try await client.request(bytes("x"), peer: try pinned("B"), connection: conn)
+                XCTFail("accepted \(kind)")
+            } catch let e as LanSyncError {
+                XCTAssertEqual(e.reason, kind)
+                XCTAssertTrue(e.detail.hasPrefix(try identity("B").deviceID + ": update needed"), e.detail)
+            }
+            XCTAssertEqual(conn.calls, 1)   // nothing sealed, nothing sent after the refusal
+            // A whole sync stops at once: one connection, no retry, no other version tried.
+            var opened = 0
+            let connector = ScriptConnector { _ in opened += 1; return RefusingConnection(reply) }
+            do {
+                _ = try await client.sync(peer: try pinned("B"), localStates: [], ownCounter: 0, connector: connector)
+                XCTFail("synced despite \(kind)")
+            } catch let e as LanSyncError { XCTAssertEqual(e.reason, kind) }
+            XCTAssertEqual(opened, 1)
+            XCTAssertEqual(sleeps.log, [])
+        }
     }
 
     // MARK: messages
@@ -380,19 +547,22 @@ final class LanTests: XCTestCase {
         let pinnedA: PinnedPeer
         let counter: Int64
         let nonce: [UInt8]?
+        let eph: [UInt8]?
         let answer: ([UInt8]) throws -> [UInt8]
         var clientHello: SessionHello?
         var localHello: SessionHello?
         var channel: SecureChannel?
-        init(b: DeviceIdentity, pinnedA: PinnedPeer, counter: Int64, nonce: [UInt8]?, answer: @escaping ([UInt8]) throws -> [UInt8]) {
-            self.b = b; self.pinnedA = pinnedA; self.counter = counter; self.nonce = nonce; self.answer = answer
+        init(b: DeviceIdentity, pinnedA: PinnedPeer, counter: Int64, nonce: [UInt8]?, eph: [UInt8]? = nil,
+             answer: @escaping ([UInt8]) throws -> [UInt8]) {
+            self.b = b; self.pinnedA = pinnedA; self.counter = counter; self.nonce = nonce; self.eph = eph; self.answer = answer
         }
         func exchange(_ frame: [UInt8]) async throws -> [UInt8] {
             if channel == nil {
                 let h = try SessionHello.parse(try LanTransport.decodeFrame(frame))
                 try SessionHello.verify(h, pinned: pinnedA, groupID: LanTests.groupID)
+                // The recorded nonce and ephemeral key when given (QueueRandom falls back to system randomness).
                 let mine = try SessionHello.make(identity: b, groupID: LanTests.groupID, sessionID: h.sessionID, counter: counter,
-                                                 random: nonce.map { FixedRandom(value: $0) } ?? FixedRandom(value: SystemRandomSource().bytes(count: 32)))
+                                                 random: QueueRandom(nonce.map { [$0] + (eph.map { [$0] } ?? []) } ?? []))
                 clientHello = h; localHello = mine
                 channel = try SecureChannel(local: b, remote: pinnedA, groupID: LanTests.groupID, sessionID: h.sessionID,
                                             role: .responder, localHello: mine, remoteHello: h)
@@ -425,10 +595,12 @@ final class LanTests: XCTestCase {
             let hello = obj(c["hello"])
             let client = LanClient(identity: a, groupKey: try groupKey(),
                                    counters: HelloCounterSource(store: MemoryCounterStore(), clock: FixedClock(now: 0)),
-                                   random: QueueRandom([Vectors.hex(str(c["session_id"])), Vectors.hex(str(obj(hello["initiator"])["nonce_hex"]))]),
+                                   random: QueueRandom([Vectors.hex(str(c["session_id"])), Vectors.hex(str(obj(hello["initiator"])["nonce_hex"])),
+                                                        Vectors.hex(str(obj(hello["initiator"])["ephemeral_private_hex"]))]),
                                    clock: FixedClock(now: 0))
             var seen: [UInt8] = []
-            let conn = FakeConnection(b: b, pinnedA: try pinned("A"), counter: 1, nonce: Vectors.hex(str(obj(hello["responder"])["nonce_hex"]))) {
+            let conn = FakeConnection(b: b, pinnedA: try pinned("A"), counter: 1, nonce: Vectors.hex(str(obj(hello["responder"])["nonce_hex"])),
+                                      eph: Vectors.hex(str(obj(hello["responder"])["ephemeral_private_hex"]))) {
                 seen = $0; return response
             }
             let got = try await client.request(request, peer: try pinned("B"), connection: conn)
@@ -436,8 +608,9 @@ final class LanTests: XCTestCase {
             XCTAssertEqual(seen, request)
             let recorded = try SessionHello.parse(bytes(str(obj(hello["initiator"])["text"])))
             XCTAssertEqual(conn.clientHello?.unsignedJSON, recorded.unsignedJSON)
-            // B's recorded hello recreated (same session id, nonce and counter; hedged signature).
+            // B's recorded hello recreated (same session id, nonce, ephemeral key and counter; hedged signature).
             XCTAssertEqual(conn.localHello?.unsignedJSON, try SessionHello.parse(bytes(str(obj(hello["responder"])["text"]))).unsignedJSON)
+            XCTAssertEqual(conn.localHello?.ephemeralSecret?.used, true)   // the responder's key served its one derivation
         }
     }
 

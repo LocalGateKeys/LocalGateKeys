@@ -6,6 +6,7 @@
   import { okOrToast } from '../lib/toast.js';
   import Button from './Button.svelte';
   import Field from './Field.svelte';
+  import PhraseCard from './PhraseCard.svelte';
 
   let { initial = null, onclose } = $props();
   let status = $state(null);
@@ -15,8 +16,6 @@
   let error = $state('');
   let summary = $state('');
   let card = $state(null);
-  let answers = $state([]);
-  let cardError = $state('');
   // What replacing the phrase changed (old phrase dead, older backups still
   // open with it, Hello/camera to set up again); kept after the card closes.
   let phraseNotes = $state([]);
@@ -62,7 +61,7 @@
     if (!result.ok) { if (result.error.code !== 'cancelled') error = result.error.message; return; }
     form = null;
     if (kind === 'phrase') {
-      card = result; answers = result.positions.map(() => ''); cardError = '';
+      card = result;
       phraseNotes = Array.isArray(result.notes) ? result.notes.filter((n) => typeof n === 'string' && n) : [];
       return;
     }
@@ -83,19 +82,9 @@
     load();
   }
 
-  async function confirmPhrase() {
-    const result = await call('phrase_confirm', card.token, answers);
-    if (!result.ok) { cardError = result.error.message; return; }
-    if (!result.confirmed) { cardError = result.message; return; }
-    summary = result.message;
-    card = null; answers = [];
-    load();
-  }
-
-  async function closeCard() {
-    const result = await call('phrase_close', card.token);
-    card = null; answers = [];
-    if (result.ok) summary = result.message;
+  function cardDone(message) {
+    if (message) summary = message;
+    card = null;
     load();
   }
 </script>
@@ -114,24 +103,7 @@
       </ul>
     {/if}
     {#if card}
-      <section class="card group" aria-label="Your recovery phrase">
-        <h3>Your recovery phrase</h3>
-        <p class="note">{card.intro}</p>
-        <ol class="words">
-          {#each card.words as word, i (i)}<li><span class="n">{String(i + 1).padStart(2, '0')}.</span> {word}</li>{/each}
-        </ol>
-        <p class="note">To confirm you wrote it down, enter these words:</p>
-        <div class="challenge">
-          {#each card.positions as pos, i (pos)}
-            <label>Word #{pos}<input autocomplete="off" spellcheck="false" bind:value={answers[i]} /></label>
-          {/each}
-        </div>
-        {#if cardError}<p class="error" role="alert">{cardError}<ErrorLogLink text={cardError} /></p>{/if}
-        <footer>
-          <Button label="Close without confirming" onclick={closeCard} />
-          <Button label="Confirm" variant="primary" onclick={confirmPhrase} />
-        </footer>
-      </section>
+      {#key card.token}<PhraseCard {card} ondone={cardDone} />{/key}
     {:else if form}
       <form class="group form" onsubmit={submit} aria-label={FORMS[form].title}>
         <h3>{FORMS[form].title}</h3>
@@ -197,13 +169,7 @@
   .row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; }
   .row + .row { border-top: 1px solid var(--separator); }
   .text { flex: 1; }
-  .form, .card { padding: 14px; display: grid; gap: 8px; }
-  .words { columns: 3; list-style: none; padding: 0; margin: 4px 0; font: 500 14px ui-monospace, monospace; user-select: text; }
-  .words li { padding: 3px 0; }
-  .n { color: var(--text-faint); }
-  .challenge { display: flex; gap: 10px; }
-  .challenge label { display: grid; gap: 4px; font-size: 12.5px; color: var(--text-muted); }
-  .challenge input { background: var(--group); border: 1px solid var(--separator); border-radius: 8px; padding: 6px 8px; color: var(--text); }
+  .form { padding: 14px; display: grid; gap: 8px; }
   .error { color: var(--danger); margin: 0; }
   footer { display: flex; justify-content: flex-end; gap: 8px; }
 </style>

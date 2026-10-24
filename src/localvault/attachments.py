@@ -28,7 +28,7 @@ from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from .item_schema import MAX_ATTACHMENT_NAME, ItemSchemaError, new_item, validate_attachment_records
-from .vault import VaultError, VaultLockedError, require_pro_feature
+from .vault import VaultError, VaultLockedError, _aesgcm_decrypt, require_pro_feature
 
 MAX_ATTACHMENT_SIZE = 25 * 1024 * 1024
 MAX_ATTACHMENT_QUOTA = 1024 * 1024 * 1024
@@ -547,9 +547,10 @@ class AttachmentStore:
         if len(ciphertext) != record["size"] + 16:
             raise AttachmentError("Attachment sidecar length does not match its catalog record")
         key = bytearray(_b64d(record["key"]))
-        plaintext = bytearray(record["size"])
+        plaintext = bytearray()
         try:
-            AESGCM(key).decrypt_into(nonce, ciphertext, header_bytes, plaintext)
+            # The vault helper falls back when this cryptography build has no decrypt_into (R-7).
+            plaintext = _aesgcm_decrypt(key, nonce, ciphertext, header_bytes)
             if hashlib.sha256(plaintext).hexdigest() != record["sha256"]:
                 raise AttachmentError("Attachment integrity check failed")
         except (InvalidTag, ValueError):

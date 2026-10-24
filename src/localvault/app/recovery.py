@@ -10,11 +10,11 @@ returned once; only its word challenge is kept, until confirmed or locked.
 from __future__ import annotations
 
 import secrets
-import tempfile
 from pathlib import Path
 from typing import Any, Mapping
 
 from ..api.result import ApiError
+from ..backup import private_temporary_directory
 from ..secret_text import SecretText, is_blank_secret, secrets_match
 
 INTRO = ("Backups are encrypted files saved on this computer or a location you choose. To restore one, you need "
@@ -268,7 +268,11 @@ class RecoveryWebService:
         self.cancel_trial()
         center = self._run(self._center)
         source = self._open("Choose backup to test")
-        directory = tempfile.TemporaryDirectory(prefix="localgatekeys-restore-test-")
+        try:
+            # Inside the owner-only data folder, not the shared system temp (cleanup junction race).
+            directory = private_temporary_directory("localgatekeys-restore-test-")
+        except OSError:
+            raise ApiError("invalid", "Could not prepare a private folder for the test restore.") from None
         destination = Path(directory.name) / "profile"
 
         def run() -> dict[str, Any]:
@@ -316,12 +320,18 @@ class RecoveryWebService:
 
     # -------------------------------------------------------- recovery phrase
     def phrase_create(self, vault_password: str | SecretText) -> dict[str, Any]:
-        from .recovery_center import RecoveryPhraseChallenge
-
         if not self._controller.is_unlocked():
             raise ApiError("locked", "Unlock this profile to manage its recovery phrase.")
         center = self._run(self._center)
         phrase = self._run(lambda: center.create_recovery_phrase(vault_password))
+        # Replacing a phrase rotates the data key; the notes say what that changed.
+        notes = list((getattr(center, "last_result", None) or {}).get("warnings", []))
+        return self.phrase_card(phrase, notes)
+
+    def phrase_card(self, phrase: str, notes: list[str] | None = None) -> dict[str, Any]:
+        """The show-once card for a phrase just issued (here, or by removing camera verification)."""
+        from .recovery_center import RecoveryPhraseChallenge
+
         try:
             challenge = RecoveryPhraseChallenge(phrase)
             words = phrase.split()
@@ -330,10 +340,8 @@ class RecoveryWebService:
         self._challenges.clear()
         token = secrets.token_urlsafe(12)
         self._challenges[token] = challenge
-        # Replacing a phrase rotates the data key; the notes say what that changed.
-        notes = list((getattr(center, "last_result", None) or {}).get("warnings", []))
         return {"token": token, "words": words, "positions": list(challenge.positions), "intro": CARD_INTRO,
-                "notes": notes}
+                "notes": [note for note in (notes or []) if isinstance(note, str) and note]}
 
     def phrase_confirm(self, token: str, answers: list[str]) -> dict[str, Any]:
         challenge = self._challenges.get(str(token))

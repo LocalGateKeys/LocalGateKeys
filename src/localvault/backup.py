@@ -51,6 +51,46 @@ class BackupError(Exception):
     pass
 
 
+PRIVATE_TEMP_FOLDER = "tmp"
+
+
+def private_temp_root() -> Path:
+    """An owner-only ``tmp`` folder inside the data folder for scratch directories.
+
+    ``tempfile.TemporaryDirectory`` in the shared system temp folder has a
+    cleanup race on Windows (another process can swap the directory for a
+    junction before rmtree runs).  Scratch directories are therefore created
+    in a folder only the current user and SYSTEM can write to.  A link or
+    junction in its place is refused rather than followed.
+    """
+    from .config import apply_owner_only_acl, data_dir, has_owner_only_acl
+    root = data_dir() / PRIVATE_TEMP_FOLDER
+    if root.is_symlink() or root.is_junction():
+        raise OSError("The private temporary folder is a link")
+    created = False
+    if not root.is_dir():
+        root.mkdir(mode=0o700)
+        created = True
+    if os.name == "nt":
+        try:
+            if created or not has_owner_only_acl(root):
+                apply_owner_only_acl(root)
+        except Exception:  # noqa: BLE001 - best-effort, like the data folder ACL
+            import logging
+            logging.getLogger(__name__).warning("Could not apply the owner-only ACL to the private temporary folder.")
+    else:
+        try:
+            root.chmod(0o700)
+        except OSError:
+            pass
+    return root
+
+
+def private_temporary_directory(prefix: str) -> tempfile.TemporaryDirectory[str]:
+    """``TemporaryDirectory`` created inside ``private_temp_root()`` (still removed on exit)."""
+    return tempfile.TemporaryDirectory(prefix=prefix, dir=private_temp_root())
+
+
 def _b64e(value: bytes) -> str:
     return base64.b64encode(value).decode("ascii")
 
@@ -233,7 +273,7 @@ def _read_backup_payload(source: Path, backup_password: str) -> dict[str, Any]:
         return payload
     except InvalidTag:
         raise BackupError("Wrong backup password or modified backup") from None
-    except (OSError, KeyError, TypeError, ValueError):
+    except (OSError, KeyError, TypeError, ValueError, RecursionError):
         raise BackupError("Could not read this backup") from None
 
 
@@ -275,7 +315,7 @@ def _verify_payload(payload: dict[str, Any], vault_password: SecretText) -> dict
         # probe unlock writes; nothing is left behind in the system temp.  The
         # probe never upgrades a v1/v2 envelope, which would otherwise write a
         # migration journal and pre-migration snapshot beside the copy.
-        with tempfile.TemporaryDirectory(prefix="lgk-verify-") as directory:
+        with private_temporary_directory("lgk-verify-") as directory:
             encrypted_path = Path(directory) / "vault.json"
             atomic_write_json(encrypted_path, payload["vault"])
             session = unlock_vault(encrypted_path, vault_password, upgrade_envelope=False)
@@ -285,7 +325,7 @@ def _verify_payload(payload: dict[str, Any], vault_password: SecretText) -> dict
                         "exported_at": int(payload.get("exported_at", 0))}
             finally:
                 session.lock()
-    except (VaultError, OSError, ValueError, TypeError):
+    except (VaultError, OSError, ValueError, TypeError, OverflowError):
         raise BackupError("Backup opened, but its vault could not be unlocked/validated. Use the vault master password from when this backup was made.") from None
 
 
@@ -356,7 +396,7 @@ def _restore_verified(payload: dict[str, Any], vault_password: SecretText, *, va
     info = _verify_payload(payload, vault_password)
     if vault_file.exists() and not replace:
         raise BackupError("Destination already has a vault. Restore as a new profile instead.")
-    with tempfile.TemporaryDirectory(prefix="lgk-restore-check-") as directory:
+    with private_temporary_directory("lgk-restore-check-") as directory:
         probe_path = Path(directory) / "vault.json"
         atomic_write_json(probe_path, payload["vault"])
         probe = unlock_vault(probe_path, vault_password, upgrade_envelope=False)
@@ -378,7 +418,7 @@ def _restore_verified(payload: dict[str, Any], vault_password: SecretText, *, va
             AppSettings.load(settings_file).save(settings_file)
     # Restored credentials must not silently retain per-entry automatic sign-in approvals.
     # Re-encrypt the sanitized payload in an encrypted-only temporary file.
-    with tempfile.TemporaryDirectory(prefix="lgk-restore-") as directory:
+    with private_temporary_directory("lgk-restore-") as directory:
         temporary = Path(directory) / "vault.json"
         atomic_write_json(temporary, payload["vault"])
         session = unlock_vault(temporary, vault_password)
@@ -590,7 +630,7 @@ def _full_read_settings(path: Path | None) -> dict[str, Any]:
         return _full_validate_settings({})
     try:
         raw = read_json(Path(path))
-    except (OSError, ValueError, TypeError) as exc:
+    except (OSError, ValueError, TypeError, RecursionError) as exc:
         raise BackupError("Could not read profile settings") from exc
     return _full_validate_settings(raw)
 
@@ -598,7 +638,7 @@ def _full_read_settings(path: Path | None) -> dict[str, Any]:
 def _full_validate_json_object(data: bytes, label: str) -> dict[str, Any]:
     try:
         value = json.loads(data)
-    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+    except (TypeError, ValueError, json.JSONDecodeError, RecursionError) as exc:
         raise BackupError(f"{label} is not valid JSON") from exc
     if not isinstance(value, dict):
         raise BackupError(f"{label} must be a JSON object")
@@ -1094,7 +1134,7 @@ def _full_read_container(
             return {"manifest": manifest, "header": header, "entries": entries}
     except BackupError:
         raise
-    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError, zipfile.BadZipFile) as exc:
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError, zipfile.BadZipFile, RecursionError) as exc:
         raise BackupError("Could not read full backup") from exc
 
 

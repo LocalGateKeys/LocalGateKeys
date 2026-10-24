@@ -92,6 +92,9 @@ THROTTLE_FREE_ATTEMPTS = 5
 THROTTLE_BASE_SECONDS = 2.0
 THROTTLE_MAX_SECONDS = 60.0
 THROTTLE_FAIL_CLOSED_FAILURES = 10
+# v3 header field (authenticated through the catalog AAD) naming the unlock-throttle key in use at
+# this vault's location, so a deleted, replaced or downgraded throttle key fails closed (R-8).
+THROTTLE_BINDING_FIELD = "throttle_binding"
 
 _LOG = logging.getLogger("localvault.vault")
 _monotonic = time.monotonic  # patched by tests with a fake clock
@@ -338,6 +341,9 @@ def _aad(header: dict[str, Any]) -> bytes:
         authenticated_header = _v3_identity(header)
         authenticated_header["generation"] = header.get("generation", 0)
         authenticated_header["cipher"] = {"name": header["cipher"]["name"]}
+        if THROTTLE_BINDING_FIELD in header:
+            # R-8: deleting or swapping the throttle key would change this and fail the unlock.
+            authenticated_header[THROTTLE_BINDING_FIELD] = header[THROTTLE_BINDING_FIELD]
         return AAD_PREFIX_V3 + _canonical_json(authenticated_header)
     authenticated_header = {
         "version": header["version"],
@@ -477,7 +483,8 @@ def _derive_key(password: str | SecretText, kdf: dict[str, Any]) -> bytearray:
                 parallelism=parallelism,
                 hash_len=hash_len,
             )
-        except (KeyError, TypeError, ValueError) as exc:
+        except (KeyError, TypeError, ValueError, OverflowError) as exc:
+            # OverflowError: int() of an out-of-range float such as 1e400 (parsed as inf).
             raise VaultError("Invalid KDF parameters") from exc
         except RuntimeError:
             raise VaultError("Key derivation failed") from None
@@ -1030,7 +1037,7 @@ def _read_vault_migration_journal(path: Path) -> dict[str, Any] | None:
         raw = json.loads(journal_path.read_text(encoding="utf-8"))
     except FileNotFoundError:
         return None
-    except (OSError, ValueError, json.JSONDecodeError) as exc:
+    except (OSError, ValueError, RecursionError) as exc:
         raise VaultError("Vault migration journal is damaged; recovery is required") from exc
     if not isinstance(raw, dict):
         raise VaultError("Vault migration journal is malformed; recovery is required")
@@ -1119,6 +1126,8 @@ def _recover_vault_migration(path: Path, *, in_process: bool = False) -> str | N
 
 _THROTTLE_LOCK = threading.Lock()
 _THROTTLE_STATE: dict[str, dict[str, float]] = {}
+# Per vault path: the binding this process last derived from a readable, current throttle key.
+_THROTTLE_BINDINGS: dict[str, dict[str, str]] = {}
 
 
 def _unlock_throttle_path(path: Path) -> Path:
@@ -1140,6 +1149,23 @@ def _throttle_delay(failures: int) -> float:
 def _reset_unlock_throttle_state_for_tests() -> None:
     with _THROTTLE_LOCK:
         _THROTTLE_STATE.clear()
+        _THROTTLE_BINDINGS.clear()
+
+
+def _throttle_location(path: Path) -> str:
+    """Hash of the vault's absolute path: a copy elsewhere (a restore, a verified backup) is not bound."""
+    text = os.path.normcase(str(Path(path).absolute()))
+    return hashlib.sha256(b"localgatekeys|unlock-throttle-location|v1|" + text.encode("utf-8")).hexdigest()[:32]
+
+
+def _throttle_key_id(key: bytes) -> str:
+    return hmac.new(key, b"localgatekeys|unlock-throttle-key-id|v1", hashlib.sha256).hexdigest()[:32]
+
+
+def _valid_throttle_binding(value: Any) -> bool:
+    return (isinstance(value, dict) and set(value) == {"key_id", "location"}
+            and all(isinstance(value[name], str) and len(value[name]) == 32
+                    and all(c in "0123456789abcdef" for c in value[name]) for name in ("key_id", "location")))
 
 
 class UnlockThrottle:
@@ -1155,6 +1181,13 @@ class UnlockThrottle:
     key fails closed, so deleting the counter file does not clear failures.
     Version 1 keys come from releases that deleted the counter on reset;
     they are upgraded at the next reset.
+
+    Every save of a v3 vault records the current key's id and the vault's
+    location in the authenticated header (``THROTTLE_BINDING_FIELD``).  At
+    that location a missing, replaced or version-1 key then fails closed
+    (the maximum delay, never a permanent lock-out), so deleting both files
+    no longer clears the failures.  A vault without the field (older
+    release, not saved since) keeps the behaviour above until its next save.
     """
 
     def __init__(self, path: Path):
@@ -1166,7 +1199,7 @@ class UnlockThrottle:
         key_path = _unlock_throttle_key_path(self.path)
         try:
             raw = json.loads(key_path.read_text(encoding="utf-8")) if key_path.exists() else None
-        except (OSError, ValueError):
+        except (OSError, ValueError, RecursionError):
             raw = None
         return raw if isinstance(raw, dict) else None
 
@@ -1196,6 +1229,7 @@ class UnlockThrottle:
 
     def _write_key_record(self, key: bytes) -> bool:
         key_path = _unlock_throttle_key_path(self.path)
+        _THROTTLE_BINDINGS.pop(self._id, None)
         record: dict[str, Any] = {"version": 2}
         sealed = _dpapi_protect(key, "LocalGateKeys unlock throttle", ROLLBACK_ANCHOR_INFO)
         if sealed is not None:
@@ -1213,8 +1247,57 @@ class UnlockThrottle:
         return _b64e(hmac.new(key, body, hashlib.sha256).digest())
 
     # -- persisted counter --------------------------------------------------
+    def _header_binding(self) -> dict[str, str] | None:
+        """The binding recorded in this vault's header at this location, if any (read before any key)."""
+        try:
+            if not self.path.is_file() or self.path.stat().st_size > MAX_VAULT_BYTES:
+                return None
+            header = json.loads(self.path.read_bytes())
+        except (OSError, ValueError, RecursionError):  # deep nesting: _read_vault_header refuses it
+            return None
+        if not isinstance(header, dict) or header.get("version") != FORMAT_VERSION:
+            return None
+        binding = header.get(THROTTLE_BINDING_FIELD)
+        if not _valid_throttle_binding(binding) or binding["location"] != _throttle_location(self.path):
+            return None
+        return binding
+
+    def _binding_broken(self) -> bool:
+        binding = self._header_binding()
+        if binding is None:
+            return False
+        key = self._key(create=False)
+        return (key is None or self._key_version() < 2
+                or not hmac.compare_digest(_throttle_key_id(key), binding["key_id"]))
+
+    def binding(self) -> dict[str, str] | None:
+        """The header binding for the next save; creates (or upgrades) the key and its counter when needed."""
+        with _THROTTLE_LOCK:
+            cached = _THROTTLE_BINDINGS.get(self._id)
+            if cached is not None:
+                return dict(cached)
+            state = self._state()
+            key = self._key(create=False)
+            fresh = key is None
+            if key is None:
+                key = self._key(create=True)
+                if key is None:
+                    return None
+            elif self._key_version() < 2 and not self._write_key_record(key):
+                return None
+            if fresh or not _unlock_throttle_path(self.path).exists():
+                self._store_failures(int(state["failures"]), key=key)
+                if not _unlock_throttle_path(self.path).exists():
+                    return None
+            binding = {"key_id": _throttle_key_id(key), "location": _throttle_location(self.path)}
+            _THROTTLE_BINDINGS[self._id] = binding
+            return dict(binding)
+
     def _load_failures(self) -> int:
         state_path = _unlock_throttle_path(self.path)
+        if self._binding_broken():
+            _LOG.warning("Unlock attempt key for %s is missing or replaced; failing closed.", self.path.name)
+            return THROTTLE_FAIL_CLOSED_FAILURES
         if not state_path.exists():
             if self._key_version() >= 2:
                 # A current key always has a counter beside it: a missing
@@ -1237,11 +1320,13 @@ class UnlockThrottle:
             _LOG.warning("Unlock attempt counter for %s is unreadable or forged; failing closed.", self.path.name)
             return THROTTLE_FAIL_CLOSED_FAILURES
 
-    def _store_failures(self, failures: int) -> None:
+    def _store_failures(self, failures: int, *, key: bytes | None = None) -> None:
         state_path = _unlock_throttle_path(self.path)
         failures = max(0, int(failures))
         try:
-            if failures == 0:
+            if key is not None:
+                pass  # binding(): the key was just created or checked
+            elif failures == 0:
                 if self._key_record() is None:
                     # No failure was ever persisted: nothing to keep.
                     state_path.unlink(missing_ok=True)
@@ -2700,7 +2785,7 @@ class VaultSession:
                     if candidate.is_symlink() or not candidate.is_file() or candidate.stat().st_size > MAX_VAULT_BYTES:
                         continue
                     header = json.loads(candidate.read_bytes())
-                except (OSError, ValueError):
+                except (OSError, ValueError, RecursionError):
                     continue
                 if (isinstance(header, dict) and isinstance(header.get("wrappers"), dict)
                         and isinstance(header["wrappers"].get("recovery"), dict)
@@ -2941,7 +3026,7 @@ class VaultSession:
                                 and header.get("vault_id") == self._header.get("vault_id")
                                 and header.get("key_generation") == generation):
                             continue
-                except (OSError, ValueError, VaultError):
+                except (OSError, ValueError, RecursionError, VaultError):
                     pass
                 found.append(candidate)
         return sorted(found)
@@ -2977,7 +3062,7 @@ class VaultSession:
                 if not keep:
                     backup.unlink()
                     removed += 1
-            except (OSError, ValueError, VaultError):
+            except (OSError, ValueError, RecursionError, VaultError):
                 continue
         return removed
 
@@ -3373,6 +3458,10 @@ class VaultSession:
             header["cipher"]["nonce"] = _b64e(nonce)
             if _header_version(header) == FORMAT_VERSION:
                 header["generation"] = int(payload["generation"])
+                # R-8: bind the unlock-throttle key in use here (authenticated by the AAD below).
+                binding = UnlockThrottle(self.path).binding()
+                if binding is not None:
+                    header[THROTTLE_BINDING_FIELD] = binding
             # The plaintext catalog lives only in a buffer that is zeroed once
             # it is encrypted, and the data key is used without a copy.
             plaintext = _canonical_json_buffer(payload)
@@ -3562,6 +3651,12 @@ def _validate_v3_header(header: dict[str, Any]) -> None:
         if recovery.get("kind") != RECOVERY_WRAPPER_KIND:
             raise VaultError("Unsupported recovery wrapper")
         _validated_wrapper_field(recovery, "salt", 16)
+    if THROTTLE_BINDING_FIELD in header and not _valid_throttle_binding(header[THROTTLE_BINDING_FIELD]):
+        raise VaultError("Vault unlock-throttle binding is malformed")
+
+
+def _reject_json_constant(name: str) -> Any:
+    raise ValueError(f"non-finite number {name}")
 
 
 def _read_vault_header(path: Path) -> tuple[dict[str, Any], bytes]:
@@ -3572,10 +3667,13 @@ def _read_vault_header(path: Path) -> tuple[dict[str, Any], bytes]:
             source_bytes = handle.read(MAX_VAULT_BYTES + 1)
         if len(source_bytes) > MAX_VAULT_BYTES:
             raise VaultError("Vault exceeds the accepted size limit")
-        header = json.loads(source_bytes)
+        # NaN/Infinity are not JSON and the writer never emits them; refusing them here keeps
+        # int() on KDF fields from raising OverflowError.
+        header = json.loads(source_bytes, parse_constant=_reject_json_constant)
         if not isinstance(header, dict):
             raise VaultError("Vault header must be an object")
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, RecursionError) as exc:
+        # RecursionError: Python 3.14's C decoder raises it for deeply nested input.
         raise VaultError(f"Unable to read vault: {exc}") from exc
     if header.get("version") not in SUPPORTED_FORMAT_VERSIONS:
         raise VaultError("Unsupported vault format version")
@@ -3675,6 +3773,20 @@ def _open_with_password(path: Path, header: dict[str, Any], source_bytes: bytes,
     return _decrypt_vault(path, header, source_bytes, data_key, backup_dir=backup_dir, backup_count=backup_count)
 
 
+def _rebind_throttle(session: VaultSession, throttle: UnlockThrottle) -> None:
+    """After a verified unlock, re-record a throttle key that had to be replaced (R-8).
+
+    An unreadable key (a profile copied to another Windows account) is
+    replaced at the reset; without a save the header would keep naming the
+    old key and every later start would fail closed.  Best effort.
+    """
+    try:
+        if _header_version(session._header) == FORMAT_VERSION and throttle._binding_broken():
+            session.save()
+    except (VaultError, OSError):
+        _LOG.warning("Could not re-record the unlock-throttle key for %s.", session.path.name)
+
+
 def unlock_vault(path: Path, master_password: str | SecretText, *, backup_dir: Path | None = None,
                  backup_count: int = 0, upgrade_envelope: bool = True) -> VaultSession:
     """Open the vault with its master password.
@@ -3699,6 +3811,8 @@ def unlock_vault(path: Path, master_password: str | SecretText, *, backup_dir: P
             throttle.record_failure()
             raise
         throttle.reset()
+        if upgrade_envelope:
+            _rebind_throttle(session, throttle)
         if _header_version(header) != FORMAT_VERSION and upgrade_envelope:
             try:
                 session._prepare_promotion(secret)
@@ -3736,6 +3850,7 @@ def unlock_with_recovery_phrase(path: Path, phrase: str, *, backup_dir: Path | N
         raise
     session = _decrypt_vault(path, header, source_bytes, data_key, backup_dir=backup_dir, backup_count=backup_count)
     throttle.reset()
+    _rebind_throttle(session, throttle)
     session.recovery_unlocked = True
     session._recovery_entropy = bytearray(entropy)
     return session

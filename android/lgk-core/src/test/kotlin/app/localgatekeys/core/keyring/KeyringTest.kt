@@ -100,6 +100,7 @@ class KeyringTest {
             Triple("keyring_epoch1.json", "1", false), Triple("keyring_epoch2.json", "2", false),
             Triple("keyring_epoch1_ab.json", "1", false), Triple("keyring_existing_epoch1.json", "1", true),
             Triple("keyring_existing_epoch3.json", "3", true), Triple("keyring_attach.json", "1", true),
+            Triple("keyring_v1_epoch1.json", "1", false),
         )
         for ((file, e, existing) in cases) {
             val raw = read(file)
@@ -123,10 +124,12 @@ class KeyringTest {
         assertEquals("bad-keyring", reason { parse("[1]") })
         assertEquals("bad-json", reason { parse("{\"x\":NaN}") })
         assertEquals("too-large", reason { Keyring.parse(ByteArray(256 * 1024 + 1) { 0x20 }) })
-        assertEquals("bad-format", reason { parse(text.replace("\"format\":1", "\"format\":1.0")) })
+        assertEquals("bad-format", reason { parse(text.replace("\"format\":2", "\"format\":2.0")) })
+        assertEquals("bad-format", reason { parse(text.replace("\"format\":2", "\"format\":3")) })
+        assertEquals("bad-format", reason { parse(text.replace("\"format\":2", "\"format\":0")) })
         assertEquals("bad-epoch", reason { parse(text.replace("\"epoch\":1", "\"epoch\":0")) })
         assertEquals("bad-kdf", reason { parse(text.replace("\"iterations\":4", "\"iterations\":3")) })
-        assertEquals("bad-fields", reason { parse(text.replace("\"format\":1,", "\"format\":1,\"extra\":1,")) })
+        assertEquals("bad-fields", reason { parse(text.replace("\"format\":2,", "\"format\":2,\"extra\":1,")) })
         val mac32 = Base64Std.encode(ByteArray(32) { 1 })
         assertEquals("bad-fields", reason { parse(text.replace("\"prev_mac\":null", "\"prev_mac\":\"$mac32\"")) })
         // Non-canonical base64 of the salt (strip padding).
@@ -164,6 +167,13 @@ class KeyringTest {
         val c = identity("C")
         val fakeA = DeviceIdentity(A, c.signingPrivateKey, c.exchangePrivateKey)
         assertEquals("key-mismatch", reason { Keyring.unwrapDevice(r2, fakeA) })
+        // Same device id and exchange key, another signing key: the format-2 entry lists A's own key.
+        val a = identity("A")
+        val otherSigner = DeviceIdentity(A, c.signingPrivateKey, a.exchangePrivateKey)
+        assertEquals("key-mismatch", reason { Keyring.unwrapDevice(r2, otherSigner) })
+        assertEquals("key-mismatch", reason { Keyring.accept(r2, epochKey("1"), otherSigner) })
+        // A format-1 entry lists no signing key: nothing to compare.
+        assertEquals(epochKey("1"), Keyring.unwrapDevice(ring("keyring_v1_epoch1.json"), otherSigner))
     }
 
     // ---- accept ----
@@ -478,5 +488,133 @@ class KeyringTest {
         assertTrue(Regex("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}").matches(g.deviceId))
         assertEquals("fixed", DeviceIdentity.generate("fixed", DetRand("uuid")).deviceId)
         assertFailsWith<DeviceIdentityException> { DeviceIdentity.generate(random = FixedRandom(ByteArray(3))) }
+    }
+
+    // ---- format 2: member signing keys ----
+
+    private fun signingKeys(e: String): Map<String, String> =
+        obj(obj(obj(expected()["epochs"])[e])["member_signing_keys"]).mapValues { str(it.value)!! }
+
+    @Test
+    fun member_signing_keys_match_vectors() {
+        assertEquals(signingKeys("1"), Keyring.memberSigningKeys(ring("keyring_epoch1.json")))
+        assertEquals(signingKeys("2"), Keyring.memberSigningKeys(ring("keyring_epoch2.json")))
+        for (who in listOf("A", "B", "C")) {
+            assertEquals(Base64Std.encode(identity(who).signingPublicKey), signingKeys("1")[identity(who).deviceId], who)
+        }
+        assertEquals(mapOf(A to Base64Std.encode(identity("A").signingPublicKey)), Keyring.memberSigningKeys(ring("keyring_existing_epoch1.json")))
+        for (file in listOf("keyring_epoch1.json", "keyring_epoch2.json", "keyring_epoch1_ab.json", "keyring_attach.json")) {
+            assertEquals(JsonValue.Int(2), obj(ring(file))["format"], file)
+        }
+    }
+
+    @Test
+    fun format1_keyring_is_still_read_and_accepted() {
+        val v1 = ring("keyring_v1_epoch1.json")
+        val g1 = epochKey("1")
+        assertEquals(JsonValue.Int(1), obj(v1)["format"])
+        assertEquals(emptyMap(), Keyring.memberSigningKeys(v1))
+        assertTrue(Keyring.macOk(v1, g1))
+        for (who in listOf("A", "B", "C")) {
+            assertEquals(g1, Keyring.accept(v1, g1, identity(who)), who)
+            assertEquals(g1, Keyring.unwrapDevice(v1, identity(who)), who)
+        }
+        assertEquals(g1, Keyring.unwrap(v1, pwKey("1")))
+        assertEquals(names("1"), Keyring.memberNames(v1, g1))
+        // The from_ios keyring (format 1) is read too.
+        assertEquals(JsonValue.Int(1), obj(Keyring.parse(Vectors.sync("from_ios/keyring.lgkkeys").readBytes()))["format"])
+    }
+
+    @Test
+    fun join_to_format1_writes_format2_with_null_signing_fields() {
+        val v1 = ring("keyring_v1_epoch1.json")
+        val g1 = epochKey("1")
+        val me = DeviceIdentity.generate(random = DetRand("kt-v1-join-id"))
+        val (joined, gk) = Keyring.join(v1, pwKey("1"), me, "Pixel", DetRand("kt-v1-join"), FixedClock(1790000700))
+        assertEquals(g1, gk)
+        val back = Keyring.parse(CanonicalJson.encode(joined, Dialect.UTF8))
+        val o = obj(back)
+        assertEquals(JsonValue.Int(2), o["format"])
+        assertTrue(Keyring.macOk(back, g1))
+        val members = arr(o["members"]).map { obj(it) }
+        assertEquals(4, members.size)
+        val old = arr(obj(v1)["members"]).map { obj(it) }
+        for ((i, m) in old.withIndex()) {
+            assertEquals(m + mapOf("signing_public" to JsonValue.Null, "signing_proof" to JsonValue.Null), members[i])
+        }
+        assertEquals(JsonValue.Str(Base64Std.encode(me.signingPublicKey)), members[3]["signing_public"])
+        assertEquals(mapOf(me.deviceId to Base64Std.encode(me.signingPublicKey)), Keyring.memberSigningKeys(back))
+        for (who in listOf("A", "B", "C")) assertEquals(g1, Keyring.accept(back, g1, identity(who)), who)
+        assertEquals(g1, Keyring.accept(back, g1, me))
+        assertEquals("Pixel", Keyring.memberNames(back, g1)[me.deviceId])
+        // Attach a further device to the format-1 ring: format 2 as well.
+        val other = DeviceIdentity.generate(random = DetRand("kt-v1-attach-id"))
+        val attached = Keyring.parse(
+            CanonicalJson.encode(Keyring.attach(v1, pwKey("1"), other, "Tablet", g1, DetRand("kt-v1-attach"), FixedClock(5)), Dialect.UTF8),
+        )
+        assertEquals(JsonValue.Int(2), obj(attached)["format"])
+        assertEquals(setOf(other.deviceId), Keyring.memberSigningKeys(attached).keys)
+    }
+
+    @Test
+    fun join_output_lists_own_signing_key_with_a_valid_proof() {
+        val ab = ring("keyring_epoch1_ab.json")
+        val me = DeviceIdentity.generate(random = DetRand("kt-proof-id"))
+        val (joined, _) = Keyring.join(ab, pwKey("1"), me, "Pixel", DetRand("kt-proof"), FixedClock(1790000800))
+        val entry = obj(arr(obj(joined)["members"]).last())
+        assertEquals(setOf("device_id", "name_ct", "exchange_public", "signing_public", "signing_proof", "added_at"), entry.keys)
+        val msg = Keyring.proofMessage(
+            str(obj(joined)["group_id"])!!, me.deviceId, str(entry["exchange_public"])!!, str(entry["signing_public"])!!,
+        )
+        assertTrue(DeviceIdentity.verify(Base64Std.decodeStrict(str(entry["signing_proof"])!!), msg, me.signingPublicKey))
+        assertEquals(signingKeys("1").filterKeys { it != C } + (me.deviceId to Base64Std.encode(me.signingPublicKey)), Keyring.memberSigningKeys(joined))
+    }
+
+    @Test
+    fun member_proof_tampering_is_bad_member_proof() {
+        val r1 = ring("keyring_epoch1.json")
+        val m0 = obj(arr(obj(r1)["members"])[0])
+        val m1 = obj(arr(obj(r1)["members"])[1])
+        val cases = listOf<Pair<String, (LinkedHashMap<String, JsonValue>) -> Unit>>(
+            "bad-member-proof" to { o ->
+                val proof = Base64Std.decodeStrict(str(m0["signing_proof"])!!)
+                proof[5] = (proof[5].toInt() xor 1).toByte()
+                editMember(o, 0, "signing_proof", JsonValue.Str(Base64Std.encode(proof)))
+            },
+            "bad-member-proof" to { o -> editMember(o, 0, "signing_public", m1["signing_public"]!!) },
+            "bad-member-proof" to { o -> editMember(o, 0, "signing_proof", m1["signing_proof"]!!) },
+            "bad-member-proof" to { o -> editMember(o, 0, "signing_public", JsonValue.Null) },
+            "bad-member-proof" to { o -> editMember(o, 0, "signing_proof", JsonValue.Null) },
+            // The proof binds the exchange key and the group.
+            "bad-member-proof" to { o -> editMember(o, 0, "exchange_public", m1["exchange_public"]!!) },
+            "bad-member-proof" to { o -> o["group_id"] = JsonValue.Str("5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b65") },
+            "bad-length" to { o -> editMember(o, 0, "signing_public", JsonValue.Str(Base64Std.encode(ByteArray(31)))) },
+            "bad-length" to { o -> editMember(o, 0, "signing_proof", JsonValue.Str(Base64Std.encode(ByteArray(63)))) },
+            "bad-base64" to { o -> editMember(o, 0, "signing_public", JsonValue.Int(1)) },
+            // Field sets follow the format.
+            "bad-fields" to { o -> o["format"] = JsonValue.Int(1) },
+            "bad-fields" to { o ->
+                val ms = arr(o["members"]).toMutableList()
+                ms[0] = JsonValue.Obj(obj(ms[0]) - "signing_proof" - "signing_public")
+                o["members"] = JsonValue.Arr(ms)
+            },
+        )
+        val failures = ArrayList<String>()
+        for ((i, c) in cases.withIndex()) {
+            val got = reason { Keyring.parse(mutated("keyring_epoch1.json", c.second)) }
+            if (got != c.first) failures += "case $i: want ${c.first}, got $got"
+        }
+        assertTrue(failures.isEmpty(), failures.joinToString("; "))
+        // Both null is a valid format-2 member (carried over from format 1).
+        Keyring.parse(
+            mutated("keyring_epoch1.json") { o ->
+                editMember(o, 0, "signing_public", JsonValue.Null)
+                editMember(o, 0, "signing_proof", JsonValue.Null)
+            },
+        )
+        // Signing fields in a format-1 keyring are refused.
+        val v1 = LinkedHashMap(obj(ring("keyring_v1_epoch1.json")))
+        editMember(v1, 0, "signing_public", JsonValue.Null)
+        assertEquals("bad-fields", reason { Keyring.parse(CanonicalJson.encode(JsonValue.Obj(v1), Dialect.UTF8)) })
     }
 }

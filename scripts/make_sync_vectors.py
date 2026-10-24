@@ -62,7 +62,7 @@ from localvault.sync.pairing import (
     parse_qr_payload,
     seal_enrollment_reply,
 )
-from localvault.sync.transport import SecureChannel, create_session_hello
+from localvault.sync.transport import SecureChannel, create_session_hello, version_refusal
 from localvault.sync.vault_bridge import CONFLICT_SUFFIX, _license_wrapper, _wrapper, normal_form
 from localvault.totp import TotpError
 from localvault.updates import canonical_json
@@ -115,6 +115,7 @@ GENERATED_FILES = tuple(sorted((
     "keyring_epoch2.json",
     "keyring_existing_epoch1.json",
     "keyring_existing_epoch3.json",
+    "keyring_v1_epoch1.json",
     "lan/enroll_reply.bin",
     "lan/enroll_reply_no_endpoint.bin",
     "lan/enroll_request.bin",
@@ -244,6 +245,15 @@ def build_keyrings(identities: dict[str, DeviceIdentity]) -> dict[str, Any]:
     return {"ring_ab": ring_ab, "ring1": ring1, "ring2": ring2, "gk": {1: gk1, 2: gk2}, "pw_keys": pw_keys}
 
 
+def format1_keyring(ring: dict[str, Any], gk: GroupKey) -> dict[str, Any]:
+    """*ring* as format 1 (no member signing keys), MAC recomputed under *gk*: what an older app wrote."""
+    body = {k: v for k, v in ring.items() if k != "mac"}
+    body["format"] = 1
+    body["members"] = [{k: v for k, v in m.items() if k not in ("signing_public", "signing_proof")}
+                       for m in ring["members"]]
+    return kr._finish(body, gk, None, ring["prev_mac"])
+
+
 def expected_json(built: dict[str, Any], existing: dict[str, Any], unicode_pw: dict[str, Any]) -> bytes:
     epochs = {}
     for epoch in (1, 2):
@@ -256,6 +266,7 @@ def expected_json(built: dict[str, Any], existing: dict[str, Any], unicode_pw: d
             "password_wrap_key_hex": built["pw_keys"][epoch].hex(),
             "member_name_key_hex": kr._name_key(gk).hex(),
             "member_names": kr.member_names(built[f"ring{epoch}"], gk),
+            "member_signing_keys": kr.member_signing_keys(built[f"ring{epoch}"]),
         }
     return dumps(
         {
@@ -691,19 +702,24 @@ def lan_files(identities: dict[str, DeviceIdentity], gk1: GroupKey) -> dict[str,
             x25519.X25519PublicKey.from_public_bytes(peer_public)
         )
 
-    def enroll(endpoint):
+    def enroll(endpoint, name):
         """One request + reply round; returns (request, reply, expected-dict fragment)."""
         req_eph, req_nonce = rand(32), rand(12)
         request = build_enrollment_request(
-            offer, invitee, endpoint=endpoint, now=now, _eph_seed=req_eph, _nonce=req_nonce
+            offer, invitee, endpoint=endpoint, name=name, now=now, _eph_seed=req_eph, _nonce=req_nonce
         )
         _peer, verified = PairingSession(offer).accept_enrollment(inviter, request, now=now)
+        assert verified.name == name
         rep_eph, rep_nonce = rand(32), rand(12)
         reply = seal_enrollment_reply(
             inviter, offer, verified, GROUP_ID, gk1.epoch, gk1.key, _eph_seed=rep_eph, _nonce=rep_nonce
         )
-        group_id, epoch, key = open_enrollment_reply(offer, invitee, reply, endpoint=endpoint)
+        group_id, epoch, key = open_enrollment_reply(offer, invitee, reply, endpoint=endpoint, name=name)
         assert (group_id, epoch, key) == (GROUP_ID, gk1.epoch, gk1.key)
+        # the verification code, recomputed from the documented recipe
+        digest = hashlib.sha256(b"localgatekeys|sync|enroll-verify|v2|" + verified.transcript).digest()
+        code = f"{int.from_bytes(digest[:4], 'big') % 10**6:06d}"
+        assert code == verified.code == pr.verification_code(verified.transcript)
 
         bound = hashlib.sha256(verified.transcript).digest()
         offer_id = offer.offer_id.encode("ascii")
@@ -723,6 +739,8 @@ def lan_files(identities: dict[str, DeviceIdentity], gk1: GroupKey) -> dict[str,
         return request, reply, {
             "request": {
                 "device_id": verified.device_id,
+                "name": name,
+                "verification_code": code,
                 "invitee_endpoint": None if endpoint is None else {"host": endpoint[0], "port": endpoint[1]},
                 "endpoint_list": None if endpoint is None else [endpoint[0], endpoint[1]],
                 "transcript": verified.transcript.decode("ascii"),
@@ -748,12 +766,14 @@ def lan_files(identities: dict[str, DeviceIdentity], gk1: GroupKey) -> dict[str,
             },
         }
 
-    request, reply, with_endpoint = enroll(("192.168.1.31", 48202))
-    request2, reply2, without_endpoint = enroll(None)
+    request, reply, with_endpoint = enroll(("192.168.1.31", 48202), DEVICE_NAMES["B"])
+    # a non-ASCII name: the canonical JSON escapes it (\u2019, \u00e9) in the body and the transcript
+    request2, reply2, without_endpoint = enroll(None, "Ilias\u2019s iPhone \u00e9")
     expected = {
-        "description": "QR enrollment of device B by device A at epoch 1 (see README.md). Top-level "
-        "request/reply: B announces its listening endpoint; request_no_endpoint/reply_no_endpoint: "
-        "B announces none (invitee_endpoint is null in the body and the transcript).",
+        "description": "QR enrollment (version 2: device name, verification code, Accept step) of device B "
+        "by device A at epoch 1 (see README.md). Top-level request/reply: B announces its listening "
+        "endpoint; request_no_endpoint/reply_no_endpoint: B announces none (invitee_endpoint is null in "
+        "the body and the transcript) and a non-ASCII name.",
         "now": now,
         "qr_payload": qr,
         "offer_bundle": parsed,
@@ -767,6 +787,7 @@ def lan_files(identities: dict[str, DeviceIdentity], gk1: GroupKey) -> dict[str,
             "reply_magic_hex": pr.ENROLL_REPLY_MAGIC.hex(),
             "refused_magic": "LGKENROLLNO1\\n",
             "refused_magic_hex": pr.ENROLL_REFUSED_MAGIC.hex(),
+            "refusals_hex": {reason: pr.enrollment_refusal(reason).hex() for reason in sorted(pr.REFUSAL_REASONS)},
             "json": "pairing._canonical: sorted keys, compact, ensure_ascii=True (differs from "
             "the sealed-view canonical JSON, which keeps non-ASCII literally)",
         },
@@ -843,7 +864,8 @@ def paired(identity: DeviceIdentity) -> PairedDevice:
 
 
 class LanSession:
-    """One LAN connection: *initiator* and the other device, fixed session id and hello nonces.
+    """One LAN connection: *initiator* and the other device, fixed session id, hello nonces and
+    ephemeral keys (protocol version 2).
 
     The desktop opens one connection per request/response (``sync_with`` makes a new connection,
     hello pair, session id and key for every chunk request), so every frame counter here is 1.
@@ -857,10 +879,13 @@ class LanSession:
         self.session_id = seed(f"lan|{label}|session-id")[:16]
         self.a, self.b = identities[self.initiator_name], identities[self.responder_name]
         self.counters = counters
+        self.eph = {role: seed(f"lan|{label}|ephemeral|{role}") for role in ("initiator", "responder")}
         self.hello_a = create_session_hello(self.a, GROUP_ID, self.session_id, counter=counters[0],
-                                            _nonce=seed(f"lan|{label}|hello-nonce|initiator"))
+                                            _nonce=seed(f"lan|{label}|hello-nonce|initiator"),
+                                            _ephemeral=self.eph["initiator"])
         self.hello_b = create_session_hello(self.b, GROUP_ID, self.session_id, counter=counters[1],
-                                            _nonce=seed(f"lan|{label}|hello-nonce|responder"))
+                                            _nonce=seed(f"lan|{label}|hello-nonce|responder"),
+                                            _ephemeral=self.eph["responder"])
         self.initiator = SecureChannel.from_paired_identities(
             self.a, paired(self.b), group_id=GROUP_ID, session_id=self.session_id, role="initiator",
             local_hello=self.hello_a, remote_hello=self.hello_b)
@@ -873,26 +898,35 @@ class LanSession:
         self.sorted_first = "initiator" if ordered[0] == self.hello_a.to_bytes() else "responder"
         self.shared = self.a.exchange_key.exchange(
             x25519.X25519PublicKey.from_public_bytes(self.b.exchange_public_key))
-        self.salt = hashlib.sha256(b"localgatekeys|sync|session-salt|" + self.transcript).digest()
-        self.info = b"localgatekeys|sync|session-key|" + self.session_id
-        self.key = HKDF(algorithm=hashes.SHA256(), length=32, salt=self.salt, info=self.info).derive(self.shared)
+        self.ephemeral_shared = x25519.X25519PrivateKey.from_private_bytes(self.eph["initiator"]).exchange(
+            x25519.X25519PublicKey.from_public_bytes(self.hello_b.ephemeral_public))
+        assert self.ephemeral_shared == x25519.X25519PrivateKey.from_private_bytes(self.eph["responder"]).exchange(
+            x25519.X25519PublicKey.from_public_bytes(self.hello_a.ephemeral_public))
+        self.salt = hashlib.sha256(b"localgatekeys|sync|session-salt|v2|" + self.transcript).digest()
+        self.info = b"localgatekeys|sync|session-key|v2|" + self.session_id
+        self.ikm = self.ephemeral_shared + self.shared
+        self.key = HKDF(algorithm=hashes.SHA256(), length=32, salt=self.salt, info=self.info).derive(self.ikm)
         assert self.key == self.initiator._key == self.responder._key
+        # both ephemeral secrets were used up by the two derivations
+        assert self.hello_a.ephemeral_secret.used and self.hello_b.ephemeral_secret.used
         self.prefix = {role: hashlib.sha256(self.key + b"send|" + role.encode()).digest()[:4]
                        for role in ("initiator", "responder")}
         assert self.prefix["initiator"] == self.initiator._send_prefix
         assert self.prefix["responder"] == self.responder._send_prefix
 
     def hello_json(self) -> dict[str, Any]:
-        def one(hello, name):
+        def one(hello, name, role):
             return {
                 "device": name,
                 "counter": hello.counter,
                 "text": hello.to_bytes().decode("ascii"),
                 "signing_input_hex": hello.signing_bytes().hex(),
                 "nonce_hex": hello.nonce.hex(),
+                "ephemeral_private_hex": self.eph[role].hex(),
+                "ephemeral_public_hex": hello.ephemeral_public.hex(),
             }
-        return {"initiator": one(self.hello_a, self.initiator_name),
-                "responder": one(self.hello_b, self.responder_name)}
+        return {"initiator": one(self.hello_a, self.initiator_name, "initiator"),
+                "responder": one(self.hello_b, self.responder_name, "responder")}
 
     def key_json(self) -> dict[str, Any]:
         return {
@@ -903,6 +937,8 @@ class LanSession:
             "transcript_sorted_hex": self.transcript.hex(),
             "sorted_first": self.sorted_first,
             "shared_secret_hex": self.shared.hex(),
+            "ephemeral_shared_secret_hex": self.ephemeral_shared.hex(),
+            "ikm_hex": self.ikm.hex(),
             "salt": self.salt.hex(),
             "info_hex": self.info.hex(),
             "key": self.key.hex(),
@@ -923,7 +959,7 @@ class LanSession:
         counter = outer["counter"]
         assert counter == 1, "one request and one response per connection"
         nonce = self.prefix[role] + counter.to_bytes(8, "big")
-        metadata = {"version": 1, "session_id": b64(self.session_id), "counter": counter, "nonce": b64(nonce)}
+        metadata = {"version": 2, "session_id": b64(self.session_id), "counter": counter, "nonce": b64(nonce)}
         aad = json.dumps(metadata, ensure_ascii=True, separators=(",", ":"), sort_keys=True).encode("ascii")
         assert {k: v for k, v in outer.items() if k != "ciphertext"} == metadata
         assert AESGCM(self.key).decrypt(nonce, base64.b64decode(outer["ciphertext"]), aad) == plaintext
@@ -955,6 +991,21 @@ LAN_RANGE_CASES: tuple[tuple[str, bool], ...] = (
     ("fd12:3456::1", True), ("2001:db8::1", False), ("::ffff:192.168.1.1", False), ("::", False),
     ("fe80::1%eth0", False), ("fe80::1%1", False),
 )
+
+
+def legacy_hello(identities: dict[str, DeviceIdentity]) -> dict[str, Any]:
+    """A signed version-1 hello of B (no ephemeral key): a version-2 responder must refuse it with
+    ``version_refusal`` and may verify the signature only to report that B needs an update."""
+    b = identities["B"]
+    unsigned = {"version": 1, "session_id": b64(seed("lan|legacy|session-id")[:16]), "group_id": GROUP_ID,
+                "device_id": b.device_id, "signing_public": b64(b.signing_public_key),
+                "exchange_public": b64(b.exchange_public_key), "nonce": b64(seed("lan|legacy|nonce")),
+                "counter": 5}
+    canonical = json.dumps(unsigned, ensure_ascii=True, separators=(",", ":"), sort_keys=True).encode("ascii")
+    signature = b.sign(b"localgatekeys|sync|session-hello|v1|" + canonical)
+    text = json.dumps({**unsigned, "signature": b64(signature)}, ensure_ascii=True, separators=(",", ":"),
+                      sort_keys=True)
+    return {"device": "B", "text": text}
 
 
 def prefixed(payload: bytes) -> bytes:
@@ -1004,7 +1055,8 @@ def lan_session_files(identities: dict[str, DeviceIdentity], gk1: GroupKey) -> t
         if name == "counters-9-10":
             assert session.hello_a.to_bytes() > session.hello_b.to_bytes() and counters[0] < counters[1]
     files["lan/session.json"] = dumps({
-        "description": "Three LAN connections of A and B (group id and identities as in identities.json), each "
+        "description": "Three LAN connections (protocol version 2, ephemeral keys) of A and B (group id and "
+        "identities as in identities.json), each "
         "with its one sealed request and one sealed response, both with frame counter 1. The first has A "
         "as initiator and both hello counters 1, the second B as initiator, the third hello counters 9 "
         "(initiator A) and 10 (responder B), where bytewise order (counter 10 before counter 9) "
@@ -1012,6 +1064,8 @@ def lan_session_files(identities: dict[str, DeviceIdentity], gk1: GroupKey) -> t
         "are the first connection. Every .bin file and every frame_hex INCLUDES the 4-byte big-endian "
         "length prefix (README.md).",
         "group_id": GROUP_ID,
+        "version_refusal": version_refusal().decode("ascii"),
+        "legacy_hello": legacy_hello(identities),
         "sessions": sessions,
     })
 
@@ -1716,15 +1770,16 @@ the docstrings of `src/localvault/sync/{{group,keyring,engine,pairing}}.py`. The
 | --- | --- | --- |
 | `identities.json` | Private and public keys of A, B, C (Ed25519 signing, X25519 exchange, raw base64). | Build `DeviceIdentity` values; the iOS test device can act as any of them. |
 | `keyring_epoch1_ab.json` | Keyring after A created the group and B joined by password (2 members). | Optional: join as C with the password and check structure (output differs, joins are randomised). |
-| `keyring_epoch1.json` | Epoch-1 keyring: A created it, B and C joined by password. Exact bytes of `keyring.lgkkeys` (canonical JSON, no trailing newline). | Parse, re-canonicalise, verify `mac`; open the password wrap with `correct horse battery staple 42` (Argon2id 128 MiB / 4 passes / 4 lanes, production parameters) and each device wrap with its identity. All three give `expected.json` epoch-1 group key. Decrypt every member's `name_ct` (key `member_name_key_hex`, AAD bound to group, epoch and device id) and compare with `member_names`. |
+| `keyring_epoch1.json` | Epoch-1 keyring: A created it, B and C joined by password. Exact bytes of `keyring.lgkkeys` (canonical JSON, no trailing newline). | Parse, re-canonicalise, verify `mac`; open the password wrap with `correct horse battery staple 42` (Argon2id 128 MiB / 4 passes / 4 lanes, production parameters) and each device wrap with its identity. All three give `expected.json` epoch-1 group key. Decrypt every member's `name_ct` (key `member_name_key_hex`, AAD bound to group, epoch and device id) and compare with `member_names`. Keyring format 2: every member lists its Ed25519 view-signing key `signing_public` and `signing_proof`, its signature over `localgatekeys|sync|keyring-member|v2|` + group id + `|` + device id + `|` + `exchange_public` (base64 text) + `|` + `signing_public` (base64 text); verify each proof and compare the keys with `member_signing_keys`. |
+| `keyring_v1_epoch1.json` | `keyring_epoch1.json` written in format 1 (members without `signing_public` / `signing_proof`, `mac` recomputed): what an older app wrote. Byte-identical to the epoch-1 keyring of the format-1 vectors. | Must still be read and accepted (same group key, names and wraps); `member_signing_keys` is empty; a join or attach writes it back as format 2 with null signing fields for the existing members. |
 | `keyring_epoch2.json` | A rotated to `violet tram sundial 1987 pebble` and removed C. Members: A, B. | `accept_keyring` from trusted epoch 1 + A's or B's identity must return the epoch-2 key (checks `prev_mac` and `mac`). C must get `not-member`; epoch 2 trusted against epoch 1 keyring must give `rollback`. Names were re-encrypted under the epoch-2 name key (`member_names` of epoch 2). |
 | `expected.json` | Group id, both passwords, group keys, record/file keys, keyring MAC keys, member-name keys, the decrypted member names and the raw Argon2id outputs (hex). | Compare every derived key. The Argon2id outputs let a failing KDF be told from a failing unwrap. |
 | `devices/A.lgksync`, `B`, `C` | Sealed device views at epoch 1 (`LGKSYNC1` format), headers: A counter 7, B counter 4, C counter 3. | Decode with the epoch-1 group key and `expected_device_id` = the device id. |
 | `expected_merge.json` | Final item set after merging A+B+C in ANY order. | Merge the decoded states in all 6 orders (first = local, then merge each other file into it and apply upserts, deletes and copies) and compare `engine_states`. Then check the stored form (below). |
 | `lan/qr_payload.txt` | The QR text (`lgk-pair:` + unpadded base64url of the canonical offer bundle), no trailing newline. | `parse_qr_payload` equivalent must give `lan/expected_lan.json` `offer_bundle`. |
-| `lan/enroll_request.bin` | B's enrollment request to A, exact wire bytes (`LGKENROLL1\\n` + canonical JSON). | Verify as A (inviter) at `now` from `expected_lan.json`; the decrypted transcript must equal `request.transcript`. |
+| `lan/enroll_request.bin` | B's enrollment request to A, exact wire bytes (`LGKENROLL1\\n` + canonical JSON). Body version 2: it carries B's `name`, which is also `invitee_name` in the transcript. | Verify as A (inviter) at `now` from `expected_lan.json`; the decrypted transcript must equal `request.transcript`, and both devices must compute `request.verification_code` from it (first 4 bytes of SHA-256(`localgatekeys|sync|enroll-verify|v2|` + transcript), big-endian, mod 10^6, 6 digits). |
 | `lan/enroll_reply.bin` | A's reply (`LGKENROLLOK1\\n` + canonical JSON), the epoch-1 group key sealed to B and signed by A. | `open_enrollment_reply` as B must return group id, epoch 1 and the epoch-1 key. |
-| `lan/enroll_request_no_endpoint.bin`, `lan/enroll_reply_no_endpoint.bin` | The same enrollment where B announces no listening endpoint (`invitee_endpoint` null). | As above; `expected_lan.json` `request_no_endpoint` / `reply_no_endpoint`. |
+| `lan/enroll_request_no_endpoint.bin`, `lan/enroll_reply_no_endpoint.bin` | The same enrollment where B announces no listening endpoint (`invitee_endpoint` null) and a non-ASCII name (escaped as `\\u2019` and `\\u00e9` by the ASCII canonical JSON). | As above; `expected_lan.json` `request_no_endpoint` / `reply_no_endpoint`. `framing.refusals_hex` has the refusal of every reason, including `declined` (Decline or no Accept within 60 s) and `update-needed` (a version-1 body). |
 | `lan/expected_lan.json` | Decoded fields and intermediate values: ephemeral keys, nonces, transcript and its hash, both HKDF keys, the AADs, the decrypted request and reply body plaintexts, and the magics as text and hex. | Compare each value. |
 | `lan/session.json` | Three LAN connections of A and B (A initiates; B initiates; hello counters 9 and 10), each with both signed hello texts, their signing inputs (hex), the X25519 shared secret, the sorted transcript (hex) and which hello sorts first, `salt`, HKDF `info`, the session `key`, `prefix_initiator`, `prefix_responder`, and the one sealed request and one sealed response (`counter` 1, `nonce`, `aad`, `plaintext`, `frame_hex`). | Verify both hellos against the pinned identities of `identities.json`, re-derive `key` independently (the transcript order is by bytes), then decrypt the frames. |
 | `lan/hello_initiator.bin`, `lan/hello_responder.bin` | The two hello frames of the first connection as they go on the wire: the 4-byte length prefix plus the canonical hello JSON. | Strip the prefix, parse strictly, check the signature and that `exchange_public` is the pinned one. |
@@ -1781,17 +1836,26 @@ view is its own request on its own connection with its own hello pair, `session_
 frame counter is 1. The desktop never sends two frames in one direction of a connection.
 `lan/session.json` holds three such connections; `lan/messages.json` holds three more (the exchange below).
 
-**Hello.** A hello is canonical ASCII JSON (sorted keys, compact) with exactly the fields `version` (1),
-`session_id` (16 bytes, base64), `group_id`, `device_id`, `signing_public` (32 bytes), `exchange_public`
-(32 bytes), `nonce` (32 bytes, base64), `counter` and `signature` (64 bytes, base64). Parse strictly:
-exactly that field set, duplicate keys rejected, base64 canonical (what you re-encode must equal what you
-read), exact lengths, `counter` a JSON integer from 0 to 2^63 - 1, and at most 1 MiB - 256 bytes. The
-signing input is the ASCII text `localgatekeys|sync|session-hello|v1|` followed by the canonical JSON of
-the hello without `signature`. A receiver checks that the group, device id, signing key, its fingerprint
-(lowercase hex SHA-256 of the raw 32-byte Ed25519 public key) and `exchange_public` are exactly the
-pinned ones (the pinned exchange key, not the one in the hello), then the Ed25519 signature. `version`
-must be the JSON integer 1: `true`, `1.0` and `"1"` are refused, and so is a hello with a missing or an
-extra field.
+**Hello (protocol version 2).** A hello is canonical ASCII JSON (sorted keys, compact) with exactly the
+fields `version` (2), `session_id` (16 bytes, base64), `group_id`, `device_id`, `signing_public` (32 bytes),
+`exchange_public` (32 bytes), `ephemeral_public` (32 bytes: a fresh X25519 public key for this connection
+only), `nonce` (32 bytes, base64), `counter` and `signature` (64 bytes, base64). Parse strictly: exactly
+that field set, duplicate keys rejected, base64 canonical (what you re-encode must equal what you read),
+exact lengths, `counter` a JSON integer from 0 to 2^63 - 1, and at most 1 MiB - 256 bytes. The signing
+input is the ASCII text `localgatekeys|sync|session-hello|v2|` followed by the canonical JSON of the hello
+without `signature`. A receiver checks that the group, device id, signing key, its fingerprint (lowercase
+hex SHA-256 of the raw 32-byte Ed25519 public key) and `exchange_public` are exactly the pinned ones (the
+pinned exchange key, not the one in the hello), that `ephemeral_public` is not all zero and not the
+exchange key, then the Ed25519 signature. `version` must be the JSON integer 2: `true`, `2.0` and `"2"`
+are refused, and so is a hello with a missing or an extra field.
+
+**Other versions: no downgrade.** A first frame that is a signed hello with another integer `version`
+(version 1 had no `ephemeral_public` and the label `...|session-hello|v1|`) is never used for a key. The
+responder answers with the plain frame `{{"refused":"version","version":2}}` (`session.json`
+`version_refusal`) and closes; a version-1 hello whose signature verifies under the pinned key only marks
+that device as "needs an update" (`session.json` `legacy_hello` is B's). An initiator that reads such a
+refusal instead of a hello stops and reports that one side needs an update (the announced version is
+lower: the peer; higher: this device). It never retries with another version.
 
 **Hello counter.** Each device raises its hello counter for every connection it starts or accepts. Both
 sides enforce it: the responder rejects a hello whose counter is not above the last one it accepted from
@@ -1801,23 +1865,29 @@ restarts and a clock set backwards: the desktop refuses a hello whose counter is
 it accepted from that device, whichever side sent it.
 `session.json` `counters-9-10` shows hellos with different counters.
 
-**Session key.** `shared` = X25519 of one side's exchange private key and the other side's exchange
-public key. `transcript` = both hellos, each as the canonical re-serialisation of the parsed hello (what
+**Session key.** `shared` (`shared_secret_hex`) = X25519 of one side's exchange private key and the other
+side's exchange public key; `ephemeral_shared` (`ephemeral_shared_secret_hex`) = X25519 of one side's
+ephemeral private key (`hello.*.ephemeral_private_hex`, published here for testing only) and the other
+hello's `ephemeral_public`. An all-zero result of either is refused. Each ephemeral private key is used
+for exactly one derivation and then erased. `transcript` = both hellos, each as the canonical re-serialisation of the parsed hello (what
 `to_bytes` returns; not the bytes as received, though for a canonical sender they are equal), sorted
 bytewise as byte strings and concatenated with no separator. The order is by bytes, never by role or by
 counter: `session.json` `b-initiates` (A's hello sorts first although A is the responder) and `counters-9-10`
 (the text `"counter":10` sorts before `"counter":9`, so the responder's hello comes first although
-the initiator's counter is the smaller number) have `sorted_first` = `responder`. `salt` = SHA-256 of `localgatekeys|sync|session-salt|`
+the initiator's counter is the smaller number) have `sorted_first` = `responder`. `salt` = SHA-256 of `localgatekeys|sync|session-salt|v2|`
 followed by `transcript`. `key` = HKDF-SHA256, 32 bytes, that `salt`, `info` =
-`localgatekeys|sync|session-key|` followed by the 16 raw session id bytes, applied to `shared`.
+`localgatekeys|sync|session-key|v2|` followed by the 16 raw session id bytes, applied to `ikm` =
+`ephemeral_shared` followed by `shared` (64 bytes, `ikm_hex`). The static part still binds the session
+to the pinned exchange keys; the ephemeral part means a later leak of both exchange private keys does
+not open recorded sessions.
 
 **Frames.** The nonce is a 4-byte direction prefix plus the 8-byte big-endian counter. The prefix is the
 first 4 bytes of SHA-256 of `key`, then `send|`, then the sender's role (`initiator` or `responder`).
-The AAD is the canonical ASCII JSON of `version` (1), `session_id` (base64), `counter` and `nonce`
+The AAD is the canonical ASCII JSON of `version` (2), `session_id` (base64), `counter` and `nonce`
 (base64). The frame payload is the canonical JSON of those four fields plus `ciphertext` (base64 of
 AES-256-GCM output with the 16-byte tag at the end). A message plaintext is at most 1 MiB - 256 bytes.
 Parse a frame payload as strictly as a hello: exactly the fields `ciphertext`, `counter`, `nonce`,
-`session_id` and `version`, duplicate keys rejected, `version` the JSON integer 1 (not `true` or `1.0`).
+`session_id` and `version`, duplicate keys rejected, `version` the JSON integer 2 (not `true` or `2.0`).
 A receiver rejects a counter that is not above the last one it accepted on that connection.
 
 **Messages.** A message is canonical ASCII JSON of one of `view`, `ack`, `next` or `error` (field lists
@@ -2213,6 +2283,7 @@ def generate(out: Path) -> None:
         "keyring_epoch2.json": canonical_json(built["ring2"]),
         "keyring_existing_epoch1.json": canonical_json(existing["ring1"]),
         "keyring_existing_epoch3.json": canonical_json(existing["ring3"]),
+        "keyring_v1_epoch1.json": canonical_json(format1_keyring(built["ring1"], gk1)),
         "keyring_attach.json": canonical_json(existing["attach"]),
         "expected.json": expected_json(built, existing_expected(existing), unicode_password()),
         "canonical_json.json": canonical_json_file(),

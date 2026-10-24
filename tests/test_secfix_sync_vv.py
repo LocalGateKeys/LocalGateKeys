@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 import pytest
-from test_sync_folder_transport import NOW, _group, _web, kinds
+from test_sync_folder_transport import NOW, _group, _older_app_members, _web, kinds
 from test_sync_phone_restore import PASSWORD, PHONE, FakeLease, _vault
 
 from localvault.phone_backup import read_phone_backup, write_phone_backup
@@ -74,6 +74,7 @@ def test_poisoned_vector_is_quarantined_and_sync_continues(tmp_path: Path) -> No
         d.sync(NOW)
     sig = root / "LocalGateKeys Sync" / "signatures" / f"{m.device_id}.lgksig"
     sig.unlink()
+    _older_app_members(root, a, m)
     _unpin(a, b)  # m looks like a member that runs an older (unsigned) app
     _poison(m, eid, [a.device_id, b.device_id, m.device_id])
 

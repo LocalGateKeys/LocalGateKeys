@@ -32,6 +32,27 @@ describe('UnlockingPage', () => {
     finish({ ok: true, message: 'Camera verification enabled. Lock the vault and test it before relying on it.' });
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Set up camera verification' })).not.toBeInTheDocument());
   });
+
+  it('shows the new recovery phrase once after removing camera verification replaced it', async () => {
+    const words = Array.from({ length: 24 }, (_, i) => `word${i + 1}`);
+    const api = fakeApi({ hello_status: vi.fn().mockResolvedValue(HELLO_OFF),
+      face_status: vi.fn().mockResolvedValue({ ...FACE_OFF, enabled: true, status: 'Enabled.' }),
+      face_disable: vi.fn().mockResolvedValue({ ok: true,
+        message: 'Camera verification removed. Your old recovery phrase no longer works. Write down the new one shown below.',
+        phrase_card: { token: 't1', words, positions: [2, 9, 17], intro: 'Write these 24 words down.',
+          notes: ['The previous recovery phrase no longer opens this vault.'] } }),
+      phrase_confirm: vi.fn().mockResolvedValue({ ok: true, confirmed: true, message: 'Recovery phrase confirmed.' }) });
+    render(UnlockingPage, { onclose: vi.fn() });
+    await fireEvent.click(await screen.findByRole('button', { name: 'Remove' }));
+    expect(await screen.findByText(/Your old recovery phrase no longer works/)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Your recovery phrase' })).toBeInTheDocument();
+    expect(screen.getByText('word24')).toBeInTheDocument();
+    expect(screen.getByText('The previous recovery phrase no longer opens this vault.')).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    await waitFor(() => expect(api.phrase_confirm).toHaveBeenCalledWith('t1', ['', '', '']));
+    expect(await screen.findByText('Recovery phrase confirmed.')).toBeInTheDocument();
+    expect(screen.queryByText('word24')).not.toBeInTheDocument();
+  });
 });
 
 describe('CameraView', () => {

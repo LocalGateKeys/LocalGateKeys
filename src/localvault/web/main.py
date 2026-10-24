@@ -28,6 +28,17 @@ def run() -> None:
     # The legacy-data decision comes first: nothing is written to the data folder before it.
     startup, profiles = prepare_startup()
 
+    def secure_data_folder() -> None:
+        # Main app only, once per launch (never the native host): skipped when the ACL is already owner-only.
+        from ..config import secure_data_dir_once
+
+        secure_data_dir_once()
+
+    if startup.pending:
+        startup.on_ready.append(secure_data_folder)
+    else:
+        secure_data_folder()
+
     def clean_open_copies() -> None:
         # Decrypted copies left by a crash or a file that was still open at exit.
         from ..attachments import cleanup_open_copies

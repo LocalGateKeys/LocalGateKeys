@@ -22,12 +22,10 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
+from ..winpaths import system32, windows_powershell
+
 RULE_NAME = "LocalGateKeys Wi-Fi sync"
 ERROR_CANCELLED = 1223  # the user said No at the UAC prompt
-
-
-def _system32(executable: str) -> str:
-    return os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", executable)
 
 
 def program_path() -> str:
@@ -154,8 +152,7 @@ def parse_status(document: str, *, program: str, port: int, interface: str = "")
 
 
 def _run_powershell(script: str, env: dict[str, str]) -> str | None:
-    exe = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", "WindowsPowerShell", "v1.0",
-                       "powershell.exe")
+    exe = windows_powershell()
     try:
         result = subprocess.run([exe, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",  # noqa: S603
                                  "-Command", script], capture_output=True, text=True, encoding="utf-8",
@@ -254,7 +251,7 @@ def allow_inbound(port: int, *, status: FirewallStatus | None = None, program: s
         return AllowResult(False, message="Windows Firewall settings are only available on Windows.")
     program = program or program_path()
     args = rule_arguments(program, port, replace=bool(status and status.rule_present))
-    code = elevate(_system32("netsh.exe"), " ".join(args))
+    code = elevate(system32("netsh.exe"), " ".join(args))
     if code == ERROR_CANCELLED:
         return AllowResult(False, cancelled=True, message="Windows Firewall was not changed.")
     if code != 0:
