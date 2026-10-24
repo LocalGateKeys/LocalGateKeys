@@ -52,7 +52,7 @@ describe('Startup and keys', () => {
   it('shows the legacy-data choice before anything else', async () => {
     const api = fakeApi({ vault_state: vi.fn().mockResolvedValue({ ok: true, state: 'legacy', profile: null, vault_exists: false,
       legacy: { title: 'Legacy LocalGateKeys data found', text: 'Found data.', location: 'Legacy location: C:\\old' } }),
-      legacy_fresh: vi.fn().mockResolvedValue({ ok: true, state: 'locked', profile: { id: 'p1', name: 'Ilias', color: '#000' }, vault_exists: false, chips: [] }) });
+      legacy_fresh: vi.fn().mockResolvedValue({ ok: true, state: 'locked', profile: { id: 'p1', name: 'Alex', color: '#000' }, vault_exists: false, chips: [] }) });
     render(App);
     await fireEvent.click(await screen.findByRole('button', { name: 'Start fresh' }));
     await waitFor(() => expect(api.legacy_fresh).toHaveBeenCalled());

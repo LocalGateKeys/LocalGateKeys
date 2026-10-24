@@ -25,6 +25,10 @@ def check(*, require_camera: bool = False, require_license_keys: bool = False) -
         for name in (
             "win32api", "win32con", "win32gui", "win32security", "pywinauto",
             "pystray", "PIL.Image", "webview",
+            # The window's renderer: importing it loads pythonnet and WinForms and resolves
+            # every WebView2 runtime folder, exactly what the app does before the first
+            # window; a payload trimmed too far fails here instead of at the user's start.
+            "webview.platforms.edgechromium",
         ):
             importlib.import_module(name)
         from .windows_hello import WindowsHello

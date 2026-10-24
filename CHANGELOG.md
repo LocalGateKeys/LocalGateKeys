@@ -6,9 +6,41 @@ under docs/archive/. Numbered release documents with full
 detail: docs/RELEASE_020.md, docs/RELEASE_019.md.
 Current implementation and validation status: docs/NEXT_RELEASE_IMPLEMENTATION_STATUS.md.
 
-## Unreleased
+## 0.4.7 (2026-10-24)
 
-### Security and privacy (scan of 2026-10-24, docs/SECURITY_SCAN_2026-10-24.md)
+- Fixes 0.4.6 not starting ("Cannot find win-arm64"): the installer left out
+  WebView2 runtime files the window needs. The build check now loads the window's
+  renderer, so a build missing them fails before release. Includes everything in
+  0.4.6 below.
+
+## 0.4.6 (2026-10-24, withdrawn: did not start)
+
+Security release. Everyone on 0.4.5 or older should update: this release fixes
+every finding of three audits on 2026-10-24 (static analysis, fuzzing, a
+Windows assessment, a live-service scan and code review). Details are in
+SECURITY.md.
+
+### Security
+- Browser save prompts no longer reveal whether a typed password matches the
+  saved one; the app compares them after you click Save ("Already saved").
+- Wi-Fi sync uses fresh keys for every connection (forward secrecy). Pairing a
+  new device shows the same 6-digit code on both screens and needs Accept on
+  this PC. Older devices are asked to update.
+- Sync checks each device's signing key from the group key file, so a group
+  member cannot impersonate another device.
+- Turning off camera unlock now replaces the encryption key and shows a new
+  recovery phrase once; the old phrase stops working.
+- The unlock delay after wrong passwords can no longer be reset by deleting
+  its files. Vaults saved by 0.4.6 cannot be opened by older versions.
+- The installer only installs into your own app folder, and the app loads
+  system DLLs only from Windows. The download is 39 MB smaller.
+- Malformed vaults, backups, transfer files and browser messages are refused
+  cleanly instead of crashing; plus fixes for site matching with full-width
+  dots, sync conflict notices that repeated, and attachment reading on older
+  cryptography versions.
+- Built on Python 3.14.9 (OpenSSL 3.5.9).
+
+### Security and privacy (scan of 2026-10-24)
 - Website icons are off by default again, and strict offline mode now blocks them. Settings files
   before v7 load with icons off (v6 had switched them on for everyone). iPhone: off by default too.
 - The privacy policy has a new section 2.5 on website icons and breach checks (effective 24 October 2026).

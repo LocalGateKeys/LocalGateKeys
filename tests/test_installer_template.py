@@ -107,7 +107,10 @@ def test_both_executables_get_a_version_resource_from_the_app_version() -> None:
 def test_main_app_drops_unused_payload_but_keeps_what_runs() -> None:
     text = (ROOT / "LocalGateKeys.spec").read_text(encoding="utf-8")
     drop = _spec_list(text, "DROP_PAYLOAD")
-    assert "cv2/opencv_videoio_ffmpeg" in drop
+    # 0.4.6 did not start: pywebview needs every runtimes/<arch> folder (win-arm64,
+    # win-x64, win-x86) at import, and the camera plugin stays until a frozen camera test exists.
+    assert not any("webview" in p for p in drop)
+    assert not any("ffmpeg" in p for p in drop)
     assert not any("win-x64" in p or "amd64" in p or p.endswith("x64.dll") for p in drop)
     excludes = _spec_list(text, "EXCLUDES")
     assert "numpy._core._multiarray_tests" in excludes and "PIL._avif" in excludes

@@ -121,8 +121,8 @@ You are prompted for a password (or pass `--password-env NAME`). The PEM is
 encrypted PKCS#8 with owner-only permissions; the script refuses to overwrite an
 existing file. It prints the `key_id` and the base64 public key.
 
-Store the PEM text **and** its password in the password manager, then keep no
-other copy on a networked disk. Losing the key means no new licences can be
+Store the PEM text **and** its password offline (an encrypted store only you can
+open), then keep no other copy on a networked disk. Losing the key means no new licences can be
 issued under that `key_id`; a leaked key lets anyone mint licences (see key
 rotation).
 

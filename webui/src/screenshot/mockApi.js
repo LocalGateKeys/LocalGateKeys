@@ -131,7 +131,7 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
 
   const handlers = {
     // ---- app, window, profiles
-    app_info: () => ok({ version: '0.4.5', glass: false }),
+    app_info: () => ok({ version: '0.4.7', glass: false }),
     window_theme_sync: () => ok(),
     phone_backup_choose: () => ok({ handle: 'demo', name: 'LocalGateKeys-Backup-2026-10-20.lgkm', platform: 'android', created: '2026-10-20' }),
     phone_backup_preview: () => ok({ token: 'demo-token', lines: ['3 new items', '1 items updated from the backup', '2 already up to date', '1 items moved to the trash (deleted on the phone)'], status: 'Preview is ready. Review it, then restore.' }),

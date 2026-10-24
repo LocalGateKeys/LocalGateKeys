@@ -1,4 +1,4 @@
-> **App 0.4.5.** Report vulnerabilities privately (GitHub "Report a vulnerability" on the public repository, or security@localgatekeys.app); see the [disclosure policy](https://localgatekeys.app/legal/vulnerability-disclosure). Master-password unlock remains primary; Windows Hello and camera verification are optional, explicitly configured methods.
+> **App 0.4.7.** Report vulnerabilities privately (GitHub "Report a vulnerability" on the public repository, or security@localgatekeys.app); see the [disclosure policy](https://localgatekeys.app/legal/vulnerability-disclosure). Master-password unlock remains primary; Windows Hello and camera verification are optional, explicitly configured methods.
 
 # Security notes
 

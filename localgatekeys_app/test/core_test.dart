@@ -55,7 +55,7 @@ void main() {
 
     test('parses otpauth links and base32', () {
       final c = TotpConfig.parse(
-          'otpauth://totp/GitHub:ilias?secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ&issuer=GitHub&digits=8');
+          'otpauth://totp/GitHub:alex?secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ&issuer=GitHub&digits=8');
       expect(c!.digits, 8);
       expect(c.issuer, 'GitHub');
       expect(c.secret, secret);
@@ -88,7 +88,7 @@ void main() {
 
   test('CSV import handles Chrome and Bitwarden exports', () {
     final chrome = loginsFromCsv('name,url,username,password,note\r\n'
-        'GitHub,https://github.com,ilias,"pa,ss""word",\r\n'
+        'GitHub,https://github.com,alex,"pa,ss""word",\r\n'
         ',https://www.example.com/login,me,x,hello\n');
     expect(chrome, hasLength(2));
     expect(chrome.first.field('password'), 'pa,ss"word');
@@ -97,7 +97,7 @@ void main() {
 
     final bitwarden = loginsFromCsv(
         'folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp\n'
-        ',,login,Steam,,,,https://store.steampowered.com,ilias_p,hunter2,JBSWY3DPEHPK3PXP\n');
+        ',,login,Steam,,,,https://store.steampowered.com,alex_p,hunter2,JBSWY3DPEHPK3PXP\n');
     expect(bitwarden.single.field('totp'), 'JBSWY3DPEHPK3PXP');
     expect(() => loginsFromCsv('a,b\n1,2\n'), throwsFormatException);
   });

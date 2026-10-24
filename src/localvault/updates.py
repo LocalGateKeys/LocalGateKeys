@@ -57,8 +57,8 @@ REVOCATIONS_URL = urljoin(RELEASE_FEED_URL, "/revocations.json")
 # present during key rotation. With no trusted key every check fails closed and
 # the UI reports that update checks are not configured.
 PUBLISHER_KEYS: dict[str, str] = {
-    # Release key in use since 0.4.4 (2026-10-23); private half kept in the publisher's
-    # password manager (keygen --print-key). 0.4.0-0.4.3 trusted 2c85b99e44279161, which signed
+    # Release key in use since 0.4.4 (2026-10-23); private half held offline by the
+    # publisher (keygen --print-key). 0.4.0-0.4.3 trusted 2c85b99e44279161, which signed
     # the 0.4.0 feed; its private half was then lost.
     "6a892769c82386b3": "wQv4rd+J5MvV2EhSe8rovFFw+jeAWyq2tyfe9fXBwlM=",
 }

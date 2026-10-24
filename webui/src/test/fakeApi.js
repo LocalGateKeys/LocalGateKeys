@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 
-export const PROFILE = { id: 'p1', name: 'Ilias', color: '#2b6fe0' };
+export const PROFILE = { id: 'p1', name: 'Alex', color: '#2b6fe0' };
 export const LOCKED = { ok: true, state: 'locked', profile: PROFILE, vault_exists: true, autolock_seconds: 300 };
 export const UNLOCKED = { ...LOCKED, state: 'unlocked' };
 

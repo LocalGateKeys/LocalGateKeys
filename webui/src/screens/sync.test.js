@@ -59,8 +59,8 @@ describe('SyncPage', () => {
 
   it('asks Accept or Decline with the verification code before a scanned device joins', async () => {
     let decided = null;
-    const confirm = { ok: true, state: 'confirm', seconds_left: 58, message: 'Ilias iPhone wants to join.',
-      device: { id: 'd1', name: 'Ilias iPhone', code: '123 456', fingerprint: 'abcd ef01 2345 6789' } };
+    const confirm = { ok: true, state: 'confirm', seconds_left: 58, message: 'Alex iPhone wants to join.',
+      device: { id: 'd1', name: 'Alex iPhone', code: '123 456', fingerprint: 'abcd ef01 2345 6789' } };
     const pairedState = { ok: true, state: 'paired', device: { id: 'd1', name: 'd1…', fingerprint: 'abcd ef01 2345 6789' },
       message: 'Paired: d1….' };
     const poll = vi.fn(async (_id, decision) => {
@@ -76,7 +76,7 @@ describe('SyncPage', () => {
     render(SyncPage, { onclose: vi.fn() });
     await fireEvent.click(await screen.findByRole('button', { name: 'Show pairing code' }));
     const prompt = await screen.findByRole('alertdialog', { name: 'Accept this device?' }, { timeout: 3000 });
-    expect(within(prompt).getByText('Add Ilias iPhone?')).toBeInTheDocument();
+    expect(within(prompt).getByText('Add Alex iPhone?')).toBeInTheDocument();
     expect(within(prompt).getByText('123 456')).toBeInTheDocument();
     await fireEvent.click(within(prompt).getByRole('button', { name: 'Accept' }));
     await waitFor(() => expect(poll).toHaveBeenCalledWith('o1', 'accept'));

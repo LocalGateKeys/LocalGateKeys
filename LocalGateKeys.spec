@@ -31,10 +31,11 @@ EXCLUDES = [
 # - x86/arm64 copies: pywebview, its WebView2 SDK and clr_loader pick the
 #   loader matching the (x64) process.
 DROP_PAYLOAD = [
-    'cv2/opencv_videoio_ffmpeg',
-    'webview/lib/runtimes/win-x86/',
-    'webview/lib/runtimes/win-arm64/',
-    'webview/lib/webbrowserinterop.x86.dll',
+    # Kept for now: the OpenCV FFmpeg plugin (camera unlock). Trim only with a test
+    # that opens the camera in the frozen app.
+    # Not the WebView2 runtimes for x86/arm64: pywebview's edgechromium module adds
+    # all three runtimes/<arch>/native folders to PATH at import and fails if one is
+    # missing (FileNotFoundError: Cannot find win-arm64), so the window never opens.
     'clr_loader/ffi/dlls/x86/',
 ]
 

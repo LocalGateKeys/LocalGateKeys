@@ -107,7 +107,7 @@ describe('LicencePage', () => {
 describe('ProfilesPage', () => {
   it('adds a profile', async () => {
     const list = { ok: true, intro: 'Select a LocalGateKeys profile.', note: 'Locking does not sign out websites.',
-      profiles: [{ id: 'p1', name: 'Ilias', color: '#28C7FA', initials: 'I', active: true, photo: '' }] };
+      profiles: [{ id: 'p1', name: 'Alex', color: '#28C7FA', initials: 'I', active: true, photo: '' }] };
     const api = fakeApi({ profiles_manage: vi.fn().mockResolvedValue(list), profiles_create: vi.fn().mockResolvedValue({ ok: true, profile: {} }) });
     render(ProfilesPage, { onclose: vi.fn() });
     await fireEvent.input(await screen.findByLabelText('New profile name'), { target: { value: 'Work' } });

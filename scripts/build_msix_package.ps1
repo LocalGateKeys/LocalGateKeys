@@ -63,8 +63,13 @@ $TestIdentity = [ordered]@{
     PublisherDisplayName = "LocalGateKeys (test build)"
     DisplayName = "LocalGateKeys"
 }
-# Not a secret: it protects a throwaway self-signed test key in an ignored folder.
-$TestPfxPassword = "localgatekeys-msix-test"
+# A fresh random password per build; the PFX (the private key) is deleted right
+# after signing, so a machine that trusts a test certificate cannot be handed
+# packages signed later by anyone who finds the key on disk. Each test build
+# therefore has a new certificate to trust.
+$TestPfxBytes = New-Object byte[] 24
+[Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($TestPfxBytes)
+$TestPfxPassword = [Convert]::ToBase64String($TestPfxBytes)
 
 # ---------------------------------------------------------------------------
 # Tools
@@ -227,8 +232,12 @@ if ($TestSign) {
     & $Python (Join-Path $Root "scripts\msix_test_certificate.py") $certDir --subject $TestIdentity.Publisher --password $TestPfxPassword
     if ($LASTEXITCODE -ne 0) { throw "Creating the test certificate failed." }
     # No timestamp: a test signature only has to outlive the test.
-    Invoke-Tool $SignTool @("sign", "/fd", "SHA256", "/f", (Join-Path $certDir "LocalGateKeys-TestSigning.pfx"),
-        "/p", $TestPfxPassword, $PackagePath) "signtool sign"
+    $testPfx = Join-Path $certDir "LocalGateKeys-TestSigning.pfx"
+    try {
+        Invoke-Tool $SignTool @("sign", "/fd", "SHA256", "/f", $testPfx, "/p", $TestPfxPassword, $PackagePath) "signtool sign"
+    } finally {
+        Remove-Item -LiteralPath $testPfx -Force -ErrorAction SilentlyContinue
+    }
     Write-Host ""
     Write-Host "TEST-SIGNED package (sideload testing only): $PackagePath" -ForegroundColor Yellow
     Write-Host "Trust $(Join-Path $certDir 'LocalGateKeys-TestSigning.cer') on the test machine first; see docs\store\MSIX_FEASIBILITY.md." -ForegroundColor Yellow

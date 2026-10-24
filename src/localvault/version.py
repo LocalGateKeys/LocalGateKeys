@@ -1,5 +1,5 @@
 """Component versions shared by the agent and native bridge."""
-APP_VERSION = "0.4.5"
+APP_VERSION = "0.4.7"
 PROTOCOL_VERSION = 2
 RELEASE_ID = "024"
 BRIDGE_CONFIG_VERSION = 7

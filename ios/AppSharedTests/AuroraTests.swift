@@ -20,7 +20,7 @@ final class AuroraTests: XCTestCase {
         XCTAssertNil(AvatarInitials.from("12"))
         XCTAssertEqual(AvatarInitials.from("ip"), "IP")
         XCTAssertEqual(AvatarInitials.from(" i p "), "IP")
-        XCTAssertEqual(AvatarInitials.from("Ilias Pel"), "IP")
+        XCTAssertEqual(AvatarInitials.from("Alex Morgan"), "AM")
         XCTAssertEqual(AvatarInitials.from("abc"), "AB")
         XCTAssertEqual(AvatarInitials.from("é"), "É")
     }
@@ -29,7 +29,7 @@ final class AuroraTests: XCTestCase {
         let d = UserDefaults(suiteName: "aurora-\(UUID().uuidString)")!
         let s = AppSettings(defaults: d)
         XCTAssertEqual(s.initials, "")
-        s.initials = "ilias"
-        XCTAssertEqual(AppSettings(defaults: d).initials, "IL")
+        s.initials = "alex"
+        XCTAssertEqual(AppSettings(defaults: d).initials, "AL")
     }
 }

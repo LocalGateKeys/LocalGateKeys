@@ -27,8 +27,8 @@ describe('Button', () => {
 
 describe('Field', () => {
   it('links its label to the input', () => {
-    render(Field, { label: 'Username', value: 'ilias' });
-    expect(screen.getByLabelText('Username')).toHaveValue('ilias');
+    render(Field, { label: 'Username', value: 'alex' });
+    expect(screen.getByLabelText('Username')).toHaveValue('alex');
   });
 
   it('masks a password until Show is pressed', async () => {

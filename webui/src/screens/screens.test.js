@@ -4,7 +4,7 @@ import App from '../App.svelte';
 import ProfileChooser from './ProfileChooser.svelte';
 import Unlock from './Unlock.svelte';
 
-const PROFILE = { id: 'p1', name: 'Ilias', color: '#2b6fe0' };
+const PROFILE = { id: 'p1', name: 'Alex', color: '#2b6fe0' };
 const locked = { ok: true, state: 'locked', profile: PROFILE, vault_exists: true, autolock_seconds: 300 };
 
 function fakeApi(overrides = {}) {

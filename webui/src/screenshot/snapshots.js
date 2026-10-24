@@ -454,7 +454,7 @@ export const settingsPage = {
         {
           "type": "button",
           "title": "Updates",
-          "description": "Version 0.4.5",
+          "description": "Version 0.4.7",
           "label": "Check now",
           "route": "updates",
           "params": {},
