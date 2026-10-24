@@ -352,6 +352,13 @@ final class SyncCoordinator {
         return out
     }
 
+    /// The QR-paired peer's signing key (device id -> base64), the only key its folder view may be signed
+    /// with (desktop `_paired_keys`, audit M-7). An unreadable pairing leaves the first-use pin in charge.
+    nonisolated static func pairedKeys(_ deps: SyncDependencies) -> [String: String] {
+        guard let peer = (try? deps.keychain.pairedPeer()) ?? nil else { return [:] }
+        return [peer.deviceID: Base64.encode(peer.signingPublic)]
+    }
+
     nonisolated static func folderRun(store: any ItemStore, deps: SyncDependencies, installID: String) -> RunReport {
         var fail = RunReport()
         let bookmark: [UInt8]?
@@ -362,7 +369,8 @@ final class SyncCoordinator {
         do {
             let (folder, refreshed) = try deps.folders.open(bookmark: bookmark)
             if let refreshed { try? deps.keychain.writeSlot(.folderBookmark, refreshed) }
-            let fs = try FolderSync(access: folder, installID: installID, licenseKeys: deps.licenseKeys)
+            let fs = try FolderSync(access: folder, installID: installID, licenseKeys: deps.licenseKeys,
+                                    pairedKeys: pairedKeys(deps))
             return fs.runOnce(store: store, random: deps.random, clock: deps.clock)
         } catch {
             fail.issues = [SyncIssue("folder-missing", "\(error)")]
@@ -565,7 +573,8 @@ final class SyncCoordinator {
         let refreshed: [UInt8]?
         do { (folder, refreshed) = try deps.folders.open(bookmark: bookmark) } catch { throw SyncActionError("folder-missing") }
         let installID = try deps.keychain.installID(random: deps.random)
-        let fs = try FolderSync(access: folder, installID: installID, licenseKeys: deps.licenseKeys)
+        let fs = try FolderSync(access: folder, installID: installID, licenseKeys: deps.licenseKeys,
+                                pairedKeys: pairedKeys(deps))
         let snapshot = try store.load()
         let report: RunReport
         if let state = snapshot.sync, state.hasFolder, state.installID == installID {

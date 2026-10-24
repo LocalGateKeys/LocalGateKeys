@@ -63,6 +63,15 @@ public struct SyncMeta: Equatable, Sendable {
         guard (0...VersionVector.maxCounter).contains(now) else { throw RecordError(nil, nil, "Sync clock value is malformed") }
     }
 
+    /// `skipped` reason of a record whose stored vector cannot be bumped (audit M-6).
+    public static let counterOverflow = "version counter overflow"
+
+    /// `bump(vv, device)`, or nil when this device's counter would overflow (desktop `_bumped`).
+    static func bumped(_ vv: [String: Int64], device: String) throws -> [String: Int64]? {
+        if (vv[device] ?? 0) >= VersionVector.maxCounter { return nil }
+        return try VersionVector.bump(vv, device: device)
+    }
+
     static func nsName(_ wrapper: JSONValue) -> String? {
         if case .object(let w) = wrapper, case .string(let s)? = w["ns"] { return s }
         return nil
@@ -93,7 +102,12 @@ public struct SyncMeta: Equatable, Sendable {
                 let d: String
                 do { d = try digest(wrapper) } catch { skipped[id] = "unencodable"; continue }
                 if m == nil || m!.deleted || m!.digest != d {
-                    m = try live(wrapper, vv: VersionVector.bump(m?.vv ?? [:], device: device))
+                    // A vector stored before the plausibility rule: skip only this record.
+                    guard let vv = try bumped(m?.vv ?? [:], device: device) else {
+                        skipped[id] = counterOverflow
+                        continue
+                    }
+                    m = try live(wrapper, vv: vv)
                     meta[id] = m
                 }
                 states[id] = try ItemState(itemID: id, vv: m!.vv, deleted: false, deletedAt: nil, item: wrapper)
@@ -102,7 +116,9 @@ public struct SyncMeta: Equatable, Sendable {
                 if Wrapper.isLicenseID(id) || !Identifier.isValid(id) { continue }
                 var t = m
                 if !m.deleted {
-                    t = tomb(vv: try VersionVector.bump(m.vv, device: device), deletedAt: now)
+                    // The delete cannot be recorded without an overflow: publish nothing for it.
+                    guard let vv = try bumped(m.vv, device: device) else { continue }
+                    t = tomb(vv: vv, deletedAt: now)
                     meta[id] = t
                 }
                 states[id] = try ItemState(itemID: id, vv: t.vv, deleted: true, deletedAt: t.deletedAt, item: nil)
@@ -179,8 +195,8 @@ public struct SyncMeta: Equatable, Sendable {
         }
         for (s, at) in deletes {
             if Wrapper.isLicenseID(s.itemID) {
-                // A licence is republished above the tombstone.
-                meta[s.itemID] = try live(published[s.itemID]!, vv: VersionVector.bump(s.vv, device: device))
+                // A licence is republished above the tombstone; an overflowing bump refuses only this state.
+                meta[s.itemID] = try blame(s.itemID) { try live(published[s.itemID]!, vv: VersionVector.bump(s.vv, device: device)) }
                 continue
             }
             if records.removeValue(forKey: s.itemID) != nil { deleted += 1 }

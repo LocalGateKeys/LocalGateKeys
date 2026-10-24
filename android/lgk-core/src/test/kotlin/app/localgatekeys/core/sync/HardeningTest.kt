@@ -24,6 +24,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** Audit 2026-10-24 M-6 / M-7 (desktop `tests/test_secfix_sync_vv.py`, `tests/test_secfix_sync_views.py`). */
@@ -175,6 +176,24 @@ class HardeningTest {
         assertEquals(Base64Std.encode(SyncFixtures.identity("A").signingPublicKey), j.store.snapshot.sync!!.viewSigners[A])
         writeA(j, 9, "a9") // forged by a group-key holder, no signature
         assertEquals(listOf("view-unsigned"), issues(j.fs.runOnce(j.store, DetRand("r2"), FixedClock(T0 + 1700))))
+    }
+
+    @Test
+    fun paired_key_outranks_the_pin_on_first_use() {
+        // Desktop `paired_keys.get(dev) or signers.get(dev)`: the key learned at LAN pairing is the only one A may sign with.
+        val j = joined()
+        val keyA = Base64Std.encode(SyncFixtures.identity("A").signingPublicKey)
+        val fs = FolderSync(j.folder, INSTALL, pairedKeys = mapOf(A to keyA))
+        val raw = writeA(j, 8, "a8")
+        j.folder.files[FolderLayout.signatureFile(A)!!] = ViewSignature.sign(raw, ViewFile.decodeHeader(raw), SyncFixtures.identity("B"))
+        assertEquals(listOf("view-forged"), issues(fs.runOnce(j.store, DetRand("r1"), FixedClock(T0 + 1600))))
+        assertNull(j.store.snapshot.sync!!.viewSigners[A])
+        // A wrong key pinned on first use does not win over the paired one.
+        pin(j, A, SyncFixtures.identity("B").signingPublicKey)
+        j.folder.files[FolderLayout.signatureFile(A)!!] = ViewSignature.sign(raw, ViewFile.decodeHeader(raw), SyncFixtures.identity("A"))
+        assertEquals(emptyList(), issues(fs.runOnce(j.store, DetRand("r2"), FixedClock(T0 + 1700))))
+        assertEquals(8L, j.store.snapshot.sync!!.lastSeen[A])
+        assertEquals(keyA, j.store.snapshot.sync!!.viewSigners[A])
     }
 
     @Test

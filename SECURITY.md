@@ -75,8 +75,8 @@ The extension uses Manifest V3 (Chromium service worker; Firefox variant generat
 - The desktop agent gives a second save confirmation displaying the canonical origin and username.
 - Fill responses contain one selected credential, never the whole vault.
 - **Site matching.** Internationalised host names are converted with UTS-46 non-transitional processing (the `idna` package), the same mapping browsers use, so `straße.de` is stored as `xn--strae-oqa.de` rather than collapsing to `strasse.de`. Origins saved before this change are plain ASCII and are not recanonicalised; an old row keeps matching only the host it literally records, which fails closed. `base_domain` rows use the bundled Public Suffix List snapshot (`localvault/assets/public_suffix_list.dat`, ICANN and PRIVATE sections, wildcard and exception rules, plus one local narrowing rule `*.web.core.windows.net`), so a login is never offered to another tenant of a shared hosting suffix. If the list is missing or truncated, every host is its own base domain. `starts_with` URL rows narrow which entries are *offered*, but they are not an isolation boundary: any page on the same origin can change its path.
-- **Probe limits.** `check_browser` / `capture_browser` (used to decide whether to offer a save prompt) are limited to 10 checks per origin and 30 in total per 60 s while the vault is unlocked, so they cannot be used as a password-guessing oracle.
-- **Save prompt after a redirect.** A captured login waits in memory for its tab (90 s on the desktop, 10 minutes in Safari on iPhone). The next document on the same origin may show it. For 12 s after the capture, a document in the same tab on another origin of the same site may also show it: same scheme and port, and the same registrable domain by the bundled Public Suffix List (`login.paddle.com` → `vendors.paddle.com`). Never across a public suffix such as `github.io`, never for IP addresses, never in another tab. The login is saved for the origin it was typed on, and the panel and the desktop confirmation name that origin. Filling stays exact-origin.
+- **Probe limits.** `check_browser` / `capture_browser` (used to decide whether to offer a save prompt) compare the captured password with the stored one, so they are a password-guessing oracle and are rate-limited. On the desktop, while the vault is unlocked, they answer at most 10 checks per origin, 15 per site (registrable domain) and 60 in total per 60 s; past the total each site keeps 3, up to a hard cap of 240. Safari on iPhone allows 10 per origin and 30 in total per 60 s. Residual risk: within these limits a page can still test a few guesses per minute against the stored password for its origin.
+- **Save prompt after a redirect.** A captured login waits in memory for its tab (90 s, on the desktop and in Safari on iPhone). The next document on the same origin may show it. For 12 s after the capture, a document in the same tab on another origin of the same site may also show it: same scheme and port, and the same registrable domain by the bundled Public Suffix List (`login.paddle.com` → `vendors.paddle.com`). Never across a public suffix such as `github.io`, never for IP addresses, never in another tab. The login is saved for the origin it was typed on, and the panel and the desktop confirmation name that origin. Filling stays exact-origin.
 - **Page URL.** For multi-URL logins the content script sends `location.href` (fragment stripped, never credentials) next to `origin` in `begin_browser` / `get_browser`. The service worker re-derives the sender origin from `sender.url`, forwards the `url` only when its canonical origin is identical, and otherwise drops it so the broker matches the origin alone; the broker independently fails closed (`invalid_request`) on a mismatched `url`. Choices carry the broker's `match` kind and the in-page picker labels anything wider than `exact_origin`.
 - **Card fill** (`card_protocol: 1`) mirrors identity fill: `begin_card_browser` returns metadata only (title, brand, last four, which tokens exist), never a number or CVV. The user ticks fields in the extension's closed-shadow-root panel, defaulting to the tokens present on the page with the security code **unticked**; the desktop app then shows the trusted native review (number as `•••• 1111`, CVV masked) and the single-use approval is bound to the lease, origin, tab/document context, item revision and the selected tokens. `release_card_browser` is gesture-gated like `get_browser`; the page fills only the approved tokens into controls that pass the same `safeForm` / `onTop` checks as logins, never submits, discards a reply that carries any unapproved token, and blanks every released value from memory immediately after the fill. Payment forms are recognised from `autocomplete="cc-*"`; name/id heuristics cover only number, expiry and CVV and only inside a scope that already contains a card-number-like field. The PIN has no token and is never released.
 
@@ -100,8 +100,8 @@ Before fill, the prototype checks:
 
 1. exact normalized executable path
 2. exact executable SHA-256 fingerprint
-3. exact complete edit-control layout fingerprint
-4. exact normalized saved window title
+3. exact complete edit-control layout fingerprint (a change asks for confirmation, see below)
+4. exact normalized saved window title (a change asks for confirmation, see below)
 5. saved Authenticode signer certificate thumbprint when one was available during binding
 6. a strong, unambiguous UI-control selector
 7. a protected password-field type when the app originally exposed one
@@ -115,7 +115,8 @@ current protected password field (plus an unambiguous username field when one
 was saved). This compatibility policy permits updates without pinning the old
 binary hash, version directory, title, or complete control layout. Other desktop
 applications retain the strict checks above. When an identical (or same-signer)
-binary shows a changed window title, the app asks before filling or adopting it.
+binary shows a changed window title or edit-control layout, the app asks before
+filling or adopting it.
 
 If the app exposed an unprotected field and the user explicitly saved that mapping, LocalVault requires a stronger selector score and displays a fresh confirmation before every fill.
 
@@ -148,7 +149,9 @@ next unlock.
   phrase is supplied; otherwise it is invalidated and the user is asked to create a
   new phrase. Older copies still expose their own (pre-change) contents to someone
   who knows the old password. Recovery-phrase unlock followed by a new master
-  password (`set_master_password_after_recovery`) still re-wraps the existing DK.
+  password (`set_master_password_after_recovery`) rotates DK the same way; the
+  phrase that opened the session is re-wrapped under the new DK and keeps working,
+  and Windows Hello and camera bindings are revoked.
 - Recovery wrapper (optional): a 24-word BIP39 English phrase (256 bits of entropy
   plus an 8-bit checksum; the bundled word list is verified by SHA-256 when loaded)
   is expanded with HKDF-SHA256 and a per-wrapper random 16-byte salt into a
@@ -218,7 +221,10 @@ attempts are free; afterwards the wait doubles from 2 s up to a 60 s cap, measur
 with a monotonic clock, and a success resets the counter. An unreadable or forged
 counter fails closed to the maximum wait, and restarting the application re-arms
 the persisted wait instead of shortening it. The unlock dialog shows the countdown
-and keeps the Unlock button disabled until it expires.
+and keeps the Unlock button disabled until it expires. Residual risk: deleting
+both the counter file and its key file resets the count to zero, and restoring an
+older, correctly MAC'd counter file restores its lower count; both need same-user
+write access.
 
 ## Backup, transfer, attachment and sync cryptography
 
@@ -227,7 +233,13 @@ All derived formats reuse AES-256-GCM with 12 fresh random bytes per sealed obje
 - Vault-only backups (`.lgk`, envelope v2) and full profile backups (v2 container) derive their key with Argon2id using the vault defaults for new writes (64 MiB memory, 3 iterations, parallelism 4, 32-byte output). The parameters are stored in the header and are part of the associated data. Readers accept any header inside the vault's bounded range (8-512 MiB, 1-10 iterations, parallelism 1-16) and reject anything outside it before derivation runs; v1 `.lgk` envelopes (constant associated data) and older 32 MiB files remain restorable.
 - Selective transfer packages use the same Argon2id defaults, bounds, and header-in-associated-data rule.
 - Attachment sidecars (v2) carry only identity in the plaintext header (format, version, attachment id, store id). The plaintext size, SHA-256 digest, and per-attachment key live in the encrypted catalog record; integrity is verified after decryption against that record. v1 sidecars, whose header also exposed size and digest, remain readable.
-- LAN sync typed items (v2) are sealed under a pairwise channel key derived with HKDF-SHA256 from the static X25519 shared secret of the two paired devices (salt: sync group id; info: protocol label, both device ids, both exchange public keys). Each record uses a random 96-bit nonce and binds the item id, item revision, sender device id, and protocol counter in the associated data; the receiver re-derives those values from the authenticated envelope and rejects mismatches, records from a sender other than the authenticated peer, and retired v1 records. The channel derivation is static-static because records are sealed before a transport session exists and may be retried across sessions; the transport layer separately uses per-session keys.
+- LAN sync typed items (v2) are sealed under a pairwise channel key derived with HKDF-SHA256 from the static X25519 shared secret of the two paired devices (salt: sync group id; info: protocol label, both device ids, both exchange public keys). Each record uses a random 96-bit nonce and binds the item id, item revision, sender device id, and protocol counter in the associated data; the receiver re-derives those values from the authenticated envelope and rejects mismatches, records from a sender other than the authenticated peer, and retired v1 records. The channel derivation is static-static because records are sealed before a transport session exists and may be retried across sessions. The transport session key is also derived from the same static X25519 secret (salted with the session transcript and id), so LAN sync has **no forward secrecy**: anyone who later obtains a device's private exchange key can decrypt recorded sync traffic between it and its paired devices.
+
+Known limitations of sync:
+
+- **Signer pins are trust-on-first-use.** A folder-sync view is checked against the device's LAN-paired signing key when one is known; otherwise against the first key seen signing a view for that device. A holder of the group key who writes a signed view for a device before that device does gets their key pinned, and the device's real views are then refused as forged until the next key rotation.
+- **Hello replay window after restart.** The last hello counter received from each LAN peer is kept in memory only and starts again when the app restarts, so a recorded hello is not rejected as a replay after a restart; the session key still needs a paired device's private exchange key.
+- **Firewall scope from source.** The Windows Firewall rule for LAN sync names the executable that listens. Packaged builds scope it to the app executable; a source checkout scopes it to the whole `python.exe` interpreter, so any script run by that interpreter is allowed too.
 
 ## Memory handling
 
@@ -259,6 +271,8 @@ Residual exposure that this does not remove:
 - the master password is wiped on the app's side (see above), but the WebView2
   page keeps its own copy of what was typed, and the bridge's JSON-decoded
   `str` of it lives for the duration of the call; the app cannot erase either.
+- the KDBX export password is handed to the KDBX writer library as a Python
+  `str`, which cannot be zeroed.
 - garbage collection timing is not deterministic.
 - the interpreter, crash dumps, paging, or security tools may retain memory.
 
@@ -373,6 +387,25 @@ malicious process running as the same user may inspect state or process memory.
   whole names (`/JavaScript`, `/JS`, `/OpenAction`, `/AA`, `/Launch`,
   `/EmbeddedFile(s)`, `/RichMedia`, `/SubmitForm`, `/GoToR`, `/GoToE`,
   `/ImportData`). Names inside compressed object streams are not inspected.
+
+Known limitations:
+
+- **CSV export.** Values beginning with `=`, `+`, `-` or `@` are written as is, so
+  a spreadsheet may run them as formulas. The app warns before the export not to
+  open the file in a spreadsheet application.
+- **Backup mirrors and settings.** A backup mirror folder may be a network path (UNC
+  share or mapped drive); device and namespace paths are refused. `settings.json`
+  is not authenticated, so malware running as the user can change any setting,
+  including the mirror folder.
+- **Local UI server.** The desktop UI is served by pywebview's built-in HTTP server
+  on `127.0.0.1` at a random port, with no Host-header check and no per-launch
+  token on file requests. A DNS-rebinding page could therefore read what that
+  server serves: the static UI bundle (`localvault/assets/ui`: `index.html`,
+  `popup.html` and their scripts and styles), which holds no vault data. The
+  app's own calls go through the WebView2 bridge, not this server.
+- **Licence revocations** are fetched only together with an update check. With
+  strict offline mode on, a client sees new revocations only when the user runs a
+  manual check and accepts the network request.
 
 ## Production hardening backlog
 

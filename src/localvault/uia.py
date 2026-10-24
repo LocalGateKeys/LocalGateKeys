@@ -698,8 +698,8 @@ def updated_binary_binding(
     current hash, window title and layout. An identical binary, or a new one
     whose pinned signer still matches, is verified; ``signer_verified`` is
     False only for a changed unsigned binary, which the user must confirm.
-    A changed window title is never adopted silently, even for an identical
-    binary: the caller asks first (app/desktop.py).
+    A changed window title or edit-control layout is never adopted silently,
+    even for an identical binary: the caller asks first (app/desktop.py).
     """
 
     scope = entry.get("scope")

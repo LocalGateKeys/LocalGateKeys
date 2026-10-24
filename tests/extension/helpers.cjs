@@ -183,7 +183,9 @@ function createPage({
     commandListeners[0]({ command: cmd }, { id: runtimeId }, resolve);
   });
   const sent = type => messages.filter(m => m.type === type);
-  const panelHost = () => d.querySelector("[data-localgatekeys-panel]");
+  // The panel host carries a random per-page attribute: find it as the div
+  // with a closed shadow root that content.js appends to <html>.
+  const panelHost = () => Array.from(d.documentElement.children).find(e => e.tagName === "DIV" && shadows.get(e)?.mode === "closed") || null;
   const panelVisible = () => { const host = panelHost(); return !!host && host.style.display === "block"; };
   const panelText = () => { const host = panelHost(); return host ? (shadows.get(host)?.textContent || "") : ""; };
   const fieldIcons = () => Array.from(d.querySelectorAll("[data-localvault-field-icon]"));

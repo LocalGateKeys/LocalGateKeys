@@ -105,8 +105,8 @@ function boundTo(key, entry, doc, now) {
 }
 function frameOrigin(frame) { return frame && !frame.errorOccurred ? senderOrigin(frame.url) : null; }
 // Every frame from the sender up to the top must have the sender's origin.
-// With webNavigation (where Safari offers it) the whole chain is checked;
-// otherwise only the tab's top document can be compared. content.js refuses
+// With webNavigation (requested in the Safari manifest) the whole chain is
+// checked through getFrame; if the API is missing, only the tab's top document can be compared. content.js refuses
 // to run below a cross-origin ancestor in either case.
 async function frameChainOk(sender, origin) {
   if (sender.frameId === undefined || sender.frameId === 0) return true;
@@ -275,7 +275,7 @@ api.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 // A finished load in a tab with a waiting capture asks its content script to
-// re-check (no webNavigation on Safari).
+// re-check (tabs.onUpdated; webNavigation is used for frame checks only).
 api.tabs?.onUpdated?.addListener((tabId, changeInfo) => {
   if (changeInfo?.status !== "complete") return;
   const prefix = `${tabId}|`;

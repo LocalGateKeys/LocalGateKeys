@@ -15,8 +15,8 @@ tooling) and `tests/test_updates.py`.
 `lgk-updates` Worker's custom domain, added 2026-10-15). Version 0.4.0 shipped
 with `https://lgk-updates.<account>.workers.dev/stable.json`; that address was
 switched off on 2026-10-24 (`workers_dev: false`) because no client uses 0.4.0. `PUBLISHER_KEYS`
-trusts key_id `6a892769c82386b3` since 0.4.4 (private key held in the
-publisher's password manager, created with `keygen --print-key` on 2026-10-23).
+trusts key_id `6a892769c82386b3` since 0.4.4 (private key held offline by the
+publisher, created with `keygen --print-key` on 2026-10-23).
 
 Versions 0.4.0 to 0.4.3 trusted key_id `2c85b99e44279161`, whose private half
 was lost after it signed the 0.4.0 feed. Once the feed is signed with

@@ -12,7 +12,7 @@ updates:
         update-types: [minor, patch]
     labels: [dependencies, python]
 
-  # npm: only relevant once a package.json exists for the extension tests.
+  # npm: the extension test harness at the root.
   - package-ecosystem: npm
     directory: "/"
     schedule:
@@ -20,6 +20,42 @@ updates:
       day: monday
     open-pull-requests-limit: 3
     labels: [dependencies, npm]
+
+  # npm: the desktop web UI and the Cloudflare workers.
+  - package-ecosystem: npm
+    directories:
+      - "/webui"
+      - "/cloudflare/license-issuer"
+      - "/cloudflare/update-feed"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+    labels: [dependencies, npm]
+
+  # Android app (Gradle Kotlin DSL).
+  - package-ecosystem: gradle
+    directory: "/android"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      gradle-minor-and-patch:
+        update-types: [minor, patch]
+    labels: [dependencies, android]
+
+  # iPhone core Swift package.
+  - package-ecosystem: swift
+    directory: "/ios/LGKCore"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    labels: [dependencies, ios]
 
   # Actions are pinned to commit SHAs (version in a comment); Dependabot bumps both.
   - package-ecosystem: github-actions

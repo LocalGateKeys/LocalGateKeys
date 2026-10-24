@@ -1,7 +1,11 @@
 # Cloudflare Pages response headers. The site uses no scripts, so scripts,
 # frames, forms and every third-party origin are blocked outright, except on
-# /buy (rules at the end), which loads Paddle's checkout.
+# /buy (rules at the end), which loads Paddle's checkout. Pages adds
+# "Access-Control-Allow-Origin: *" to every static file by default; nothing
+# reads this site cross-origin (the update feed and licences are separate
+# workers, and Paddle only shows /brand/ images in <img>), so it is removed.
 /*
+  ! Access-Control-Allow-Origin
   Content-Security-Policy: default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff

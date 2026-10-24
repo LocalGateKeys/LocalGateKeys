@@ -999,6 +999,31 @@ def _restore_bytes_atomically(path: Path, source: bytes) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def _keep_before_restore_copy(path: Path, current: bytes) -> Path:
+    """Copy the encrypted vault about to be replaced to ``Backups/before-restore-*.json``.
+
+    Same name as the copy a backup restore keeps, so the key-rotation report
+    finds it. If the copy cannot be written, nothing is restored.
+    """
+    directory = Path(path).parent / "Backups"
+    try:
+        directory.mkdir(parents=True, exist_ok=True)
+        target = directory / f"before-restore-{time.time_ns()}.json"
+        fd, name = tempfile.mkstemp(prefix=".lgk-", suffix=".tmp", dir=directory)
+        temporary = Path(name)
+        try:
+            with os.fdopen(fd, "wb") as handle:
+                handle.write(current)
+                handle.flush()
+                os.fsync(handle.fileno())
+            replace_with_retry(temporary, target)
+        finally:
+            temporary.unlink(missing_ok=True)
+    except OSError as exc:
+        raise VaultError("Could not keep a copy of the vault before rolling back a migration") from exc
+    return target
+
+
 def _read_vault_migration_journal(path: Path) -> dict[str, Any] | None:
     journal_path = vault_migration_journal_path(path)
     try:
@@ -1070,6 +1095,9 @@ def _recover_vault_migration(path: Path, *, in_process: bool = False) -> str | N
     current = path.read_bytes() if path.exists() else b""
     source_digest = str(journal["source_sha256"])
     if hashlib.sha256(current).hexdigest() != source_digest:
+        if current and not in_process:
+            # The journal is unauthenticated: keep the vault it would replace.
+            _keep_before_restore_copy(path, current)
         _restore_bytes_atomically(path, backup_bytes)
         # A journal found on disk keeps the current anchor, so the restored
         # copy must still satisfy it at the next unlock.
@@ -2569,7 +2597,8 @@ class VaultSession:
             nonce, ciphertext = _wrap_key(kek, self._key or b"", _wrapper_aad(header, "password", {"kdf": kdf}))
         finally:
             _zero(kek)
-        return {"nonce": _b64e(nonce), "ciphertext": _b64e(ciphertext), "created_at": int(time.time())}
+        # No created_at: it sat outside the wrapper AAD and nothing read it (old vaults may still carry it).
+        return {"nonce": _b64e(nonce), "ciphertext": _b64e(ciphertext)}
 
     def _commit_header_change(self, header: dict[str, Any], *, before_save: Any = None) -> None:
         """Save with a replacement header; restore the previous header on failure."""
@@ -2717,8 +2746,7 @@ class VaultSession:
             nonce, ciphertext = _wrap_key(recovery_key, self._key or b"", _wrapper_aad(header, "recovery", metadata))
         finally:
             _zero(recovery_key)
-        header["wrappers"]["recovery"] = {**metadata, "nonce": _b64e(nonce), "ciphertext": _b64e(ciphertext),
-                                          "created_at": int(time.time())}
+        header["wrappers"]["recovery"] = {**metadata, "nonce": _b64e(nonce), "ciphertext": _b64e(ciphertext)}
         self._commit_header_change(header)
         self.last_recovery_phrase_change = {"operation": "create", "key_generation": header.get("key_generation"),
                                             "recovery_phrase_invalidated": False, "reenroll_required": [],
@@ -2820,8 +2848,7 @@ class VaultSession:
                     nonce, ciphertext = _wrap_key(recovery_key, new_key, _wrapper_aad(header, "recovery", metadata))
                 finally:
                     _zero(recovery_key)
-                header["wrappers"]["recovery"] = {**metadata, "nonce": _b64e(nonce), "ciphertext": _b64e(ciphertext),
-                                                  "created_at": int(time.time())}
+                header["wrappers"]["recovery"] = {**metadata, "nonce": _b64e(nonce), "ciphertext": _b64e(ciphertext)}
             if had_recovery and recovery_entropy is None:
                 # Not re-wrapped (removed, or replaced by a new phrase).
                 result["recovery_phrase_invalidated"] = True
@@ -3489,8 +3516,7 @@ def _create_vault_with(path: Path, secret: SecretText, kdf_overrides: dict[str, 
         nonce, ciphertext = _wrap_key(kek, data_key, _wrapper_aad(header, "password", {"kdf": kdf}))
     finally:
         _zero(kek)
-    header["wrappers"]["password"] = {"nonce": _b64e(nonce), "ciphertext": _b64e(ciphertext),
-                                      "created_at": int(time.time())}
+    header["wrappers"]["password"] = {"nonce": _b64e(nonce), "ciphertext": _b64e(ciphertext)}
     session = VaultSession(path, header, data_key, _empty_payload(), backup_dir=backup_dir, backup_count=backup_count)
     session._disk_digest = None  # Creation must not overwrite a concurrently created vault.
     session.save()

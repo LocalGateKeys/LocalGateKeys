@@ -149,8 +149,12 @@
   const HOST_BASE={position:"fixed",margin:"0",padding:"0",border:"0",background:"transparent",overflow:"visible",
     opacity:"1",visibility:"visible",transform:"none",filter:"none","clip-path":"none",mask:"none","pointer-events":"auto","mix-blend-mode":"normal"};
   function pin(host,props){for(const [name,value] of Object.entries(props))host.style.setProperty(name,value,"important");}
+  // The panel host is marked with an attribute whose name is random per page
+  // and known only to this closure, so a page cannot select it by a fixed name.
+  const PANEL_ATTR="data-"+Array.from(crypto.getRandomValues(new Uint8Array(12)),b=>String.fromCharCode(97+b%26)).join("");
   function uiHost(dataKey,props){
-    const host=document.createElement(dataKey==="localgatekeysPanel"?"div":"span");host.dataset[dataKey]="true";
+    const host=document.createElement(dataKey===PANEL_ATTR?"div":"span");
+    if(dataKey===PANEL_ATTR)host.setAttribute(PANEL_ATTR,"");else host.dataset[dataKey]="true";
     pin(host,{...HOST_BASE,display:"none",...props});
     return host;
   }
@@ -262,7 +266,7 @@
   // lives in a closed shadow root.
   function panel(title, text, actions=[], target=null, siteOrigin=origin()) {
     if (!panelHost) {
-      panelHost=uiHost("localgatekeysPanel",{"z-index":"2147483647",width:"320px"});
+      panelHost=uiHost(PANEL_ATTR,{"z-index":"2147483647",width:"320px"});
       panelShadow=panelHost.attachShadow({mode:"closed"});
     }
     if (!panelHost.isConnected) document.documentElement.appendChild(panelHost);
@@ -809,7 +813,7 @@
   function schedule(){if(syncTimer)return;syncTimer=setTimeout(()=>{syncTimer=null;syncIcons();if(active&&!S.unchanged(active.ctx))reset();if(identityActive&&!identityUnchanged(identityActive.ctx))resetIdentity();if(cardActive&&!S.cardUnchanged(cardActive.ctx))resetCard();if(otpActive&&!S.unchanged(otpActive.ctx))resetTotp();},40);}
   const observerOptions={childList:true,subtree:true,attributes:true,attributeFilter:["type","autocomplete","disabled","readonly","class","style","action","method","target"]};
   const observer=new MutationObserver(records=>{
-    const owned=node=>node instanceof Element && !!node.closest('[data-localgatekeys-panel],[data-localvault-field-icon],[data-localgatekeys-identity-icon],[data-localgatekeys-otp-icon],[data-localgatekeys-card-icon]');
+    const owned=node=>node instanceof Element && !!node.closest(`[${PANEL_ATTR}],[data-localvault-field-icon],[data-localgatekeys-identity-icon],[data-localgatekeys-otp-icon],[data-localgatekeys-card-icon]`);
     if(records.some(r=>!owned(r.target) && (r.type!=="childList" || [...r.addedNodes,...r.removedNodes].some(n=>!owned(n)))))schedule();
   });
   observer.observe(document.documentElement,observerOptions);

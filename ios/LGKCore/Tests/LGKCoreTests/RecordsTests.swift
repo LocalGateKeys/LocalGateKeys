@@ -127,6 +127,26 @@ final class RecordsTests: XCTestCase {
         XCTAssertNil(view.states[sid])
     }
 
+    func test_license_republish_with_overflowing_counter_refuses_only_that_state() throws {
+        // Desktop wraps the republish bump in _blame: bad-remote for the licence id, not a bare engine error.
+        let o = try load("license_state.json")
+        let keys = try licenseKeys()
+        let sid = MergeVectors.str(o["state_id"])!
+        let s = try ItemState(itemID: sid, vv: [EngineTests.A: 1], deleted: false, deletedAt: nil, item: o["wrapper"]!)
+        let r = try SyncMeta.applyRemote(MergeOutcome(upserts: [s], deletes: [], conflicts: [], copies: []),
+                                         records: [:], meta: [:], device: Self.phone, now: EngineTests.T0, licenseKeys: keys)
+        let tomb = try ItemState(itemID: sid, vv: [EngineTests.A: 2, Self.phone: VersionVector.maxCounter], deleted: true,
+                                 deletedAt: EngineTests.T0, item: nil)
+        do {
+            _ = try SyncMeta.applyRemote(MergeOutcome(upserts: [], deletes: [tomb], conflicts: [], copies: []),
+                                         records: r.records, meta: r.meta, device: Self.phone, now: EngineTests.T0, licenseKeys: keys)
+            XCTFail("an overflowing licence republish was accepted")
+        } catch let e as RecordError {
+            XCTAssertEqual(e.reason, "bad-remote")
+            XCTAssertEqual(e.itemID, sid)
+        }
+    }
+
     // MARK: suffix
 
     func test_suffix_truncation_counts_code_points() {
@@ -238,6 +258,30 @@ final class RecordsTests: XCTestCase {
                                            now: EngineTests.T0 + 30 + 365 * 86400 + 1)
         XCTAssertNil(later.states[id])
         XCTAssertNil(later.meta[id])
+    }
+
+    func test_overflowing_counter_skips_only_that_record() throws {
+        // A vector stored before the plausibility rule (audit M-6) may already hold the maximum.
+        let v = try view("A")
+        let applied = try SyncMeta.applyRemote(try Engine.merge(local: [:], remote: v.states), records: [:], meta: [:],
+                                               device: Self.phone, now: EngineTests.T0, licenseKeys: [:])
+        let id = EngineTests.NOTE
+        var meta = applied.meta
+        meta[id]!.vv[Self.phone] = VersionVector.maxCounter
+        var records = applied.records
+        var rec = MergeVectors.obj(MergeVectors.obj(records[id])["record"])
+        rec["title"] = .string("Edited on the phone")
+        records[id] = Wrapper.make(ns: .item, record: try Normalise.normalForm(ns: .item, record: .object(rec)))
+        let edited = try SyncMeta.localView(records: records, meta: meta, device: Self.phone, now: EngineTests.T0 + 10)
+        XCTAssertEqual(edited.skipped[id], SyncMeta.counterOverflow)
+        XCTAssertNil(edited.states[id])
+        XCTAssertEqual(edited.meta[id], meta[id])
+        for s in v.states where s.itemID != id { XCTAssertEqual(edited.states[s.itemID], s) }
+        // A delete that cannot be recorded publishes nothing for that record.
+        records[id] = nil
+        let removed = try SyncMeta.localView(records: records, meta: meta, device: Self.phone, now: EngineTests.T0 + 20)
+        XCTAssertNil(removed.states[id])
+        XCTAssertEqual(removed.meta[id], meta[id])
     }
 
     func test_apply_remote_rules() throws {

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import time
 import stat
@@ -177,30 +178,37 @@ def data_dir() -> Path:
         root = _local_appdata() / APP_DIR_NAME
     else:
         root = _local_appdata() / "localgatekeys"
-    created = not root.exists()
     root.mkdir(parents=True, exist_ok=True)
-    if created:
-        _restrict_new_data_dir(root)
+    if root not in _ACL_APPLIED:
+        # Once per process: a folder that already existed (older release, a
+        # folder someone loosened) gets the same ACL as a new one.
+        _ACL_APPLIED.add(root)
+        _restrict_data_dir(root)
     _restrict_path(root, is_dir=True)
     return root
 
 
-def _restrict_new_data_dir(path: Path) -> None:
-    """Give a data folder this app just created an owner-only ACL on Windows.
+# Data folders whose owner-only ACL was (re)applied by this process.
+_ACL_APPLIED: set[Path] = set()
+
+
+def _restrict_data_dir(path: Path) -> None:
+    """Give the data folder an owner-only ACL on Windows, new or existing.
 
     chmod cannot express a Windows ACL, so a folder created outside the
     installer (portable run, a custom LOCALGATEKEYS_DATA_DIR) would otherwise
-    inherit whatever its parent grants. The new DACL is protected (nothing
-    inherited from the parent) and allows only the current user and SYSTEM, for
-    the folder and everything later created in it. Best-effort: on failure the
-    inherited ACL stays, as before.
+    inherit whatever its parent grants, and an existing folder keeps whatever
+    it was given. The new DACL is protected (nothing inherited from the
+    parent) and allows only the current user and SYSTEM, for the folder and
+    everything created in it. Best-effort: on failure the current ACL stays,
+    as before, and startup continues.
     """
     if os.name != "nt":
         return
     try:
         apply_owner_only_acl(path)
-    except Exception:  # noqa: BLE001, S110 - best-effort; the inherited profile ACL stays
-        pass
+    except Exception:  # noqa: BLE001 - best-effort; the current ACL stays
+        logging.getLogger(__name__).warning("Could not apply the owner-only ACL to the data folder.")
 
 
 def apply_owner_only_acl(path: Path) -> None:
@@ -260,7 +268,7 @@ def _restrict_path(path: Path, *, is_dir: bool = False) -> None:
     """Apply best-effort owner-only POSIX permissions.
 
     Windows profile ACLs are handled by the installer, and a data folder this
-    app creates itself gets an owner-only ACL (``_restrict_new_data_dir``).
+    app uses gets an owner-only ACL (``_restrict_data_dir``).
     chmod on Windows is not a complete ACL mechanism, so failure is
     intentionally non-fatal.
     """

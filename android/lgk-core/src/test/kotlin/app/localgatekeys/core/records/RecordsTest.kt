@@ -157,6 +157,22 @@ class RecordsTest {
         assertNull(view.states[sid])
     }
 
+    @Test
+    fun license_republish_with_overflowing_counter_refuses_only_that_state() {
+        // Desktop wraps the republish bump in _blame: bad-remote for the licence id, not a bare engine error.
+        val o = load("license_state.json")
+        val keys = licenseKeys()
+        val sid = str(o["state_id"])!!
+        val s = ItemState(sid, mapOf(A to 1L), false, null, o["wrapper"]!!)
+        val r = SyncMeta.applyRemote(outcome(upserts = listOf(s)), emptyMap(), emptyMap(), phone, T0, keys)
+        val tomb = ItemState(sid, mapOf(A to 2L, phone to VersionVector.MAX_COUNTER), true, T0, null)
+        val e = assertFailsWith<RecordException> {
+            SyncMeta.applyRemote(outcome(deletes = listOf(tomb)), r.records, r.meta, phone, T0, keys)
+        }
+        assertEquals("bad-remote", e.reason)
+        assertEquals(sid, e.itemId)
+    }
+
     // MARK: suffix
 
     @Test
@@ -273,6 +289,29 @@ class RecordsTest {
         val later = SyncMeta.localView(records, third.meta, phone, T0 + 30 + 365L * 86400 + 1)
         assertNull(later.states[id])
         assertNull(later.meta[id])
+    }
+
+    @Test
+    fun overflowing_counter_skips_only_that_record() {
+        // A vector stored before the plausibility rule (audit M-6) may already hold the maximum.
+        val v = view("A")
+        val applied = SyncMeta.applyRemote(Engine.merge(emptyMap(), v), emptyMap(), emptyMap(), phone, T0, emptyMap())
+        val full = mapOf(phone to VersionVector.MAX_COUNTER)
+        val meta = applied.meta.mapValues { (k, m) -> if (k == NOTE) m.copy(vv = m.vv + full) else m }
+        val records = applied.records.toMutableMap()
+        val rec = obj(obj(records[NOTE])["record"]).toMutableMap()
+        rec["title"] = JsonValue.Str("Edited on the phone")
+        records[NOTE] = Wrapper.make(Namespace.ITEM, Normalise.normalForm(Namespace.ITEM, JsonValue.Obj(rec)))
+        val edited = SyncMeta.localView(records, meta, phone, T0 + 10)
+        assertEquals(SyncMeta.COUNTER_OVERFLOW, edited.skipped[NOTE])
+        assertNull(edited.states[NOTE])
+        assertEquals(meta[NOTE], edited.meta[NOTE])
+        for (s in v) if (s.itemId != NOTE) assertEquals(s, edited.states[s.itemId])
+        // A delete that cannot be recorded publishes nothing for that record.
+        records.remove(NOTE)
+        val removed = SyncMeta.localView(records, meta, phone, T0 + 20)
+        assertNull(removed.states[NOTE])
+        assertEquals(meta[NOTE], removed.meta[NOTE])
     }
 
     @Test

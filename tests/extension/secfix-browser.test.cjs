@@ -179,7 +179,20 @@ test("content: a hidden panel is detached, not left in the page with display:non
   assert.equal(p.shadows.get(host).mode, "closed");
   p.trusted(p.document.body, "keydown", { key: "Escape" }, p.impls.KeyboardEventImpl);
   assert.equal(host.isConnected, false);
-  assert.equal(p.document.querySelector("[data-localgatekeys-panel]"), null, "nothing left for the page to poll");
+  assert.equal(p.panelHost(), null, "nothing left for the page to poll");
+});
+
+test("content: the panel host has no fixed attribute a page could select it by", async () => {
+  const { p } = await pageWithPrompt();
+  const host = p.panelHost();
+  assert.ok(host && host.isConnected);
+  assert.equal(p.document.querySelector("[data-localgatekeys-panel]"), null);
+  const names = host.getAttributeNames().filter(n => n !== "style" && n !== "popover");
+  assert.equal(names.length, 1);
+  assert.match(names[0], /^data-[a-z]{12}$/);
+  const { p: q } = await pageWithPrompt();
+  const other = q.panelHost().getAttributeNames().find(n => n.startsWith("data-"));
+  assert.notEqual(other, names[0], "a new attribute name per page");
 });
 
 test("content: a same-site handoff prompt shows the origin, not a username, and is not discarded", async () => {

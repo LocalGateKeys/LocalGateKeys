@@ -55,6 +55,11 @@ class FolderSync(
     val installId: String,
     /** Licence keys this build knows (key id -> raw Ed25519 public key). */
     val licenseKeys: Map<String, ByteArray> = emptyMap(),
+    /**
+     * Device id -> base64 signing key of every LAN-paired peer (desktop `_paired_keys`): the only key that
+     * peer's view signature may carry, ahead of the signer pinned on first use.
+     */
+    val pairedKeys: Map<String, String> = emptyMap(),
 ) {
     init {
         if (installId.isEmpty() || Scalars.count(installId) > MAX_INSTALL_ID || installId.contains('\u0000')) {
@@ -264,6 +269,7 @@ class FolderSync(
         digests: Map<String, String>,
         now: Long,
         signers: Map<String, String> = emptyMap(),
+        pairedKeys: Map<String, String> = emptyMap(),
     ): PeerRead {
         val out = PeerRead()
         val allowed = HashSet<String>()
@@ -313,7 +319,7 @@ class FolderSync(
                 out.issues.add(SyncIssue("suspicious-rewrite", "$name: counter $counter reused"))
                 continue
             }
-            val signer = checkSignature(dev, name, raw, view.first, signers, out.issues)
+            val signer = checkSignature(dev, name, raw, view.first, signers, pairedKeys, out.issues)
             if (signer == REFUSED) continue
             if (counterVerdict(counter, last) != null) {
                 out.issues.add(SyncIssue("implausible-counter", "$name: counter $counter"))
@@ -348,9 +354,10 @@ class FolderSync(
         raw: ByteArray,
         header: ViewHeader,
         signers: Map<String, String>,
+        pairedKeys: Map<String, String>,
         issues: MutableList<SyncIssue>,
     ): String? {
-        val expected = signers[dev]
+        val expected = pairedKeys[dev] ?: signers[dev]
         val sig = readSignature(dev)
         var why = "no signature file"
         if (sig != null) {
@@ -365,7 +372,7 @@ class FolderSync(
                 why = e.reason
             }
         }
-        if (expected == null) return null // a device that never signed (older app): accepted as before
+        if (dev !in signers) return null // a device that never signed (older app): accepted as before
         issues.add(SyncIssue(if (why == "sig-mismatch") "view-forged" else "view-unsigned", "$name: $why"))
         return REFUSED
     }
@@ -476,6 +483,7 @@ class FolderSync(
         val peers = readPeers(
             gk, state.deviceId, members, state.lastSeen, state.peerDigests, now,
             signers = state.viewSigners.filterKeys { it != state.deviceId },
+            pairedKeys = pairedKeys.filterKeys { it != state.deviceId },
         )
         issues.addAll(peers.issues)
         val knownDevices = members + state.lastSeen.keys + state.deviceId

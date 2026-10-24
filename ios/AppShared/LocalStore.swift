@@ -386,7 +386,8 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
                  "has_folder": .bool(s.hasFolder), "last_seen": ints(s.lastSeen),
                  "peer_digests": .object(s.peerDigests.mapValues { .string($0) }),
                  "members_epoch": .int(s.membersEpoch), "members": .array(s.members.map { .string($0) }),
-                 "keyring": s.keyring.map(b64) ?? .null, "own_counter": .int(s.ownCounter)])
+                 "keyring": s.keyring.map(b64) ?? .null, "own_counter": .int(s.ownCounter),
+                 "view_signers": .object(s.viewSigners.mapValues { .string($0) })])
     }
 
     private struct Fields {
@@ -417,13 +418,18 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
         let identity = try DeviceIdentity(deviceID: try f.str("device_id"), signingPrivate: try f.bytes("signing"),
                                           exchangePrivate: try f.bytes("exchange"))
         guard case .array(let members)? = f.o["members"] else { throw LocalStoreError.corrupt("members") }
+        // Pinned view signing keys (audit M-7); absent in states stored before the pins existed.
+        let signers = f.o["view_signers"] == nil ? [:] : try f.dict("view_signers").mapValues {
+            guard case .string(let s) = $0 else { throw LocalStoreError.corrupt("view_signers") }; return s
+        }
         return SyncGroupState(
             groupID: try f.str("group_id"), epoch: try f.int("epoch"), key: try f.bytes("key"), identity: identity,
             installID: try f.str("install_id"), hasFolder: try f.bool("has_folder"), lastSeen: try f.ints("last_seen"),
             peerDigests: try f.dict("peer_digests").mapValues { guard case .string(let s) = $0 else { throw LocalStoreError.corrupt("peer_digests") }; return s },
             membersEpoch: try f.int("members_epoch"),
             members: try members.map { guard case .string(let s) = $0 else { throw LocalStoreError.corrupt("members") }; return s },
-            keyring: f.o["keyring"] == .null ? nil : try f.bytes("keyring"), ownCounter: try f.int("own_counter"))
+            keyring: f.o["keyring"] == .null ? nil : try f.bytes("keyring"), ownCounter: try f.int("own_counter"),
+            viewSigners: signers)
     }
 }
 

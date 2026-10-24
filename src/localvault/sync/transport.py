@@ -13,11 +13,12 @@ Connection slots: outbound (``request``/``enroll``) and inbound connections
 have separate slots, so a peer connecting in never blocks this device's own
 sync or pairing and vice versa.  At most one outbound connection runs at a
 time.  The listener serves up to ``MAX_INBOUND_CONNECTIONS`` connections at
-once, at most ``MAX_INBOUND_PER_ADDRESS`` from one source address, and drops a
-connection whose first frame (session hello or enrollment request, at most
-``MAX_FIRST_FRAME_BYTES``) has not arrived within ``FIRST_FRAME_SECONDS``.  One
-idle unauthenticated LAN connection therefore holds a slot for about two
-seconds and can no longer block sync or pairing.
+once, at most ``MAX_INBOUND_PER_ADDRESS`` from one source address and at most
+``MAX_PRE_AUTH_PER_PREFIX`` not yet authenticated from one /24 (IPv4) or /64
+(IPv6) network, and drops a connection whose first frame (session hello or
+enrollment request, at most ``MAX_FIRST_FRAME_BYTES``) has not arrived within
+``FIRST_FRAME_SECONDS``.  One idle unauthenticated LAN connection therefore
+holds a slot for about two seconds and can no longer block sync or pairing.
 
 Every socket operation is bounded by a timeout and checks the transport's
 cancellation token.  ``stop()`` and ``cancel()`` close the listener and any
@@ -110,6 +111,10 @@ MAX_INBOUND_CONNECTIONS = 4
 #: Inbound connections served at the same time from one source address.  Two cover
 #: a peer whose next LAN chunk arrives while the previous handler is finishing.
 MAX_INBOUND_PER_ADDRESS = 2
+#: Inbound connections not yet authenticated (no verified session hello) held at the same
+#: time from one /24 (IPv4) or /64 (IPv6) network: one host with several addresses cannot
+#: take every slot before authenticating.
+MAX_PRE_AUTH_PER_PREFIX = 2
 #: Deadline for the first frame of an inbound connection (a hello or enrollment request
 #: is sent right after connecting; the iPhone app does the same).
 FIRST_FRAME_SECONDS = 2.0
@@ -118,6 +123,17 @@ FIRST_FRAME_SECONDS = 2.0
 MAX_FIRST_FRAME_BYTES = 64 * 1024
 #: Listen backlog (connections the OS queues before ``accept``).
 LISTEN_BACKLOG = 8
+
+
+def _source_prefix(address: str) -> str:
+    """The /24 (IPv4) or /64 (IPv6) network of *address*; the address itself when it does not parse."""
+    try:
+        ip = ipaddress.ip_address(address.split("%", 1)[0])
+    except ValueError:
+        return address
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+        ip = ip.ipv4_mapped
+    return str(ipaddress.ip_network(f"{ip}/{24 if ip.version == 4 else 64}", strict=False))
 
 
 def _canonical(value: Any, limit: int = MAX_FRAME_PAYLOAD) -> bytes:
@@ -510,6 +526,7 @@ class SyncTransport:
         self._listener_thread: threading.Thread | None = None
         self._active_socket: socket.socket | None = None  # the one outbound connection
         self._inbound: dict[socket.socket, str] = {}  # inbound connection -> source address
+        self._pre_auth: dict[socket.socket, str] = {}  # not yet authenticated -> source network
         self._socket_lock = threading.RLock()
         self._slot_free = threading.Condition(self._socket_lock)
         self._connection_lock = threading.Lock()
@@ -619,18 +636,29 @@ class SyncTransport:
             pass
 
     def _reserve_inbound(self, sock: socket.socket, address: str) -> bool:
-        """Take an inbound slot for *sock* from *address*; False when the total or per-address cap is reached."""
+        """Take an inbound slot for *sock* from *address*; False when the total, per-address or
+        per-network pre-authentication cap is reached."""
+        prefix = _source_prefix(address)
         with self._socket_lock:
             if len(self._inbound) >= MAX_INBOUND_CONNECTIONS:
                 return False
             if sum(1 for a in self._inbound.values() if a == address) >= MAX_INBOUND_PER_ADDRESS:
                 return False
+            if sum(1 for p in self._pre_auth.values() if p == prefix) >= MAX_PRE_AUTH_PER_PREFIX:
+                return False
             self._inbound[sock] = address
+            self._pre_auth[sock] = prefix
             return True
+
+    def _inbound_authenticated(self, sock: socket.socket) -> None:
+        """*sock*'s peer sent a verified session hello: it no longer counts against its network's cap."""
+        with self._socket_lock:
+            self._pre_auth.pop(sock, None)
 
     def _release_inbound(self, sock: socket.socket) -> None:
         with self._socket_lock:
             self._inbound.pop(sock, None)
+            self._pre_auth.pop(sock, None)
 
     def _take_all_sockets(self) -> list[socket.socket]:
         """Detach the outbound and every inbound socket (stop/cancel closes them)."""
@@ -638,6 +666,7 @@ class SyncTransport:
             taken = [s for s in (self._active_socket, *self._inbound) if s is not None]
             self._active_socket = None
             self._inbound.clear()
+            self._pre_auth.clear()
             self._slot_free.notify_all()
         return taken
 
@@ -825,6 +854,7 @@ class SyncTransport:
                 return
             remote_hello = SessionHello.from_bytes(first)
             peer = self._peer_for_hello(remote_hello)
+            self._inbound_authenticated(client)
             local_hello = self._local_hello(remote_hello.session_id)
             self._send_all(client, encode_frame(local_hello.to_bytes()), deadline)
             channel = establish_channel(

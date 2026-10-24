@@ -60,7 +60,7 @@ test("safari manifest drops Chromium-only keys and keeps only storage and native
   assert.deepEqual(m.icons, { 16: "icon16.png", 32: "icon32.png", 48: "icon48.png", 128: "icon128.png" });
   assert.equal(m.manifest_version, 3);
   assert.equal(m.version, source.version);
-  assert.deepEqual([...m.permissions].sort(), ["nativeMessaging", "storage"]);
+  assert.deepEqual([...m.permissions].sort(), ["nativeMessaging", "storage", "webNavigation"]);
   assert.deepEqual(m.host_permissions, ["http://*/*", "https://*/*"]);
   assert.deepEqual(m.background, { scripts: ["api.js", "background-safari.js"], persistent: false });
   assert.equal(m.content_scripts.length, 1, "passkey scripts stripped");

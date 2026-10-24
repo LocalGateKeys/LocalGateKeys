@@ -141,6 +141,8 @@ Write-Host "Package: $($Identity.Name) $PackageVersion ($Channel)"
 if ($Build) {
     $buildArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", (Join-Path $PSScriptRoot "build_personal_installer.ps1"), "-SkipInstaller")
     if (-not [string]::IsNullOrWhiteSpace($OutputRoot)) { $buildArgs += @("-OutputRoot", $OutputBase) }
+    # Store packages are releases: hash-pinned lock and a hard Python floor, not a warning.
+    if ($Channel -eq "Store") { $buildArgs += "-Release" }
     & (Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe") @buildArgs
     if ($LASTEXITCODE -ne 0) { throw "build_personal_installer.ps1 -SkipInstaller failed." }
 }

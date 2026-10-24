@@ -65,12 +65,16 @@ public struct FolderSync {
     public let installID: String
     /// Licence keys this build knows (key id -> raw Ed25519 public key).
     public let licenseKeys: [String: [UInt8]]
+    /// Device id -> base64 signing key of every LAN-paired peer (desktop `_paired_keys`): the only key that
+    /// peer's view signature may carry, ahead of the signer pinned on first use.
+    public let pairedKeys: [String: String]
 
-    public init(access: any FolderAccess, installID: String, licenseKeys: [String: [UInt8]] = [:]) throws {
+    public init(access: any FolderAccess, installID: String, licenseKeys: [String: [UInt8]] = [:],
+                pairedKeys: [String: String] = [:]) throws {
         guard !installID.isEmpty, installID.unicodeScalars.count <= Self.maxInstallID, !installID.contains("\u{0}") else {
             throw FolderSyncError("bad-install-id", "install id must be a non-empty bounded string")
         }
-        self.access = access; self.installID = installID; self.licenseKeys = licenseKeys
+        self.access = access; self.installID = installID; self.licenseKeys = licenseKeys; self.pairedKeys = pairedKeys
     }
 
     // MARK: keyring
@@ -186,7 +190,8 @@ public struct FolderSync {
 
     /// Reads every peer file; never throws for a single bad file.
     func readPeers(_ gk: GroupKey, ownID: String, members: Set<String>, lastSeen: [String: Int64],
-                   digests: [String: String], now: Int64, signers: [String: String] = [:]) -> PeerRead {
+                   digests: [String: String], now: Int64, signers: [String: String] = [:],
+                   pairedKeys: [String: String] = [:]) -> PeerRead {
         var out = PeerRead()
         var allowed = Set<String>()
         for m in members.subtracting([ownID]).sorted() {
@@ -230,7 +235,7 @@ public struct FolderSync {
                 continue
             }
             let signer: String?
-            switch checkSignature(dev, name: name, raw: raw, header: view.header, signers: signers) {
+            switch checkSignature(dev, name: name, raw: raw, header: view.header, signers: signers, pairedKeys: pairedKeys) {
             case .refused(let issue): out.issues.append(issue); continue
             case .signed(let key): signer = key
             case .unsigned: signer = nil
@@ -260,8 +265,8 @@ public struct FolderSync {
 
     /// A validly signed view (its base64 key), an accepted unsigned one, or a refusal with its issue.
     func checkSignature(_ dev: String, name: String, raw: [UInt8], header: ViewHeader,
-                        signers: [String: String]) -> SignatureCheck {
-        let expected = signers[dev]
+                        signers: [String: String], pairedKeys: [String: String] = [:]) -> SignatureCheck {
+        let expected = pairedKeys[dev] ?? signers[dev]
         var why = "no signature file"
         if let sig = readSignature(dev) {
             do {
@@ -274,7 +279,7 @@ public struct FolderSync {
                 why = (error as? SyncFormatError)?.reason ?? "sig-malformed"
             }
         }
-        guard expected != nil else { return .unsigned }  // a device that never signed (older app): accepted as before
+        guard signers[dev] != nil else { return .unsigned }  // a device that never signed (older app): accepted as before
         return .refused(SyncIssue(why == "sig-mismatch" ? "view-forged" : "view-unsigned", "\(name): \(why)"))
     }
 
@@ -361,7 +366,8 @@ public struct FolderSync {
         if Identifier.isSafeDeviceFile(state.deviceID) { sweepOwnTempFiles(state.deviceID) }
         let peers = readPeers(gk, ownID: state.deviceID, members: members, lastSeen: state.lastSeen,
                               digests: state.peerDigests, now: now,
-                              signers: state.viewSigners.filter { $0.key != state.deviceID })
+                              signers: state.viewSigners.filter { $0.key != state.deviceID },
+                              pairedKeys: pairedKeys.filter { $0.key != state.deviceID })
         issues += peers.issues
         let knownDevices = members.union(state.lastSeen.keys).union([state.deviceID])
         var report = SyncRunner.run(store: snapshot, views: peers.views, device: state.deviceID, now: now,

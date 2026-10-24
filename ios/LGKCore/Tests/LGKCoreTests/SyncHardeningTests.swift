@@ -148,6 +148,24 @@ final class SyncHardeningTests: XCTestCase {
                        ["view-forged"])
     }
 
+    func test_paired_key_outranks_the_pin_on_first_use() throws {
+        // Desktop `paired_keys.get(dev) or signers.get(dev)`: the key learned at LAN pairing is the only one A may sign with.
+        let (folder, store, _) = try joined()
+        let keyA = Base64.encode(try KeyringTests.identity("A").signingPublicKey)
+        let fs = try FolderSync(access: folder, installID: FolderSyncTests.install, pairedKeys: [Self.A: keyA])
+        let raw = try writeA(folder, counter: 8, "a8")
+        try signA(folder, raw, as: "B")
+        XCTAssertEqual(issues(fs.runOnce(store: store, random: DetRand("r1"), clock: FixedClock(now: Self.T0 + 1600))),
+                       ["view-forged"])
+        XCTAssertNil(store.snapshot.sync?.viewSigners[Self.A])
+        // A wrong key pinned on first use does not win over the paired one.
+        store.snapshot.sync!.viewSigners[Self.A] = Base64.encode(try KeyringTests.identity("B").signingPublicKey)
+        try signA(folder, raw)
+        XCTAssertEqual(issues(fs.runOnce(store: store, random: DetRand("r2"), clock: FixedClock(now: Self.T0 + 1700))), [])
+        XCTAssertEqual(store.snapshot.sync?.lastSeen[Self.A], 8)
+        XCTAssertEqual(store.snapshot.sync?.viewSigners[Self.A], keyA)
+    }
+
     func test_huge_counter_of_an_unpinned_peer_is_refused() throws {
         let (folder, store, fs) = try joined()
         _ = try writeA(folder, counter: VersionVector.maxCounter, "amax")

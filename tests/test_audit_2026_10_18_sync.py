@@ -454,6 +454,7 @@ def test_first_frame_deadline_and_per_address_cap(devs, monkeypatch) -> None:
 
 def test_total_inbound_cap(devs, monkeypatch) -> None:
     monkeypatch.setattr(tr, "MAX_INBOUND_PER_ADDRESS", 10)
+    monkeypatch.setattr(tr, "MAX_PRE_AUTH_PER_PREFIX", 10)  # every test connection comes from 127.0.0.1
     a = devs("a", group=True)
     held = [_idle(a.endpoint) for _ in range(tr.MAX_INBOUND_CONNECTIONS)]
     try:

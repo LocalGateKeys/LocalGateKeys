@@ -182,15 +182,18 @@ class DesktopService:
             approved = signer_verified
             scope = entry.get("scope")
             saved_title = str(scope.get("window_title", "")) if isinstance(scope, dict) else ""
-            if signer_verified and saved_title != snapshot.title:
-                # Same (or same-signer) program, another window: never adopt its title silently,
-                # it may be a different login screen of the same app.
+            saved_layout = scope.get("control_fingerprint") if isinstance(scope, dict) else None
+            layout_changed = saved_layout != snapshot.control_fingerprint()
+            if signer_verified and (saved_title != snapshot.title or layout_changed):
+                # Same (or same-signer) program, another window or other login fields: never adopt
+                # its title or layout silently, it may be a different login screen of the same app.
                 self._raise_window()
                 approved = self._port.confirm("App window changed", (
-                    f"{_safe(Path(snapshot.exe_path).name)} shows a different window than when this login was "
-                    f"saved.\n\nApp: {_safe(snapshot.exe_path)}\nSaved window: {_safe(saved_title)}\n"
-                    f"Current window: {_safe(snapshot.title)}\n\nFill the saved login into this window and "
-                    "remember it?"))
+                    f"{_safe(Path(snapshot.exe_path).name)} shows a different window"
+                    + (" or different login fields" if layout_changed else "")
+                    + f" than when this login was saved.\n\nApp: {_safe(snapshot.exe_path)}\n"
+                    f"Saved window: {_safe(saved_title)}\nCurrent window: {_safe(snapshot.title)}\n\n"
+                    "Fill the saved login into this window and remember it?"))
             if not signer_verified:
                 self._raise_window()
                 approved = self._port.confirm("App was updated", (

@@ -33,7 +33,9 @@ function safariManifest(source) {
   for (const key of ["key", "minimum_chrome_version", "web_accessible_resources", "browser_specific_settings", "action", "icons"]) delete m[key];
   m.description = DESCRIPTION;
   m.icons = { ...SAFARI_ICONS };
-  m.permissions = ["nativeMessaging", "storage"];
+  // webNavigation: background-safari.js checks the whole frame chain of an
+  // iframe sender with getFrame (frameChainOk) instead of the top frame only.
+  m.permissions = ["nativeMessaging", "storage", "webNavigation"];
   m.host_permissions = ["http://*/*", "https://*/*"];
   m.background = { scripts: ["api.js", "background-safari.js"], persistent: false };
   m.content_scripts = (m.content_scripts || [])

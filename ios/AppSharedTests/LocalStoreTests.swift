@@ -36,7 +36,8 @@ final class LocalStoreTests: XCTestCase {
         let identity = try DeviceIdentity.generate(deviceID: "phone-1", random: FixedRandom())
         let sync = SyncGroupState(groupID: "grp", epoch: 2, key: Array(repeating: 7, count: 32), identity: identity,
                                   installID: "inst", hasFolder: true, lastSeen: ["desk": 4], peerDigests: ["desk": "ab"],
-                                  membersEpoch: 1, members: ["desk", "phone-1"], keyring: [1, 2, 3], ownCounter: 5)
+                                  membersEpoch: 1, members: ["desk", "phone-1"], keyring: [1, 2, 3], ownCounter: 5,
+                                  viewSigners: ["desk": "ZGVzay1zaWduaW5nLWtleQ==", "phone-1": "cGhvbmUta2V5"])
         return StoreChange(baseRevision: base, records: ["a1": w1, "b2": w2],
                            meta: ["a1": try SyncMeta.live(w1, vv: ["phone-1": 1]), "gone": .tomb(vv: ["desk": 2], deletedAt: 50)],
                            sync: sync)

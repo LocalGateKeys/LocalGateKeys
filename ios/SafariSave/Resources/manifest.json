@@ -5,7 +5,8 @@
   "description": "Offers to save the logins you sign in with in Safari to LocalGateKeys on this iPhone.",
   "permissions": [
     "nativeMessaging",
-    "storage"
+    "storage",
+    "webNavigation"
   ],
   "host_permissions": [
     "http://*/*",

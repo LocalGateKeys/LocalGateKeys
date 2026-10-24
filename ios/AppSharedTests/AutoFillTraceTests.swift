@@ -76,10 +76,10 @@ final class AutoFillTraceTests: XCTestCase {
 
     func test_error_is_type_domain_and_code_only() {
         let e = NSError(domain: "com.apple.LocalAuthentication", code: -1004,
-                        userInfo: [NSLocalizedDescriptionKey: "secret user name decave2026@gmail.com"])
+                        userInfo: [NSLocalizedDescriptionKey: "secret user name sam.private@example.test"])
         let m: TraceMessage = "e=\(error: e)"
         XCTAssertEqual(m.text, "e=NSError(com.apple.LocalAuthentication -1004)")
-        XCTAssertFalse(m.text.contains("decave"))
+        XCTAssertFalse(m.text.contains("sam.private"))
     }
 
     func test_numbers_bools_and_fixed_names() {

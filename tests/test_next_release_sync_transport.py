@@ -20,6 +20,7 @@ from localvault.sync import (
     confirm_pairing_offer,
     create_pairing_offer,
 )
+from localvault.sync import transport as tr
 from localvault.sync.transport import MAX_FRAME_PAYLOAD
 
 
@@ -153,3 +154,44 @@ def test_constructor_does_not_create_network_socket(monkeypatch):
     monkeypatch.setattr(socket, "socket", forbidden_socket)
     SyncTransport(SyncState())
     assert calls == []
+
+
+class _FakeSocket:
+    def shutdown(self, how) -> None:
+        pass
+
+    def close(self) -> None:
+        pass
+
+
+def test_one_network_holds_at_most_two_unauthenticated_inbound_slots():
+    transport = SyncTransport(SyncState())
+    socks = [_FakeSocket() for _ in range(5)]
+    assert tr.MAX_PRE_AUTH_PER_PREFIX == 2 and tr.MAX_INBOUND_CONNECTIONS == 4
+    # One host with two addresses in the same /24 can no longer take all four slots.
+    assert transport._reserve_inbound(socks[0], "192.168.1.10")
+    assert transport._reserve_inbound(socks[1], "192.168.1.11")
+    assert not transport._reserve_inbound(socks[2], "192.168.1.12")
+    # Another network still gets in; the total cap is unchanged.
+    assert transport._reserve_inbound(socks[2], "192.168.2.10")
+    assert transport._reserve_inbound(socks[3], "10.0.0.1")
+    assert not transport._reserve_inbound(socks[4], "172.16.0.1")
+    # An authenticated connection no longer counts against its network.
+    transport._release_inbound(socks[3])
+    transport._inbound_authenticated(socks[0])
+    assert transport._reserve_inbound(socks[4], "192.168.1.12")
+    transport._release_inbound(socks[4])
+    transport._release_inbound(socks[1])
+    assert transport._pre_auth == {socks[2]: "192.168.2.0/24"}
+    # IPv6: one /64 (with or without a scope id); an IPv4-mapped address counts as its IPv4 network.
+    assert transport._reserve_inbound(socks[1], "fe80::1%3")
+    assert transport._reserve_inbound(socks[3], "fe80::2")
+    transport._release_inbound(socks[0])
+    assert not transport._reserve_inbound(socks[4], "fe80::3")
+    transport._release_inbound(socks[1])
+    transport._release_inbound(socks[3])
+    assert transport._reserve_inbound(socks[1], "::ffff:192.168.2.11")
+    assert not transport._reserve_inbound(socks[3], "192.168.2.12")
+    assert transport._reserve_inbound(socks[3], "fd00:1:2:3::9")
+    transport.stop()
+    assert transport._inbound == {} and transport._pre_auth == {}

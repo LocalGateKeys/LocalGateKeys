@@ -114,7 +114,9 @@ class DocumentService:
         source = self._pick("Choose encrypted document source")
         self._still(lease)
         try:
-            item_id = session.documents.create(source, title=(title or "").strip() or source.name,
+            # The default title is the file name, without bidi tricks that disguise it in the list.
+            default = strip_format_controls(source.name).strip() or "Document"
+            item_id = session.documents.create(source, title=(title or "").strip() or default,
                                                description=description or "")
         except ItemLimitReached as exc:
             self._port.show_upgrade(limit=exc.limit, message=str(exc), on_enter=lambda: None)

@@ -84,6 +84,13 @@ data class SyncMeta(
             if (now < 0 || now > VersionVector.MAX_COUNTER) throw RecordException(null, null, "Sync clock value is malformed")
         }
 
+        /** `LocalViewResult.skipped` reason of a record whose stored vector cannot be bumped (audit M-6). */
+        const val COUNTER_OVERFLOW = "version counter overflow"
+
+        /** `bump(vv, device)`, or null when this device's counter would overflow (desktop `_bumped`). */
+        private fun bumped(vv: Map<String, Long>, device: String): Map<String, Long>? =
+            if ((vv[device] ?: 0L) >= VersionVector.MAX_COUNTER) null else VersionVector.bump(vv, device)
+
         private fun nsName(wrapper: JsonValue): String? = ((wrapper as? JsonValue.Obj)?.fields?.get("ns") as? JsonValue.Str)?.v
 
         // MARK: local view
@@ -115,7 +122,13 @@ data class SyncMeta(
                         continue
                     }
                     if (m == null || m.deleted || m.digest != d) {
-                        m = live(wrapper, VersionVector.bump(m?.vv ?: emptyMap(), device))
+                        // A vector stored before the plausibility rule: skip only this record.
+                        val vv = bumped(m?.vv ?: emptyMap(), device)
+                        if (vv == null) {
+                            skipped[id] = COUNTER_OVERFLOW
+                            continue
+                        }
+                        m = live(wrapper, vv)
                         metaOut[id] = m
                     }
                     states[id] = ItemState(id, m.vv, false, null, wrapper)
@@ -125,7 +138,8 @@ data class SyncMeta(
                     if (Wrapper.isLicenseId(id) || !Identifier.isValid(id)) continue
                     var t = m
                     if (!m.deleted) {
-                        t = tomb(VersionVector.bump(m.vv, device), now)
+                        // The delete cannot be recorded without an overflow: publish nothing for it.
+                        t = tomb(bumped(m.vv, device) ?: continue, now)
                         metaOut[id] = t
                     }
                     states[id] = ItemState(id, t.vv, true, t.deletedAt, null)
@@ -206,8 +220,8 @@ data class SyncMeta(
             val received = ArrayList<JsonValue>()
             for ((s, at) in deletes) {
                 if (Wrapper.isLicenseId(s.itemId)) {
-                    // A licence is republished above the tombstone.
-                    metaOut[s.itemId] = live(published.getValue(s.itemId), VersionVector.bump(s.vv, device))
+                    // A licence is republished above the tombstone; an overflowing bump refuses only this state.
+                    metaOut[s.itemId] = blame(s.itemId) { live(published.getValue(s.itemId), VersionVector.bump(s.vv, device)) }
                     continue
                 }
                 if (recs.remove(s.itemId) != null) deleted++
