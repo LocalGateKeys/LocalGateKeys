@@ -393,7 +393,7 @@ Original notes
 
 See docs/RELEASE_020.md, docs/VALIDATION_020.md,
 docs/RELEASE_019.md, docs/VALIDATION_019.md and
-docs/SECURITY_019.md. The checked patch appliers those
+[docs/SECURITY_019.md](docs/SECURITY_019.md). The checked patch appliers those
 notes mention were removed in October 2026. Early prototype checksums and the
 first validation summary are archived in docs/archive/SHA256SUMS.txt,
 docs/archive/PATCH_MANIFEST_SHA256.txt and
