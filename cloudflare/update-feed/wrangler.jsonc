@@ -20,5 +20,8 @@
       "bucket_name": "localgatekeys-releases"
     }
   ],
+  // Older installers lack later security fixes: the Worker answers 410 for
+  // them (the objects stay in R2). Raise with each release.
+  "vars": { "MIN_RELEASE": "0.4.5" },
   "observability": { "enabled": true }
 }

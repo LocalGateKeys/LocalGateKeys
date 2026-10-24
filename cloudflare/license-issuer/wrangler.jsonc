@@ -20,7 +20,7 @@
     {
       "binding": "CLAIMS",
       "database_name": "lgk-licence-claims",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "71bc7b25-2cec-4dfb-b6e2-72f8246e3630",
       "migrations_dir": "migrations"
     }
   ],

@@ -95,7 +95,25 @@ function resolve(pathname) {
     cacheControl: "public, max-age=31536000, immutable",
     maxBytes: null,
     filename: match[2],
+    version: match[1],
   };
+}
+
+// Releases older than MIN_RELEASE (a wrangler var, "x.y.z") are no longer
+// offered: they lack later security fixes. The objects stay in R2, so raising
+// or removing the var brings them back. Without the var every release is served.
+function compareVersions(a, b) {
+  const pa = a.split(".").map(Number);
+  const pb = b.split(".").map(Number);
+  for (let i = 0; i < 3; i += 1) {
+    if (pa[i] !== pb[i]) return pa[i] < pb[i] ? -1 : 1;
+  }
+  return 0;
+}
+
+function retired(target, env) {
+  const floor = env.MIN_RELEASE;
+  return typeof floor === "string" && /^\d+\.\d+\.\d+$/.test(floor) && compareVersions(target.version, floor) < 0;
 }
 
 function objectHeaders(target, object) {
@@ -182,6 +200,9 @@ export default {
     }
 
     if (target.filename !== undefined) {
+      if (retired(target, env)) {
+        return plain(410, "This release is no longer offered. Download the current version from https://localgatekeys.app/download");
+      }
       return serveRelease(request, env, target);
     }
 

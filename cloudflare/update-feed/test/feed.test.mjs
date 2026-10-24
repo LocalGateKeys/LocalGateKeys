@@ -153,3 +153,18 @@ test("the feed is served whole, unranged, and other paths and methods are refuse
   assert.equal(post.status, 405);
   assert.equal(post.headers.get("Strict-Transport-Security"), "max-age=63072000; includeSubDomains");
 });
+
+test("releases older than MIN_RELEASE are no longer offered; newer and equal ones are", async () => {
+  const objects = { [INSTALLER]: BYTES, "releases/0.4.5/LocalGateKeys-0.4.5-setup.exe": BYTES };
+  const e = { RELEASES: fakeR2(objects), MIN_RELEASE: "0.4.5" };
+  const old = await worker.fetch(new Request(`https://updates.example/${INSTALLER}`), e);
+  assert.equal(old.status, 410);
+  assert.equal(e.RELEASES.calls.length, 0, "a retired release never reaches R2");
+  const current = await worker.fetch(new Request("https://updates.example/releases/0.4.5/LocalGateKeys-0.4.5-setup.exe"), e);
+  assert.equal(current.status, 200);
+  const head = await worker.fetch(new Request(`https://updates.example/${INSTALLER}`, { method: "HEAD" }), e);
+  assert.equal(head.status, 410);
+  // A malformed floor is ignored rather than blocking every download.
+  const loose = await worker.fetch(new Request(`https://updates.example/${INSTALLER}`), { RELEASES: fakeR2(objects), MIN_RELEASE: "0.4" });
+  assert.equal(loose.status, 200);
+});
