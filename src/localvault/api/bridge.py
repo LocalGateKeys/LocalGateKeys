@@ -512,6 +512,9 @@ class Api:
                                          schedule=self._schedule)
         self._licence = LicenceService(self._controller, self._port, self._dialogs)
         self._updates = UpdatesService(self._controller, self._port)
+        from ..app.rating import RatingService
+
+        self._rating = RatingService(self._controller)
         self._profiles = ProfilesService(self._controller, self._port, self._dialogs)
         self._connections = ConnectionsService(self._port, self._dialogs)
         from ..app.sync import SyncWebService
@@ -787,6 +790,19 @@ class Api:
     @guarded
     def updates_snooze(self) -> dict[str, Any]:
         return ok(**self._updates.snooze())
+
+    # ------------------------------------------------------------------ rating
+    @guarded
+    def rating_prompt(self) -> dict[str, Any]:
+        return ok(**self._rating.prompt())
+
+    @guarded
+    def rating_answer(self, rate: Any) -> dict[str, Any]:
+        return ok(**self._rating.answer(rate is True))
+
+    @guarded
+    def rating_open(self) -> dict[str, Any]:
+        return ok(**self._rating.open())
 
     # ---------------------------------------------------------------- profiles
     @guarded

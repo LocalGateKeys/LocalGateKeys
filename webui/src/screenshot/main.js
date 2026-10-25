@@ -3,6 +3,7 @@
 //   ?screen=home|item|edit|generator|palette|new|quick|trash|unlock|security|health|settings|sync|licence
 //   &id=<item id> (item, edit)   &filter=<health filter> (health)   &section=<key> (settings)
 //   ?popup=unlock|fill|passkey   the small fill popup instead of the main window
+//   &rate=on   a Store build: the Settings "Rate" row, and the one-time rating prompt on home
 //   &theme=dark|light|system (default dark)   &glass=on keeps the page transparent like the real window
 import { mount } from 'svelte';
 import '../styles/tokens.css';
@@ -22,6 +23,24 @@ if (params.get('glass') !== 'on') document.documentElement.dataset.glass = 'off'
 
 const unlocked = popup ? popup !== 'unlock' : screen !== 'unlock';
 window.pywebview = { api: createMockApi({ unlocked, appearance: theme }) };
+if (params.get('rate') === 'on') {
+  const base = window.pywebview.api;
+  const extra = {};
+  window.pywebview.api = new Proxy({}, { get: (_target, name) => extra[name] ?? base[name] });
+  const settingsPage = base.settings_page;
+  extra.rating_prompt = async () => ({ ok: true, due: screen === 'home', title: 'Enjoying LocalGateKeys?', text: (
+    'A rating on the Microsoft Store helps other people find LocalGateKeys.\n\nRate it now? This opens the '
+    + 'Microsoft Store app. LocalGateKeys sends nothing, and won\'t ask again.') });
+  extra.settings_page = async () => {
+    const page = await settingsPage();
+    for (const section of page.sections ?? []) {
+      const at = section.rows.findIndex((row) => row.route === 'updates');
+      if (at >= 0) section.rows.splice(at + 1, 0, { type: 'button', title: 'Rate LocalGateKeys',
+        description: 'Tell others what you think on the Microsoft Store', label: 'Rate', route: 'rate', params: {}, primary: false });
+    }
+    return page;
+  };
+}
 
 /** Resolve with the first element matching `test` once it renders (or null after a few seconds). */
 function waitFor(test, timeout = 5000) {

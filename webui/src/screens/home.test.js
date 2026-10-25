@@ -233,6 +233,25 @@ describe('Old build reminder', () => {
   });
 });
 
+describe('Rating prompt', () => {
+  it('asks once the update reminder is quiet and sends the answer', async () => {
+    const api = fakeApi({ updates_reminder: vi.fn().mockResolvedValue({ ok: true, due: false }),
+      rating_prompt: vi.fn().mockResolvedValue({ ok: true, due: true, title: 'Enjoying LocalGateKeys?', text: 'Rate it now?' }),
+      rating_answer: vi.fn().mockResolvedValue({ ok: true }) });
+    render(Home, { vault: UNLOCKED });
+    await fireEvent.click(await screen.findByRole('button', { name: 'Rate now' }));
+    await waitFor(() => expect(api.rating_answer).toHaveBeenCalledWith(true));
+  });
+
+  it('stays quiet while the update reminder is showing', async () => {
+    const api = fakeApi({ updates_reminder: vi.fn().mockResolvedValue({ ok: true, due: true, title: 'Check for updates?', text: 'Old.' }),
+      rating_prompt: vi.fn() });
+    render(Home, { vault: UNLOCKED });
+    await screen.findByRole('button', { name: 'Check now' });
+    expect(api.rating_prompt).not.toHaveBeenCalled();
+  });
+});
+
 describe('CodesCard', () => {
   const code = (id, title, extra) => ({ ref: { source: 'credential', id, kind: 'web' }, title, username: 'ann',
     origin: null, icon: null, ...extra });

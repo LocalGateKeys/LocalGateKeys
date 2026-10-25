@@ -37,7 +37,7 @@ ROUTES = {
     "hello_settings_clicked": "hello", "face_settings_clicked": "face", "change_master_clicked": "master",
     "recovery_center_clicked": "recovery", "check_updates_clicked": "updates", "licence_clicked": "licence",
     "sync_clicked": "sync", "show_shortcuts_clicked": "shortcuts", "onboarding_clicked": "onboarding",
-    "connections_clicked": "connections", "open_error_log_clicked": "errorlog",
+    "connections_clicked": "connections", "open_error_log_clicked": "errorlog", "rate_clicked": "rate",
 }
 
 

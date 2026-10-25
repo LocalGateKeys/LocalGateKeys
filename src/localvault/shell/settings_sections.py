@@ -180,6 +180,11 @@ def build_appearance(form: SettingsForm) -> None:
     form.switch("minimize_to_tray", "Keep running in the tray",
                 "Closing the window keeps autofill working; it does not lock the vault")
     form.button("Updates", f"Version {APP_VERSION}", "Check now", _call(form.app, "check_updates_clicked"))
+    from ..app import rating
+
+    if rating.available():
+        form.button("Rate LocalGateKeys", "Tell others what you think on the Microsoft Store", "Rate",
+                    _call(form.app, "rate_clicked"))
 
 
 def build_backups(form: SettingsForm) -> None:

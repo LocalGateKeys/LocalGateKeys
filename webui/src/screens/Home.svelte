@@ -161,10 +161,27 @@
 
   // After unlock: an old build suggests an update check (no network until the user says yes).
   let reminder = $state(null);
-  $effect(() => { call('updates_reminder').then((r) => { if (r.ok && r.due) reminder = r; }); });
+  // Otherwise, from the third unlock: ask once for a Microsoft Store rating.
+  let ratePrompt = $state(null);
+  $effect(() => {
+    call('updates_reminder').then(async (r) => {
+      if (r.ok && r.due) { reminder = r; return; }
+      const rate = await call('rating_prompt');
+      if (rate.ok && rate.due) ratePrompt = rate;
+    });
+  });
   function reminderAnswer(yes) {
     reminder = null;
     if (yes) checkUpdates(); else call('updates_snooze');
+  }
+  async function rateAnswer(yes) {
+    ratePrompt = null;
+    const result = await call('rating_answer', yes);
+    if (!result.ok) toast(result.error.message, '', 'error');
+  }
+  async function rate() {
+    const result = await call('rating_open');
+    if (!result.ok) toast(result.error.message, '', 'error');
   }
 
   async function checkUpdates() {
@@ -195,6 +212,7 @@
   function route(target, params = {}, refresh = null) {
     if (target === 'security') push({ kind: 'security' }, refresh);
     else if (target === 'health') push({ kind: 'health', filter: params.filter ?? null, scanAll: !!params.scan_all }, refresh);
+    else if (target === 'rate') rate();
     else if (target === 'master') push({ kind: 'master' }, refresh);
     else if (target === 'recovery') push({ kind: 'recovery', initial: params.initial ?? null }, refresh);
     else if (target === 'hello' || target === 'face') push({ kind: 'unlocking', startHello: !!params.startHello }, refresh);
@@ -344,6 +362,7 @@
   <section class="right">
     <DetailPane {selected} icon={list?.items?.find((i) => i.ref.id === selected?.id)?.icon ?? null} onedit={openItem} onchanged={refresh} />
     {#if reminder}<Modal title={reminder.title} message={reminder.text} allowLabel="Check now" denyLabel="Not now" onanswer={reminderAnswer} />{/if}
+    {#if ratePrompt}<Modal title={ratePrompt.title} message={ratePrompt.text} allowLabel="Rate now" denyLabel="No thanks" onanswer={rateAnswer} />{/if}
     {#if quick}<QuickAccess onclose={() => (quick = false)} onopen={(ref) => { quick = false; openItem(ref); }} />{/if}
     {#if sheet?.kind === 'editor'}
       <LoginEditor ref={sheet.ref} newPassword={!!sheet.newPassword} onclose={(saved) => { sheet = null; if (saved) { selected = saved; refresh(); } }}

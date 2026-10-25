@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "localgatekeys"
-version = "0.4.7"
+version = "0.4.8"
 description = "Local-first encrypted credential manager for browsers and desktop applications"
 readme = "README.md"
 requires-python = ">=3.12"

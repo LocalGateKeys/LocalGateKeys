@@ -10,6 +10,7 @@ from .hotkey import normalize_hotkey
 from .password_tools import normalize_generator_options
 
 SETTINGS_VERSION = 8
+UNLOCK_COUNT_CAP = 1000
 # Older versions still load; each migration below names the version that introduced it.
 LOADABLE_SETTINGS_VERSIONS = (1, 2, 3, 4, 5, 6, 7, SETTINGS_VERSION)
 
@@ -61,6 +62,10 @@ class AppSettings:
     # ISO date until which the "this version is old, check for updates?"
     # reminder stays quiet after the user declined it ("" = not snoozed).
     update_reminder_snoozed_until: str = ""
+    # Unlocks so far (capped); the one-time "rate us" prompt waits for the third.
+    unlock_count: int = 0
+    # Set once the user has answered the "rate us on the Microsoft Store?" prompt.
+    rate_prompt_answered: bool = False
     quick_access_hotkey: str = "Ctrl+Alt+K"
     appearance: str = "light"
     # When Windows Hello is enrolled, start its prompt as soon as the unlock
@@ -113,6 +118,7 @@ class AppSettings:
             backup_mirror_dir=_validated_mirror_dir(raw.get("backup_mirror_dir")),
             sync_lan_endpoint=_validated_lan_endpoint(raw.get("sync_lan_endpoint")),
             sync_lan_endpoint_confirmed=_validated_lan_endpoint(raw.get("sync_lan_endpoint_confirmed")),
+            unlock_count=_bounded(raw.get("unlock_count", 0), 0, UNLOCK_COUNT_CAP, 0),
         )
         version = raw.get("version", 1)
         # v7 turned website icons back off by default; v6 files stored "on"
@@ -151,6 +157,7 @@ class AppSettings:
         payload["max_session_seconds"] = _validated_timeout(self.max_session_seconds, default=28800)
         payload["clipboard_clear_seconds"] = _validated_clipboard_timeout(self.clipboard_clear_seconds)
         payload["automatic_backup_count"] = _validated_backup_count(self.automatic_backup_count)
+        payload["unlock_count"] = _bounded(self.unlock_count, 0, UNLOCK_COUNT_CAP, 0)
         payload["trash_retention_days"] = _bounded(self.trash_retention_days, 1, 365, 30)
         payload["scheduled_backup_frequency"] = _validated_frequency(self.scheduled_backup_frequency)
         payload["scheduled_backup_time"] = validated_time(self.scheduled_backup_time)

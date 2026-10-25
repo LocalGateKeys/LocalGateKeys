@@ -8,7 +8,12 @@ Current implementation and validation status: docs/NEXT_RELEASE_IMPLEMENTATION_S
 
 ## Unreleased
 
+## 0.4.8 (2026-10-25)
+
 ### Desktop
+- The Microsoft Store version can be rated from Settings ("Rate LocalGateKeys"), and asks once, from
+  the third unlock, whether you want to rate it. It opens the Store app; LocalGateKeys sends nothing,
+  and the prompt never appears in strict offline mode.
 - Installing Pro after buying takes one click: the licence page has an "Install in LocalGateKeys"
   button. It opens the app through a `localgatekeys://install-licence/` link; the app checks the
   licence's signature, asks before installing it and names whose licence it is (and whose it
