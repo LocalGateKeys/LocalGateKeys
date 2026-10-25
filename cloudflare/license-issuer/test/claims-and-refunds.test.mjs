@@ -478,3 +478,19 @@ test("L-3: Lemon Squeezy order_refunded is recorded the same way", async () => {
   assert.equal(record.revoke, true);
   assert.equal(record.license_id, await licenseIdForOrder("order:lemonsqueezy:1001"));
 });
+
+test("the licence page links the key to the desktop app's install link", async () => {
+  const env = makeEnv();
+  await webhook(env, transaction("txn_link", "ctm_victim", CLAIM, "web"));
+  const response = await handle(new Request(`https://licenses.example/license/${CLAIM}`), env, deps);
+  const html = await response.text();
+  const paste = html.match(/<textarea readonly>(LGK1-[A-Za-z0-9_-]+)<\/textarea>/)[1];
+  assert.ok(html.includes(`href="localgatekeys://install-licence/${paste}"`));
+  assert.match(response.headers.get("Content-Security-Policy"), /default-src 'none'/);
+});
+
+test("a pending licence page has no install link", async () => {
+  const env = makeEnv();
+  const html = await (await handle(new Request(`https://licenses.example/license/${CLAIM}`), env, deps)).text();
+  assert.ok(!html.includes("localgatekeys://"));
+});

@@ -1,7 +1,7 @@
 // LocalGateKeys licence issuer: payment webhooks in, signed Pro licences out.
 //
 //   POST /webhooks/lemonsqueezy | /webhooks/paddle   -> issue + store licence
-//   GET  /license/<token>                            -> HTML page with LGK1- key
+//   GET  /license/<token>                            -> HTML page with LGK1- key and an install link
 //   GET  /license/<token>/file                       -> .lgklicense download
 //   GET  /recover, POST /recover                     -> find a licence by order id + email
 //
@@ -37,6 +37,8 @@ const MAX_BODY_BYTES = 64 * 1024;
 const MAX_FORM_BYTES = 4 * 1024;
 const TOKEN_PATH = /^\/license\/([A-Za-z0-9_-]{43})(\/file)?$/;
 const RECOVER_PATH = "/recover";
+// Opens the desktop app, which verifies the key and asks before installing it.
+const INSTALL_LINK = "localgatekeys://install-licence/";
 const ORDER_ID = /^[A-Za-z0-9_-]{1,64}$/;
 // Per-email /recover throttle (review R-6), on top of the Cloudflare rule
 // "Licence recovery limit" (3 requests / 10 s per IP) on the zone.
@@ -71,7 +73,8 @@ function page(title, inner, head = "", extra = {}, status = 200) {
       `<meta name="viewport" content="width=device-width,initial-scale=1">` +
       `<title>${escapeHtml(title)}</title>${head}` +
       `<style>body{font:16px system-ui,sans-serif;max-width:40rem;margin:2rem auto;padding:0 1rem}` +
-      `textarea{width:100%;height:9rem;font:12px monospace}</style></head><body>${inner}</body></html>`,
+      `textarea{width:100%;height:9rem;font:12px monospace}` +
+      `a.install{display:inline-block;padding:.6rem 1.1rem;border-radius:.5rem;background:#1f5eff;color:#fff;text-decoration:none;font-weight:600}</style></head><body>${inner}</body></html>`,
     "text/html; charset=utf-8",
     extra,
   );
@@ -291,12 +294,15 @@ async function licensePage(token, wantFile, env, deps, url) {
   // Paddle's checkout asks for no name, so the name is often the email itself.
   const { name, email } = bundle.license;
   const holder = name === email ? escapeHtml(email) : `${escapeHtml(name)} (${escapeHtml(email)})`;
+  const paste = encodePaste(bundle);
   return page(
     "Your LocalGateKeys Pro licence",
     `<h1>Your LocalGateKeys Pro licence</h1>` +
       `<p>Licensed to ${holder}.</p>` +
-      `<p>Paste this key into LocalGateKeys, or download the file and open it there.</p>` +
-      `<textarea readonly>${escapeHtml(encodePaste(bundle))}</textarea>` +
+      `<p><a class="install" href="${INSTALL_LINK}${escapeHtml(paste)}">Install in LocalGateKeys</a></p>` +
+      `<p>The app asks before it installs anything. If the button does nothing, paste this key into ` +
+      `LocalGateKeys (Licence), or download the file and open it there.</p>` +
+      `<textarea readonly>${escapeHtml(paste)}</textarea>` +
       `<p><a href="/license/${escapeHtml(token)}/file" download>Download LocalGateKeys-Pro.lgklicense</a></p>`,
   );
 }

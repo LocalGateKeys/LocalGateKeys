@@ -57,6 +57,29 @@ def _tell_already_running(background: bool) -> None:
         ctypes.windll.user32.MessageBoxW(None, ALREADY_RUNNING, "LocalGateKeys", 0x40)  # MB_ICONINFORMATION
 
 
+def _install_from_link(link: str) -> bool:
+    """Confirm and install the licence in a ``localgatekeys://install-licence/`` link (Windows dialogs)."""
+    from .licence_link import handle
+
+    def ask(text: str) -> bool:
+        if os.name != "nt":
+            return False
+        import ctypes
+
+        mb_yesno, mb_iconquestion, mb_setforeground, idyes = 0x4, 0x20, 0x10000, 6
+        return ctypes.windll.user32.MessageBoxW(
+            None, text, "LocalGateKeys", mb_yesno | mb_iconquestion | mb_setforeground) == idyes
+
+    def tell(text: str) -> None:
+        print(text, file=sys.stderr)
+        if os.name == "nt":
+            import ctypes
+
+            ctypes.windll.user32.MessageBoxW(None, text, "LocalGateKeys", 0x30 | 0x10000)  # MB_ICONWARNING
+
+    return handle(link, ask, tell)
+
+
 def sweep_open_copies(profile_dir: str) -> int:
     """``--sweep-open-copies``: after exit, delete decrypted copies once their apps close them.
 
@@ -104,9 +127,20 @@ def main() -> None:
         unregister_browser_bridge()
         return
 
+    from .licence_link import find_link
+
+    link = find_link(_unknown)
+    installed = False
+    if link is not None:
+        installed = _install_from_link(link)
     mutex = _acquire_windows_instance_mutex()
     if mutex is None:
-        _tell_already_running(args.background)
+        if link is None:
+            _tell_already_running(args.background)
+        elif installed:
+            from .licence_link import signal_running_app
+
+            signal_running_app()
         return
     try:
         from .web.main import run as run_web_ui

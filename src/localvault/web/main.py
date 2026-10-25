@@ -161,6 +161,17 @@ def run() -> None:
         host._refresh_tray()
 
     api._settings.on_change.append(settings_changed)
+    from ..licence_link import watch_for_installs
+
+    def licence_installed_elsewhere() -> None:
+        # A localgatekeys://install-licence/ link was opened while this app runs.
+        host.run_on_ui(api._licence.after_unlock)
+        controller._publish()
+        host.show_main_window()
+        host.raise_window()
+        host.set_status("Pro licence installed.")
+
+    watch_for_installs(licence_installed_elsewhere)
     window = webview.create_window(
         BRAND_NAME, url=str(index), js_api=js_api, width=1180, height=760, min_size=(900, 600),
         background_color="#0C1424", text_select=False, hidden=background,

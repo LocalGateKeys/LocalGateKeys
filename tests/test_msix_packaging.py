@@ -147,3 +147,13 @@ def test_test_certificate_matches_the_test_publisher(tmp_path) -> None:
     assert cer.read_bytes() == first
     with pytest.raises(ValueError):
         certificates.create(tmp_path / "other", "CN=A, O=B", "pw")
+
+
+def test_install_licence_links_open_the_app(manifest) -> None:
+    from localvault.licence_link import SCHEME
+
+    protocol = manifest.find(".//uap:Extension[@Category='windows.protocol']/uap:Protocol", NS)
+    assert protocol is not None and protocol.get("Name") == SCHEME
+    iss = (ROOT / "build-personal" / "LocalGateKeys-Personal.iss").read_text(encoding="utf-8")
+    assert rf'Subkey: "Software\Classes\{SCHEME}\shell\open\command"' in iss
+    assert r'""{app}\LocalGateKeys.exe"" ""%1""' in iss

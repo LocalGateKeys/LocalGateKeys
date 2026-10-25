@@ -4,11 +4,11 @@
 
 ## Status
 
-LocalVault is an engineering prototype, not a production password manager. Do not rely on it as the only copy of important credentials. The code has not received an independent cryptographic review, penetration test, accessibility review, or supply-chain audit.
+LocalGateKeys is a released password manager: a Windows app (Microsoft Store and installer), an Edge extension, and an iPhone app in public beta. The source is published here so anyone can check how it protects your data. It has been through repeated internal security reviews, and the fixes are listed below. It has not yet had an independent cryptographic review, penetration test, accessibility review, or supply-chain audit. As with any password manager, keep an encrypted backup of your vault and your recovery phrase somewhere safe.
 
 ## Threat model
 
-The prototype is designed to reduce these risks:
+The app is designed to reduce these risks:
 
 - a website obtaining credentials stored for a different web origin
 - a content script directly opening the native vault without extension-background validation
@@ -94,10 +94,10 @@ The desktop path reads accessibility metadata only:
 - editable control name, automation ID, class/framework, geometry, visibility, enabled state, and `IsPassword`
 
 It never requests an existing password value.
-For a control marked `IsPassword`, the prototype also discards its accessibility `Name` before
+For a control marked `IsPassword`, the app also discards its accessibility `Name` before
 displaying or storing the selector, in case a defective provider leaks sensitive text there.
 
-Before fill, the prototype checks:
+Before fill, the app checks:
 
 1. exact normalized executable path
 2. exact executable SHA-256 fingerprint

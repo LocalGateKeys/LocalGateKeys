@@ -8,6 +8,13 @@ Current implementation and validation status: docs/NEXT_RELEASE_IMPLEMENTATION_S
 
 ## Unreleased
 
+### Desktop
+- Installing Pro after buying takes one click: the licence page has an "Install in LocalGateKeys"
+  button. It opens the app through a `localgatekeys://install-licence/` link; the app checks the
+  licence's signature, asks before installing it and names whose licence it is (and whose it
+  replaces). A running app picks the licence up at once. Both installers register the link.
+  Pasting the key or opening the licence file still works.
+
 ### Android
 - The Android app (`android/app`, Android 10 and later; not on Google Play yet) has:
   - an unlock with your fingerprint, face or screen lock;

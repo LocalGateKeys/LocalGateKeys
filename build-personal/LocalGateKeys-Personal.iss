@@ -53,6 +53,11 @@ Name: "{userdesktop}\LocalGateKeys"; Filename: "{app}\LocalGateKeys.exe"; IconFi
 
 [Registry]
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "LocalGateKeys"; ValueData: """{app}\LocalGateKeys.exe"""; Flags: uninsdeletevalue
+; localgatekeys://install-licence/ links from the licence page open the app, which verifies and asks first.
+Root: HKCU; Subkey: "Software\Classes\localgatekeys"; ValueType: string; ValueName: ""; ValueData: "URL:LocalGateKeys"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\localgatekeys"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
+Root: HKCU; Subkey: "Software\Classes\localgatekeys\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: """{app}\LocalGateKeys.exe"",0"
+Root: HKCU; Subkey: "Software\Classes\localgatekeys\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\LocalGateKeys.exe"" ""%1"""
 
 [Run]
 Filename: "{app}\LocalGateKeys.exe"; Parameters: "--repair-browser-bridge"; Flags: runhidden waituntilterminated

@@ -106,6 +106,13 @@
           uap10:Parameters="--background">
           <desktop:StartupTask TaskId="LocalGateKeysStartup" Enabled="false" DisplayName="@DISPLAY_NAME@" />
         </desktop:Extension>
+        <!-- localgatekeys://install-licence/ links from the licence page; the URI arrives
+             as the command-line argument (localvault.licence_link verifies and asks first). -->
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="localgatekeys">
+            <uap:DisplayName>@DISPLAY_NAME@</uap:DisplayName>
+          </uap:Protocol>
+        </uap:Extension>
         <!-- The Chromium/Firefox native-messaging host. Browsers launch it through
              %LOCALAPPDATA%\Microsoft\WindowsApps\<family name>\LocalGateKeysNativeHost.exe,
              which survives package updates and gives the host package identity.
