@@ -5,18 +5,6 @@
 
 # LocalGateKeys Terms of Sale
 
-<!-- owner-decisions -->
-## Decisions the owner must make before review
-
-- **Merchant of record.** Choose Paddle or Lemon Squeezy ({{MERCHANT_OF_RECORD}}). Both act as reseller, so the buyer's contract of sale is with them; these terms must be aligned with their buyer terms ({{MERCHANT_TERMS_URL}}) and must not contradict them.
-- **Price and currencies.** The Pro price is {{PRICE}}, one-time, with all future updates included. Decide whether the merchant shows local-currency prices and whether EU/UK prices are shown tax-inclusive (normal for consumers there).
-- **Lifetime updates.** See the decision about "all future updates" in the End User Licence Agreement; these terms make the same promise.
-- **Business and volume sales.** Whether you offer multi-seat licences, purchase orders or business invoicing beyond what the merchant provides.
-- **Countries.** Whether you sell everywhere the merchant supports or exclude some countries.
-- **EU/UK withdrawal right.** The merchant's checkout must collect the consumer's express consent to immediate delivery and acknowledgement of losing the withdrawal right (Directive 2011/83/EU, Article 16(m)). Confirm the merchant does this; the 30-day refund policy is offered on top of it.
-- **Complaint handling and alternative dispute resolution.** Whether you participate in an ADR scheme; the EU ODR platform closed in July 2025, so do not link to it.
-- **Effective date** ({{EFFECTIVE_DATE}}).
-<!-- /owner-decisions -->
 
 Effective date: {{EFFECTIVE_DATE}}
 

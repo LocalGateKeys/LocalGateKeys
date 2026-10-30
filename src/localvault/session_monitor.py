@@ -5,6 +5,27 @@ import threading
 from collections.abc import Callable
 
 
+WM_WTSSESSION_CHANGE = 0x02B1
+WTS_CONSOLE_DISCONNECT = 0x2  # fast user switching away from this session
+WTS_REMOTE_DISCONNECT = 0x4  # Remote Desktop connection dropped or closed
+WTS_SESSION_LOGOFF = 0x6
+WTS_SESSION_LOCK = 0x7
+# WM_WTSSESSION_CHANGE codes that lock the vault (under "lock when Windows locks"), with the reason shown.
+SESSION_LOCK_REASONS = {
+    WTS_SESSION_LOCK: "Windows session locked",
+    WTS_SESSION_LOGOFF: "Windows signed out",
+    WTS_CONSOLE_DISCONNECT: "Windows user switched",
+    WTS_REMOTE_DISCONNECT: "Remote Desktop disconnected",
+}
+
+
+def session_lock_reason(msg: int, wparam: int) -> str | None:
+    """The lock reason for a window message, or None when it is not a session change that locks."""
+    if msg == WM_WTSSESSION_CHANGE:
+        return SESSION_LOCK_REASONS.get(wparam)
+    return None
+
+
 class WindowsSessionMonitor:
     """Receive Windows lock/logoff/suspend notifications on a hidden message window."""
 
@@ -46,14 +67,11 @@ class WindowsSessionMonitor:
         except Exception:
             return
 
-        WM_WTSSESSION_CHANGE = 0x02B1
-        WTS_SESSION_LOCK = 0x7
-        WTS_SESSION_LOGOFF = 0x6
         PBT_APMSUSPEND = 0x0004
 
         def wndproc(hwnd: int, msg: int, wparam: int, lparam: int) -> int:
-            if msg == WM_WTSSESSION_CHANGE and wparam in (WTS_SESSION_LOCK, WTS_SESSION_LOGOFF):
-                reason = "Windows session locked" if wparam == WTS_SESSION_LOCK else "Windows signed out"
+            reason = session_lock_reason(msg, wparam)
+            if reason:
                 self.on_lock_required(reason)
                 return 0
             if msg == win32con.WM_POWERBROADCAST and wparam == PBT_APMSUSPEND:

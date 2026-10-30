@@ -291,8 +291,8 @@ def ensure_packaged_registration() -> bool:
     ``--repair-browser-bridge``. Repairing on every launch also re-pins the
     host after a Store update moved the package to a new versioned directory.
     The data directory is excluded from AppData virtualization and new HKCU
-    keys are written unvirtualized (see build-msix/AppxManifest.xml.in and
-    docs/store/MSIX_FEASIBILITY.md), so the browsers see both. Returns whether
+    keys are written unvirtualized (see build-msix/AppxManifest.xml.in),
+    so the browsers see both. Returns whether
     the registration completed.
     """
 

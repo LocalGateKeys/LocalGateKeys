@@ -1,7 +1,7 @@
 """Writes tests/vectors/sync/attachments/vectors.json: synced attachment blobs (format 1).
 
 The format is defined in ``src/localvault/sync/attachment_sync.py`` and
-``docs/superpowers/plans/2026-10-29-attachment-sync.md``.  Every value is
+``docs/SYNC.md`` ("Documents and files").  Every value is
 deterministic (fixed keys, ids and plaintexts; the nonce is derived), so
 LGKCore (Swift) and lgk-core (Kotlin) must reproduce each blob byte for byte.
 Run ``python scripts/make_attachment_sync_vectors.py`` to rewrite, ``--check``

@@ -8,8 +8,7 @@ copies of important credentials and use disposable test logins initially.**
 Previous patches never submitted login forms. Release 019 adds explicit opt-in
 per-profile/per-entry automatic sign-in after an explicit fill action, not on
 page load. The encrypted profile preference defaults false. Per-entry policies
-are encrypted, and restore/rebind resets automatic-sign-in trust. Browser and
-desktop gates are described in `RELEASE_019.md`; ambiguous destinations stay manual.
+are encrypted, and restore/rebind resets automatic-sign-in trust. Ambiguous destinations stay manual.
 
 This design uses HTML `requestSubmit` to preserve validation/submit events and
 UI Automation Invoke for a saved desktop button. It does not skip MFA, CAPTCHA,

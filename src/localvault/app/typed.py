@@ -1,7 +1,7 @@
 """Typed items for the WebView UI: per-kind schema, detail, edit, save, reveal and copy.
 
-Behaviour follows the Tk ``TypedItemEditor`` / ``typed_item_details``
-(docs/superpowers/specs/2026-10-17-webview-items-dataflow.md §1). Protected
+Behaviour follows the Tk ``TypedItemEditor`` / ``typed_item_details``.
+Protected
 values never leave Python except through an explicit, re-authenticated
 ``reveal``. Bookmark URL/notes and identity fields are shown in the detail view
 without re-auth, exactly as the Tk app does. A secure note's body is hidden: it

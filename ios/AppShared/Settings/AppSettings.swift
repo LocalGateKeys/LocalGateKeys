@@ -7,11 +7,11 @@ public enum AutoLockDelay: Int64, CaseIterable, Identifiable, Sendable {
     public var id: Int64 { rawValue }
     public var label: String {
         switch self {
-        case .immediately: "Immediately"
-        case .oneMinute: "After 1 minute"
-        case .fiveMinutes: "After 5 minutes"
-        case .fifteenMinutes: "After 15 minutes"
-        case .oneHour: "After 1 hour"
+        case .immediately: String(localized: "Immediately")
+        case .oneMinute: String(localized: "After 1 minute")
+        case .fiveMinutes: String(localized: "After 5 minutes")
+        case .fifteenMinutes: String(localized: "After 15 minutes")
+        case .oneHour: String(localized: "After 1 hour")
         }
     }
 }
@@ -23,11 +23,11 @@ public enum IdleLock: Int64, CaseIterable, Identifiable, Sendable {
     public var seconds: Int64? { self == .never ? nil : rawValue }
     public var label: String {
         switch self {
-        case .oneMinute: "1 minute"
-        case .fiveMinutes: "5 minutes"
-        case .fifteenMinutes: "15 minutes"
-        case .thirtyMinutes: "30 minutes"
-        case .never: "Never"
+        case .oneMinute: String(localized: "1 minute")
+        case .fiveMinutes: String(localized: "5 minutes")
+        case .fifteenMinutes: String(localized: "15 minutes")
+        case .thirtyMinutes: String(localized: "30 minutes")
+        case .never: String(localized: "Never")
         }
     }
 }
@@ -38,10 +38,10 @@ public enum ClipboardExpiry: Int64, CaseIterable, Identifiable, Sendable {
     public var id: Int64 { rawValue }
     public var label: String {
         switch self {
-        case .thirtySeconds: "30 seconds"
-        case .sixtySeconds: "60 seconds"
-        case .twoMinutes: "2 minutes"
-        case .fiveMinutes: "5 minutes"
+        case .thirtySeconds: String(localized: "30 seconds")
+        case .sixtySeconds: String(localized: "60 seconds")
+        case .twoMinutes: String(localized: "2 minutes")
+        case .fiveMinutes: String(localized: "5 minutes")
         }
     }
 }
@@ -51,9 +51,9 @@ public enum Appearance: String, CaseIterable, Identifiable, Sendable {
     public var id: String { rawValue }
     public var label: String {
         switch self {
-        case .system: "System"
-        case .light: "Light"
-        case .dark: "Dark"
+        case .system: String(localized: "System")
+        case .light: String(localized: "Light")
+        case .dark: String(localized: "Dark")
         }
     }
 }

@@ -9,8 +9,8 @@ public struct AttachmentSyncError: Error, Equatable, Sendable, CustomStringConve
     public var description: String { detail.isEmpty ? reason : "\(reason): \(detail)" }
 }
 
-/// Synced file attachments, format 1 (desktop `sync/attachment_sync.py`; plan
-/// `docs/superpowers/plans/2026-10-29-attachment-sync.md`; vectors `tests/vectors/sync/attachments`).
+/// Synced file attachments, format 1 (desktop `sync/attachment_sync.py`; docs/SYNC.md
+/// "Documents and files"; vectors `tests/vectors/sync/attachments`).
 ///
 /// A blob is one immutable encrypted file per attachment, addressed by the SHA-256 of its bytes:
 /// `"LGKABLB1" || nonce || AES-256-GCM(k, nonce, u64_be(len) || data || zero padding to 64 KiB, aad)`, with

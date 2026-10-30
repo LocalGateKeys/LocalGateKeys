@@ -39,8 +39,12 @@ struct OverviewCards: View {
                 Text(score).font(.system(size: 22, weight: .semibold))
                 Text(card.label).font(.system(size: 13)).foregroundStyle(theme.textMuted)
             }
-            HStack(spacing: 6) { ForEach(card.pills, id: \.self) { Pill(text: $0) } }
-                .padding(.top, 6)
+            // Stacked when one row would not fit (long German pills squeeze the narrow column).
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 6) { ForEach(card.pills, id: \.self) { Pill(text: $0) } }
+                VStack(alignment: .leading, spacing: 4) { ForEach(card.pills, id: \.self) { Pill(text: $0) } }
+            }
+            .padding(.top, 6)
         } else {
             Text(card.label).font(.system(size: 13)).foregroundStyle(theme.textMuted)
         }

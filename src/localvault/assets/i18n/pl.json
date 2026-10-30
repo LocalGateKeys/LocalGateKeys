@@ -1999,6 +1999,8 @@
   "settings.hello.title": "Windows Hello",
   "settings.helloAutoStart.desc": "Gdy otworzy się ekran odblokowania",
   "settings.helloAutoStart.title": "Uruchamiaj Windows Hello automatycznie",
+  "settings.hideFromCapture.desc": "Inne programy, nagrywarki ekranu i rozmowy wideo nie mogą przechwycić tego okna",
+  "settings.hideFromCapture.title": "Ukryj przed zrzutami ekranu i udostępnianiem ekranu",
   "settings.idleSource.desc": "Komputer: klawiatura lub mysz gdziekolwiek. Sejf: używanie lub zapisywanie elementów.",
   "settings.idleSource.title": "Licz aktywność od",
   "settings.keep.latest": "Zachowaj tylko najnowszą",

@@ -27,7 +27,7 @@ class AppPasswordException(val kind: Kind, message: String = kind.name) : Except
 }
 
 /**
- * `app-password.bin` (docs/superpowers/plans/2026-10-29-app-master-password.md): the 32-byte local key wrapped twice,
+ * `app-password.bin`: the 32-byte local key wrapped twice,
  * by Argon2id(app password) and by the recovery phrase. Immutable; [encode] gives the 165 bytes.
  */
 class AppPasswordRecord private constructor(

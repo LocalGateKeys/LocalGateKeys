@@ -2,8 +2,7 @@
 
 Status: Part A (the pure Kotlin core `lgk-core`) and Part B (the Compose app in `app/`: unlock, vault, editor, sync
 over Wi-Fi and a cloud folder, backups, settings, Play Billing) are done and checked live against the desktop's sync
-code (2026-10-24). Part C (Autofill, save, passkeys) is next. Release steps and the owner checklist: `RELEASE.md`.
-Design: `docs/superpowers/specs/2026-10-23-android-app-design.md`; plan: `docs/superpowers/plans/2026-10-23-android-core.md`.
+code (2026-10-24). Part C (Autofill, save, passkeys; packages `autofill/` and `passkey/`) is built; its device checks are still open in `RELEASE.md`. Release steps and the owner checklist: `RELEASE.md`.
 
 ## Layout
 
@@ -86,7 +85,7 @@ The files are binary and byte-exact (`tests/vectors/** -text`, `*.lgksync` and `
 - Device tests: `android/gradlew -p android :app:connectedDebugAndroidTest` with an emulator running. The sync vectors
   they need are copied from `tests/vectors/sync` into `app/build/generated/vectors` by the `copyVectors` task (not in git).
 - Emulators: `LGK_API36` (Android 16) and `LGK_API29` (Android 10, the minSdk device), both google_apis x86_64 with no
-  screen lock. Device tests and screenshots run there. `Pixel_8` and `Pixel_8_2` are the owner's AVDs: never use them.
+  screen lock. Device tests and screenshots run there.
 - Debug-only intent extras on `MainActivity` (ignored in release): `lgk.debug.insecure=true` leaves `FLAG_SECURE` off so
   `adb exec-out screencap -p` works; `lgk.debug.appearance=light|dark|system` forces the theme.
 - `Argon2KtAdapter` (argon2kt) is installed into `Argon2.default` in `LgkApp.onCreate`.
@@ -144,11 +143,9 @@ and remove it afterwards with `adb shell locksettings clear --old 1234`. On API 
 - `--es lgk.debug.appearance light|dark|system` forces the theme.
 - `--ez lgk.debug.demo true` fills an empty vault with sample items.
 - `--es lgk.debug.pairing "<lgk-pair:... text>"` joins that Wi-Fi pairing code after the unlock, as if the camera had
-  scanned it (Ruling D). Start with `-S` so the activity is new.
+  scanned it. Start with `-S` so the activity is new.
 
-A release build (`:app:assembleRelease`) is minified and unsigned; `RELEASE.md` has the signing steps. The screenshots in
-`docs/design/android/` (`unlock`, `vault`, `detail`, `editor`, `sync`, `settings`, each `-light` and `-dark`) come from
-`LGK_API36`.
+A release build (`:app:assembleRelease`) is minified and unsigned; `RELEASE.md` has the signing steps.
 
 ## Live checks with the desktop
 
@@ -183,8 +180,6 @@ Other commands (see the script's docstring):
   `phone_backup.read_phone_backup` and `phone_restore.plan_restore`/`restore`.
 - `quit` stops the peer.
 
-The run of 2026-10-24 is recorded in `.superpowers/sdd/2026-10-23-android-app/task-15-report.md`.
-
 ## Known limits (v1)
 
 - **Clipboard.**
@@ -205,9 +200,9 @@ The run of 2026-10-24 is recorded in `.superpowers/sdd/2026-10-23-android-app/ta
   - `SafFolderOpener.keepOnly` releases every persisted URI grant except the sync folder's, including any non-folder
     grant.
   - A persisted folder grant can briefly outlive a lock until the release finishes.
-- **System picker allowance (Ruling 21).** The 120 s cap and the screen-off lock apply under every auto-lock delay, not
+- **System picker allowance.** The 120 s cap and the screen-off lock apply under every auto-lock delay, not
   only "Immediately".
-- **Autofill.** The Settings › Autofill section does nothing until Part C adds the autofill service.
+- **Autofill.** Settings › Autofill opens the system's autofill settings, where you choose LocalGateKeys; the fill and save flows still need their device checks (`RELEASE.md`).
 - **Free plan.** The free 4-item limit stops the phone from adding a fifth item; the upgrade sheet opens instead.
   Items that arrive by sync are kept beyond the limit (seen live: a free phone holding 5 synced items). A backup
-  restore fills only the free slots and holds the rest back (Ruling B).
+  restore fills only the free slots and holds the rest back (the free limit applies to restores).

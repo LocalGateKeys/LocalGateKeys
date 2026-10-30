@@ -22,6 +22,9 @@ _DWMWA_USE_IMMERSIVE_DARK_MODE = 20
 _DWMWA_SYSTEMBACKDROP_TYPE = 38
 _DWMSBT_MAINWINDOW = 2  # Mica
 _BACKDROP_MIN_BUILD = 22621
+_WDA_NONE = 0x0
+_WDA_MONITOR = 0x1  # shows black in captures; every Windows 10 build
+_WDA_EXCLUDEFROMCAPTURE = 0x11  # the window is simply absent from captures; Windows 10 2004 and later
 
 
 # ------------------------------------------------------------ pure helpers
@@ -170,6 +173,33 @@ def native_handle(window: Any) -> int | None:
     return found.get("hwnd") or None
 
 
+def set_display_affinity(hwnd: int | None, hide: bool) -> bool:
+    """Hide a window from screenshots and screen sharing (or show it again). Best-effort; False when not applied.
+
+    Falls back to WDA_MONITOR where WDA_EXCLUDEFROMCAPTURE is refused (older Windows). This only stops other
+    programs from capturing the window; LocalGateKeys itself never captures the screen.
+    """
+    if os.name != "nt" or not hwnd:
+        return False
+    try:
+        from ctypes import wintypes
+
+        set_affinity = ctypes.windll.user32.SetWindowDisplayAffinity
+        set_affinity.argtypes = (wintypes.HWND, wintypes.DWORD)
+        set_affinity.restype = wintypes.BOOL
+        target = wintypes.HWND(int(hwnd))
+        if not hide:
+            return bool(set_affinity(target, _WDA_NONE))
+        return bool(set_affinity(target, _WDA_EXCLUDEFROMCAPTURE)) or bool(set_affinity(target, _WDA_MONITOR))
+    except Exception:  # noqa: BLE001 - best effort
+        return False
+
+
+def apply_capture_protection(window: Any, hide: bool) -> bool:
+    """set_display_affinity for a pywebview window's top-level form."""
+    return set_display_affinity(native_handle(window), hide)
+
+
 def apply_glass(window: Any) -> bool:
     """The recipe from the spec's feasibility check. Best-effort; False when not applied."""
     if not backdrop_supported():
@@ -292,6 +322,9 @@ class WindowOps:
     def set_theme(self, appearance: str) -> None:
         set_title_bar_dark(self._window, theme_is_dark(appearance))
 
+    def set_capture_protection(self, hide: bool) -> bool:
+        return apply_capture_protection(self._window, hide)
+
     def show(self) -> None:
         self._window.show()
 
@@ -372,6 +405,12 @@ class PopupWindow:
         self.disabled = False
         # Run once when the popup is disabled: the host moves its prompts to the main window.
         self.on_disable: list[Any] = []
+        self.hide_from_capture = False
+
+    def set_capture_protection(self, hide: bool) -> bool:
+        """Remember the choice (applied again each time the popup is shown) and apply it now."""
+        self.hide_from_capture = hide
+        return apply_capture_protection(self._window, hide)
 
     def disable(self) -> None:
         """Never show this window again (its navigation lock could not be installed)."""
@@ -392,6 +431,8 @@ class PopupWindow:
             return False
         window = self._window
         window.show()
+        if self.hide_from_capture:
+            apply_capture_protection(window, True)
 
         def run() -> None:
             form = window.native

@@ -173,7 +173,7 @@ final class AppLockModel {
         }
         if let e = error as? KeychainVaultError {
             switch e {
-            case .status(let code): return String(localized: "Could not read the vault key from the Keychain (error \(code)). Try again.")
+            case .status(let code): return String(localized: "Could not read the vault key from the Keychain (error \(String(code))). Try again.")
             case .accessControl: return String(localized: "Could not protect the vault key in the Keychain. Try again.")
             case .malformed(let slot): return String(localized: "A Keychain item of the vault is damaged (\(slot.rawValue)).")
             }

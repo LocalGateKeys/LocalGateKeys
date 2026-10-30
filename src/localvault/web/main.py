@@ -13,6 +13,10 @@ _LOAD_TIMEOUT = 60
 def run() -> None:
     import webview  # type: ignore[import-not-found]
 
+    from ..crash_dumps import disable_crash_dumps
+
+    disable_crash_dumps()  # no WER memory dump of a process that holds the decrypted vault
+
     from ..api.bridge import PAGE_CALLS, Api, page_api
     from ..app.controller import WebController
     from ..config import BRAND_NAME
@@ -160,6 +164,11 @@ def run() -> None:
         if key == "quick_access_hotkey":
             host.restart_hotkeys()
             return
+        if key == "hide_from_capture":
+            hide = controller.settings.hide_from_capture
+            ops["ops"].set_capture_protection(hide)
+            popup.set_capture_protection(hide)
+            return
         if key in ("strict_offline_mode", "website_icons"):
             icons.clear()  # a policy change never carries icons fetched under the old one
         host.apply_overlay()
@@ -295,6 +304,9 @@ def run() -> None:
             return
         bus.attach(QueuedSink(win.evaluate_js))
         ops["ops"].handle = native_handle(win)
+        hide_from_capture = getattr(controller.settings, "hide_from_capture", True) is not False
+        ops["ops"].set_capture_protection(hide_from_capture)
+        popup.set_capture_protection(hide_from_capture)
         glass = apply_glass(win)
         ops["ops"].set_theme(controller.settings.appearance)
         api._glass = glass

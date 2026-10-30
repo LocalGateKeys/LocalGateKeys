@@ -65,3 +65,70 @@ def test_theme_choice_overrides_windows(monkeypatch):
     assert window.theme_is_dark("light") is False
     assert window.theme_is_dark("dark") is True
     assert window.theme_is_dark("system") is True
+
+
+class _FakeAffinity:
+    """Stands in for ctypes.windll.user32.SetWindowDisplayAffinity; fails the modes listed in `refuse`."""
+
+    def __init__(self, refuse=()):
+        self.calls = []
+        self.refuse = set(refuse)
+        self.argtypes = self.restype = None
+
+    def __call__(self, hwnd, mode):
+        self.calls.append(mode)
+        return 0 if mode in self.refuse else 1
+
+
+def _fake_windll(monkeypatch, fake):
+    class User32:
+        SetWindowDisplayAffinity = fake
+
+    class Windll:
+        user32 = User32()
+
+    monkeypatch.setattr(web_window.ctypes, "windll", Windll(), raising=False)
+    monkeypatch.setattr(web_window.os, "name", "nt")
+
+
+def test_display_affinity_excludes_the_window_from_capture(monkeypatch):
+    fake = _FakeAffinity()
+    _fake_windll(monkeypatch, fake)
+    assert web_window.set_display_affinity(1234, True)
+    assert fake.calls == [0x11]
+
+
+def test_display_affinity_falls_back_to_monitor_on_older_windows(monkeypatch):
+    fake = _FakeAffinity(refuse={0x11})
+    _fake_windll(monkeypatch, fake)
+    assert web_window.set_display_affinity(1234, True)
+    assert fake.calls == [0x11, 0x1]
+
+
+def test_display_affinity_reports_failure_and_can_be_turned_off(monkeypatch):
+    fake = _FakeAffinity(refuse={0x11, 0x1})
+    _fake_windll(monkeypatch, fake)
+    assert not web_window.set_display_affinity(1234, True)
+    fake.calls.clear()
+    assert web_window.set_display_affinity(1234, False)
+    assert fake.calls == [0x0]
+
+
+def test_display_affinity_is_a_no_op_without_a_handle_or_off_windows(monkeypatch):
+    fake = _FakeAffinity()
+    _fake_windll(monkeypatch, fake)
+    assert not web_window.set_display_affinity(None, True)
+    monkeypatch.setattr(web_window.os, "name", "posix")
+    assert not web_window.set_display_affinity(1234, True)
+    assert fake.calls == []
+
+
+def test_capture_protection_uses_the_native_handle(monkeypatch):
+    seen = []
+    monkeypatch.setattr(web_window, "native_handle", lambda window: 77)
+    monkeypatch.setattr(web_window, "set_display_affinity", lambda hwnd, hide: seen.append((hwnd, hide)) or True)
+    assert web_window.WindowOps(object()).set_capture_protection(True)
+    popup = web_window.PopupWindow(object())
+    assert popup.set_capture_protection(False)
+    assert popup.hide_from_capture is False
+    assert seen == [(77, True), (77, False)]

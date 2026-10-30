@@ -4,7 +4,7 @@ import Security
 import LocalAuthentication
 import LGKCore
 
-/// Task 7 (docs/superpowers/plans/2026-10-29-app-master-password.md): the optional iPhone app password.
+/// The optional iPhone app password.
 ///
 /// The file is the Mac's `master-key.json` format (LGKCore `MasterKeyFile` with its `RecoveryWrapper`, desktop
 /// Argon2id t=3, 64 MiB, p=4), named `app-password.json` in the app-group container. The local key stays the same;

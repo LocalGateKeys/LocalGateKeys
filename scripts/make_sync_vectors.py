@@ -935,7 +935,7 @@ def lan_files(identities: dict[str, DeviceIdentity], gk1: GroupKey) -> dict[str,
 
     request, reply, with_endpoint = enroll(("192.168.1.31", 48202), DEVICE_NAMES["B"])
     # a non-ASCII name: the canonical JSON escapes it (\u2019, \u00e9) in the body and the transcript
-    request2, reply2, without_endpoint = enroll(None, "Ilias\u2019s iPhone \u00e9")
+    request2, reply2, without_endpoint = enroll(None, "Alex\u2019s iPhone \u00e9")
     expected = {
         "description": "QR enrollment (version 2: device name, verification code, Accept step) of device B "
         "by device A at epoch 1 (see README.md). Top-level request/reply: B announces its listening "

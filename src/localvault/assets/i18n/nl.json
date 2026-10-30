@@ -1903,6 +1903,8 @@
   "settings.hello.title": "Windows Hello",
   "settings.helloAutoStart.desc": "Wanneer het ontgrendelscherm opent",
   "settings.helloAutoStart.title": "Windows Hello automatisch starten",
+  "settings.hideFromCapture.desc": "Andere programma's, schermopnames en videogesprekken kunnen dit venster niet vastleggen",
+  "settings.hideFromCapture.title": "Verberg voor schermafbeeldingen en schermdelen",
   "settings.idleSource.desc": "Computer: toetsenbord of muis overal. Kluis: items gebruiken of opslaan.",
   "settings.idleSource.title": "Activiteit tellen vanaf",
   "settings.keep.latest": "Alleen de laatste bewaren",

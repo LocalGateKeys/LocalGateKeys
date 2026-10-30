@@ -5,15 +5,6 @@
 
 # LocalGateKeys Refund Policy
 
-<!-- owner-decisions -->
-## Decisions the owner must make before review
-
-- **Refund window.** This draft uses 30 days from purchase. Confirm, and check the merchant of record allows it (Paddle and Lemon Squeezy both let the seller set refund windows within their own limits).
-- **Who processes refunds.** Whether buyers ask {{MERCHANT_OF_RECORD}} directly, email you, or both. This draft allows both.
-- **Revocation timing.** How quickly a refunded licence is added to the revocation list (this draft: within 7 days) and how often the app reads the list.
-- **Repeat refunds.** Whether you may refuse a refund for a second purchase after an earlier refund by the same buyer (this draft allows refusing).
-- **Effective date** ({{EFFECTIVE_DATE}}).
-<!-- /owner-decisions -->
 
 Effective date: {{EFFECTIVE_DATE}}
 

@@ -1,7 +1,7 @@
 """Synced file attachments: encrypted content-addressed blobs (format 1, 2026-10-29).
 
 The design, the byte formats and the security review are in
-``docs/superpowers/plans/2026-10-29-attachment-sync.md``; the shared vectors are
+``docs/SYNC.md`` ("Documents and files"); the shared vectors are
 ``tests/vectors/sync/attachments/`` (``scripts/make_attachment_sync_vectors.py``).
 Every rule below is part of the format that LGKCore (Swift) and lgk-core
 (Kotlin) implement byte for byte.

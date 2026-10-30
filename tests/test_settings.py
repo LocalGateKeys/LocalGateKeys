@@ -78,3 +78,12 @@ def test_settings_bounds_auto_lock_timeout(tmp_path: Path) -> None:
     assert AppSettings.load(path).auto_lock_seconds == 30
     path.write_text('{"version":1,"auto_lock_seconds":0}', encoding="utf-8")
     assert AppSettings.load(path).auto_lock_seconds == 0
+
+
+def test_hide_from_capture_defaults_on_and_round_trips(tmp_path: Path) -> None:
+    assert AppSettings().hide_from_capture is True
+    path = tmp_path / "settings.json"
+    AppSettings(hide_from_capture=False).save(path)
+    assert AppSettings.load(path).hide_from_capture is False
+    path.write_text('{"version": 8, "hide_from_capture": "no"}', encoding="utf-8")
+    assert AppSettings.load(path).hide_from_capture is True

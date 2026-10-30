@@ -17,8 +17,7 @@ Code: `src/localvault/licensing.py` (verification, item limit, vault copy),
 `pro_gate.py` (applies the limit to the unlocked vault and routes a refusal to
 the upgrade dialog), `licence_link.py` (the `localgatekeys://install-licence/`
 link), `scripts/issue_license.py` (owner tooling), `cloudflare/license-issuer` (Worker that issues licences after
-payment). Design: `docs/superpowers/specs/2026-10-15-licensing-design.md`
-("Revision 2" is the item-limit model).
+payment). The item-limit model is described below.
 
 ## What the app enforces
 
@@ -193,10 +192,9 @@ npx wrangler deploy
 
 ```jsonc
 "vars": {
-  "PRODUCT_IDS": "777,pro_1",   // comma-separated product ids that sell Pro
-  "PROVIDER": "lemonsqueezy",    // optional: lemonsqueezy | paddle (other webhook 404s)
-  "ALLOW_TEST_MODE": "",         // "1" only while testing Lemon Squeezy test orders
-  "SUPPORT_EMAIL": "support@example.com"  // shown on the pending page after 10 minutes
+  "PRODUCT_IDS": "pro_01m58y778xrg43pvvznfhy5k0d",  // comma-separated product ids that sell Pro
+  "PROVIDER": "paddle",          // optional: lemonsqueezy | paddle (other webhook 404s)
+  "SUPPORT_EMAIL": "support@localgatekeys.app"  // shown on the pending page after 10 minutes
 }
 ```
 

@@ -262,7 +262,7 @@ final class SyncCoordinatorTests: XCTestCase {
 
     /// The name B announces in the vector enrollment: `lan/enroll_reply_no_endpoint.bin` is bound to it,
     /// so a QR join with any other name fails to open the reply (scripts/make_sync_vectors.py).
-    static let vectorDeviceName = "Ilias\u{2019}s iPhone \u{00E9}"
+    static let vectorDeviceName = "Alex\u{2019}s iPhone \u{00E9}"
 
     /// The desktop's inviter (A) side of the vector enrollment: checks B's request, answers with the recorded reply.
     func inviterAnswers() throws {

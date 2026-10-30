@@ -1,8 +1,7 @@
 """A login's extra content for the WebView UI.
 
 Password history, recovery codes, custom fields, autofill rules and Google
-Authenticator import, following ``FeatureUI.entry_details`` / ``history_clicked``
-(docs/superpowers/specs/2026-10-17-webview-items-dataflow.md §5, §7).
+Authenticator import, following ``FeatureUI.entry_details`` / ``history_clicked``.
 ``session.set_details`` replaces every detail field, so each save re-reads the
 current values and changes only its own field.
 """

@@ -5,21 +5,6 @@
 
 # LocalGateKeys Privacy Policy
 
-<!-- owner-decisions -->
-## Decisions the owner must make before review
-
-- **Controller identity.** Name, address and, if required, the EU/UK representative of {{COMPANY_NAME}}; a privacy contact ({{PRIVACY_EMAIL}}).
-- **Update host.** The domain the app's update checks and revocation list use ({{UPDATE_HOST}}). The current build points at a `workers.dev` subdomain that contains the Cloudflare account name; move the feed to a custom domain such as `updates.{{DOMAIN}}` before launch if that name must not be public, and update this policy.
-- **Server logs.** Confirm that Workers logs, Logpush and Cloudflare Web Analytics stay off for the update service and the website, and that Bot Fight Mode or other features that set cookies stay off on the website. If any are turned on, sections 3 and 4 must change.
-- **Revocation list behaviour.** Confirm with the implementation how often the list is fetched, that the request contains no licence identifier, and that Strict offline mode stops it.
-- **Licence contents.** The licence format (pro-launch branch) embeds the buyer's name and email. Section 5.3 says so. If you drop them from the format, update it.
-- **Licence store.** The licence-issuer Worker keeps every issued licence in Cloudflare KV under a retrieval token, with an order index. Decide how long it keeps them ({{LICENCE_RETENTION}}) and whether it deletes them after a refund.
-- **What the merchant of record shares.** Confirm with {{MERCHANT_OF_RECORD}} which buyer fields you receive (for example name, email, country, postcode, order ID, VAT ID) and remove the ones you do not.
-- **Retention periods** for order records ({{ORDER_RETENTION}}, usually set by tax law) and support emails ({{SUPPORT_RETENTION}}).
-- **iPhone crash reports.** Decide whether you will read Apple's opt-in crash reports in App Store Connect. If yes, keep section 7.4; the App Store label can still be "Data Not Collected" only if nothing else is collected.
-- **Support tooling.** Which email provider hosts {{CONTACT_EMAIL}} (it processes support emails) and where it stores data.
-- **Effective date** ({{EFFECTIVE_DATE}}).
-<!-- /owner-decisions -->
 
 Effective date: {{PRIVACY_EFFECTIVE_DATE}}
 

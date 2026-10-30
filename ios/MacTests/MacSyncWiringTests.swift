@@ -127,7 +127,7 @@ final class MacSyncWiringTests: XCTestCase {
         XCTAssertEqual(lock.state, .unlocked)
 
         let coordinator = try XCTUnwrap(MacSyncEnvironment.makeCoordinator(lock: lock, keychain: InMemoryKeychainVault(),
-                                                                           hostName: "Ilias's MacBook Pro"))
+                                                                           hostName: "Alex's MacBook Pro"))
         let gated = try XCTUnwrap(coordinator.store as? GatedStore)
         // Sync commits through the publishing store, marked as sync's own (never counted as local edits).
         let source = try XCTUnwrap(gated.base as? SyncSourceStore)
@@ -137,7 +137,7 @@ final class MacSyncWiringTests: XCTestCase {
         XCTAssertTrue((source.local as AnyObject?) === lock)
         XCTAssertEqual(coordinator.deps.editDebounceNanos, 10_000_000_000)
         XCTAssertTrue(coordinator.deps.autoFill is NoAutoFillRefresh)
-        XCTAssertEqual(coordinator.deps.deviceName, "Ilias's MacBook Pro")
+        XCTAssertEqual(coordinator.deps.deviceName, "Alex's MacBook Pro")
         coordinator.shutdown()
     }
 

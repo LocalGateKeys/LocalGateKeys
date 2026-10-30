@@ -21,7 +21,7 @@ NATIVE_HOST_NAME = "com.localgatekeys.app"
 EXTENSION_ID = "hojebpmbiibhbhhkohgongojilojijmb"
 # Store-published builds get an ID assigned by each store (the store package
 # has no "key"). PLACEHOLDERS: fill in from the Chrome Web Store / Edge
-# Add-ons dashboards once the listings exist (see docs/store/SUBMISSION_CHECKLIST.md).
+# Add-ons dashboards once the listings exist.
 # An empty string means "not assigned yet" and is ignored.
 # Chrome Web Store item ID (Developer Dashboard draft, 2026-10-28).
 CHROME_WEB_STORE_EXTENSION_ID = "fcilinmkccknaoeobcdnploacggajbdg"

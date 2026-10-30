@@ -451,7 +451,7 @@ def _wrapper(ns: str, record: Mapping[str, Any]) -> dict[str, Any]:
     return out
 
 
-# --- documents (attachment sync, docs/superpowers/plans/2026-10-29-attachment-sync.md) ------------
+# --- documents (attachment sync, docs/SYNC.md "Documents and files") ------------
 #
 # While ``local_view`` or ``apply`` runs, ``_DOC_SESSION`` holds the session and ``document``
 # items sync: their wrapper carries one more key, ``attachment`` (an ``AttachmentRef`` dict) built

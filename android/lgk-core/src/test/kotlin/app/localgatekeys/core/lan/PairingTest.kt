@@ -255,7 +255,7 @@ class PairingTest {
             assertEquals(JsonValue.Int(2), body["version"])
             assertEquals(JsonValue.Str(name), body["name"])
         }
-        assertEquals("Ilias\u2019s iPhone \u00e9", str(obj(lan()["request_no_endpoint"])["name"]))
+        assertEquals("Alex\u2019s iPhone \u00e9", str(obj(lan()["request_no_endpoint"])["name"]))
         // Every refusal reason, byte for byte, and its mapping for the app.
         val refusals = obj(obj(lan()["framing"])["refusals_hex"])
         assertEquals(Enrollment.REFUSAL_REASONS, refusals.keys)
@@ -280,7 +280,7 @@ class PairingTest {
 
     @Test
     fun device_name_rule() {
-        for (ok in listOf("Pixel", "a", "x".repeat(64), "\u00e9".repeat(32), "Ilias\u2019s iPhone", "Pixel \uD83D\uDE00", "~")) {
+        for (ok in listOf("Pixel", "a", "x".repeat(64), "\u00e9".repeat(32), "Alex\u2019s iPhone", "Pixel \uD83D\uDE00", "~")) {
             assertEquals(ok, Enrollment.checkDeviceName(ok))
         }
         for (bad in listOf("", "x".repeat(65), "\u00e9".repeat(33), "a\u0000b", "tab\tname", "line\n", "del\u007F", "\u001F",

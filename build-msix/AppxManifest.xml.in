@@ -14,7 +14,7 @@
     - StartupTask LocalGateKeysStartup           (distribution.STARTUP_TASK_ID)
     - $(KnownFolder:LocalAppData)\LocalGateKeys  (config.APP_DIR_NAME)
     - ...\NativeMessagingHosts\com.localgatekeys.app  (config.NATIVE_HOST_NAME)
-  See docs/store/MSIX_FEASIBILITY.md for why each entry exists.
+  Each entry exists to keep the data folder and its registry keys outside AppData virtualization.
 -->
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
@@ -42,7 +42,7 @@
     <!-- Windows 10: flexible virtualization is not available, so AppData and
          HKCU write virtualization is switched off for the whole package. That
          matches what the Inno Setup build does today.
-         Windows 11 (measured on build 26200, docs/store/MSIX_FEASIBILITY.md):
+         Windows 11 (measured on build 26200):
          the AppData exclusion below replaces the file-system flag, but the
          registry flag stays in force and is what makes new HKCU keys real; the
          ExcludedKeys list alone left every write private. Even with the flag,
@@ -143,7 +143,7 @@
   <Capabilities>
     <rescap:Capability Name="runFullTrust" />
     <!-- Needed for the virtualization exclusions above; Partner Center asks
-         for a justification (text in docs/store/MICROSOFT_STORE_CHECKLIST.md). -->
+         for a justification. -->
     <rescap:Capability Name="unvirtualizedResources" />
     <!-- Optional face unlock / camera confirmation. Packaged apps get their own
          entry under Settings > Privacy > Camera and must declare it. -->

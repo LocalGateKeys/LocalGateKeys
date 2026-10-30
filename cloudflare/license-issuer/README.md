@@ -294,8 +294,8 @@ node cloudflare/license-issuer/scripts/revocation-list.mjs revoke-keys.json --ex
 Keep `revoked-new.txt` as the next `revoked.txt`. `publish_revocations.ps1`
 signs with `sign_release_manifest.py revocations` and uploads to the R2 bucket
 `localgatekeys-releases` (use `-WhatIf` for a dry run). With no `-IdsFile` it
-signs an **empty** list, which is what to publish now so `/revocations.json`
-no longer 404s. Signing needs the release key, which only the owner holds.
+signs an **empty** list; publish one first so `/revocations.json` does not
+404 (this has been done for the live site). Signing needs the release key, which only the owner holds.
 
 ## Test orders and products
 

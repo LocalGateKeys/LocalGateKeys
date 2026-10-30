@@ -123,7 +123,7 @@ them with the pages that use them.
 | `LATEST_VERSION` | Current release, for example "0.4.0" | Download |
 | `MS_STORE_URL` | Microsoft Store listing | Home, get started, download |
 | `MS_STORE_LIVE` | `true` once the Store listing is public; shows the Store buttons instead of "Coming soon" | Home, get started, download |
-| `IPHONE_BETA_URL` | TestFlight public beta link; when set, iPhone copy says "public beta" instead of "coming" | Home, features, get started, download, support |
+| `IPHONE_APP_URL` | App Store link of the iPhone app; when set, the App Store button is shown | Home, download, help |
 | `INSTALLER_URL` | Direct installer download | Download |
 | `INSTALLER_FILENAME` | Installer file name, for the Get-FileHash example | Download |
 | `INSTALLER_SHA256` | SHA-256 of that installer | Download |
@@ -142,7 +142,7 @@ draft in `docs/legal/`, and the cross-cutting ones in `docs/legal/README.md`.
 
 ## Copy that depends on the product
 
-The site follows licensing revision 2 (`docs/superpowers/specs/2026-10-15-licensing-design.md`). Keep these true or change the copy:
+The site follows the item-limit licensing model in `docs/LICENSING.md`. Keep these true or change the copy:
 
 - Free has browser and Windows app fill, passkeys, Windows Hello, a recovery
   phrase, imports and backups, for up to 4 live items; items in the trash do
@@ -164,9 +164,10 @@ The site follows licensing revision 2 (`docs/superpowers/specs/2026-10-15-licens
 - The licence embeds the buyer's name and email (privacy policy 5.3).
 - Importers are shipped (1Password, Bitwarden, LastPass, Dashlane, Proton Pass,
   KeePass/KeePassXC, Chrome/Edge/Brave, Firefox, Safari, mapped CSV). The
-  iPhone app is in public beta (`IPHONE_BETA_URL`); copy says nothing about
-  its price. The Android app is built but not on Google Play, and the Mac app
-  is not released, so the site does not offer either.
+  iPhone app is on the App Store (`IPHONE_APP_URL`); copy says nothing about
+  its price. The Android app is not on Google Play yet (the help page says
+  "coming soon"), and `site.config.json` has no Mac download link, so the
+  download page offers neither.
 
 ## The buy page
 

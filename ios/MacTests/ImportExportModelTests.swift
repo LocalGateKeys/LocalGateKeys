@@ -256,7 +256,7 @@ final class ImportExportModelTests: XCTestCase {
     }
 
     func testPreviewLinesCountMissingFiles() {
-        XCTAssertEqual(ImportExportModel.missingFilesLine(2, verb: "will be"),
+        XCTAssertEqual(ImportExportModel.missingFilesLine(2, future: true),
                        "2 documents will not be restored: their files are not in this backup")
         XCTAssertEqual(ImportExportModel.fileLines(stored: 1, refused: 1, missing: 0),
                        " 1 document files restored. 1 document files were damaged and not restored.")

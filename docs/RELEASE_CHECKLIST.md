@@ -2,9 +2,7 @@
 
 Work through every section in order. Each produces an artifact that the next
 one consumes, and the manifest written at the end records all of them.
-Remaining release gates and their evidence are tracked in
-NEXT_RELEASE_IMPLEMENTATION_STATUS.md
-and NEXT_RELEASE_CLOSURE_PLAN.md.
+Record the evidence for each gate with the release.
 
 ## 1. Freeze the source
 
@@ -94,8 +92,7 @@ Compare-Object ($a.payload | % { "$($_.path) $($_.sha256)" }) ($b.payload | % { 
 
 - [ ] Clean Windows VM, network disabled: install, first run, bridge repair,
       extension load, save/fill on the demo page, lock/unlock, uninstall keeps
-      profile data. Record results in the release's validation document
-      (template: UI_RELEASE_ACCEPTANCE.md).
+      profile data. Record results in the release's validation document.
 
 ## 9. Update-feed publication
 
@@ -108,7 +105,8 @@ HTTPS URLs compiled into `src/localvault/updates.py`.
 - [ ] **Next release (audit 2026-10-24 I-11):** raise `min_supported_version`
       in the manifest to this release's version, so clients from before the
       Pillow 13 / dependency bump (`1de3cf1`) are told they are unsupported.
-      The live feed still says `0.3.0`; do not edit the live `stable.json`
+      The latest feed manifest (`release-feed/stable-0.4.9.unsigned.json`)
+      says `0.4.7`; do not edit the live `stable.json`
       by hand, publish the change with the release.
 - [ ] Sign `stable.json` with `--published` set to a timestamp on the
       `BUILD_DATE` day (for example `2026-10-15T12:00:00Z`), so a licence that

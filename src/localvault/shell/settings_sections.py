@@ -163,6 +163,7 @@ def build_privacy(form: SettingsForm) -> None:
                 t("settings.breach.desc"))
     form.switch("strict_offline_mode", t("settings.offline.title"),
                 t("settings.offline.desc"))
+    form.switch("hide_from_capture", t("settings.hideFromCapture.title"), t("settings.hideFromCapture.desc"))
     form.switch("trash_auto_purge", t("settings.trashPurge.title"),
                 t("settings.trashPurge.desc"))
     form.choice("trash_retention_days", t("settings.trashRetention.title"), t("settings.trashRetention.desc"))
@@ -263,7 +264,7 @@ BUILT_IN_SECTIONS: tuple[SettingsSection, ...] = (
     SettingsSection("unlocking", "settings.section.unlocking", build_unlocking, 0,
                     ("hello", "face", "camera", "biometric", "master", "recovery", "phrase")),
     SettingsSection("privacy", "settings.section.privacy", build_privacy, 0,
-                    ("clipboard", "breach", "offline", "trash", "documents", "network")),
+                    ("clipboard", "breach", "offline", "trash", "documents", "network", "screenshot", "screen sharing", "capture")),
     SettingsSection("autofill", "settings.section.autofill", build_autofill, 1,
                     ("fill", "browser", "extension", "desktop", "shortcut", "hotkey")),
     SettingsSection("appearance", "settings.section.appearance", build_appearance, 1,

@@ -1,12 +1,74 @@
 # Changelog
 
 Newest first. Entries before October 2026 are condensed from the patch notes
-that used to live in the repository root; the originals are preserved verbatim
-under docs/archive/. Numbered release documents with full
-detail: docs/RELEASE_020.md, docs/RELEASE_019.md.
-Current implementation and validation status: docs/NEXT_RELEASE_IMPLEMENTATION_STATUS.md.
+that used to live in the repository root; the original notes are not part of
+this repository.
 
 ## Unreleased
+
+In the source since 0.4.10. The Mac and Android apps are not in their stores
+yet.
+
+### All apps and the website
+- **Ten languages:** English, German, Spanish, Italian, Japanese, Korean, Dutch,
+  Polish, Brazilian Portuguese and Simplified Chinese, in the Windows app (with
+  a language picker that switches at once), the browser extension (Edge/Chrome
+  and Safari), the iPhone, Mac, Apple Watch and Android apps, and the website.
+- **Buy Pro in the phone and Mac apps:** an App Store purchase (iPhone and Mac)
+  or a Google Play purchase (Android) now also gets you an `LGK1-` licence from
+  the licence server. Pairing carries it to your PCs, so a free PC becomes Pro.
+  The app sends only the store's purchase record; a refund revokes the licence.
+  The Mac takes Pro only from the App Store or from sync.
+
+### Mac
+- **The Mac app** (macOS 14+): master password with optional Touch ID, the
+  vault, editor, generator and command palette.
+- **Sync:** host a Wi-Fi sync group or join one, pair with Accept and a
+  verification code, add a cloud folder, and see each device's last sync.
+  Documents sync with their files.
+- **Import and backup:** import from Safari, Chrome, Edge, Brave, Firefox,
+  Bitwarden, 1Password, LastPass, KeePass, Proton Pass, Dashlane or any CSV,
+  reviewing every row first; full backups that restore on Windows too,
+  scheduled backups with a mirror folder, phone backup restore, a recovery
+  phrase and a Recovery centre.
+- **AutoFill** for passwords, one-time codes and passkeys, and a **Safari
+  extension** that offers to save the logins you sign in with.
+- **Menu bar and shortcut:** search the vault and copy a username, password or
+  code from the menu bar; ⌃⌥K opens search from any app; optional Open at
+  login.
+- **Secure sharing** of one item as a `.lgkshare` file or QR code, and Receive.
+
+### iPhone
+- **Import** every format the Mac reads (other password managers and
+  browsers), in addition to Apple Passwords and CSV.
+- **App password** (optional) instead of the device passcode, with an optional
+  Face ID shortcut.
+- New Vault, Sync, Security and Settings tabs; a Security tab with five checks
+  and an opt-in breach check; favorites and sorting; password history with
+  restore; Recently deleted with Undo; expiry reminders; scan 2FA QR codes from
+  photos.
+- AutoFill can insert card and identity fields.
+- Documents sync with their files; secure sharing with `.lgkshare`.
+- Wi-Fi sync finds the paired PC again after its address changes, and warns
+  when a device brings back an older copy of the vault.
+
+### Apple Watch
+- **The Apple Watch app** shows the two-factor codes you pin on the iPhone
+  (Pro). The codes stay in the watch's Keychain; "Forget Apple Watch codes
+  on lock" is optional.
+
+### Android
+- **Autofill:** fill logins in apps and in known browsers, and a save prompt
+  after you sign in.
+- **Passkeys and passwords through Credential Manager** (Android 14+): create
+  and use passkeys, and pick saved passwords.
+- **Import** from other password managers; **app password** (optional) with a
+  biometric shortcut.
+- Favorites and sorting, password history with restore, a skippable setup with
+  a "Finish setting up" card, `>` actions in search and Ctrl+K.
+- Documents sync with their files; secure sharing with `.lgkshare`.
+- Wi-Fi sync finds the paired PC again after its address changes, and warns
+  when a device brings back an older copy of the vault.
 
 ## 0.4.10 (2026-10-30)
 
@@ -393,20 +455,18 @@ SECURITY.md.
   otpauth-migration parsers (`tests/fuzz/`). Finding recorded for the owning
   module: `transfer.inspect_transfer` leaks `UnicodeEncodeError` on lone surrogates.
 - Documentation consolidated: this changelog, `docs/CONTRIBUTING.md`,
-  `docs/RELEASE_CHECKLIST.md`; historical notes and agent hand-off prompts moved
-  to `docs/archive/`; obsolete patch-applier scripts (`apply_patch_019/020.py`) removed.
+  `docs/RELEASE_CHECKLIST.md`; historical patch notes moved out of the
+  repository; obsolete patch-applier scripts (`apply_patch_019/020.py`) removed.
 
 ## Desktop fixes 025-034 (September 2026, app 0.3.3)
 
 Numbered desktop/browser fixes validated by `tests/test_*02x.py` / `*03x.py`:
 WebView stability (025), dynamic-layout fallback (027), sign-in mapping (028),
 unique sign-in names (030), multi-account settings (031), the DPI-safe account
-chooser with keyboard activation (032, notes),
+chooser with keyboard activation (032),
 desktop multi-account (033) and UI polish (034).
 
 ## 2026-09-18 - Three-step camera liveness and earlier automatic save prompt
-
-Original notes
 
 - Camera verification reduced to three visible liveness steps (closer, right,
   left); liveness advances only on frames that also match the enrolled face.
@@ -418,9 +478,6 @@ Original notes
 - Validation: 371 Python tests, 22 service-worker cases.
 
 ## 2026-09-17 - 0.3.3: RGB camera verification and automatic save prompt
-
-Original notes -
-native-host test fix
 
 - Password-first unlock with an optional, per-profile enrolled **Use camera**
   route using the public OpenCV Zoo YuNet/SFace models (hash-pinned, fetched at
@@ -437,10 +494,6 @@ native-host test fix
 
 ## 2026-09-17 - Password-first unlock and optional local Windows Hello
 
-Original notes -
-validation report -
-patch manifest
-
 - Master password is the default unlock again; the old webcam-frame
   confirmation is removed from the unlock path.
 - Optional Windows Hello route: vault-key envelope protected by a real
@@ -453,8 +506,6 @@ patch manifest
 
 ## 2026-09-17 - Camera and browser reliability patch
 
-Original notes
-
 - Local webcam presence-confirmation window before unlock and reauthentication
   (live preview only; superseded by the entries above).
 - Master-password dialogs centred on the active monitor and raised to foreground.
@@ -464,8 +515,6 @@ Original notes
 
 ## Release 024 - Browser bridge production patch
 
-Original notes
-
 - Production native-messaging registration in `browser_bridge.py`;
   `--repair-browser-bridge` / `--unregister-browser-bridge` CLI modes.
 - Installer repairs Chrome/Edge native-host registration (HKCU) before first
@@ -474,10 +523,6 @@ Original notes
 
 ## Releases 019 and 020 (app 0.3.0 - 0.3.2)
 
-See docs/RELEASE_020.md, docs/VALIDATION_020.md,
-docs/RELEASE_019.md, docs/VALIDATION_019.md and
-[docs/SECURITY_019.md](docs/SECURITY_019.md). The checked patch appliers those
-notes mention were removed in October 2026. Early prototype checksums and the
-first validation summary are archived in docs/archive/SHA256SUMS.txt,
-docs/archive/PATCH_MANIFEST_SHA256.txt and
-docs/archive/VALIDATION.md.
+The release notes for 019 and 020 are not part of this repository; the
+security notes from that time are in [docs/SECURITY_019.md](docs/SECURITY_019.md).
+The checked patch appliers those notes mention were removed in October 2026.

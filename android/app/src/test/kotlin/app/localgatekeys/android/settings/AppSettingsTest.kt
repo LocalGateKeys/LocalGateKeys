@@ -121,8 +121,8 @@ class AppSettingsTest {
         val d = MemoryStore()
         val s = AppSettings(d)
         assertEquals("", s.initials)
-        s.initials = "ilias"
-        assertEquals("IL", AppSettings(d).initials)
+        s.initials = "alex"
+        assertEquals("AL", AppSettings(d).initials)
         s.initials = "12"
         assertEquals("", AppSettings(d).initials)
     }
@@ -133,7 +133,7 @@ class AppSettingsTest {
         assertNull(AvatarInitials.from("12"))
         assertEquals("IP", AvatarInitials.from("ip"))
         assertEquals("IP", AvatarInitials.from(" i p "))
-        assertEquals("IP", AvatarInitials.from("Ilias Pel"))
+        assertEquals("AE", AvatarInitials.from("Alex Example"))
         assertEquals("AB", AvatarInitials.from("a1 b2 c3"))
         assertEquals("AB", AvatarInitials.from("abc"))
         assertEquals("\u00C9", AvatarInitials.from("\u00E9"))

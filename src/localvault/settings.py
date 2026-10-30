@@ -30,6 +30,9 @@ class AppSettings:
     minimize_to_tray: bool = True
     lock_on_session_lock: bool = True
     lock_on_sleep: bool = True
+    # Ask Windows to leave this app's windows out of screenshots and screen sharing
+    # (SetWindowDisplayAffinity).  The app itself never captures the screen.
+    hide_from_capture: bool = True
     clipboard_clear_seconds: int = 30
     automatic_backup_count: int = 5
     # Scheduled encrypted .lgk backups (see backup_schedule). Off by default;

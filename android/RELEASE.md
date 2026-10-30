@@ -1,8 +1,7 @@
 # Releasing LocalGateKeys for Android
 
 The owner works through this list for each Google Play release. Leave every box unchecked in git. Tick them in a
-copy for each release. Design: `docs/superpowers/specs/2026-10-23-android-app-design.md` (§9 Delivery and the owner
-checklist).
+copy for each release.
 
 ## Before the first release (once)
 
@@ -13,16 +12,19 @@ checklist).
   - US$4.99;
   - **not** family-shared;
   - title and description from the upgrade sheet copy.
-- [ ] Store listing: name, short and full description, icon, feature graphic, phone screenshots (start from
-  `docs/design/android/*-light.png` and `*-dark.png`).
+- [ ] Store listing: name, short and full description, icon, feature graphic, phone screenshots (take them from the app
+  in light and dark).
 - [ ] Website legal pages: add Android / Google Play to the EULA (`website/public/legal/eula.html`) and the privacy
   policy (`website/public/legal/privacy.html`), then deploy the website (needs the owner's OK). Play requires a privacy
   policy that covers the app. Enter its URL in Play Console.
-- [ ] Data-safety form: **no data collected, no data shared**. This holds only while Ruling 23 stands: Play Billing's
-  datatransport/CCT telemetry and the unused play-services location, base and tasks modules are excluded from the
-  build. Check `:app:dependencies --configuration releaseRuntimeClasspath` before you answer. The app's only network
-  use is TCP to the paired PC on the local network and Play Billing through the Play Store app.
-- [ ] A new personal developer account needs a closed test with at least 12 testers for 14 days before production
+- [ ] Data-safety form: **Purchase history** (app functionality), not shared; nothing else collected. This matches
+  the privacy policy (`docs/legal/privacy-policy.md`, section 7.3): the app sends the Google Play purchase token to
+  the licence server so a purchase unlocks the PC too. It holds only while Play Billing's datatransport/CCT telemetry
+  and the unused play-services location, base and tasks modules are excluded from the build. Check
+  `:app:dependencies --configuration releaseRuntimeClasspath` before you answer. The app's only network use is TCP to
+  the paired PC on the local network, Play Billing through the Play Store app, and
+  `https://licenses.localgatekeys.app/play/claim` (the licence server, purchase token only).
+- [ ] A new developer account needs a closed test with at least 12 testers for 14 days before production
   access.
 - [ ] Acknowledgements: `app/src/main/assets/licenses/argon2kt-LICENSE.txt` is the verbatim upstream LICENSE of
   argon2kt tag `v1.6.0` (sha256 `05ad83ab16adef6c1385bdf20ece73e6e7cb373243ea3015819d5441ff65a595`). If the argon2kt
@@ -33,9 +35,9 @@ checklist).
 Never commit a keystore, its passwords or a `keystore.properties` (`.gitignore` excludes `*.jks`, `*.keystore` and
 `keystore.properties`).
 
-- [ ] On the owner's PC, generate the upload key (one time):
+- [ ] Generate the upload key (one time):
   ```
-  keytool -genkeypair -v -keystore %USERPROFILE%\keys\lgk-android-upload.jks -alias lgk-upload ^
+  keytool -genkeypair -v -keystore <path>\lgk-android-upload.jks -alias lgk-upload ^
           -keyalg RSA -keysize 4096 -validity 10000
   ```
   Keep the keystore file and both passwords in the password manager, with an offline copy.
@@ -44,7 +46,7 @@ Never commit a keystore, its passwords or a `keystore.properties` (`.gitignore` 
 - [ ] Sign the bundle outside git. Either sign it after the build:
   ```
   android\gradlew -p android :app:bundleRelease
-  jarsigner -keystore %USERPROFILE%\keys\lgk-android-upload.jks ^
+  jarsigner -keystore <path>\lgk-android-upload.jks ^
             android\app\build\outputs\bundle\release\app-release.aab lgk-upload
   ```
   or add a local, uncommitted `signingConfig` that reads the keystore path and passwords from environment variables.
@@ -63,7 +65,7 @@ Never commit a keystore, its passwords or a `keystore.properties` (`.gitignore` 
 - [ ] Live checks with the desktop (`scripts/android_live_peer.py`, see `android/README.md`): Wi-Fi pairing and sync
   both ways, the cloud folder, and a phone backup restored on the desktop.
 - [ ] Build the signed bundle (above) and upload it to the internal testing track.
-- [ ] **Real Play purchase run on internal testing**, with the Ruling 23 exclusions in the build. Use a licence-tester
+- [ ] **Real Play purchase run on internal testing**, with the Play Billing telemetry and unused play-services modules excluded from the build (see the Data-safety item). Use a licence-tester
   account on a real phone:
   - [ ] Buy `pro_unlimited`: the sheet shows Pro, and the purchase is **acknowledged** (Play Console › Order
     management shows it acknowledged, not refunded after 3 days).
@@ -72,17 +74,17 @@ Never commit a keystore, its passwords or a `keystore.properties` (`.gitignore` 
   - [ ] Logcat shows `BillingLogger: Skipping logging since initialization failed.` and no crash.
 - [ ] Install the R8 release build (`:app:assembleRelease`) on `LGK_API29` and `LGK_API36` and smoke it: unlock, the
   vault, add an item, the Sync screen.
-- [ ] Owner's-phone checks (spec §8): a OneDrive and a Dropbox folder through their Android apps' document providers;
-  Google Drive shows the notice (Ruling 22).
+- [ ] Owner's-phone checks: a OneDrive and a Dropbox folder through their Android apps' document providers;
+  Google Drive shows the notice that its Android app cannot be chosen as a sync folder.
 - [ ] Owner's phone: press the power button while the folder picker is open. The app comes back locked.
 - [ ] Release notes for the store. Mention the behaviours that differ from what users may expect:
-  - Ruling 14 (clipboard): a copied secret is cleared only if it is still our copy. If the app is not in front when
+  - Clipboard: a copied secret is cleared only if it is still our copy. If the app is not in front when
     the time is up, it is cleared when you come back.
-  - Ruling 15: LocalGateKeys' own screens are excluded from other autofill services, and keyboards are asked not to
+  - Autofill and keyboards: LocalGateKeys' own screens are excluded from other autofill services, and keyboards are asked not to
     learn what you type in the app.
-  - Ruling 21: choosing a folder or backup file in the system picker keeps the app unlocked for up to 2 minutes, even
+  - System picker: choosing a folder or backup file in the system picker keeps the app unlocked for up to 2 minutes, even
     with "Auto-lock after leaving the app: Immediately". Turning the screen off locks it.
-  - Ruling 26: the backup password must pass the same strength check as the desktop's sync password.
+  - Backup password: the backup password must pass the same strength check as the desktop's sync password.
 - [ ] Wi-Fi sync after an IP change (task 11): pair with the PC, give the PC a new address (new DHCP lease or a
   different router), then Sync now on the phone: it finds the PC by its announcement and syncs with no re-pairing;
   the next sync dials the new address directly. With the PC network set to Public nothing is found.

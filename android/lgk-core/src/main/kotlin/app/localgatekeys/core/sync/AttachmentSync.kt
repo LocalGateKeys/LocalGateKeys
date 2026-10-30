@@ -17,8 +17,8 @@ class AttachmentSyncException(val reason: String, val detail: String = "") :
     Exception(if (detail.isEmpty()) reason else "$reason: $detail")
 
 /**
- * Synced file attachments, format 1 (desktop `sync/attachment_sync.py`; plan
- * `docs/superpowers/plans/2026-10-29-attachment-sync.md`). Byte for byte with `tests/vectors/sync/attachments/`.
+ * Synced file attachments, format 1 (desktop `sync/attachment_sync.py`; docs/SYNC.md
+ * "Documents and files"). Byte for byte with `tests/vectors/sync/attachments/`.
  *
  * Blob: `"LGKABLB1" || nonce || AES-256-GCM(k, nonce, u64be(len) || data || zero pad to 64 KiB, "lgk-sync-attachment-v1|" || id)`,
  * `nonce = HMAC-SHA256(k, "lgk-sync-attachment-nonce-v1|" || id || "|" || sha256(data))[0:12]`, blob id = hex sha256(blob).

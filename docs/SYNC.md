@@ -7,7 +7,11 @@ over your home Wi-Fi, or they leave encrypted files in a cloud-drive folder you
 choose (OneDrive, Dropbox, Google Drive, iCloud Drive). You can use either, or
 both.
 
-Sync is part of LocalGateKeys Pro. Without a Pro licence on a PC, sync does not run there; what earlier syncs brought stays in its vault, and sync resumes where it left off once Pro is back. Enter your licence on each PC: a free PC cannot sync, so it cannot receive the licence by sync.
+Sync is part of LocalGateKeys Pro. Without a Pro licence on a PC, full sync does not run there; what earlier syncs brought stays in its vault, and sync resumes where it left off once Pro is back. A free PC runs a licence-only sync service: it can pair and join, and it takes a valid
+licence from a Pro phone or PC, but it never syncs logins or notes and publishes nothing. It
+never runs in the background, only when you press Sync now, and its Wi-Fi listener stays open
+for about 120 seconds after such a round (and while a pairing code is armed). Once it adopts a
+licence the PC turns Pro and full sync starts. You can also enter a licence key on each PC.
 
 This page describes the app as built. It makes no claim of an independent
 security audit. How the pieces work is in
@@ -462,8 +466,7 @@ pin every recipe byte for byte.
 
 ## Documents and files (2026-10-29)
 
-Documents sync together with their files. The design and byte formats are in
-`docs/superpowers/plans/2026-10-29-attachment-sync.md`, the code in `src/localvault/sync/attachment_sync.py`
+Documents sync together with their files. The byte formats are in the code in `src/localvault/sync/attachment_sync.py`
 and `attachment_flow.py`, and the vectors in `tests/vectors/sync/attachments/vectors.json`.
 
 - Each file becomes one immutable encrypted blob, padded to 64 KiB and named after the SHA-256 of

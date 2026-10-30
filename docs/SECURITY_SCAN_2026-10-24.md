@@ -72,6 +72,8 @@ needed unless the server ever serves dynamic data.
 `com.localgatekeys.app.json` allows `hojebpmbiibhbhhkohgongojilojijmb` next to the Edge store ID.
 Already tracked as M6 in `docs/AUDIT_2026-10-18.md`.
 
+Update 2026-10-30: closed for builds made after 2026-10-28. Both store IDs are set (`src/localvault/config.py`), so `extension_trust()` drops the developer ID from installed builds unless the `allow-developer-extension` opt-in file exists.
+
 ### I3. Paddle script without SRI on /buy — Info
 Paddle does not publish versioned SRI hashes for `paddle.js` v2; the page's CSP limits scripts to
 `self` and `cdn.paddle.com`. Accepted.

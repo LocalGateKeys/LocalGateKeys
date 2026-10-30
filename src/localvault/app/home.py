@@ -1,7 +1,7 @@
 """Home screen data for the WebView UI: list, sidebar, chips, overview cards and status line.
 
-Mirrors ``AgentApp.refresh_entries`` / ``_refresh_overview`` and the status bar
-(see docs/superpowers/specs/2026-10-17-webview-home-dataflow.md). Read-only: it
+Mirrors ``AgentApp.refresh_entries`` / ``_refresh_overview`` and the status bar.
+Read-only: it
 never returns a password, a protected payload value or a 2FA secret (only the
 current code, as the detail pane shows it).
 """

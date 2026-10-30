@@ -1903,6 +1903,8 @@
   "settings.hello.title": "Windows Hello",
   "settings.helloAutoStart.desc": "Quando si apre la schermata di sblocco",
   "settings.helloAutoStart.title": "Avvia Windows Hello automaticamente",
+  "settings.hideFromCapture.desc": "Altri programmi, registratori dello schermo e videochiamate non possono acquisire questa finestra",
+  "settings.hideFromCapture.title": "Nascondi da screenshot e condivisione dello schermo",
   "settings.idleSource.desc": "Computer: tastiera o mouse ovunque. Cassaforte: uso o salvataggio di elementi.",
   "settings.idleSource.title": "Conta l'attività da",
   "settings.keep.latest": "Conserva solo l'ultimo",

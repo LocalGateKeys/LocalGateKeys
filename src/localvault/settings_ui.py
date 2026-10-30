@@ -74,7 +74,7 @@ BOOLEAN_KEYS = ('fill_and_sign_in', 'lock_on_session_lock', 'lock_on_sleep',
                 'browser_enabled', 'desktop_overlay_enabled', 'start_with_windows',
                 'minimize_to_tray', 'breach_check_enabled', 'strict_offline_mode',
                 'hello_auto_start', 'totp_confirm', 'trash_auto_purge', 'passkeys_enabled',
-                'document_open_enabled')
+                'document_open_enabled', 'hide_from_capture')
 INTEGER_KEYS = ('auto_lock_seconds', 'max_session_seconds', 'clipboard_clear_seconds',
                 'trash_retention_days', 'automatic_backup_count',
                 'scheduled_backup_weekday', 'scheduled_backup_keep')

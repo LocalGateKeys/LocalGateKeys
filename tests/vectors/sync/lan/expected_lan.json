@@ -48,12 +48,12 @@
     "plaintext": "{\"device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"epoch\":1,\"group_id\":\"5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64\",\"key\":\"kr8EnkJd3CJc/LAktL1XN8DMENrNQ0d3QH02a4AtfXE=\",\"signing_public\":\"hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=\"}"
   },
   "reply_no_endpoint": {
-    "aad_hex": "7b22657068223a222b3236536e3041524d5033496a54483245736844474a6c4a71476f57787077707074653074654b654351343d222c226e6f6e6365223a227250446c5474657163372f706d586c4c227d648d4c45ea7fb4a3a792a010ed6b583f4d6fe0df4f4bfb5ec577df3b7b5ac965",
+    "aad_hex": "7b22657068223a222b3236536e3041524d5033496a54483245736844474a6c4a71476f57787077707074653074654b654351343d222c226e6f6e6365223a227250446c5474657163372f706d586c4c227d66a0388f64cdd38091fc848ed32dc05de0430e8715fef500d88d094ab3c2bb53",
     "ephemeral_private_hex": "195a8e8ee15093b74f7df16dbe397139a964ffca91cf8d422c024e0d31593100",
     "ephemeral_public_b64": "+26Sn0ARMP3IjTH2EshDGJlJqGoWxpwppte0teKeCQ4=",
     "epoch": 1,
     "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
-    "hkdf_key_hex": "af154e5e577710a1a9691310c6e24d1cd37ae163a7c6990f4560c8acf8e9f709",
+    "hkdf_key_hex": "ae93223b0b5f8b6917951ca0ea3132d68e62d80e69196941855a69d650f39e7d",
     "key_b64": "kr8EnkJd3CJc/LAktL1XN8DMENrNQ0d3QH02a4AtfXE=",
     "key_hex": "92bf049e425ddc225cfcb024b4bd5737c0cc10dacd434777407d366b802d7d71",
     "nonce_b64": "rPDlTteqc7/pmXlL",
@@ -88,11 +88,11 @@
     "ephemeral_public_b64": "E/OpYiSDebs6Ed/j2FiuiJftgY8ODezTQ5O2qKfe11c=",
     "hkdf_key_hex": "81cc8dae33ac362e1974ff58863d92a4ed7d18bbe84167442a552f5f2592a083",
     "invitee_endpoint": null,
-    "name": "Ilias’s iPhone é",
+    "name": "Alex’s iPhone é",
     "nonce_b64": "yCvUC5AekkFnrx07",
-    "plaintext": "{\"device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"endpoint\":null,\"exchange_public\":\"/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=\",\"mac\":\"Nsh1n0QeugmVstb1jBPJ6IgG6ADssRa2wFVYm/wPQUY=\",\"name\":\"Ilias\\u2019s iPhone \\u00e9\",\"offer_id\":\"d4e5f6a7-0b1c-4d2e-8f30-415263748596\",\"signature\":\"O5QDjpHqUlb/Q++cVxPZlDOtHe5wIv2p+oy9P7Dsns7RroUYDjumcg7MnPVcX0PZhzcm9jKPBA9N54BCncHSDA==\",\"signing_public\":\"hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=\",\"version\":2}",
-    "transcript": "{\"code\":\"04817352\",\"invitee_device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"invitee_endpoint\":null,\"invitee_exchange_public\":\"/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=\",\"invitee_name\":\"Ilias\\u2019s iPhone \\u00e9\",\"invitee_signing_public\":\"hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=\",\"offer\":{\"certificate_fingerprint\":\"5c64391564d6f9308ebda9b4ca516292e354684b870c330326fe13a4153b71ee\",\"endpoint\":{\"host\":\"192.168.1.20\",\"port\":48201},\"expires_at\":1790000120,\"group_id\":\"5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64\",\"inviter_device_id\":\"a1111111-0000-4000-8000-00000000000a\",\"inviter_exchange_public\":\"SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=\",\"inviter_signing_public\":\"9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=\",\"offer_id\":\"d4e5f6a7-0b1c-4d2e-8f30-415263748596\",\"transcript_nonce\":\"5J1oy9rcnYWv4TsXbAKqZoWI2yK6R37NY+d7aVe/WDY=\",\"version\":1},\"protocol\":\"localgatekeys-sync-enrollment\",\"version\":2}",
-    "transcript_sha256_hex": "648d4c45ea7fb4a3a792a010ed6b583f4d6fe0df4f4bfb5ec577df3b7b5ac965",
-    "verification_code": "496265"
+    "plaintext": "{\"device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"endpoint\":null,\"exchange_public\":\"/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=\",\"mac\":\"w307u3Tsy/hgA5nd+FhqI/8Hqps5Ljl0sBf3XLHEVQ4=\",\"name\":\"Alex\\u2019s iPhone \\u00e9\",\"offer_id\":\"d4e5f6a7-0b1c-4d2e-8f30-415263748596\",\"signature\":\"hBQSPJF2V13NhhpZIJbzCv+0GBv5xCFj6D3N0a9CXi6V3bxDVai1f6gwtCihBPSUiOZIy38rVbkVFAQ9ZWYsCg==\",\"signing_public\":\"hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=\",\"version\":2}",
+    "transcript": "{\"code\":\"04817352\",\"invitee_device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"invitee_endpoint\":null,\"invitee_exchange_public\":\"/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=\",\"invitee_name\":\"Alex\\u2019s iPhone \\u00e9\",\"invitee_signing_public\":\"hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=\",\"offer\":{\"certificate_fingerprint\":\"5c64391564d6f9308ebda9b4ca516292e354684b870c330326fe13a4153b71ee\",\"endpoint\":{\"host\":\"192.168.1.20\",\"port\":48201},\"expires_at\":1790000120,\"group_id\":\"5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64\",\"inviter_device_id\":\"a1111111-0000-4000-8000-00000000000a\",\"inviter_exchange_public\":\"SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=\",\"inviter_signing_public\":\"9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=\",\"offer_id\":\"d4e5f6a7-0b1c-4d2e-8f30-415263748596\",\"transcript_nonce\":\"5J1oy9rcnYWv4TsXbAKqZoWI2yK6R37NY+d7aVe/WDY=\",\"version\":1},\"protocol\":\"localgatekeys-sync-enrollment\",\"version\":2}",
+    "transcript_sha256_hex": "66a0388f64cdd38091fc848ed32dc05de0430e8715fef500d88d094ab3c2bb53",
+    "verification_code": "831498"
   }
 }

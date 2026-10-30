@@ -1903,6 +1903,8 @@
   "settings.hello.title": "Windows Hello",
   "settings.helloAutoStart.desc": "When the unlock screen opens",
   "settings.helloAutoStart.title": "Start Windows Hello automatically",
+  "settings.hideFromCapture.desc": "Other programs, screen recorders and video calls cannot capture this window",
+  "settings.hideFromCapture.title": "Hide from screenshots and screen sharing",
   "settings.idleSource.desc": "Computer: keyboard or mouse anywhere. Vault: using or saving items.",
   "settings.idleSource.title": "Count activity from",
   "settings.keep.latest": "Keep only the latest",

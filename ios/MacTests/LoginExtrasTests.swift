@@ -96,7 +96,7 @@ final class LoginExtrasTests: XCTestCase {
         XCTAssertEqual(LoginExtrasModel.validate(fields: [F(name: String(repeating: "n", count: 101), value: "")]),
                        "Name is longer than 100 characters")
         XCTAssertEqual(LoginExtrasModel.validate(fields: [F(name: "n", value: String(repeating: "v", count: 4097))]),
-                       "Value is longer than 4096 characters")
+                       "Value is longer than 4,096 characters")
         XCTAssertEqual(LoginExtrasModel.validate(fields: [F(name: "", value: "orphan")]), "Give this field a name")
 
         // Add field → save writes the desktop's {name, value, hidden} rows, names trimmed, empty rows dropped.

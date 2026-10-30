@@ -596,12 +596,15 @@ targets:
       # The iPhone's StoreKit configuration (same `pro_unlimited` product), for SKTestSession.
       - path: App/StoreKit/LocalGateKeys.storekit
         buildPhase: resources
+      # The app's strings, so String(localized:) gives the English plurals (MacTests/TestBundleSetup.swift).
+      - Shared/Localizable.xcstrings
     dependencies:
       - target: AppSharedMac
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).LocalGateKeysMacTests
+        INFOPLIST_KEY_NSPrincipalClass: LGKMacTestBundleSetup
 schemes:
   LocalGateKeys:
     build:

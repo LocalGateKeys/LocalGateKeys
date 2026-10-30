@@ -12,7 +12,7 @@ _FALLBACK_ICON = "nav.tools"
 
 _PLURAL_KINDS = frozenset({"web", "desktop", "card", "bank_account", "identity", "note", "document", "ssh_key", "api_key", "wifi", "license", "purchase", "warranty", "subscription", "bookmark", "passkey"})
 
-# Only names that exist in docs/design/sidebar-v1/icon-manifest.json.
+# Only names that exist in the sidebar icon manifest.
 _KIND_ICONS = {
     "web": "row.websiteGlobe",
     "desktop": "row.desktopLogin",

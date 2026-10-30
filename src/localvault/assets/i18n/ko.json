@@ -1855,6 +1855,8 @@
   "settings.hello.title": "Windows Hello",
   "settings.helloAutoStart.desc": "잠금 해제 화면이 열릴 때",
   "settings.helloAutoStart.title": "Windows Hello 자동 시작",
+  "settings.hideFromCapture.desc": "다른 프로그램, 화면 녹화 도구, 화상 통화에서 이 창을 캡처할 수 없습니다",
+  "settings.hideFromCapture.title": "스크린샷 및 화면 공유에서 숨기기",
   "settings.idleSource.desc": "컴퓨터: 어디서나 키보드나 마우스 사용. 보관함: 항목 사용 또는 저장.",
   "settings.idleSource.title": "활동 집계 기준",
   "settings.keep.latest": "최신 백업만 유지",

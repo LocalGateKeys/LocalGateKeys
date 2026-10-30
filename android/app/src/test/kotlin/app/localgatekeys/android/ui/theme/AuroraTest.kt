@@ -29,7 +29,7 @@ class AuroraTest {
         assertNull(AvatarInitials.from("12"))
         assertEquals("IP", AvatarInitials.from("ip"))
         assertEquals("IP", AvatarInitials.from(" i p "))
-        assertEquals("IP", AvatarInitials.from("Ilias Pel"))
+        assertEquals("AE", AvatarInitials.from("Alex Example"))
         assertEquals("AB", AvatarInitials.from("abc"))
         assertEquals("É", AvatarInitials.from("é"))
     }

@@ -1855,6 +1855,8 @@
   "settings.hello.title": "Windows Hello",
   "settings.helloAutoStart.desc": "ロック解除画面が開いたとき",
   "settings.helloAutoStart.title": "Windows Helloを自動で開始",
+  "settings.hideFromCapture.desc": "他のプログラム、画面録画、ビデオ通話からこのウィンドウをキャプチャできなくします",
+  "settings.hideFromCapture.title": "スクリーンショットと画面共有から隠す",
   "settings.idleSource.desc": "コンピューター: どこでもキーボードやマウスの操作。保管庫: 項目の使用や保存。",
   "settings.idleSource.title": "操作として数えるもの",
   "settings.keep.latest": "最新のみ保持",

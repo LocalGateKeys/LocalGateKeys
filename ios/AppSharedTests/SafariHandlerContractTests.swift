@@ -144,7 +144,7 @@ final class SafariHandlerContractTests: XCTestCase {
         let source = try backgroundSource()
         for error in ["full", "inbox_full", "invalid", "unavailable"] {
             XCTAssertNotNil(SafariSaveService.SaveError(rawValue: error), error)
-            XCTAssertTrue(source.contains("  \(error): "), "SAVE_ERRORS has \(error)")
+            XCTAssertTrue(source.contains("  get \(error)() { return tr(\""), "SAVE_ERRORS has \(error)")
         }
         for status in ["new", "exists", "full", "unavailable"] {
             XCTAssertNotNil(SafariSaveService.Status(rawValue: status), status)

@@ -59,7 +59,7 @@ object SyncVectors {
      * The name B announces in the vector enrollment: `lan/enroll_reply_no_endpoint.bin` is bound to it, so a QR join
      * with any other name fails to open the reply (scripts/make_sync_vectors.py; Swift `vectorDeviceName`).
      */
-    const val DEVICE_NAME = "Ilias’s iPhone é"
+    const val DEVICE_NAME = "Alex’s iPhone é"
 }
 
 /** In-memory folder: path -> bytes; directories exist when a file lies under them. [onRead] runs before each read. */

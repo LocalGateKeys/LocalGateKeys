@@ -2,8 +2,7 @@
 
 The page never sends a file path: Python opens the native dialogs (``dialogs``,
 implemented by ``web/window.py`` with pywebview's file dialog) and file bytes
-never cross the bridge. Texts follow the Tk app verbatim
-(docs/superpowers/specs/2026-10-17-webview-items-dataflow.md §2).
+never cross the bridge. Texts follow the Tk app verbatim.
 """
 from __future__ import annotations
 

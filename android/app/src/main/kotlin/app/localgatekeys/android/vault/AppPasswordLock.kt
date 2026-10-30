@@ -83,9 +83,8 @@ interface BootClock {
 }
 
 /**
- * The optional app password (Task 7, docs/superpowers/plans/2026-10-29-app-master-password.md): `app-password.bin`
- * (the local key wrapped by Argon2id(password) and by the recovery phrase) and the optional biometric-only shortcut
- * [bioKey] + `vault-key-bio.bin`. Blocking: call off the main thread. Never logs or stores a password or phrase.
+ * The optional app password (`app-password.bin`, the local key wrapped by Argon2id(password) and by the recovery phrase)
+ * and the optional biometric-only shortcut [bioKey] + `vault-key-bio.bin`. Blocking: call off the main thread. Never logs or stores a password or phrase.
  */
 class AppPasswordLock(
     val files: AppPasswordFiles,

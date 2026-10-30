@@ -1,7 +1,6 @@
 """Recently deleted (trash) for the WebView UI: list, restore, permanently delete, empty.
 
-Texts and rules follow ``FeatureUI.trash_clicked``
-(docs/superpowers/specs/2026-10-17-webview-items-dataflow.md §3).
+Texts and rules follow ``FeatureUI.trash_clicked``.
 """
 from __future__ import annotations
 

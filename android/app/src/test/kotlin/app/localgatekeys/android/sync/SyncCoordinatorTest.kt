@@ -262,7 +262,7 @@ class SyncCoordinatorTest {
         val join = async { c.joinByQr(SyncVectors.qrText()) }
         until("code") { c.verificationCode.value != null }
         // B's request without an endpoint, named as in the vector: expected_lan.json reply_no_endpoint.verification_code.
-        assertEquals("496265", c.verificationCode.value)
+        assertEquals("831498", c.verificationCode.value)
         val offer = PairingOffer.parseQr(SyncVectors.qrText())
         assertEquals(Enrollment.verificationCode(offer, SyncVectors.identity("B"), null, SyncVectors.DEVICE_NAME), c.verificationCode.value)
         until("connected hop") { c.connecting.value == null }

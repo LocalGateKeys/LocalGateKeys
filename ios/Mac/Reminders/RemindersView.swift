@@ -54,7 +54,7 @@ struct RemindersView: View {
         return HStack(spacing: 10) {
             Text(row.title).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
             Text(row.due).font(.system(size: 12.5).monospacedDigit()).foregroundStyle(theme.textMuted)
-            Text(Self.statusText(row.status)).font(.system(size: 11.5, weight: .medium))
+            Text(ReminderSection.statusText(row.status)).font(.system(size: 11.5, weight: .medium))
                 .padding(.horizontal, 8).padding(.vertical, 2)
                 .background(theme.line, in: Capsule())
         }

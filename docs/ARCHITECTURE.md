@@ -260,7 +260,7 @@ The prototype instead separates:
 
 ## 10. Device sync
 
-User guide: [SYNC.md](SYNC.md). Design: `docs/superpowers/specs/2026-10-15-sync-design.md`.
+User guide: [SYNC.md](SYNC.md).
 
 Sync keeps the local-first model: no server, no account. Devices exchange
 *sealed views* (every item the device knows, encrypted under a key derived from

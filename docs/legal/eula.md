@@ -5,25 +5,6 @@
 
 # LocalGateKeys End User Licence Agreement
 
-<!-- owner-decisions -->
-## Decisions the owner must make before review
-
-- **Source licence conflict.** The repository is currently published under the MIT licence (`LICENSE`). MIT lets anyone use, modify and redistribute the code, including a build without the item limit, for free. Decide before launch whether to (a) relicense the code you own (for example to a proprietary or source-available licence) for future releases, (b) keep MIT and accept that Pro is sold on convenience and support, or (c) split Free (MIT) and Pro (proprietary) code. Sections 3, 4 and 7 assume the binaries are distributed under this agreement; they must be rewritten if MIT remains for everything. Code already released under MIT stays MIT for whoever received it.
-- **Legal entity.** The owner has chosen, for now, to trade under their own name as a sole trader ({{COMPANY_NAME}}). A sole trader is personally liable without limit for anything this Agreement cannot exclude; the caps in section 12 protect only as far as the law allows them. Revisit a limited company before revenue or user numbers grow, and ask the lawyer whether your country requires a trading address and tax number on the site.
-- **Insurance.** Consider professional indemnity or product liability insurance that covers software and data loss; it covers what section 12 cannot exclude.
-- **Product liability.** The EU Product Liability Directive (EU) 2024/2853 applies to software placed on the market from 9 December 2026. It makes the producer liable, without fault, for destruction or corruption of data that is not used for professional purposes, and it cannot be excluded by contract (section 12.4). Ask the lawyer how it applies to the Free edition, to updates and to your country's implementing law.
-- **Acceptance at install.** Make the installer and the Microsoft Store listing require acceptance of this Agreement (a checkbox in the installer, the EULA field in Partner Center). Terms accepted at install are far easier to enforce than a link on the website.
-- **Device use.** This draft lets one person use Pro on all Devices they use, with no number limit (the app does not count devices), and does not allow household sharing. Confirm.
-- **Commercial use of Free.** Whether businesses may use the Free edition at no cost (this draft says yes).
-- **What "all future updates" means.** Pro is sold once and includes every future update (section 4.2). That promise covers future major versions too, so you cannot later charge existing Pro customers for a "version 2" without breaking it. If you might ever want paid major upgrades, say so now (for example "all updates to LocalGateKeys 1.x"); changing it after selling would be unfair to buyers. The draft also makes clear that you do not promise to keep developing forever (section 10).
-- **Revocation.** Confirm the reasons for revocation (refund, chargeback, fraud, licence leak) and that revocation never touches vault data: the 4-item limit returns, existing items stay usable.
-- **iPhone app.** If the iPhone app ever enforces the item limit, App Store rule 3.1.1 requires an in-app purchase as well as the outside purchase. This Agreement would then need an App Store section.
-- **Transfer and resale.** In the EU, the resale of a perpetual software licence may be permitted by law (CJEU, UsedSoft, C-128/11). Decide whether to allow transfer with notice instead of prohibiting it.
-- **Liability caps.** Pro: the amount paid for the licence ({{PRICE}}). Free: {{LIABILITY_CAP_FREE}}. Caps this low may be found unreasonable for consumers in some countries; ask the lawyer whether a higher floor (for example USD 50) makes them more likely to hold.
-- **Governing law and courts** ({{GOVERNING_LAW}}, {{JURISDICTION}}), and how consumer protections of the user's country of residence are preserved.
-- **Mandatory consumer rights.** EU Directive 2019/770 (digital content) gives consumers conformity and update rights that cannot be excluded. The lawyer must adapt sections 10 and 11 so they do not purport to exclude them.
-- **Effective date** ({{EFFECTIVE_DATE}}) and how changes are notified (website notice, in-app notice on update).
-<!-- /owner-decisions -->
 
 Effective date: {{EFFECTIVE_DATE}}
 

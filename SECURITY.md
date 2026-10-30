@@ -1,14 +1,16 @@
-> **App 0.4.9.** Report vulnerabilities privately (GitHub "Report a vulnerability" on the public repository, or security@localgatekeys.app); see the [disclosure policy](https://localgatekeys.app/legal/vulnerability-disclosure). Master-password unlock remains primary; Windows Hello and camera verification are optional, explicitly configured methods.
+> **Windows app 0.4.10.** Report vulnerabilities privately (GitHub "Report a vulnerability" on the public repository, or security@localgatekeys.app); see the [disclosure policy](https://localgatekeys.app/legal/vulnerability-disclosure). On Windows and the Mac, master-password unlock remains primary; Windows Hello, camera verification and Touch ID are optional, explicitly configured methods. The iPhone and Android apps unlock with the device's own owner check (see [Mac, iPhone, Apple Watch and Android](#mac-iphone-apple-watch-and-android)).
 
 # Security notes
 
 ## Status
 
-LocalGateKeys is a released password manager: a Windows app (Microsoft Store and installer), an Edge extension, and an iPhone app in public beta. An Android app is built but not on Google Play yet, and a Mac app (`ios/Mac`) is in the repository with its manual release checks still open. The source is published here so anyone can check how it protects your data. It has been through repeated internal security reviews, and the fixes are listed below. It has not yet had an independent cryptographic review, penetration test, accessibility review, or supply-chain audit. As with any password manager, keep an encrypted backup of your vault and your recovery phrase somewhere safe.
+LocalGateKeys is a released password manager: a Windows app (Microsoft Store and installer), an Edge extension (Edge Add-ons), and an iPhone app on the App Store, with an Apple Watch app inside it from iPhone version 1.1. A Mac app (`ios/Mac`) and an Android app (`android/`) are built and tested but not yet in the Mac App Store or on Google Play. The source is published here so anyone can check how it protects your data. It has been through repeated internal security reviews, and the fixes are listed below. It has not yet had an independent cryptographic review, penetration test, accessibility review, or supply-chain audit. As with any password manager, keep an encrypted backup of your vault and your recovery phrase somewhere safe.
 
 ## Threat model
 
-The app is designed to reduce these risks:
+This section and the boundaries that follow describe the Windows app and its Chromium extension. The Mac, iPhone, Apple Watch and Android apps rely on their operating system's key storage and extension model instead; see [Mac, iPhone, Apple Watch and Android](#mac-iphone-apple-watch-and-android).
+
+The Windows app is designed to reduce these risks:
 
 - a website obtaining credentials stored for a different web origin
 - a content script directly opening the native vault without extension-background validation
@@ -119,7 +121,7 @@ applications retain the strict checks above. When an identical (or same-signer)
 binary shows a changed window title or edit-control layout, the app asks before
 filling or adopting it.
 
-If the app exposed an unprotected field and the user explicitly saved that mapping, LocalVault requires a stronger selector score and displays a fresh confirmation before every fill.
+If the app exposed an unprotected field and the user explicitly saved that mapping, LocalGateKeys requires a stronger selector score and displays a fresh confirmation before every fill.
 
 The fallback input path sends outbound Unicode keystrokes only after focus is moved to the selected control. It does not install a hook and does not observe inbound keys. Some apps, elevated windows, anti-cheat systems, or custom renderers will reject this operation; that is an expected safe failure.
 
@@ -420,7 +422,11 @@ malicious process running as the same user may inspect state or process memory.
 - **Licence server.** A checkout claim is bound to an order atomically in D1, so
   of two orders racing for one claim the first wins; the other order's licence
   stays under its own token and `/recover` finds it. `/recover` allows 5 attempts
-  per email per hour, in addition to the per-IP rate limit.
+  per email per hour, in addition to the per-IP rate limit. Store claims
+  (`/appstore/claim`, `/play/claim`) issue at most one licence per original
+  purchase (a D1 primary key), so a repeated claim reads back the same licence;
+  they allow 20 claims per client IP per hour and answer every failed check
+  with the same bare `400 Invalid`. See "Store purchases" below.
 
 Known limitations:
 
@@ -445,9 +451,162 @@ Known limitations:
   strict offline mode on, a client sees new revocations only when the user runs a
   manual check and accepts the network request.
 
+## Mac, iPhone, Apple Watch and Android
+
+The Apple apps share one Swift core (`ios/LGKCore`) and the Android app a Kotlin
+port of it (`android/lgk-core`). Both read and write the desktop's sync, backup
+and sharing formats and are tested against the same vectors in
+`tests/vectors/`. On all four the item store is a set of AES-256-GCM
+blobs under a random 256-bit local key, with each blob bound to its revision
+and item id. What differs is how that local key is protected.
+
+**Mac** (`ios/Mac`, `ios/AppShared/MacVault`, `ios/AutoFillMac`, `ios/SafariMac`)
+
+- The local key is sealed under the master password (Argon2id with the
+  desktop's default cost: 3 passes, 64 MiB, 4 lanes) in `master-key.json`, with
+  an optional recovery-phrase wrapper. It never sits in the Keychain
+  unprotected; the app holds it in memory while unlocked.
+- Touch ID is optional: a copy of the local key in a Keychain item that is
+  `WhenUnlockedThisDeviceOnly` and `.biometryCurrentSet`, never synced, so
+  adding or removing a finger invalidates it and the master password is
+  needed again.
+- Wrong master passwords are throttled as on Windows: 5 free tries, then a wait
+  that doubles from 2 s to 60 s, kept in `throttle.json` and shared with the
+  AutoFill extension under a file lock.
+- The AutoFill extension unlocks with the Touch ID item or the master password
+  for each request, fills a password, a one-time code or a passkey, and drops
+  what it read when the request ends. Its only write is a new passkey (one
+  commit); it never syncs, opens no network connection and never uses the
+  clipboard.
+- The menu bar panel and the ⌃⌥K shortcut use Carbon's `RegisterEventHotKey`
+  for that one key combination. There is no keyboard monitoring and no
+  Accessibility permission. A copy from the menu bar goes through the main
+  window's checks, including the master-password prompt for strict items.
+- Network: Wi-Fi sync (the Mac can host a group and listens for peers; a free
+  Mac listens only while pairing and for about 120 s after a sync), the cloud
+  folder you choose, the App Store licence claim, and opt-in breach checks and
+  website icons.
+
+**iPhone** (`ios/App`, `ios/AppShared`, `ios/AutoFill`, `ios/SafariSave`)
+
+- The local key is a Keychain item that is `WhenUnlockedThisDeviceOnly` with
+  `.userPresence`, so reading it needs Face ID, Touch ID or the device
+  passcode. It never leaves the device; store files restored from a backup
+  without it cannot be read, and the app offers to start fresh.
+- Optional app password: the local key is sealed under it (Argon2id, 3 passes,
+  64 MiB, 4 lanes; the Mac's key-file format) and the passcode-readable Keychain
+  item is deleted, so the device passcode alone no longer opens the vault. An
+  optional Face ID shortcut is a `.biometryCurrentSet` item. From the fifth
+  wrong try the wait is 30 s, doubling up to 15 minutes.
+- Secret copies are local-only (no Universal Clipboard) and expire.
+- The AutoFill extension unlocks with Face ID or the passcode and reads the
+  shared app-group store. It never syncs; its only write is creating a passkey.
+  The QuickType identities the app publishes hold a username and a domain
+  only. Known gap: a QuickType fill gives the extension the stored identity but
+  not the page URL, so the system's own domain matching decides where it is
+  offered.
+- Network: Wi-Fi sync with a paired PC or Mac, the cloud folder you choose, the
+  App Store licence claim, and opt-in breach checks and website icons.
+
+**Safari extensions (iPhone and Mac)**
+
+- The extension offers to save logins you sign in with in Safari. It keeps
+  captures in memory and passes them to a native handler that can only
+  classify a capture against a keyed fingerprint index and write it into a
+  sealed (AES-256-GCM) inbox.
+- Its two keys live in a Keychain group of its own, the only group it is
+  entitled to, so it can never read the vault's local key. It never opens the
+  vault, never syncs and opens no network connection.
+- The app asks before importing what is in the inbox at its next unlock;
+  unread captures expire after 7 days. Filling in Safari goes through the
+  AutoFill extension, not the web extension.
+
+**Apple Watch** (`ios/Watch`)
+
+- The watch holds only the two-factor codes you pin on the iPhone, and only on
+  the Pro plan. The iPhone sends them over WatchConnectivity (between the
+  paired devices, never through a server); each message replaces the last and
+  "forget" deletes everything. The watch never sends secrets back.
+- They are stored in one Keychain item on the watch,
+  `WhenUnlockedThisDeviceOnly`, so they are unreadable while the watch is
+  locked, and nothing else is written (no files, defaults or complications).
+  Decoded secrets leave memory when the app is hidden.
+- Known limit: by default the watch keeps its codes while the iPhone's vault
+  is locked or the phone is away; the watch's own passcode is what guards
+  them. Turn on "Forget Apple Watch codes on lock" in the iPhone app's settings if you do not want that.
+
+**Android** (`android/`)
+
+- The local key is wrapped by an AES-256-GCM key in the Android Keystore
+  (StrongBox when the device has it) that requires user authentication for
+  every use on Android 11+ (a strong biometric or the screen lock; on Android
+  10, within 30 s of the prompt). Without a secure lock screen the app cannot
+  create a vault.
+- Optional app password: the local key is sealed under it with Argon2id at the
+  desktop's cost, and the screen-lock key is deleted. An optional biometric
+  shortcut uses a strong-biometric-only Keystore key that new enrolments
+  invalidate. Repeated wrong tries add a growing wait.
+- App windows use `FLAG_SECURE` (no screenshots or screen recording). Backups
+  and device transfer exclude all app data (`allowBackup="false"` and
+  exclusion rules). The only exported activity is the launcher; the autofill
+  and credential services can be bound only by the system.
+- The autofill service reads only a fill index (titles, usernames, addresses)
+  sealed under a Keystore key that needs no authentication, so it can offer
+  matches while the vault is locked. Every fill goes through an unlock screen.
+  A web address is trusted only from a known browser whose package and signing
+  certificate both match the bundled privileged-browser list; any other app's
+  web domain is ignored. Logins paired with an app are bound to its package
+  name and signing certificate.
+- Passkeys (Android 14+) go through Credential Manager. Every sign-in and
+  creation unlocks or asks for a fresh owner check. A web origin is accepted
+  only from a browser that passes the same privileged-browser check, and the rp
+  id must be that host or a registrable parent of it (never a public suffix).
+  Any other app is signed for as `android:apk-key-hash:<certificate>`, which
+  the site checks against its Digital Asset Links.
+- Copies are marked sensitive and cleared after the chosen delay if the
+  clipboard still holds the app's own copy.
+- Network: raw TCP Wi-Fi sync to the paired PC's private address (bound to the
+  Wi-Fi network, never cellular), Google Play Billing, and the Play licence
+  claim. The network security configuration allows no cleartext traffic and
+  trusts only system certificate authorities.
+
+Shared limits on these platforms: they have the same independent-review gap as
+the Windows app, the operating system and its key storage are trusted, and
+anyone who knows the device passcode can open the iPhone or Android vault
+unless the app password is on.
+
+## Store purchases
+
+Buying Pro in the iPhone or Mac app (App Store) or the Android app (Google
+Play) sends one request to the licence server at `licenses.localgatekeys.app`
+(`cloudflare/license-issuer`):
+
+- `POST /appstore/claim` carries the App Store's signed transaction (StoreKit 2
+  `jwsRepresentation`). The server verifies it offline: ES256, the certificate
+  chain up to Apple Root CA G3 (pinned by SHA-256), the product, the bundle id
+  and the environment. When the App Store Server API key is configured it also
+  asks Apple whether the transaction was refunded.
+- `POST /play/claim` carries the Google Play purchase token and product id. The
+  server asks the Play Developer API whether the purchase is valid and not
+  cancelled.
+- The answer is a signed `LGK1-` licence, named "App Store purchase" or
+  "Google Play purchase", with no email or other personal data. The server
+  stores the original transaction id (App Store) or order id (Play), the
+  licence and a revoked flag, so a restore, a reinstall or a second device gets
+  the same licence and a refund can revoke it. For the rate limit (20 claims
+  per hour) it keeps a keyed hash (HMAC) of the client IP address, which
+  expires after the hour.
+- The purchase record has no name, email, Apple Account or Google account
+  details. Nothing from the vault is sent. Pro on the buying device comes from
+  the store's own entitlement and does not depend on the claim.
+- Refunds reach the server through App Store Server Notifications and Google
+  Play's voided-purchase reports and revoke the licence.
+
+See the [privacy policy](docs/legal/privacy-policy.md), section 7.
+
 ## Production hardening backlog
 
-Status as of app 0.4.9 (October 2026).
+Status as of Windows app 0.4.10 (October 2026).
 
 Done:
 
@@ -459,8 +618,8 @@ Done:
   by hash; `scripts/generate_sbom.ps1` produces the SBOM.
 - **Fuzzing and property tests** for the vault, backup, sync, frame, origin and
   importer parsers (`tests/fuzz/`, `tests/props/`).
-- **Passkeys**, password generation and credential editing, on the desktop and on
-  iPhone.
+- **Passkeys**, password generation and credential editing, on the desktop, the
+  Mac, iPhone and Android.
 - **Internal security audits** with every finding fixed or tracked; the reports
   are published under `docs/SECURITY_AUDIT_*` and `docs/SECURITY_SCAN_*`.
 

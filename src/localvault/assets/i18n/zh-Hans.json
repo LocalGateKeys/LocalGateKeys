@@ -1855,6 +1855,8 @@
   "settings.hello.title": "Windows Hello",
   "settings.helloAutoStart.desc": "在解锁界面打开时",
   "settings.helloAutoStart.title": "自动启动 Windows Hello",
+  "settings.hideFromCapture.desc": "其他程序、屏幕录制工具和视频通话无法捕获此窗口",
+  "settings.hideFromCapture.title": "在截图和屏幕共享中隐藏",
   "settings.idleSource.desc": "电脑：任何位置的键盘或鼠标操作。保管库：使用或保存项目。",
   "settings.idleSource.title": "活动计算来源",
   "settings.keep.latest": "只保留最新的",
