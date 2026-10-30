@@ -747,8 +747,8 @@ def test_shapes_the_vault_writers_produce_are_accepted(tmp_path: Path, lease: Fa
 
 
 def _make_unreadable(session, entry_id: str) -> None:
-    # Six history rows: more than the vault's writers keep (a hand-edited vault).
-    _entry(session, entry_id)["password_history"] = [{"password": "p", "changed_at": 1}] * 6
+    # Eleven history rows: more than any reader accepts (a hand-edited vault).
+    _entry(session, entry_id)["password_history"] = [{"password": "p", "changed_at": 1}] * 11
 
 
 def test_unreadable_local_record_is_skipped_not_tombstoned(tmp_path: Path, lease: FakeLease) -> None:
@@ -766,6 +766,18 @@ def test_unreadable_local_record_is_skipped_not_tombstoned(tmp_path: Path, lease
     assert _entry(b, new_id)["password"] == "pw-new", "other records still sync"
     assert _entry(b, bad_id)["password"] == "pw-bad", "the skipped record is not deleted elsewhere"
     assert not local_view(b, lease, device_id=B, now=NOW)[bad_id].deleted
+
+
+def test_ten_history_rows_from_a_newer_peer_are_read(tmp_path: Path, lease: FakeLease) -> None:
+    # Readers accept up to 10 rows (vault.PASSWORD_HISTORY_READ_LIMIT); writers still keep 5.
+    a, b = _vault(tmp_path, "a"), _vault(tmp_path, "b")
+    entry_id = a.upsert_web(origin="https://ten.example", username="me", password="pw")
+    rows = [{"password": f"old-{i}", "changed_at": 100 + i} for i in range(10)]
+    _entry(a, entry_id)["password_history"] = copy.deepcopy(rows)
+    view = local_view(a, lease, device_id=A, now=NOW)
+    assert entry_id in view and not view.skipped
+    _sync(b, B, a, A, lease)
+    assert _entry(b, entry_id)["password_history"] == rows
 
 
 def test_local_record_with_mistyped_totp_is_skipped(tmp_path: Path, lease: FakeLease) -> None:
@@ -801,7 +813,7 @@ def test_unreadable_local_record_is_not_overwritten(tmp_path: Path, lease: FakeL
     report = _sync(a, A, b, B, lease)
     assert [item_id for item_id, _reason in report.skipped] == [bad_id]
     assert _entry(a, bad_id)["password"] == "pw-bad", "a skipped local record is never overwritten"
-    assert len(_entry(a, bad_id)["password_history"]) == 6
+    assert len(_entry(a, bad_id)["password_history"]) == 11
     assert _entry(a, other_id)["password"] == "pw-other", "the rest of the outcome is applied"
     # a remote delete of the skipped record is dropped as well
     b.delete(bad_id)

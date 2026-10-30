@@ -12,6 +12,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from localvault.i18n import t
 from localvault.api.result import ApiError
 from localvault.app.icons import IconProvider
 from localvault.app.qr_import import QrImportService
@@ -278,7 +279,7 @@ def test_trash_purge_lease_is_taken_before_the_confirm_dialog():
     assert purged == []
 
     service = TrashService(controller, SimpleNamespace(confirm=lambda *_a: True))
-    assert service.purge(["a1"]) == {"message": "Permanently deleted 1 item(s)."} and purged == [["a1"]]
+    assert service.purge(["a1"]) == {"message": "Permanently deleted 1 item."} and purged == [["a1"]]
 
 
 # ------------------------------------------------------- scheduled backup spawn failure
@@ -316,7 +317,7 @@ def test_schedule_spawn_failure_resets_and_reports(tmp_path, monkeypatch):
     runner, bus, ran, logged = _schedule_runner(tmp_path, broken, monkeypatch)
     assert runner.check() is False
     assert runner._running is False and runner._failed_at == datetime(2026, 10, 18, 12, 0)
-    assert ("toast", {"kind": "error", "message": FAILED}) in bus.events
+    assert ("toast", {"kind": "error", "message": t(FAILED)}) in bus.events
     assert logged == ["scheduled-backup-start"] and ran == []
     assert "backup-pw" not in repr(bus.events)
     # The retry window applies as after any failure; afterwards backups run again.

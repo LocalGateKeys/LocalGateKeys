@@ -1,0 +1,39 @@
+{
+  "_comment": "TEST ONLY. tag = base32(HMAC-SHA256(discovery_key, device_id|day)[:10]) lowercase, no padding.",
+  "discovery_key_b64": "hP8UlJLwBpx35quvf9tE2rPxyBGkwYZb+r9c2DFVMic=",
+  "epoch": 1,
+  "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
+  "group_key_b64": "kr8EnkJd3CJc/LAktL1XN8DMENrNQ0d3QH02a4AtfXE=",
+  "host_device_id": "a1111111-0000-4000-8000-00000000000a",
+  "instance_name_example": "LocalGateKeys-3f9a",
+  "service_type": "_lgksync._tcp",
+  "tags": [
+    {
+      "day": "2026-10-29",
+      "tag": "whijlnebdshs7f4e"
+    },
+    {
+      "day": "2026-10-30",
+      "tag": "adex2gbdvz46wf3r"
+    },
+    {
+      "day": "2026-12-31",
+      "tag": "qglkhiqo44fh4ihe"
+    },
+    {
+      "day": "2027-01-01",
+      "tag": "euu4uweua5qrtwsr"
+    }
+  ],
+  "txt": {
+    "t": "dwdp425xtq2wxh4d",
+    "v": "1"
+  },
+  "window": {
+    "accepted": [
+      "dwdp425xtq2wxh4d",
+      "uu7ixo5dgnh6gzfg"
+    ],
+    "now": 1790003600
+  }
+}

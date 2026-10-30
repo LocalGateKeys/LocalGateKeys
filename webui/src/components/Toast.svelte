@@ -1,5 +1,6 @@
 <script>
   /** Notifications pushed by Python ("toast" events). Closable; the timer pauses while the pointer is over one. */
+  import { t } from '../lib/i18n.svelte.js';
   import { on } from '../lib/api.js';
   import { errorLogAction, mentionsErrorLog, routeAction } from '../lib/toast.js';
 
@@ -11,7 +12,7 @@
     const id = next++;
     // Python sends one {label, route, params} action; the page sends {label, run} actions.
     const actions = detail.action ? [routeAction(detail.action)] : [...(detail.actions ?? [])];
-    if (mentionsErrorLog(`${detail.title ?? ''} ${detail.message ?? ''}`) && !actions.some((a) => a.label === 'Open error log')) {
+    if ((detail.error_log === true || mentionsErrorLog(`${detail.title ?? ''} ${detail.message ?? ''}`)) && !actions.some((a) => a.id === 'errorlog')) {
       actions.push(errorLogAction());
     }
     toasts.push({ id, kind: detail.kind === 'error' ? 'error' : 'info', title: detail.title ?? '', message: detail.message ?? '', actions });
@@ -48,7 +49,7 @@
          onfocusin={() => pause(toast.id)} onfocusout={() => resume(toast.id)}>
       <div class="head">
         <strong>{toast.title}</strong>
-        <button class="close" aria-label="Dismiss" onclick={() => dismiss(toast.id)}>✕</button>
+        <button class="close" aria-label={t('toast.dismiss')} onclick={() => dismiss(toast.id)}>✕</button>
       </div>
       {#if toast.message}<span>{toast.message}</span>{/if}
       {#if toast.actions.length}

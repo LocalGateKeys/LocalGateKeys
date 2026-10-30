@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from . import MAX_SOURCE_BYTES, ImporterError, ImportFormatError
+from ..i18n import t
 
 MAX_CSV_ROWS = 20_000
 
@@ -47,7 +48,7 @@ def read_source_bytes(source: Path | str | bytes | bytearray | memoryview, *, li
     except ImporterError:
         raise
     except OSError as exc:
-        raise ImportFormatError("Could not read the import source") from exc
+        raise ImportFormatError(t("importWorkflow.couldNotReadTheImport")) from exc
     if len(data) > limit:
         raise ImportFormatError(f"Import source exceeds {limit // (1024 * 1024)} MiB")
     return data
@@ -59,7 +60,7 @@ def decode_text(data: bytes) -> str:
         try:
             return data.decode("utf-16")
         except UnicodeDecodeError as exc:
-            raise ImportFormatError("Import source must be UTF-8 or UTF-16 text") from exc
+            raise ImportFormatError(t("Source.importSourceMustBeUtf2")) from exc
     try:
         return data.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -67,7 +68,7 @@ def decode_text(data: bytes) -> str:
     try:
         return data.decode("cp1252")
     except UnicodeDecodeError as exc:
-        raise ImportFormatError("Import source must be UTF-8 text") from exc
+        raise ImportFormatError(t("Source.importSourceMustBeUtf")) from exc
 
 
 def normalize_header(name: Any) -> str:

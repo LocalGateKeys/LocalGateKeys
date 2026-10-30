@@ -11,20 +11,15 @@ from ..api.result import ApiError
 from ..secret_text import SecretText, secrets_match
 from ..unlock_policy import require_master_unlock
 from ..vault import VaultError
+from ..i18n import t
 
-CONFIRM_TITLE = "Change master password?"
-CONFIRM_TEXT = ("The vault will be re-encrypted with a new key. Old .lgk exports and backups will no longer open the "
-                "current vault; they keep their old contents under the old master password, so protect or replace "
-                "them. The current vault will lock after the change.")
-LOCK_REASON = ("Master password changed. Camera verification and Windows Hello must be set up again; unlock with "
-               "the new password.")
-PHRASE_NOTE = {"title": "Create a new recovery phrase",
-               "text": "Your previous recovery phrase no longer opens this vault. After unlocking, create a new one "
-                       "in Recovery."}
-CLEANUP_NOTE = {"title": "Old local unlock cleanup incomplete",
-                "text": "The current vault has been re-encrypted and previous biometric unlock bindings are invalid. "
-                        "Some old encrypted local key material could not be removed. Older backup copies may still "
-                        "use their old key; keep those backups protected."}
+CONFIRM_TITLE = "master.changeMasterPassword"
+CONFIRM_TEXT = ("master.theVaultWillBeRe")
+LOCK_REASON = ("master.masterPasswordChangedCameraVerification")
+PHRASE_NOTE = {"title": "controller.createANewRecoveryPhrase",
+               "text": "master.yourPreviousRecoveryPhraseNo"}
+CLEANUP_NOTE = {"title": "controller.oldLocalUnlockCleanupIncomplete",
+                "text": "master.theCurrentVaultHasBeen"}
 
 
 class MasterService:
@@ -34,7 +29,7 @@ class MasterService:
 
     def _session_lease(self) -> tuple[Any, Any]:
         if not self._controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile first.")
+            raise ApiError("locked", t("error.lockedProfile"))
         lease = self._controller.guard.lease()
         self._controller.require_lease(lease)
         return self._controller.session, lease
@@ -51,10 +46,10 @@ class MasterService:
 
         session, lease = self._session_lease()
         if not secrets_match(new, confirm):
-            raise ApiError("invalid", "The new passwords did not match.")
+            raise ApiError("invalid", t("masterSheet.mismatch"))
         phrase = (phrase or "").strip() or None
-        if not self._port.confirm(CONFIRM_TITLE, CONFIRM_TEXT):
-            raise ApiError("cancelled", "Cancelled.")
+        if not self._port.confirm(t(CONFIRM_TITLE), t(CONFIRM_TEXT)):
+            raise ApiError("cancelled", t("error.cancelled"))
         self._controller.require_lease(lease)
         profile_id = self._controller.profiles.active_profile().id
         record_id = session.hello_binding()
@@ -67,7 +62,7 @@ class MasterService:
         require_master_unlock(profile_id)
         hello_cleaned = cleanup_hello(vault_path, record_id)
         face_cleaned = cleanup_face(vault_path) if had_face else True
-        self._controller.lock(LOCK_REASON)
+        self._controller.lock(t(LOCK_REASON))
         notes = []
         if result.get("recovery_phrase_invalidated"):
             notes.append(dict(PHRASE_NOTE))

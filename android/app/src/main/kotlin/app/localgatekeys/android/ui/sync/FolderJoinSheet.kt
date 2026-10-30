@@ -1,4 +1,7 @@
 package app.localgatekeys.android.ui.sync
+import androidx.annotation.StringRes
+import app.localgatekeys.android.R
+import androidx.compose.ui.res.stringResource
 
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -60,14 +63,12 @@ import kotlinx.coroutines.flow.receiveAsFlow
 
 /** The folder sheet's copy (iPhone `SyncScreen.swift` password sheet; the Google Drive notice is Android-only). */
 object FolderJoinText {
-    const val TITLE = "Sync password"
-    const val FIELD = "Sync password"
-    const val FOOTER = "The sync password of this folder's group. It is never stored."
+    @StringRes val TITLE = R.string.folder_sync_password
+    @StringRes val FIELD = R.string.folder_sync_password
+    @StringRes val FOOTER = R.string.folder_password_footer
 
     /** Spec section 3: Google Drive's Android app offers no folder to other apps; said plainly, with what to do instead. */
-    const val GOOGLE_DRIVE_NOTICE =
-        "Google Drive's Android app does not let other apps choose a folder in it. To sync with Google Drive, use Wi-Fi " +
-            "sync, or a folder-sync app that keeps a folder on this phone in step with Google Drive."
+    @StringRes val GOOGLE_DRIVE_NOTICE = R.string.folder_google_drive_notice
 }
 
 /**
@@ -81,15 +82,16 @@ fun FolderPasswordSheet(form: FolderPasswordForm, onCancel: () -> Unit, onJoin: 
     val monitor = LocalActivityMonitor.current
     val password by form.password.collectAsStateWithLifecycle()
     val focus = remember { FocusRequester() }
+    val fieldLabel = stringResource(FolderJoinText.FIELD)
     BackHandler(onBack = onCancel)
     LaunchedEffect(form) { runCatching { focus.requestFocus() } }
     Box(Modifier.fillMaxSize().pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }.testTag("folder-password")) {
         GlassBackdropHost(Modifier.fillMaxSize()) { AuroraBackground() }
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onCancel) { Text("Cancel", color = c.accentText) }
+                TextButton(onCancel) { Text(stringResource(R.string.common_cancel), color = c.accentText) }
                 Text(
-                    FolderJoinText.TITLE, color = c.text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
+                    stringResource(FolderJoinText.TITLE), color = c.text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center, modifier = Modifier.weight(1f).semantics { heading() },
                 )
                 Button(
@@ -97,7 +99,7 @@ fun FolderPasswordSheet(form: FolderPasswordForm, onCancel: () -> Unit, onJoin: 
                     enabled = password.isNotEmpty(),
                     colors = ButtonDefaults.buttonColors(containerColor = c.accent, contentColor = Color.White),
                     modifier = Modifier.padding(end = 4.dp).testTag("folder-join"),
-                ) { Text("Join", fontWeight = FontWeight.SemiBold) }
+                ) { Text(stringResource(R.string.sync_join), fontWeight = FontWeight.SemiBold) }
             }
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().imePadding().padding(16.dp),
@@ -117,17 +119,17 @@ fun FolderPasswordSheet(form: FolderPasswordForm, onCancel: () -> Unit, onJoin: 
                         ),
                         keyboardActions = KeyboardActions(onDone = { if (form.canJoin) onJoin() }),
                         modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag("folder-password-field")
-                            .semantics { contentDescription = FolderJoinText.FIELD },
+                            .semantics { contentDescription = fieldLabel },
                         decorationBox = { inner ->
                             Box {
-                                if (password.isEmpty()) Text(FolderJoinText.FIELD, color = c.secondaryText, style = MaterialTheme.typography.bodyLarge)
+                                if (password.isEmpty()) Text(stringResource(FolderJoinText.FIELD), color = c.secondaryText, style = MaterialTheme.typography.bodyLarge)
                                 inner()
                             }
                         },
                     )
                 }
                 Text(
-                    FolderJoinText.FOOTER, color = c.secondaryText, style = MaterialTheme.typography.bodySmall,
+                    stringResource(FolderJoinText.FOOTER), color = c.secondaryText, style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(horizontal = 4.dp),
                 )
             }

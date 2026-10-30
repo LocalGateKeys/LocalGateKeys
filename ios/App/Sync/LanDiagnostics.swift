@@ -1,6 +1,10 @@
 import Foundation
 import Network
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 // Why a LAN connection failed, and on which Wi-Fi subnet this phone is. Pure logic here; the sockets that
 // use it are in NWLanConnection.swift. Main app only (no UIKit: the e2e harness compiles this on macOS).

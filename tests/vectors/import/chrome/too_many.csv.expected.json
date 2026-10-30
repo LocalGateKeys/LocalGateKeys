@@ -1,0 +1,9 @@
+{
+  "error": {
+    "message": "At most 5,000 records per import",
+    "type": "format"
+  },
+  "format": "chrome",
+  "input": "tests/vectors/import/_inputs/too_many.csv",
+  "python_format": "chrome-csv"
+}

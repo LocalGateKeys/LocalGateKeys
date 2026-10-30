@@ -1,0 +1,99 @@
+{
+  "phrases": [
+    {
+      "entropy": "0000000000000000000000000000000000000000000000000000000000000000",
+      "phrase": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+    },
+    {
+      "entropy": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "phrase": "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo vote"
+    },
+    {
+      "entropy": "7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f",
+      "phrase": "legal winner thank year wave sausage worth useful legal winner thank year wave sausage worth useful legal winner thank year wave sausage worth title"
+    },
+    {
+      "entropy": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "phrase": "abandon amount liar amount expire adjust cage candy arch gather drum bullet absurd math era live bid rhythm alien crouch range attend journey unaware"
+    },
+    {
+      "entropy": "87c9774b05c3f50531c536902a95e1f97f6141d1de49187ec7cad6a4d6882551",
+      "phrase": "march entry spot argue dismiss little shove plug mother feed journey very voyage path electric since blur wage verify pull estate dune next cave"
+    },
+    {
+      "entropy": "3b1ba891501c840fb7b998ae461dedfd51b827c75d3e919fcea169af71d5b37f",
+      "phrase": "deposit tail cattle parent sign amazing ten credit purity couch kiwi wide breeze become buddy pond muscle wrist portion spy warfare turn social twist"
+    },
+    {
+      "entropy": "461f17630f1f49b5a17663849b0df56bec801976a7e801bab16705540d59a0a5",
+      "phrase": "ecology weather sugar bullet virus suspect magic small loyal such later style siege arrow surround wonder accuse stereo flush apple dolphin proud little position"
+    },
+    {
+      "entropy": "cbe83f4a52807729fb71c2d2ca04790e78f357fa9c5d36e846ba1ad0de825e72",
+      "phrase": "slogan draft spoon pink alter neutral universe debate spot expand bundle brother monkey program tuna merry dad drama purse cup assume donkey keep galaxy"
+    },
+    {
+      "entropy": "755e67ce48278dd489b2220337c6ffd1f0694032aeda70b5fbfd61ec2501eb00",
+      "phrase": "inspire veteran vicious motion juice tumble chat dust add sail say physical alley parade skirt swap idle quit young sense seat liberty project apart"
+    },
+    {
+      "entropy": "bf4ec9a7d6c6e2c9bebe8e00edcf9fa5612f77e6565537ba7ed77f0205fa4eb3",
+      "phrase": "satisfy iron hazard pulse hotel gospel wife spike abstract hover tree enlist base room off skirt dash stadium remind wrap cake wood depart increase"
+    },
+    {
+      "entropy": "037ad49adfecf9351d5ea86c24d61d9128bcd0e70fa4df204bcbce4967b78f1a",
+      "phrase": "address stove chase save sort once install steak history chase manual car mesh half order virus tennis across very orient nose swift detect foot"
+    },
+    {
+      "entropy": "7422f1a438eaf1dd59e7b14bd87d8d0e89812b1d1412c76c2083bff3ed7a4f9b",
+      "phrase": "injury bleak harbor impact pyramid upgrade guide wage envelope sentence globe brown object night inmate liquid shuffle genre can lend disagree rule dinosaur hover"
+    }
+  ],
+  "typed": {
+    "23 words": {
+      "error": "A recovery phrase has exactly 24 words",
+      "input": "march entry spot argue dismiss little shove plug mother feed journey very voyage path electric since blur wage verify pull estate dune next"
+    },
+    "25 words": {
+      "error": "A recovery phrase has exactly 24 words",
+      "input": "march entry spot argue dismiss little shove plug mother feed journey very voyage path electric since blur wage verify pull estate dune next cave march"
+    },
+    "bad checksum": {
+      "error": "The recovery phrase checksum does not match; check the word order",
+      "input": "entry march spot argue dismiss little shove plug mother feed journey very voyage path electric since blur wage verify pull estate dune next cave"
+    },
+    "capitals": {
+      "entropy": "87c9774b05c3f50531c536902a95e1f97f6141d1de49187ec7cad6a4d6882551",
+      "input": "March ENTRY Spot ARGUE Dismiss LITTLE Shove PLUG Mother FEED Journey VERY Voyage PATH Electric SINCE Blur WAGE Verify PULL Estate DUNE Next CAVE"
+    },
+    "empty": {
+      "error": "A recovery phrase has exactly 24 words",
+      "input": ""
+    },
+    "extra spaces": {
+      "entropy": "87c9774b05c3f50531c536902a95e1f97f6141d1de49187ec7cad6a4d6882551",
+      "input": "  march   entry   spot   argue   dismiss   little   shove   plug   mother   feed   journey   very   voyage   path   electric   since   blur   wage   verify   pull   estate   dune   next   cave  "
+    },
+    "fullwidth": {
+      "entropy": "87c9774b05c3f50531c536902a95e1f97f6141d1de49187ec7cad6a4d6882551",
+      "input": "ｍａｒｃｈ entry spot argue dismiss little shove plug mother feed journey very voyage path electric since blur wage verify pull estate dune next cave"
+    },
+    "non-breaking spaces": {
+      "entropy": "87c9774b05c3f50531c536902a95e1f97f6141d1de49187ec7cad6a4d6882551",
+      "input": "march entry spot argue dismiss little shove plug mother feed journey very voyage path electric since blur wage verify pull estate dune next cave"
+    },
+    "tabs and newlines": {
+      "entropy": "87c9774b05c3f50531c536902a95e1f97f6141d1de49187ec7cad6a4d6882551",
+      "input": "\tmarch entry spot argue dismiss little\nshove plug mother feed journey very\nvoyage path electric since blur wage\nverify pull estate dune next cave\r\n"
+    },
+    "too long": {
+      "error": "The recovery phrase is malformed",
+      "input": "march entry spot argue dismiss little shove plug mother feed journey very voyage path electric since blur wage verify pull estate dune next cave                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    "
+    },
+    "unknown word": {
+      "error": "The recovery phrase contains a word that is not in the word list",
+      "input": "notaword entry spot argue dismiss little shove plug mother feed journey very voyage path electric since blur wage verify pull estate dune next cave"
+    }
+  },
+  "word_list_sha256": "2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2ed3b24dbda"
+}

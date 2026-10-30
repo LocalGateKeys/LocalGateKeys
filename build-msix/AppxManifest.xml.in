@@ -113,6 +113,15 @@
             <uap:DisplayName>@DISPLAY_NAME@</uap:DisplayName>
           </uap:Protocol>
         </uap:Extension>
+        <!-- Shared items (.lgkshare) open in the app (localvault.share_open); the inbox checks them. -->
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="lgkshare">
+            <uap:DisplayName>LocalGateKeys shared item</uap:DisplayName>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.lgkshare</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
         <!-- The Chromium/Firefox native-messaging host. Browsers launch it through
              %LOCALAPPDATA%\Microsoft\WindowsApps\<family name>\LocalGateKeysNativeHost.exe,
              which survives package updates and gives the host package identity.

@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Wrong password or corrupted export (MAC mismatch)",
+    "type": "wrong_password"
+  },
+  "format": "bitwardenEncrypted",
+  "input": "tests/vectors/import/_inputs/bitwarden_argon2.json",
+  "password": "wrong argon password",
+  "python_format": "bitwarden-encrypted-json"
+}

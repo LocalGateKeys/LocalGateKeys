@@ -1,5 +1,7 @@
 package app.localgatekeys.android.editor
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.Txt
 import app.localgatekeys.core.records.Origin
 import app.localgatekeys.core.records.OriginException
 
@@ -8,7 +10,8 @@ sealed interface WebsiteInputError {
     /** Desktop web logins always have an origin (`Normalise.entry` refuses an empty one). */
     data object Required : WebsiteInputError
 
-    data class Invalid(val message: String) : WebsiteInputError
+    /** [http] true: a plain http:// address on a public host; otherwise just not a website. */
+    data class Invalid(val http: Boolean) : WebsiteInputError
 
     data object NeedsPunycode : WebsiteInputError
 }
@@ -21,9 +24,12 @@ class WebsiteInputException(val error: WebsiteInputError) : Exception(error.toSt
  * scheme is given, and drop any path, query or fragment. Port of `ios/App/Editor/WebsiteInput.swift`.
  */
 object WebsiteInput {
-    const val REQUIRED_MESSAGE = "Website is required"
-    const val INVALID_MESSAGE = "Enter a website like github.com"
-    const val HTTP_MESSAGE = "Use https:// for this website. Plain http:// works only for localhost."
+    /** The text under the Website field for [error]; null for [WebsiteInputError.NeedsPunycode] (the editor words that itself). */
+    fun message(error: WebsiteInputError, t: Txt): String? = when (error) {
+        WebsiteInputError.Required -> t.s(R.string.website_required)
+        is WebsiteInputError.Invalid -> t.s(if (error.http) R.string.website_http_message else R.string.website_invalid)
+        WebsiteInputError.NeedsPunycode -> null
+    }
 
     /** ASCII characters that may appear in what is typed for the host and port. */
     private val hostChars: Set<Char> =
@@ -45,13 +51,13 @@ object WebsiteInput {
     fun origin(text: String): String {
         var t = trimmed(text)
         if (t.isEmpty()) throw WebsiteInputException(WebsiteInputError.Required)
-        if (t.codePoints().anyMatch { isWhiteSpace(it) || it < 0x20 || it == 0x7F }) throw invalid(INVALID_MESSAGE)
+        if (t.codePoints().anyMatch { isWhiteSpace(it) || it < 0x20 || it == 0x7F }) throw invalid(false)
         if (!t.contains("://")) t = "https://" + (if (t.startsWith("//")) t.substring(2) else t)
         val sep = t.indexOf("://")
-        if (sep < 0) throw invalid(INVALID_MESSAGE)
+        if (sep < 0) throw invalid(false)
         val rest = t.substring(sep + 3)
         val authority = rest.takeWhile { it != '/' && it != '?' && it != '#' }
-        if (authority.any { it.code < 0x80 && it !in hostChars }) throw invalid(INVALID_MESSAGE)
+        if (authority.any { it.code < 0x80 && it !in hostChars }) throw invalid(false)
         val candidate = t.substring(0, sep + 3) + authority
         return try {
             Origin.canonicalize(candidate)
@@ -60,12 +66,12 @@ object WebsiteInput {
                 OriginException.Kind.NEEDS_PUNYCODE -> throw WebsiteInputException(WebsiteInputError.NeedsPunycode)
                 // canonicalize's own wording for http on a public host; every other refusal gets the plain hint.
                 OriginException.Kind.INVALID ->
-                    throw invalid(if ((e.message ?: "").startsWith("Plain HTTP")) HTTP_MESSAGE else INVALID_MESSAGE)
+                    throw invalid((e.message ?: "").startsWith("Plain HTTP"))
             }
         } catch (e: Exception) {
-            throw invalid(INVALID_MESSAGE)
+            throw invalid(false)
         }
     }
 
-    private fun invalid(message: String) = WebsiteInputException(WebsiteInputError.Invalid(message))
+    private fun invalid(http: Boolean) = WebsiteInputException(WebsiteInputError.Invalid(http))
 }

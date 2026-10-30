@@ -14,6 +14,7 @@ from localvault.app.controller import WebController
 from localvault.app.login_editor import LoginEditorService
 from localvault.app.login_extras import LoginExtrasService
 from localvault.app.sync import CONFIRM_SYNC, SyncWebService
+from localvault.i18n import t
 from localvault.app.transfer_web import TransferService
 from localvault.profiles import ProfileManager
 from localvault.secret_text import SecretText
@@ -109,7 +110,7 @@ def test_handing_the_vault_to_a_folder_asks_for_the_master_password(sync, action
     run = _folder_actions(sync.service)[action]
     with pytest.raises(ApiError) as cancelled:
         run(sync.service.choose_folder()["token"])
-    assert cancelled.value.code == "cancelled" and sync.port.asked == [CONFIRM_SYNC]
+    assert cancelled.value.code == "cancelled" and sync.port.asked == [t(CONFIRM_SYNC)]
     assert job not in sync.calls and sync.fake.jobs == [] and sync.hellos == []
     sync.port.passwords = ["not the master password"]
     with pytest.raises(ApiError) as wrong:
@@ -149,7 +150,7 @@ def test_arming_a_pairing_code_asks_for_the_master_password(sync, monkeypatch):
     monkeypatch.setattr("localvault.sync.pairing.render_qr_png", lambda payload, scale=6: b"x")
     with pytest.raises(ApiError) as cancelled:
         sync.service.qr_show()
-    assert cancelled.value.code == "cancelled" and sync.port.asked == [CONFIRM_SYNC]
+    assert cancelled.value.code == "cancelled" and sync.port.asked == [t(CONFIRM_SYNC)]
     assert sync.fake.armed == [] and sync.fake.jobs == [] and sync.hellos == []
     sync.port.passwords = [MASTER]
     assert sync.service.qr_show()["code"] == "123-456" and sync.fake.armed == ["o1"]

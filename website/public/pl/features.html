@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Funkcje | LocalGateKeys</title>
+  <meta name="description" content="Co robi LocalGateKeys, edycja po edycji: zaszyfrowany sejf, wypełnianie w przeglądarce i na pulpicie, klucze dostępu, Windows Hello, kody dwuskładnikowe, importy, kopie zapasowe i synchronizacja urządzeń.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/pl/features">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/features">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/features">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/features">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/features">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/features">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/features">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/features">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/features">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/features">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/features">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/features">
+  <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../brand/icon-256.png">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">Przejdź do treści</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../pl/index.html">
+        <img src="../brand/icon.svg" alt="" width="36" height="36">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav aria-label="Główne">
+        <ul class="nav">
+          <li><a href="../pl/features.html" aria-current="page">Funkcje</a></li>
+          <li><a href="../pl/pricing.html">Cennik</a></li>
+          <li><a href="../pl/security.html">Bezpieczeństwo</a></li>
+          <li><a href="../pl/get-started.html">Pierwsze kroki</a></li>
+          <li><a href="../pl/help.html">Przewodnik</a></li>
+          <li><a href="../pl/download.html">Pobierz</a></li>
+          <li><a href="../pl/support.html">Wsparcie</a></li>
+          <li><a href="../buy.html">Kup Pro</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Wszystko, co robi, i gdzie to robi</h1>
+  <p class="lead">To wszystko działa na Twoich własnych urządzeniach. Free mieści do 4 elementów; <a href="../pl/pricing.html">Pro</a> znosi limit i dodaje synchronizację, kody dwuskładnikowe oraz dokumenty.</p>
+</div>
+<div class="wrap">
+  <figure class="shot"><picture><source srcset="../screenshots/home-vault-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/home-vault-dark.webp" width="2880" height="1800" alt="Strona główna LocalGateKeys: kondycja haseł, nadchodzące przypomnienia, karta kodów jednorazowych z bieżącymi kodami dwuskładnikowymi i lista loginów z logo witryn." loading="lazy" decoding="async"></picture><figcaption>Strona główna: kondycja haseł, przypomnienia, bieżące kody dwuskładnikowe i Twoje elementy. Sejf demonstracyjny z wymyślonymi kontami.</figcaption></figure>
+</div>
+
+<div class="wrap page-body">
+  <section class="feature-group" aria-labelledby="f-vault">
+    <h2 id="f-vault">Sejf</h2>
+    <dl>
+      <div><dt>Zaszyfrowany na Twoim dysku</dt><dd>Wszystko, co zapiszesz, jest szyfrowane kluczem chronionym Twoim hasłem głównym, przy użyciu Argon2id i AES-256-GCM. Szyfrowane są też nazwy, nazwy użytkowników i witryny, nie tylko hasła.</dd></div>
+      <div><dt>Nie tylko hasła</dt><dd>Loginy do witryn i aplikacji pulpitowych, klucze dostępu, karty płatnicze, konta bankowe, tożsamości, bezpieczne notatki, dokumenty, klucze SSH, klucze API, sieci Wi-Fi, zakładki, licencje oprogramowania, subskrypcje, gwarancje i zakupy, każdy z własnymi polami.</dd></div>
+      <div><dt>Dokumenty (Pro)</dt><dd>Trzymaj w sejfie pliki, na przykład zeskanowane dokumenty, do 25 MB każdy. Każdy plik jest szyfrowany własnym kluczem. Dokument możesz podejrzeć, zapisać jego kopię lub otworzyć w innej aplikacji.</dd></div>
+      <div><dt>Kody dwuskładnikowe (Pro)</dt><dd>Zapisz klucz konfiguracyjny witryny, a LocalGateKeys pokaże bieżący kod na górze loginu oraz na karcie Kody jednorazowe na stronie głównej. Kody zgodne są ze standardem TOTP (RFC 6238): 6 do 8 cyfr, 15 do 120 sekund, SHA-1, SHA-256 lub SHA-512.</dd></div>
+      <div><dt>Dodaj kod z kodu QR</dt><dd>Zrób wycinek kodu QR ze strony konfiguracji dwuskładnikowej witryny za pomocą Win+Shift+S i wklej go albo przytrzymaj przed kamerą internetową. Działa też kod QR z eksportu Google Authenticator. Obraz jest odczytywany na Twoim komputerze i nigdy nie jest zapisywany.</dd></div>
+      <div><dt>Generator haseł</dt><dd>Losowe hasła o długości od 8 do 256 znaków lub frazy hasłowe z 3 do 16 słów.</dd></div>
+      <div><dt>Kondycja haseł</dt><dd>Zobacz, które zapisane hasła są słabe, powtarzane, starsze niż rok lub bez kodu dwuskładnikowego. Sprawdzanie wycieków w Have I Been Pwned jest wyłączone, dopóki go nie włączysz, działa tylko wtedy, gdy je uruchomisz, i wysyła tylko pięć znaków skrótu, nigdy hasło.</dd></div>
+      <div><dt>Logo witryn i ikony rodzajów</dt><dd>Każdy element pokazuje ikonę witryny, wbudowane logo znanych witryn lub ikonę swojego rodzaju, więc łatwo go wypatrzyć.</dd></div>
+      <div><dt>Wyszukiwanie i kolekcje</dt><dd>Znajduj elementy za pomocą palety poleceń (Ctrl+K), filtrów, ulubionych i własnych kolekcji. Strzałki, Enter i Ctrl+C działają na liście elementów prosto z pola wyszukiwania.</dd></div>
+      <div><dt>Kosz i cofanie</dt><dd>Usunięte elementy trafiają do kosza, a komunikat, który to potwierdza, ma przycisk Cofnij. Kosz opróżnia się sam po 30 dniach albo trzyma wszystko, dopóki go nie opróżnisz.</dd></div>
+      <div><dt>Historia haseł</dt><dd>Gdy hasło loginu się zmieni, pięć ostatnich starych haseł zostaje w jego zaszyfrowanej historii.</dd></div>
+    </dl>
+    <div class="shots">
+      <figure class="shot"><picture><source srcset="../screenshots/item-2fa-code-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/item-2fa-code-dark.webp" width="2880" height="1800" alt="Login GitHub otwarty w LocalGateKeys, z bieżącym kodem dwuskładnikowym na górze, a niżej nazwą użytkownika, ukrytym hasłem, witryną, notatkami i kodami odzyskiwania." loading="lazy" decoding="async"></picture><figcaption>Bieżący kod dwuskładnikowy znajduje się na górze loginu.</figcaption></figure>
+      <figure class="shot"><picture><source srcset="../screenshots/generator-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/generator-dark.webp" width="2880" height="1800" alt="Generator haseł z losowym 20-znakowym hasłem i opcjami długości, liter, cyfr i symboli." loading="lazy" decoding="async"></picture><figcaption>Generator tworzy losowe hasła lub frazy hasłowe.</figcaption></figure>
+      <figure class="shot"><picture><source srcset="../screenshots/security-center-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/security-center-dark.webp" width="2880" height="1800" alt="Centrum bezpieczeństwa z wynikiem 77 na 100, ze słabymi, powtarzanymi, pozbawionymi kodu dwuskładnikowego i starymi hasłami do przejrzenia oraz kontrolami odblokowania i kopii zapasowych." loading="lazy" decoding="async"></picture><figcaption>Centrum bezpieczeństwa pokazuje, co poprawić najpierw.</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-move">
+    <h2 id="f-move">Przenoszenie do sejfu i z niego</h2>
+    <dl>
+      <div><dt>Import z innych menedżerów haseł</dt><dd>Wczytaj eksporty z 1Password, Bitwarden, LastPass, Dashlane, Proton Pass, KeePass i KeePassXC (także pliki <code>.kdbx</code>), Chrome, Edge, Brave, Firefox i Safari albo dowolny inny plik CSV. Każdy element przeglądasz, zanim cokolwiek zostanie zapisane, a import nigdy nie łączy się z internetem.</dd></div>
+      <div><dt>Eksport</dt><dd>Eksportuj do zaszyfrowanego pliku KeePass KDBX 4, do pliku CSV lub JSON zgodnego z Bitwarden albo do KeePass XML. Każdy eksport najpierw prosi o Twoje hasło główne.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-fill">
+    <h2 id="f-fill">Wypełnianie logowań</h2>
+    <dl>
+      <div><dt>Rozszerzenie do Chrome i Edge</dt><dd>Wypełniaj i zapisuj loginy na stronach, także gdy logowanie prosi o nazwę użytkownika i hasło na osobnych stronach. Rozszerzenie pyta aplikację na Twoim komputerze, przez lokalnego pomocnika, o loginy pasujące do dokładnej witryny. Wypełnia też kody dwuskładnikowe, adresy i karty płatnicze.</dd></div>
+      <div><dt>Monity zapisu pod Twoją kontrolą</dt><dd>Po zalogowaniu rozszerzenie proponuje zapisanie nowego loginu lub zaktualizowanie zmienionego hasła. Monit możesz wyłączyć dla dowolnej witryny przyciskiem na pasku narzędzi.</dd></div>
+      <div><dt>Każde wypełnienie zaczynasz Ty</dt><dd>Nic nie jest wypełniane, dopóki nie wybierzesz konta. Formularze nie są wysyłane za Ciebie, chyba że włączysz w Ustawieniach „Zaloguj po wypełnieniu”, i to tylko po wypełnieniu, które zostało rozpoczęte przez Ciebie.</dd></div>
+      <div><dt>Klucze dostępu</dt><dd>Gdy witryna w Chrome lub Edge oferuje klucz dostępu, LocalGateKeys może zapisać go w sejfie i za jego pomocą Cię zalogować. Każdy klucz dostępu zatwierdzasz w aplikacji na pulpicie, przez Windows Hello lub hasło główne, a własne okno kluczy dostępu przeglądarki jest zawsze o jedno kliknięcie dalej. Klucz prywatny nigdy nie opuszcza aplikacji.</dd></div>
+      <div><dt>Wypełnianie w aplikacjach Windows</dt><dd>Wypełniaj okna logowania programów Windows przyciskiem obok pola hasła lub skrótem klawiszowym (Ctrl+Shift+Spacja). Każda aplikacja jest powiązana raz, a wypełnienie jest odrzucane, jeśli program, jego okno lub pola zmieniły się od tamtej pory.</dd></div>
+      <div><dt>Szybki dostęp</dt><dd>Przeszukuj sejf i kopiuj z dowolnego miejsca skrótem klawiszowym (domyślnie Ctrl+Alt+K). Ctrl+Alt+L natychmiast blokuje sejf.</dd></div>
+      <div><dt>Żadnego keyloggingu, nigdy</dt><dd>LocalGateKeys nie instaluje haka klawiatury, nie odczytuje zawartości ekranu, by znaleźć hasła, i niczego nie wstrzykuje do innych programów. Jeśli aplikacja nie udostępnia właściwych pól logowania, nie jest wypełniana.</dd></div>
+    </dl>
+    <figure class="shot shot-small"><img src="../screenshots/browser-fill.webp" width="480" height="540" alt="Strona logowania z rozszerzeniem LocalGateKeys, które proponuje dwa zapisane konta dla tej witryny." loading="lazy" decoding="async"><figcaption>Rozszerzenie proponuje tylko loginy zapisane dla witryny, na której jesteś.</figcaption></figure>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-unlock">
+    <h2 id="f-unlock">Odblokowywanie</h2>
+    <dl>
+      <div><dt>Hasło główne</dt><dd>Co najmniej 12 znaków, nigdy niezapisywane na dysku. To jedyna rzecz, która otwiera Twój sejf, i nie możemy jej zresetować.</dd></div>
+      <div><dt>Windows Hello</dt><dd>Odblokowuj odciskiem palca, twarzą lub PIN-em przez Windows Hello, po skonfigurowaniu go w LocalGateKeys.</dd></div>
+      <div><dt>Kontrola kamerą</dt><dd>Opcjonalna kontrola twarzy kamerą internetową dla komputerów bez Windows Hello. To wygoda, a nie certyfikowana ochrona przed podszywaniem się; jeśli możesz, wybieraj Windows Hello.</dd></div>
+      <div><dt>Fraza odzyskiwania</dt><dd>Opcjonalna 24-wyrazowa fraza, która może otworzyć sejf, jeśli zapomnisz hasła głównego. Jest pokazywana raz i aplikacja nigdy jej nie przechowuje.</dd></div>
+      <div><dt>Automatyczna blokada i czyszczenie schowka</dt><dd>Sejf blokuje się po wybranym przez Ciebie czasie, a skopiowane hasła są usuwane ze schowka. Usuwane jest tylko to, co skopiował LocalGateKeys.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-backup">
+    <h2 id="f-backup">Kopie zapasowe</h2>
+    <dl>
+      <div><dt>Zaplanowane zaszyfrowane kopie zapasowe</dt><dd>Codziennie lub co tydzień, o ustawionej przez Ciebie porze. Każda kopia zapasowa to pełny zaszyfrowany plik, sprawdzany po zapisie, z załącznikami.</dd></div>
+      <div><dt>Dodatkowa kopia w wybranym folderze</dt><dd>Każda kopia zapasowa może być kopiowana do folderu OneDrive, Google Drive, Dropbox lub Proton Drive albo gdziekolwiek indziej. Kopiowane są tylko zaszyfrowane pliki kopii zapasowych, nigdy działający sejf.</dd></div>
+      <div><dt>Zaszyfrowane paczki transferowe</dt><dd>Przenoś wybrane elementy do innego sejfu w zaszyfrowanym pliku chronionym własnym hasłem.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-sync">
+    <h2 id="f-sync">Synchronizacja między urządzeniami (Pro)</h2>
+    <dl>
+      <div><dt>Przez domowe Wi-Fi</dt><dd>Sparuj komputer raz za pomocą jednorazowego kodu QR (między komputerami wklejasz jego tekst). Gdy oba są odblokowane i w tej samej sieci, wymieniają zmiany bezpośrednio, uwierzytelnionym, szyfrowanym połączeniem. Nic nie przechodzi przez internet.</dd></div>
+      <div><dt>Przez własny folder w chmurze</dt><dd>Jeśli Twoje komputery rzadko bywają w tej samej sieci, synchronizuj przez folder OneDrive, Dropbox, Google Drive lub iCloud Drive, którego już używasz, chroniony hasłem synchronizacji. Dostawca przechowuje wyłącznie zaszyfrowane pliki. Możesz używać obu dróg.</dd></div>
+      <div><dt>Co się synchronizuje</dt><dd>Loginy do witryn i aplikacji pulpitowych oraz inne elementy, takie jak notatki i zakładki. Kolekcje, dokumenty i załączniki nie synchronizują się jeszcze. Zmiany wprowadzone na dwóch komputerach naraz zachowują obie wersje, a usunięcie przenosi element do kosza na pozostałych komputerach.</dd></div>
+      <div><dt>iPhone</dt><dd>Aplikacja na iPhone'a synchronizuje się z Twoim komputerem z Windows. <a href="https://apps.apple.com/app/id6825488435">Pobierz ją z App Store</a>.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-privacy">
+    <h2 id="f-privacy">Prywatność</h2>
+    <dl>
+      <div><dt>Bez konta</dt><dd>Nigdy się nie rejestrujesz ani nie logujesz. Licencja Pro to klucz, który przechowujesz i który jest sprawdzany na Twoim komputerze.</dd></div>
+      <div><dt>Bez telemetrii</dt><dd>Aplikacja nie wysyła danych o użyciu, raportów o awariach ani analityki.</dd></div>
+      <div><dt>Ścisły tryb offline</dt><dd>Włączony domyślnie. Blokuje żądania internetowe w tle i sprawdzanie wycieków, a przed sprawdzeniem aktualizacji aplikacja pyta Cię o zgodę.</dd></div>
+      <div><dt>Ikony witryn na Twoje życzenie</dt><dd>Aby pokazać ikonę witryny, aplikacja pobiera ją z tej witryny. Witryna dowiaduje się wtedy, że masz tam konto, i niczego więcej. Domyślnie jest to wyłączone: włącz „Pokazuj ikony stron” w Ustawieniach (ścisły tryb offline musi być wyłączony).</dd></div>
+      <div><dt>Sprawdzanie aktualizacji uruchamiane przez Ciebie</dt><dd>Sprawdzanie aktualizacji pobiera jeden mały podpisany plik. Aplikacja nigdy sama niczego nie pobiera ani nie instaluje.</dd></div>
+    </dl>
+  </section>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand">LocalGateKeys</p>
+        <p>Menedżer haseł dla Windows, który trzyma Twój sejf na Twoich urządzeniach.</p>
+        <p class="quiet">Ta strona nie ustawia plików cookie, nie używa analityki i nie ładuje niczego od innych firm.</p>
+      </div>
+      <nav aria-label="Produkt">
+        <h2>Produkt</h2>
+        <ul>
+          <li><a href="../pl/features.html">Funkcje</a></li>
+          <li><a href="../pl/pricing.html">Cennik</a></li>
+          <li><a href="../pl/download.html">Pobierz</a></li>
+          <li><a href="../pl/licence.html">Twoja licencja Pro</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Pomoc">
+        <h2>Pomoc</h2>
+        <ul>
+          <li><a href="../pl/help.html">Przewodnik</a></li>
+          <li><a href="../pl/support.html">Wsparcie i FAQ</a></li>
+          <li><a href="../pl/security.html">Bezpieczeństwo</a></li>
+          <li><a href="../legal/vulnerability-disclosure.html">Zgłoś lukę w zabezpieczeniach</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Prawne">
+        <h2>Prawne</h2>
+        <p class="quiet">Te dokumenty są w języku angielskim, a obowiązuje i jest wiążąca wersja angielska.</p>
+        <ul>
+          <li><a href="../legal/eula.html">Umowa licencyjna</a></li>
+          <li><a href="../legal/privacy.html">Polityka prywatności</a></li>
+          <li><a href="../legal/terms-of-sale.html">Warunki sprzedaży</a></li>
+          <li><a href="../legal/refunds.html">Polityka zwrotów</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base">
+      <p>&copy; 2026 Ilias Pelekas. Kontakt: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows jest znakiem towarowym grupy firm Microsoft. Chrome jest znakiem towarowym Google LLC.</p>
+      <p class="lang-switch" role="navigation" aria-label="Język"><a href="../features.html" hreflang="en" lang="en">English</a> · <a href="../es/features.html" hreflang="es" lang="es">Español</a> · <a href="../it/features.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/features.html" hreflang="pl" lang="pl" aria-current="true">Polski</a> · <a href="../zh-hans/features.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../ja/features.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/features.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/features.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/features.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/features.html" hreflang="nl" lang="nl">Nederlands</a></p>
+    </div>
+  </footer>
+</body>
+</html>

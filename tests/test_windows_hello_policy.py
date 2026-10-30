@@ -50,14 +50,17 @@ def setup_unwrap(obj):
 
 def test_private_decryption_requires_silent_failure_first(native):
     obj, _ = native; setup_unwrap(obj); calls = []
-    def crypt(_key, _data, *, decrypt, silent=False):
-        calls.append(silent); assert decrypt
+    def crypt(_key, _data, *, decrypt, silent=False, oaep_hash="SHA256"):
+        calls.append((silent, oaep_hash)); assert decrypt
         if silent:
             raise NativeError("decrypt", NTE_SILENT_CONTEXT)
         return bytearray(b"S" * 32)
     obj._crypt = crypt
     assert obj.unwrap("a" * 32, b"c" * 256, 123) == bytearray(b"S" * 32)
-    assert calls == [True, False]
+    assert calls == [(True, "SHA256"), (False, "SHA256")]
+    calls.clear()
+    assert obj.unwrap("a" * 32, b"c" * 256, 123, "SHA1") == bytearray(b"S" * 32)
+    assert calls == [(True, "SHA1"), (False, "SHA1")]
 
 
 def test_silent_success_is_wiped_and_never_authorizes(native):

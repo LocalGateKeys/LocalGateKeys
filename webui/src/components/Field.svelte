@@ -1,5 +1,7 @@
 <script>
   /** Label-left field row. type="password" gets a Show/Hide toggle. */
+  import { t } from '../lib/i18n.svelte.js';
+
   let {
     label,
     value = $bindable(''),
@@ -38,7 +40,7 @@
   />
   {#if type === 'password'}
     <button type="button" class="reveal" onclick={() => (revealed = !revealed)}>
-      {revealed ? 'Hide' : 'Show'}
+      {revealed ? t('field.hide') : t('field.show')}
     </button>
   {/if}
 </div>

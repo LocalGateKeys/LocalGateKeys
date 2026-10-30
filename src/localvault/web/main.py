@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from ..i18n import t
 
 _log = logging.getLogger(__name__)
 # How long a page may take to load before the window is closed rather than run unlocked.
@@ -70,7 +71,11 @@ def run() -> None:
         repair_start_with_windows()
     bus = EventBus()
     port = WebUiPort(bus)
-    controller = WebController(profiles=profiles, settings=AppSettings.load(), bus=bus)
+    settings = AppSettings.load()
+    from .. import i18n
+
+    i18n.set_language(i18n.resolve(settings.language, i18n.os_locale()))
+    controller = WebController(profiles=profiles, settings=settings, bus=bus)
     controller.on_lock.append(port.cancel_all)
     controller.startup = startup
     startup.on_ready.append(controller._publish)
@@ -134,7 +139,7 @@ def run() -> None:
     webview.settings["ALLOW_FILE_URLS"] = False
     # The small popup a fill started outside the app uses (classic compact unlock and account choice).
     popup_window = webview.create_window(
-        "Unlock LocalGateKeys", url=str(index.with_name("popup.html")), js_api=js_api, width=460, height=620,
+        t("main.unlockLocalgatekeys"), url=str(index.with_name("popup.html")), js_api=js_api, width=460, height=620,
         resizable=False, on_top=True, hidden=True, background_color="#0C1424",
         text_select=False,
     )
@@ -169,9 +174,29 @@ def run() -> None:
         controller._publish()
         host.show_main_window()
         host.raise_window()
-        host.set_status("Pro licence installed.")
+        host.set_status(t("main.proLicenceInstalled"))
 
     watch_for_installs(licence_installed_elsewhere)
+    from .. import share_open
+
+    def open_shared_files() -> None:
+        # A .lgkshare file was double-clicked: show the window; once unlocked, take it into the inbox.
+        if not share_open.has_pending():
+            return
+        host.show_main_window()
+        host.raise_window()
+        arrived, refused = host.run_on_ui(
+            lambda: share_open.receive_pending(controller.is_unlocked, api._share.receive_file))
+        if refused:
+            host.set_status(refused, "error")
+        if arrived:
+            host.post(lambda: host._navigate("incoming"))
+
+    share_open.watch(open_shared_files)
+    import threading
+
+    controller.on_unlock.append(lambda: threading.Thread(target=open_shared_files, name="share-open-unlock",
+                                                         daemon=True).start())
     window = webview.create_window(
         BRAND_NAME, url=str(index), js_api=js_api, width=1180, height=760, min_size=(900, 600),
         background_color="#0C1424", text_select=False, hidden=background,

@@ -1,5 +1,8 @@
 package app.localgatekeys.android.editor
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.Txt
+import androidx.annotation.StringRes
 import app.localgatekeys.android.pro.ItemLimit
 import app.localgatekeys.android.pro.ProFeatures
 import app.localgatekeys.android.vault.VaultItem
@@ -10,7 +13,9 @@ import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.primitives.RandomSource
 import app.localgatekeys.core.primitives.UnixClock
 import app.localgatekeys.core.records.Normalise
+import app.localgatekeys.core.records.Origin
 import app.localgatekeys.core.records.NormaliseException
+import app.localgatekeys.core.records.PasswordHistory
 import app.localgatekeys.core.records.SyncMeta
 import app.localgatekeys.core.records.Wrapper
 import app.localgatekeys.core.sync.ItemStore
@@ -36,6 +41,8 @@ data class EditorState(
     val websiteError: String? = null,
     /** Inline error for the Amount field. */
     val amountError: String? = null,
+    /** [totpError] is the "needs Pro" message (compared by this flag, never by its translated text). */
+    val totpErrorIsPro: Boolean = false,
     val showUpgrade: Boolean = false,
     /** Delete found the item gone already (a sync removed it): the screen says so and closes. */
     val alreadyRemoved: Boolean = false,
@@ -60,6 +67,9 @@ class EditorModel(
     private val isPro: () -> Boolean,
     private val clock: UnixClock,
     private val random: RandomSource,
+    private val t: Txt,
+    /** A restored draft's form (EditorDraft): shown instead of the record's values. */
+    initialValues: Map<String, String>? = null,
 ) {
     val kind: EditorKind = existing?.let { EditorKind.of(it.kind) } ?: kind
     val isNew: Boolean = existing == null
@@ -68,13 +78,16 @@ class EditorModel(
     /** The record as stored, untouched, so an unchanged save writes nothing. */
     private val original: Map<String, JsonValue>? = existing?.record
 
-    private val _state = MutableStateFlow(EditorState(original?.let { values(it, this.kind) } ?: this.kind.defaults()))
+    private val _state = MutableStateFlow(
+        EditorState(initialValues ?: original?.let { values(it, this.kind) } ?: this.kind.defaults()),
+    )
     val state: StateFlow<EditorState> = _state.asStateFlow()
 
     val values: Map<String, String> get() = _state.value.values
     val error: String? get() = _state.value.error
     val needsPunycode: Boolean get() = _state.value.needsPunycode
     val totpError: String? get() = _state.value.totpError
+    val totpErrorIsPro: Boolean get() = _state.value.totpErrorIsPro
     val websiteError: String? get() = _state.value.websiteError
     val amountError: String? get() = _state.value.amountError
     val showUpgrade: Boolean get() = _state.value.showUpgrade
@@ -85,13 +98,17 @@ class EditorModel(
     /** Free plan: an existing 2FA code stays (and can be cleared); adding or changing one needs Pro. */
     val totpNeedsPro: Boolean get() = kind == EditorKind.WEB && !isPro()
 
+    /** The form as an unsaved draft (Task 6), stamped [now]. */
+    fun draft(now: Long): EditorDraft =
+        EditorDraft(kind, id, original?.let { EditorDraft.recordHash(it) }, _state.value.values, now)
+
     fun value(key: String): String = _state.value.values[key] ?: ""
 
     fun set(key: String, v: String) {
         _state.update { s ->
             var n = s.copy(values = s.values + (key to v), error = null)
             if (key == "origin" || key == "url") n = n.copy(needsPunycode = false, websiteError = null)
-            if (key == "totp") n = n.copy(totpError = null)
+            if (key == "totp") n = n.copy(totpError = null, totpErrorIsPro = false)
             if (key == "amount_minor" || key == "currency") n = n.copy(amountError = null)
             n
         }
@@ -107,20 +124,20 @@ class EditorModel(
     fun scanTotp(code: String) {
         val text = WebsiteInput.trimmed(code)
         val lower = text.lowercase()
-        if (lower.startsWith("otpauth-migration:")) return setTotpError(MIGRATION_QR_MESSAGE)
+        if (lower.startsWith("otpauth-migration:")) return setTotpError(t.s(R.string.editor_migration_qr))
         try {
-            if (Totp.parseField(text) == null) return setTotpError(NOT_TOTP_QR_MESSAGE)
+            if (Totp.parseField(text) == null) return setTotpError(t.s(R.string.editor_not_totp_qr))
             set("totp", text)
         } catch (e: TotpException) {
-            setTotpError(if (lower.startsWith("otpauth")) Totp.message(e) else NOT_TOTP_QR_MESSAGE)
+            setTotpError(if (lower.startsWith("otpauth")) TotpText.message(e, t) else t.s(R.string.editor_not_totp_qr))
         } catch (e: Exception) {
-            setTotpError(NOT_TOTP_QR_MESSAGE)
+            setTotpError(t.s(R.string.editor_not_totp_qr))
         }
     }
 
-    fun totpCameraUnavailable() = setTotpError(TOTP_CAMERA_MESSAGE)
+    fun totpCameraUnavailable() = setTotpError(t.s(R.string.editor_totp_camera))
 
-    private fun setTotpError(message: String) = _state.update { it.copy(totpError = message) }
+    private fun setTotpError(message: String) = _state.update { it.copy(totpError = message, totpErrorIsPro = false) }
 
     // MARK: building the record
 
@@ -136,7 +153,13 @@ class EditorModel(
             val v = form[f.key] ?: ""
             when {
                 // Required for web logins; what was typed is reduced to its origin first.
-                kind == EditorKind.WEB && f.key == "origin" -> scope["origin"] = JsonValue.Str(WebsiteInput.origin(v))
+                kind == EditorKind.WEB && f.key == "origin" -> {
+                    val new = WebsiteInput.origin(v)
+                    val old = (scope["origin"] as? JsonValue.Str)?.v
+                    val rows = (scope["urls"] as? JsonValue.Arr)?.items
+                    if (old != null && old != new && rows != null) scope["urls"] = movedRows(rows, old, new)
+                    scope["origin"] = JsonValue.Str(new)
+                }
                 kind == EditorKind.WEB && f.key == "totp" -> {
                     val t = totp(v, r["totp"])
                     if (t == null) r.remove("totp") else r["totp"] = t
@@ -162,6 +185,9 @@ class EditorModel(
             }
         }
         if (kind == EditorKind.WEB) r["scope"] = JsonValue.Obj(scope) else r["payload"] = JsonValue.Obj(payload)
+        // A changed login password keeps the old one in the history (workstream 8: 5 written, 365 days).
+        val old = (original?.get("password") as? JsonValue.Str)?.v
+        if (kind == EditorKind.WEB && old != null) return PasswordHistory.push(r, old, clock.now)
         return r
     }
 
@@ -172,27 +198,25 @@ class EditorModel(
         val edited: Map<String, JsonValue> = try {
             edited(form)
         } catch (e: AmountException) {
-            return fail(SaveResult.INVALID) { it.copy(amountError = e.message, error = "Check the amount.") }
+            return fail(SaveResult.INVALID) { it.copy(amountError = e.text(t), error = t.s(R.string.editor_check_amount)) }
         } catch (e: TotpException) {
-            return fail(SaveResult.INVALID) { it.copy(totpError = Totp.message(e), error = "Check the 2FA secret.") }
+            return fail(SaveResult.INVALID) { it.copy(totpError = TotpText.message(e, t), error = t.s(R.string.editor_check_totp)) }
         } catch (e: WebsiteInputException) {
             return when (val w = e.error) {
                 WebsiteInputError.NeedsPunycode ->
-                    fail(SaveResult.NEEDS_PUNYCODE) { it.copy(needsPunycode = true, error = PUNYCODE_MESSAGE) }
-                WebsiteInputError.Required ->
-                    fail(SaveResult.INVALID) { it.copy(websiteError = WebsiteInput.REQUIRED_MESSAGE, error = "Check the website.") }
-                is WebsiteInputError.Invalid ->
-                    fail(SaveResult.INVALID) { it.copy(websiteError = w.message, error = "Check the website.") }
+                    fail(SaveResult.NEEDS_PUNYCODE) { it.copy(needsPunycode = true, error = t.s(R.string.editor_punycode)) }
+                WebsiteInputError.Required, is WebsiteInputError.Invalid ->
+                    fail(SaveResult.INVALID) { it.copy(websiteError = WebsiteInput.message(w, t), error = t.s(R.string.editor_check_website)) }
             }
         } catch (e: Exception) {
-            return fail(SaveResult.INVALID) { it.copy(error = "This item cannot be saved.") }
+            return fail(SaveResult.INVALID) { it.copy(error = t.s(R.string.editor_cannot_save)) }
         }
         // Unchanged: leave the stored bytes alone so the version vector is not bumped.
         val original = original
         if (original != null && same(JsonValue.Obj(edited), JsonValue.Obj(original))) return SaveResult.UNCHANGED
         if (totpNeedsPro && ProFeatures.totpChangeNeedsPro(edited["totp"], original?.get("totp"))) {
             return fail(SaveResult.NEEDS_PRO) {
-                it.copy(totpError = ProFeatures.totpMessage, error = "Two-factor codes need Pro.", showUpgrade = true)
+                it.copy(totpError = ProFeatures.totpMessage(t), totpErrorIsPro = true, error = t.s(R.string.editor_totp_needs_pro), showUpgrade = true)
             }
         }
         return try {
@@ -212,9 +236,9 @@ class EditorModel(
             if (created is JsonValue.Int && created.v > now) stamped["created_at"] = JsonValue.Int(now)
             val record = Normalise.normalForm(kind.ns, JsonValue.Obj(stamped))
             val rid = ((record as? JsonValue.Obj)?.fields?.get("id") as? JsonValue.Str)?.v
-                ?: return fail(SaveResult.INVALID) { it.copy(error = "This item cannot be saved.") }
-            if (id != null && rid != id) return fail(SaveResult.INVALID) { it.copy(error = "This item cannot be saved.") }
-            if (isNew && snap.records[rid] != null) return fail(SaveResult.FAILED) { it.copy(error = "This item cannot be saved.") }
+                ?: return fail(SaveResult.INVALID) { it.copy(error = t.s(R.string.editor_cannot_save)) }
+            if (id != null && rid != id) return fail(SaveResult.INVALID) { it.copy(error = t.s(R.string.editor_cannot_save)) }
+            if (isNew && snap.records[rid] != null) return fail(SaveResult.FAILED) { it.copy(error = t.s(R.string.editor_cannot_save)) }
             val records = LinkedHashMap(snap.records)
             records[rid] = Wrapper.make(kind.ns, record)
             store.commit(StoreChange(snap.revision, records, snap.meta, snap.sync))
@@ -222,12 +246,12 @@ class EditorModel(
         } catch (e: NormaliseException) {
             when (e.kind) {
                 NormaliseException.Kind.NEEDS_PUNYCODE ->
-                    fail(SaveResult.NEEDS_PUNYCODE) { it.copy(needsPunycode = true, error = PUNYCODE_MESSAGE) }
-                NormaliseException.Kind.REJECTED -> fail(SaveResult.INVALID) { it.copy(error = e.detail) }
-                NormaliseException.Kind.NOT_PHONE_KIND -> fail(SaveResult.FAILED) { it.copy(error = SAVE_FAILED_MESSAGE) }
+                    fail(SaveResult.NEEDS_PUNYCODE) { it.copy(needsPunycode = true, error = t.s(R.string.editor_punycode)) }
+                NormaliseException.Kind.REJECTED -> fail(SaveResult.INVALID) { it.copy(error = kind.friendlyError(e.detail, t)) }
+                NormaliseException.Kind.NOT_PHONE_KIND -> fail(SaveResult.FAILED) { it.copy(error = t.s(R.string.editor_save_failed)) }
             }
         } catch (e: Exception) {
-            fail(SaveResult.FAILED) { it.copy(error = SAVE_FAILED_MESSAGE) }
+            fail(SaveResult.FAILED) { it.copy(error = t.s(R.string.editor_save_failed)) }
         }
     }
 
@@ -253,7 +277,7 @@ class EditorModel(
         val r = delete(id, store, clock)
         _state.update {
             it.copy(
-                error = if (r == SaveResult.FAILED) "The item could not be deleted on this device." else it.error,
+                error = if (r == SaveResult.FAILED) t.s(R.string.editor_delete_failed) else it.error,
                 alreadyRemoved = r == SaveResult.UNCHANGED,
             )
         }
@@ -272,13 +296,22 @@ class EditorModel(
     override fun toString(): String = "EditorModel(kind=$kind, isNew=$isNew, state=${_state.value})"
 
     companion object {
-        const val PUNYCODE_MESSAGE = "Enter this website's domain in its xn-- (punycode) form."
-        const val ALREADY_REMOVED_MESSAGE = "This item was already removed"
-        const val MIGRATION_QR_MESSAGE =
-            "This QR code moves accounts out of an authenticator app. Scan the website's own 2FA setup code instead, or import the export on your PC."
-        const val NOT_TOTP_QR_MESSAGE = "This QR code is not a 2FA setup code."
-        const val TOTP_CAMERA_MESSAGE = "The camera is not available. Paste the setup key instead."
-        const val SAVE_FAILED_MESSAGE = "The item could not be saved on this device."
+        /**
+         * A changed Website moves the login: the URL rows on the old site (its exact-origin row and any imported page
+         * address there) give way to the new exact origin as `urls[0]`, which the desktop treats as authoritative
+         * (`migrate_web_scope`); rows on other sites stay. Port of iPhone `EditorModel.movedRows`.
+         */
+        internal fun movedRows(rows: List<JsonValue>, old: String, new: String): JsonValue {
+            val first = JsonValue.Obj(linkedMapOf("url" to JsonValue.Str(new), "match" to JsonValue.Str("exact_origin")))
+            val kept = rows.filter { row ->
+                val obj = (row as? JsonValue.Obj)?.fields
+                val url = (obj?.get("url") as? JsonValue.Str)?.v ?: (row as? JsonValue.Str)?.v ?: return@filter false
+                val origin = try { Origin.originOf(url) } catch (e: Exception) { return@filter true }
+                val match = (obj?.get("match") as? JsonValue.Str)?.v ?: "exact_origin"
+                origin != old && !(origin == new && match == "exact_origin")
+            }
+            return JsonValue.Arr(listOf(first) + kept)
+        }
 
         /** The form's values for a stored record. */
         fun values(r: Map<String, JsonValue>, kind: EditorKind): Map<String, String> {
@@ -392,23 +425,25 @@ class EditorModel(
 
 /** The editor screen's copy (the iPhone's, with "phone" for "iPhone"). */
 object EditorScreenText {
-    fun title(kind: EditorKind, isNew: Boolean): String = (if (isNew) "New " else "Edit ") + kind.label.lowercase()
+    fun title(kind: EditorKind, isNew: Boolean, t: Txt): String = t.s(if (isNew) kind.newTitle else kind.editTitle)
 
-    const val DELETE_ITEM = "Delete item"
-    const val DELETE_TITLE = "Delete this item?"
-    const val DELETE_MESSAGE = "It is removed from this phone and from your other devices at the next sync."
+    @StringRes val DELETE_ITEM = R.string.editor_delete_item
+    @StringRes val DELETE_TITLE = R.string.editor_delete_title
+    @StringRes val DELETE_MESSAGE = R.string.editor_delete_message
 
     /** The detail screen's Delete, for kinds the phone cannot edit. */
-    const val DELETE_ONLY_MESSAGE = "It is removed from this phone and from your other devices at the next sync. It can only be edited on your PC."
-    const val DELETE_FAILED = "The item could not be deleted on this device."
-    const val URL_PUNYCODE =
-        "This address has non-ASCII letters. Type the domain in its xn-- form, for example https://xn--bcher-kva.example."
-    const val ORIGIN_PUNYCODE =
-        "This address has non-ASCII letters. Type the domain as it appears in its xn-- form, for example https://xn--bcher-kva.example."
-    const val SECRET_EMPTY = "Empty. Tap the eye to paste or type it."
+    @StringRes val DELETE_ONLY_MESSAGE = R.string.editor_delete_only_message
+    @StringRes val DELETE_FAILED = R.string.editor_delete_failed
+    @StringRes val URL_PUNYCODE = R.string.editor_url_punycode
+    @StringRes val ORIGIN_PUNYCODE = R.string.editor_origin_punycode
+    @StringRes val SECRET_EMPTY = R.string.editor_secret_empty
+    @StringRes val ALREADY_REMOVED = R.string.editor_already_removed
 
     /** A hidden multi-line secret: "•••••••• (3 lines)". */
-    fun hiddenLines(text: String): String = "•••••••• (${text.split('\n', '\r').count { it.isNotEmpty() }} lines)"
+    fun hiddenLines(text: String, t: Txt): String {
+        val lines = text.split('\n', '\r').count { it.isNotEmpty() }
+        return t.plural(R.plurals.editor_hidden_lines, lines, lines)
+    }
 }
 
 /** The editor's date fields: ISO `yyyy-MM-dd` in UTC, as the desktop stores them. */

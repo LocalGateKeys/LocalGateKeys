@@ -17,9 +17,11 @@ from ..item_schema import IDENTITY_FIELDS, PROTECTED_FIELDS_BY_KIND, ItemSchemaE
 from ..shell.overview_model import age_text
 from ..vault import ItemLimitReached, VaultError
 from .setting_links import clipboard_result
+from ..i18n import catalog, t
 from .typed_schema import (
     IDENTITY_LABELS,
     KIND_LABELS,
+    kind_title,
     PURCHASE_LIKE,
     SECRET_FORM_HIDDEN_FIELDS,
     SECRET_KIND_CHOICES,
@@ -34,47 +36,40 @@ REVEAL_SECONDS = 30
 _CONTROL_TYPES = {"text": "text", "multiline": "multiline", "choice": "select", "bool": "checkbox"}
 
 _SAFE_FIELDS: dict[str, tuple[tuple[str, str, str], ...]] = {
-    "note": (("body", "Note body", "multiline"),),
-    "bookmark": (("url", "HTTPS URL", "text"), ("notes", "Bookmark notes", "multiline")),
-    "document": (("description", "Description", "text"),),
+    "note": (("body", "typed.field.note.body", "multiline"),),
+    "bookmark": (("url", "typed.field.bookmark.url", "text"), ("notes", "typed.field.bookmark.notes", "multiline")),
+    "document": (("description", "typed.field.document.description", "text"),),
     "license": (
-        ("product", "Product", "text"), ("vendor", "Vendor", "text"),
-        ("license_value", "License key / serial (protected)", "text"),
-        ("purchase_date", "Purchase date YYYY-MM-DD", "date"),
-        ("expiration_date", "Expiration date YYYY-MM-DD", "date"), ("notes", "Notes", "multiline"),
+        ("product", "typed.field.license.product", "text"), ("vendor", "typed.field.license.vendor", "text"),
+        ("license_value", "typed.field.license.license_value", "text"),
+        ("purchase_date", "typed.field.license.purchase_date", "date"),
+        ("expiration_date", "typed.field.license.expiration_date", "date"), ("notes", "typed.field.license.notes", "multiline"),
     ),
 }
 _PURCHASE_FIELDS: tuple[tuple[str, str, str], ...] = (
-    ("product", "Product", "text"), ("vendor", "Vendor", "text"), ("provider", "Provider", "text"),
-    ("purchase_date", "Purchase date YYYY-MM-DD", "date"),
-    ("expiration_date", "Expiration date YYYY-MM-DD", "date"),
-    ("renewal_date", "Renewal date YYYY-MM-DD", "date"),
-    ("amount_minor", "Amount", "number"), ("currency", "Currency (3-letter code)", "text"),
-    ("active", "Active", "checkbox"), ("notes", "Notes", "multiline"),
+    ("product", "typed.field.purchase.product", "text"), ("vendor", "typed.field.purchase.vendor", "text"), ("provider", "typed.field.purchase.provider", "text"),
+    ("purchase_date", "typed.field.purchase.purchase_date", "date"),
+    ("expiration_date", "typed.field.purchase.expiration_date", "date"),
+    ("renewal_date", "typed.field.purchase.renewal_date", "date"),
+    ("amount_minor", "typed.field.purchase.amount_minor", "number"), ("currency", "typed.field.purchase.currency", "text"),
+    ("active", "typed.field.purchase.active", "checkbox"), ("notes", "typed.field.purchase.notes", "multiline"),
 )
 _KIND_NOTES = {
     **SECRET_KIND_NOTES,
-    "bookmark": "Opening a bookmark is always an explicit normal-browser/network action.",
-    "identity": "Contact and address fields only. Payment, password, and government-ID fields are not accepted.",
-    "document": "Maximum file size: 25 MiB",
+    "bookmark": "typed.note.bookmark",
+    "identity": "typed.note.identity",
+    "document": "typed.note.document",
 }
 
 
-def _display_label(label: str) -> str:
-    """Detail-view label: the editor's hint in parentheses and its date format are dropped."""
-    short = label.split(" (", 1)[0]
-    for suffix in (" YYYY-MM-DD", " MM/YY"):
-        short = short.removesuffix(suffix)
-    return short
-
-
-def _fields_for(kind: str) -> list[dict[str, Any]]:
+def _fields_for(kind: str, *, short: bool = False) -> list[dict[str, Any]]:
+    """Field descriptors with labels in the active language (``short``: the detail view's label)."""
     protected = set(PROTECTED_FIELDS_BY_KIND.get(kind, ()))
     if kind in SECRET_KIND_FIELDS:
         rows = [(name, label, _CONTROL_TYPES.get(control, "text")) for name, label, control in SECRET_KIND_FIELDS[kind]]
-        rows.append(("notes", "Notes", "multiline"))
+        rows.append(("notes", "typed.field.notes", "multiline"))
         if kind == "card":
-            rows.append(("billing_address_id", "Billing address (identity item)", "identity_ref"))
+            rows.append(("billing_address_id", "typed.field.card.billing_address_id", "identity_ref"))
     elif kind == "identity":
         rows = [(name, IDENTITY_LABELS.get(name, name), "text") for name in sorted(IDENTITY_FIELDS)]
     elif kind in PURCHASE_LIKE:
@@ -83,8 +78,9 @@ def _fields_for(kind: str) -> list[dict[str, Any]]:
         rows = list(_SAFE_FIELDS.get(kind, ()))
     out = []
     for name, label, control in rows:
+        text = t(label + ".short") if short and (label + ".short") in catalog() else t(label)
         field: dict[str, Any] = {
-            "name": name, "label": label, "type": control,
+            "name": name, "label": text, "type": control,
             # Parity: note/bookmark/identity values are protected at rest but editable in plain view.
             "protected": name in protected and kind not in PARITY_PLAIN_KINDS,
         }
@@ -104,25 +100,27 @@ class TypedService:
 
     # ---------------------------------------------------------------- schema
     def schema(self) -> dict[str, Any]:
-        return {"kinds": [{"kind": kind, "label": label, "fields": _fields_for(kind), "note": _KIND_NOTES.get(kind, "")}
-                          for kind, label in KIND_LABELS.items()]}
+        return {"kinds": [{"kind": kind, "label": kind_title(kind), "fields": _fields_for(kind),
+                           "new_title": t(f"typed.title.new.{kind}"), "edit_title": t(f"typed.title.edit.{kind}"),
+                           "note": t(_KIND_NOTES[kind]) if kind in _KIND_NOTES else ""}
+                          for kind in KIND_LABELS]}
 
     # ---------------------------------------------------------------- helpers
     def _session(self) -> Any:
         if not self._controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile first.")
+            raise ApiError("locked", t("typed.err.unlockFirst"))
         return self._controller.session
 
     @staticmethod
     def _typed_ref(ref: dict[str, Any]) -> str:
         if ref.get("source") != "typed":
-            raise ApiError("invalid", "Choose a typed item.")
+            raise ApiError("invalid", t("typed.err.chooseTyped"))
         return ref["id"]
 
     def _item(self, session: Any, item_id: str, *, protected: bool) -> dict[str, Any]:
         item = session.item_service.get_item(item_id, include_protected=protected)
         if item is None:
-            raise ApiError("not_found", "The item is no longer available in this session.")
+            raise ApiError("not_found", t("typed.err.itemGone"))
         return item
 
     # ---------------------------------------------------------------- detail
@@ -137,21 +135,21 @@ class TypedService:
         try:
             payload = (plain or item).get("payload") or {}
             fields = []
-            for field in _fields_for(kind):
+            for field in _fields_for(kind, short=True):
                 name = field["name"]
                 if name in hidden:
                     if payload.get(name):
-                        fields.append({"name": name, "label": _display_label(field["label"]), "value": None,
+                        fields.append({"name": name, "label": field["label"], "value": None,
                                        "protected": True, "present": True})
                 elif field["protected"]:
                     present = bool(item["payload"].get(f"{name}_present") or item["payload"].get(name))
-                    fields.append({"name": name, "label": _display_label(field["label"]), "value": None, "protected": True,
+                    fields.append({"name": name, "label": field["label"], "value": None, "protected": True,
                                    "present": present})
                 else:
                     value = payload.get(name)
                     if value in (None, ""):
                         continue
-                    fields.append({"name": name, "label": _display_label(field["label"]),
+                    fields.append({"name": name, "label": field["label"],
                                    "value": value if isinstance(value, (bool, int, float)) else str(value),
                                    "protected": False, "present": True})
             result = {"kind": kind, "title": str(item.get("title") or "Untitled"),
@@ -172,7 +170,7 @@ class TypedService:
 
     @staticmethod
     def _subtitle(item: dict[str, Any], kind: str) -> str:
-        parts = [KIND_LABELS.get(kind, kind)]
+        parts = [kind_title(kind)]
         updated = int(item.get("updated_at") or 0)
         if updated:
             parts.append(f"updated {age_text(max(0.0, time.time() - updated))}")
@@ -184,7 +182,7 @@ class TypedService:
         item_id = self._typed_ref(ref)
         if str(self._item(session, item_id, protected=False).get("kind")) in MASTER_HIDDEN_FIELDS:
             lease = self._controller.guard.lease()
-            self._auth.reauthenticate("Confirm to edit this note", lease, allow_hello=False)
+            self._auth.reauthenticate(t("typed.confirmEditNote"), lease, allow_hello=False)
             self._controller.require_lease(lease)
         item = self._item(session, item_id, protected=True)
         try:
@@ -203,10 +201,10 @@ class TypedService:
     def save(self, ref: dict[str, Any] | None, kind: str, data: dict[str, Any]) -> dict[str, Any]:
         session = self._session()
         if kind not in KIND_LABELS or kind == "document" and ref is None:
-            raise ApiError("invalid", "Choose a supported item type.")
+            raise ApiError("invalid", t("typed.err.chooseSupported"))
         title = str(data.get("title") or "").strip()
         if not title:
-            raise ApiError("invalid", "Title cannot be empty")
+            raise ApiError("invalid", t("typed.err.titleEmpty"))
         lease = self._controller.guard.lease()
         self._controller.require_lease(lease)
         schema = {f["name"]: f for f in _fields_for(kind)}
@@ -226,11 +224,11 @@ class TypedService:
                 expected = data.get("revision")
                 if isinstance(expected, bool) or not isinstance(expected, int):
                     # An update without the revision the page edited would overwrite blindly.
-                    raise ApiError("changed", "This item changed. Close and reopen it before saving.")
+                    raise ApiError("changed", t("typed.err.changed"))
                 if str(current.get("kind")) != kind:
-                    raise ApiError("invalid", "This item's type cannot be changed here.")
+                    raise ApiError("invalid", t("typed.err.typeFixed"))
                 if kind in PURCHASE_LIKE and "amount_minor" not in payload and current.get("payload", {}).get("currency"):
-                    raise ApiError("invalid", "A saved amount can't be removed. Set it to 0 instead.")
+                    raise ApiError("invalid", t("typed.err.amountKept"))
                 if kind == "note":
                     ok = items.update_item(item_id, title=title, body=payload.get("body"),
                                            expected_revision=expected, **metadata)
@@ -243,7 +241,7 @@ class TypedService:
                     ok = items.update_typed_item(item_id, payload=payload, title=title,
                                                  expected_revision=expected, **metadata)
                 if not ok and session.item_service.get_item(item_id) is None:
-                    raise ApiError("not_found", "The item is no longer available in this session.")
+                    raise ApiError("not_found", t("typed.err.itemGone"))
                 # ok False with the item still there: nothing changed, which is a successful save.
         except ItemLimitReached as exc:
             self._port.show_upgrade(limit=exc.limit, message=str(exc), on_enter=lambda: None)
@@ -270,7 +268,7 @@ class TypedService:
                 try:
                     out["amount_minor"] = int(amount or "0")
                 except ValueError:
-                    raise ApiError("invalid", "Amount must be a whole number in minor units (for example cents).") from None
+                    raise ApiError("invalid", t("typed.err.amountWhole")) from None
                 out["currency"] = currency or "XXX"
             else:
                 out.pop("currency", None)
@@ -302,7 +300,7 @@ class TypedService:
         schema = {f["name"]: f for f in _fields_for(kind)}
         if field in MASTER_HIDDEN_FIELDS.get(kind, ()):
             lease = self._controller.guard.lease()
-            self._auth.reauthenticate(f"Confirm to {verb} this note", lease, allow_hello=False)
+            self._auth.reauthenticate(t("typed.confirmRevealNote" if verb == "reveal" else "typed.confirmCopyNote"), lease, allow_hello=False)
             self._controller.require_lease(lease)
             plain = self._item(session, item_id, protected=True)
             try:
@@ -310,9 +308,9 @@ class TypedService:
             finally:
                 (plain.get("payload") or {}).clear()
         if field not in schema or not schema[field]["protected"]:
-            raise ApiError("invalid", "Unsupported protected field")
+            raise ApiError("invalid", t("typed.err.unsupportedField"))
         lease = self._controller.guard.lease()
-        self._auth.reauthenticate(f"Confirm to {verb} {field}", lease, allow_hello=True)
+        self._auth.reauthenticate(t("typed.confirmRevealField" if verb == "reveal" else "typed.confirmCopyField", field=field), lease, allow_hello=True)
         self._controller.require_lease(lease)
         intent = f"user-selected protected field {verb}"
         try:

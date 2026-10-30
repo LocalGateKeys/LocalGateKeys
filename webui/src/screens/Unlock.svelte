@@ -1,13 +1,14 @@
 <script>
   /** Unlock an existing vault, or create one for a profile without a vault.
    *  Locked extras: profile chips, "Locked … ago", throttling countdown, recovery-phrase recovery, backups. */
+  import { formatNumber, t } from '../lib/i18n.svelte.js';
   import ErrorLogLink from '../components/ErrorLogLink.svelte';
   import Button from '../components/Button.svelte';
   import Field from '../components/Field.svelte';
   import RecoveryPage from '../components/RecoveryPage.svelte';
   import CameraView from '../components/CameraView.svelte';
   import { call } from '../lib/api.js';
-  import mark from '../../../src/localvault/assets/localgatekeys_mark.png';
+  import mark from '../../../src/localvault/assets/localgatekeys_icon.svg';
 
   // brand: the logo and name above the card (the small fill popup leaves it out).
   let { vault, onswitchprofile = undefined, brand = true } = $props();
@@ -27,7 +28,7 @@
   async function useHello() {
     if (alt || busy) return;
     alt = 'hello'; error = '';
-    altNote = 'Complete the Windows Security prompt. Cancel it to return to your master password.';
+    altNote = t('unlock.helloNote');
     const result = await call('vault_unlock_hello');
     alt = ''; altNote = '';
     if (!result.ok) { error = result.error.message; backToPassword(result.error.code); }
@@ -39,7 +40,7 @@
     const result = await call('vault_unlock_face');
     alt = '';
     if (!result.ok) {
-      error = result.error.code === 'cancelled' ? result.error.message : (result.error.message || 'Camera verification was not accepted. Use your master password.');
+      error = result.error.code === 'cancelled' ? result.error.message : (result.error.message || t('unlock.cameraRejected'));
       backToPassword(result.error.code);
     }
   }
@@ -98,7 +99,7 @@
   }
 </script>
 
-{#if alt === 'camera'}<CameraView title="Camera verification" mode="verify" />{/if}
+{#if alt === 'camera'}<CameraView title={t('unlock.cameraTitle')} mode="verify" />{/if}
 {#if mode === 'backups'}
   <RecoveryPage onclose={() => (mode = 'unlock')} />
 {/if}
@@ -108,12 +109,12 @@
     <header class="brand">
       <img src={mark} alt="" width="64" height="64" />
       <p class="name">Local<span>Gate</span>Keys</p>
-      <p class="tagline">Your keys. Your control.</p>
+      <p class="tagline">{t('unlock.tagline')}</p>
     </header>
   {/if}
   <form class="card glass" onsubmit={submit}>
     {#if vault.chips?.length > 1}
-      <div class="chips" role="list" aria-label="Profiles">
+      <div class="chips" role="list" aria-label={t('unlock.profiles')}>
         {#each vault.chips as chip (chip.id)}
           <span role="listitem"><button type="button" class="chip" class:on={chip.active} aria-pressed={chip.active}
                   title={chip.name} aria-label={chip.name} onclick={() => pick(chip)}>{chip.initial}</button></span>
@@ -123,53 +124,53 @@
     <div class="avatar" style:background={vault.profile?.color} aria-hidden="true">
       {(vault.profile?.name ?? '?').slice(0, 1).toUpperCase()}
     </div>
-    <h1>{vault.profile?.name ?? 'LocalGateKeys'}</h1>
+    <h1>{vault.profile?.name ?? t('app.name')}</h1>
     {#if creating}
-      <p class="hint">Choose a master password (at least 12 characters). Keep it for recovery; optional camera verification or Windows Hello can be set up later.</p>
+      <p class="hint">{t('unlock.hintCreate')}</p>
     {:else if mode === 'recover'}
-      <p class="hint">Enter your 24-word recovery phrase, separated by spaces, then choose a new master password. The vault is re-encrypted with a new key; your recovery phrase keeps working, and Windows Hello and camera verification need to be set up again.</p>
+      <p class="hint">{t('unlock.hintRecover')}</p>
     {:else}
-      <p class="hint">{vault.subtitle ?? 'Vault locked'}</p>
+      <p class="hint">{vault.subtitle ?? t('unlock.locked')}</p>
     {/if}
     {#if vault.status}<p class="status" role="status">{vault.status}</p>{/if}
 
     <div class="group fields">
       {#if mode === 'recover'}
-        <Field label="Recovery phrase" type="password" bind:value={phrase} autofocus />
-        <Field label="New master password (at least 12 characters)" type="password" bind:value={password} autocomplete="new-password" />
-        <Field label="Enter the new master password again" type="password" bind:value={confirm} autocomplete="new-password" />
+        <Field label={t('unlock.recoveryPhrase')} type="password" bind:value={phrase} autofocus />
+        <Field label={t('unlock.newPassword')} type="password" bind:value={password} autocomplete="new-password" />
+        <Field label={t('unlock.newPasswordAgain')} type="password" bind:value={confirm} autocomplete="new-password" />
       {:else}
-        <Field label="Master password" type="password" bind:value={password} autofocus autocomplete={creating ? 'new-password' : 'current-password'} invalid={!!error} />
+        <Field label={t('unlock.masterPassword')} type="password" bind:value={password} autofocus autocomplete={creating ? 'new-password' : 'current-password'} invalid={!!error} />
         {#if creating}
-          <Field label="Confirm password" type="password" bind:value={confirm} autocomplete="new-password" />
+          <Field label={t('unlock.confirmPassword')} type="password" bind:value={confirm} autocomplete="new-password" />
         {/if}
       {/if}
     </div>
 
     {#if altNote}<p class="status" role="status">{altNote}</p>{/if}
-    {#if wait}<p class="error" role="alert">Too many incorrect attempts. Try again in {wait} s.</p>
+    {#if wait}<p class="error" role="alert">{t('unlock.tooMany', { seconds: formatNumber(wait) })}</p>
     {:else if error}<p class="error" role="alert">{error}<ErrorLogLink text={error} /></p>{/if}
 
     <div class="actions">
       <Button type="submit" variant="primary" disabled={!!wait}
-              label={mode === 'recover' ? 'Recover vault' : creating ? 'Create vault' : 'Unlock'}
-              busy={busy} busyLabel={creating ? 'Creating…' : 'Unlocking…'} />
+              label={mode === 'recover' ? t('unlock.recover') : creating ? t('unlock.create') : t('unlock.unlock')}
+              busy={busy} busyLabel={creating ? t('common.creating') : t('unlock.unlocking')} />
     </div>
     {#if mode === 'unlock' && !creating && vault.hello}
-      <div class="actions"><Button label="Unlock with Windows Hello" onclick={useHello} busy={alt === 'hello'} busyLabel="Waiting for Windows…" disabled={!!wait} /></div>
-      <p class="or">or use your master password</p>
+      <div class="actions"><Button label={t('unlock.hello')} onclick={useHello} busy={alt === 'hello'} busyLabel={t('unlock.waitingWindows')} disabled={!!wait} /></div>
+      <p class="or">{t('unlock.or')}</p>
     {/if}
     <div class="links">
       {#if mode === 'unlock' && !creating && vault.camera}
-        <Button variant="link" label="Use camera instead" onclick={useCamera} disabled={!!alt || !!wait} />
+        <Button variant="link" label={t('unlock.useCamera')} onclick={useCamera} disabled={!!alt || !!wait} />
       {/if}
       {#if mode === 'recover'}
-        <Button variant="link" label="Back to unlock" onclick={() => { mode = 'unlock'; wipe(); error = ''; }} />
+        <Button variant="link" label={t('unlock.backToUnlock')} onclick={() => { mode = 'unlock'; wipe(); error = ''; }} />
       {:else if !creating && vault.recovery_phrase}
-        <Button variant="link" label="Forgot it? Use recovery phrase" onclick={() => { mode = 'recover'; wipe(); error = ''; }} />
+        <Button variant="link" label={t('unlock.forgot')} onclick={() => { mode = 'recover'; wipe(); error = ''; }} />
       {/if}
-      {#if !creating}<Button variant="link" label="Backup & restore" onclick={() => (mode = 'backups')} />{/if}
-      {#if onswitchprofile}<Button variant="link" label="Use another profile" onclick={onswitchprofile} />{/if}
+      {#if !creating}<Button variant="link" label={t('unlock.backups')} onclick={() => (mode = 'backups')} />{/if}
+      {#if onswitchprofile}<Button variant="link" label={t('unlock.anotherProfile')} onclick={onswitchprofile} />{/if}
     </div>
   </form>
 </section>

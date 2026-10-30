@@ -10,11 +10,10 @@ import threading
 from typing import Any, Callable
 
 from ..api.result import ApiError
+from ..i18n import t
 
-LEGACY_TITLE = "Legacy LocalGateKeys data found"
-LEGACY_TEXT = ("LocalGateKeys found data from an earlier development version. It will not be loaded automatically.\n\n"
-               "Import legacy data copies it into LocalGateKeys and keeps the original untouched. Start fresh ignores "
-               "the legacy data and also leaves it untouched.")
+LEGACY_TITLE = "startup.legacyLocalgatekeysDataFound"
+LEGACY_TEXT = ("startup.localgatekeysFoundDataFromAn")
 
 
 def _required() -> bool:
@@ -70,7 +69,7 @@ class DeferredProfiles:
     def __getattr__(self, name: str) -> Any:
         real = self.__dict__.get("_real")
         if real is None:
-            raise ApiError("legacy_pending", "Choose what to do with the earlier data first.")
+            raise ApiError("legacy_pending", t("startup.chooseWhatToDoWith"))
         return getattr(real, name)
 
 
@@ -110,7 +109,7 @@ class StartupService:
         self.on_ready: list[Callable[[], None]] = []
 
     def legacy_state(self) -> dict[str, Any]:
-        return {"title": LEGACY_TITLE, "text": LEGACY_TEXT, "location": f"Legacy location: {self._location()}"}
+        return {"title": t(LEGACY_TITLE), "text": t(LEGACY_TEXT), "location": t("startup.legacyLocation", v1=self._location())}
 
     def _done(self) -> None:
         self.pending = False
@@ -125,21 +124,21 @@ class StartupService:
 
         with self._lock:
             if not self.pending:
-                raise ApiError("invalid", "This choice was already made.")
+                raise ApiError("invalid", t("startup.thisChoiceWasAlreadyMade"))
             try:
                 self._importer()
             except (MigrationError, OSError, ValueError) as exc:
-                raise ApiError("legacy_failed", f"Legacy data could not be imported.\n\n{exc}") from None
+                raise ApiError("legacy_failed", t("startup.legacyDataCouldNotBe", exc=exc)) from None
             self._done()
         return {}
 
     def fresh(self) -> dict[str, Any]:
         with self._lock:
             if not self.pending:
-                raise ApiError("invalid", "This choice was already made.")
+                raise ApiError("invalid", t("startup.thisChoiceWasAlreadyMade"))
             try:
                 self._fresh()
             except OSError as exc:
-                raise ApiError("legacy_failed", str(exc) or "The choice could not be saved.") from None
+                raise ApiError("legacy_failed", str(exc) or t("startup.theChoiceCouldNotBe")) from None
             self._done()
         return {}

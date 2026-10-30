@@ -1,5 +1,6 @@
 package app.localgatekeys.android.settings
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -13,6 +14,7 @@ import org.junit.Test
  * `test_initials_*`.
  */
 class SettingsTest {
+    private val st = SettingsText(EnglishTxt())
     private val assets = File(System.getProperty("lgk.repoRoot") ?: error("lgk.repoRoot not set"), "android/app/src/main/assets")
 
     /** Swift test_acknowledgements_ship_both_licences, over what the Android app ships. */
@@ -32,22 +34,22 @@ class SettingsTest {
 
     /** Swift test_about_text (the Safari help is iPhone-only). */
     @Test fun about_text() {
-        assertEquals("Data not collected — LocalGateKeys has no analytics and no servers.", SettingsText.DATA_NOT_COLLECTED)
-        assertEquals("https://localgatekeys.app/legal/privacy.html", SettingsText.PRIVACY_POLICY_URL)
-        assertEquals("https://localgatekeys.app/legal/eula.html", SettingsText.LICENCE_AGREEMENT_URL)
-        assertEquals("0.1.0 (1)", SettingsText.version("0.1.0", "1"))
-        assertEquals("0.1.0", SettingsText.version("0.1.0", ""))
-        assertEquals("Pro is active", SettingsText.proStatus(true))
-        assertEquals("Free (up to 4 items)", SettingsText.proStatus(false))
-        assertEquals("Erase this phone's vault", SettingsText.ERASE_BUTTON)
-        assertEquals("Deletes the vault on this phone only. Your PC and the sync folder are not changed.", SettingsText.ERASE_FOOTER)
+        assertEquals("Data not collected — LocalGateKeys has no analytics and no servers.", st.dataNotCollected)
+        assertEquals("https://localgatekeys.app/legal/app/privacy.html", SettingsText.PRIVACY_POLICY_URL)
+        assertEquals("https://localgatekeys.app/legal/app/eula.html", SettingsText.LICENCE_AGREEMENT_URL)
+        assertEquals("0.1.0 (1)", st.version("0.1.0", "1"))
+        assertEquals("0.1.0", st.version("0.1.0", ""))
+        assertEquals("Pro is active", st.proStatus(true))
+        assertEquals("Free (up to 4 items)", st.proStatus(false))
+        assertEquals("Erase this phone's vault", st.eraseButton)
+        assertEquals("Deletes the vault on this phone only. Your PC and the sync folder are not changed.", st.eraseFooter)
     }
 
     @Test fun sync_status_text() {
         val time: (Long) -> String = { "12:34" }
-        assertEquals("Not set up", SettingsText.syncStatus(false, null, time))
-        assertEquals("On", SettingsText.syncStatus(true, null, time))
-        assertEquals("Last synced 12:34", SettingsText.syncStatus(true, 1_790_000_000, time))
+        assertEquals("Not set up", st.syncStatus(false, null, time))
+        assertEquals("On", st.syncStatus(true, null, time))
+        assertEquals("Last synced 12:34", st.syncStatus(true, 1_790_000_000, time))
     }
 
     /** Swift test_extension_interface_style_follows_appearance: the app's theme follows the Appearance setting. */
@@ -62,19 +64,19 @@ class SettingsTest {
     @Test fun autofill_status_is_rechecked_and_open_errors_are_shown() = runBlocking {
         var enabled = false
         var openError: Exception? = UnsupportedOperationException()
-        val m = AutofillStatusModel(isEnabled = { enabled }, open = { openError?.let { throw it } })
+        val m = AutofillStatusModel(isEnabled = { enabled }, open = { openError?.let { throw it } }, t = EnglishTxt())
         assertNull(m.enabled.value)
-        assertEquals("…", AutofillStatusModel.statusText(m.enabled.value))
+        assertEquals("…", m.statusText(m.enabled.value))
         m.refresh()
         assertEquals(false, m.enabled.value)
-        assertEquals("Off", AutofillStatusModel.statusText(m.enabled.value))
+        assertEquals("Off", m.statusText(m.enabled.value))
         m.openSettings()
-        assertEquals(AutofillStatusModel.OPEN_FAILED_MESSAGE, m.openError.value)
+        assertEquals(EnglishTxt().s(app.localgatekeys.android.R.string.autofill_open_failed), m.openError.value)
         // Back from system settings (the screen resumed): checked again, and the error goes.
         enabled = true; openError = null
         m.refresh()
         assertEquals(true, m.enabled.value)
-        assertEquals("On", AutofillStatusModel.statusText(m.enabled.value))
+        assertEquals("On", m.statusText(m.enabled.value))
         assertNull(m.openError.value)
         m.openSettings()
         assertNull(m.openError.value)

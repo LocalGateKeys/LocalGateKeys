@@ -1,0 +1,31 @@
+{
+  "format": "appleCSV",
+  "input": "tests/fixtures/imports/safari.csv",
+  "python_format": "safari-csv",
+  "result": {
+    "diagnostics": [],
+    "records": [
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "Saved from Safari",
+        "password": "safari-pass-1",
+        "source_row": 2,
+        "tags": [],
+        "title": "login.example.com (alex)",
+        "totp_uri": "otpauth://totp/login.example.com:alex?secret=JBSWY3DPEHPK3PXP&algorithm=SHA1&digits=6&period=30",
+        "urls": [
+          "https://login.example.com/"
+        ],
+        "username": "alex"
+      }
+    ],
+    "source_format": "safari-csv"
+  }
+}

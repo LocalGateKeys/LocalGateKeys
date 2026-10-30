@@ -15,3 +15,9 @@
 // content script on Chromium, a page element with id="browser" is reachable
 // as globalThis.browser through named property access (DOM clobbering).
 var api = typeof globalThis.browser?.runtime?.sendMessage === "function" ? globalThis.browser : globalThis.chrome;
+// Localized string lookup (_locales/<lang>/messages.json). Falls back to the
+// key itself, so a missing catalog never throws. Substitutions fill $1..$9.
+// Callers pass only literal keys; text is always assigned with textContent.
+var tr = (key, ...subs) => {
+  try { return api.i18n.getMessage(key, subs.map(String)) || key; } catch { return key; }
+};

@@ -1,0 +1,179 @@
+[
+  {
+    "header": [
+      "name",
+      "url",
+      "username",
+      "password",
+      "note"
+    ],
+    "input": "tests/fixtures/imports/chrome.csv",
+    "mapping": {
+      "notes": "note",
+      "password": "password",
+      "title": "name",
+      "url": "url",
+      "username": "username"
+    }
+  },
+  {
+    "header": [
+      "name",
+      "url",
+      "username",
+      "password"
+    ],
+    "input": "tests/fixtures/imports/edge_legacy.csv",
+    "mapping": {
+      "password": "password",
+      "title": "name",
+      "url": "url",
+      "username": "username"
+    }
+  },
+  {
+    "header": [
+      "url",
+      "username",
+      "password",
+      "totp",
+      "extra",
+      "name",
+      "grouping",
+      "fav"
+    ],
+    "input": "tests/fixtures/imports/lastpass.csv",
+    "mapping": {
+      "notes": "extra",
+      "password": "password",
+      "title": "name",
+      "totp": "totp",
+      "url": "url",
+      "username": "username"
+    }
+  },
+  {
+    "header": [
+      "Name",
+      "URL",
+      "User Name",
+      "Password",
+      "Note"
+    ],
+    "input": "tests/vectors/import/_inputs/bom_tabs.csv",
+    "mapping": {
+      "notes": "Note",
+      "password": "Password",
+      "title": "Name",
+      "url": "URL",
+      "username": "User Name"
+    }
+  },
+  {
+    "header": [
+      "name",
+      "url",
+      "username",
+      "password",
+      "note"
+    ],
+    "input": "tests/vectors/import/_inputs/cp1252.csv",
+    "mapping": {
+      "notes": "note",
+      "password": "password",
+      "title": "name",
+      "url": "url",
+      "username": "username"
+    }
+  },
+  {
+    "header": [
+      "Label",
+      "Address",
+      "Email",
+      "Pwd",
+      "Comments",
+      "TOTP Secret",
+      "Group"
+    ],
+    "input": "tests/vectors/import/_inputs/generic.csv",
+    "mapping": {
+      "notes": "Comments",
+      "password": "Pwd",
+      "title": "Label",
+      "totp": "TOTP Secret",
+      "url": "Address",
+      "username": "Email"
+    }
+  },
+  {
+    "header": [
+      "url",
+      "username",
+      "password",
+      "totp",
+      "extra",
+      "name",
+      "grouping",
+      "fav"
+    ],
+    "input": "tests/vectors/import/_inputs/lastpass_notes.csv",
+    "mapping": {
+      "notes": "extra",
+      "password": "password",
+      "title": "name",
+      "totp": "totp",
+      "url": "url",
+      "username": "username"
+    }
+  },
+  {
+    "header": [
+      "name",
+      "url",
+      "username",
+      "password",
+      "note"
+    ],
+    "input": "tests/vectors/import/_inputs/semicolon.csv",
+    "mapping": {
+      "notes": "note",
+      "password": "password",
+      "title": "name",
+      "url": "url",
+      "username": "username"
+    }
+  },
+  {
+    "header": [
+      "name",
+      "url",
+      "username",
+      "password"
+    ],
+    "input": "tests/vectors/import/_inputs/too_many.csv",
+    "mapping": {
+      "password": "password",
+      "title": "name",
+      "url": "url",
+      "username": "username"
+    }
+  },
+  {
+    "header": [
+      "name",
+      "url",
+      "username",
+      "password",
+      "note"
+    ],
+    "input": "tests/vectors/import/_inputs/utf16.csv",
+    "mapping": {
+      "notes": "note",
+      "password": "password",
+      "title": "name",
+      "url": "url",
+      "username": "username"
+    }
+  }
+]

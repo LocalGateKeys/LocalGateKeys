@@ -25,13 +25,22 @@ data class ViewHeader(
     val epoch: Long,
     val counter: Long,
     val writtenAt: Long,
+    /** The writer's vault generation (format 2), null for a format-1 view. */
+    val vaultGeneration: Long? = null,
+    /** The writer's witness of its peers (format 2), empty for a format-1 view. */
+    val witness: Map<String, Long> = emptyMap(),
 ) {
-    internal fun json(): JsonValue = JsonValue.Obj(
-        mapOf(
+    internal fun json(): JsonValue {
+        val fields = linkedMapOf<String, JsonValue>(
             "format" to JsonValue.Int(format), "group_id" to JsonValue.Str(groupId), "device_id" to JsonValue.Str(deviceId),
             "epoch" to JsonValue.Int(epoch), "counter" to JsonValue.Int(counter), "written_at" to JsonValue.Int(writtenAt),
-        ),
-    )
+        )
+        if (vaultGeneration != null) {
+            fields["vault_generation"] = JsonValue.Int(vaultGeneration)
+            fields["witness"] = JsonValue.Obj(witness.mapValues { JsonValue.Int(it.value) })
+        }
+        return JsonValue.Obj(fields)
+    }
 }
 
 /** Device view files (desktop `sync.group.encode_view` / `decode_view`). */
@@ -41,9 +50,14 @@ object ViewFile {
     /** A copy of the file magic. */
     val MAGIC: ByteArray get() = MAGIC_BYTES.copyOf()
     const val FORMAT: Long = 1
+
+    /** Format 2 (rollback witnesses, 2026-10-29): format 1 plus `vault_generation` and `witness`. */
+    const val FORMAT_WITNESS: Long = 2
+    const val MAX_WITNESS: Int = 64
     const val MAX_BYTES: Int = 64 shl 20
     const val MAX_RECORDS: Int = 20_000
     private val HEADER_FIELDS = setOf("format", "group_id", "device_id", "epoch", "counter", "written_at")
+    private val HEADER_FIELDS_V2 = HEADER_FIELDS + setOf("vault_generation", "witness")
 
     private fun checkHeaderValues(device: JsonValue?, epoch: JsonValue?, counter: JsonValue?, writtenAt: JsonValue?) {
         val validDevice = device is JsonValue.Str && Identifier.isValid(device.v)
@@ -53,7 +67,21 @@ object ViewFile {
         if (!SealedItem.isInt(epoch)) throw SyncFormatException("bad-header", "invalid epoch")
     }
 
-    /** Serialises [states] (sorted by id) into one view file. Nonces: one per item in id order, then the file nonce. */
+    private fun checkWitnessValues(deviceId: String, vaultGeneration: JsonValue?, witness: JsonValue?) {
+        if (!SealedItem.isInt(vaultGeneration)) throw SyncFormatException("bad-header", "invalid vault_generation")
+        val w = (witness as? JsonValue.Obj)?.fields
+        if (w == null || w.size > MAX_WITNESS) throw SyncFormatException("bad-header", "invalid witness")
+        for ((peer, generation) in w) {
+            if (!Identifier.isValid(peer) || peer == deviceId || !SealedItem.isInt(generation)) {
+                throw SyncFormatException("bad-header", "invalid witness entry")
+            }
+        }
+    }
+
+    /**
+     * Serialises [states] (sorted by id) into one view file. Nonces: one per item in id order, then the file nonce.
+     * Format 1 unless [vaultGeneration] is given; then format 2 with [witness] (default empty).
+     */
     fun encode(
         key: GroupKey,
         deviceId: String,
@@ -62,9 +90,16 @@ object ViewFile {
         now: UnixClock,
         random: RandomSource,
         maxRecords: Int = MAX_RECORDS,
+        vaultGeneration: Long? = null,
+        witness: Map<String, Long>? = null,
     ): ByteArray {
         val writtenAt = now.now
         checkHeaderValues(JsonValue.Str(deviceId), JsonValue.Int(key.epoch), JsonValue.Int(counter), JsonValue.Int(writtenAt))
+        if (vaultGeneration == null && witness != null) throw SyncFormatException("bad-header", "a witness needs a vault_generation")
+        val w = if (vaultGeneration != null) witness ?: emptyMap() else emptyMap()
+        if (vaultGeneration != null) {
+            checkWitnessValues(deviceId, JsonValue.Int(vaultGeneration), JsonValue.Obj(w.mapValues { JsonValue.Int(it.value) }))
+        }
         // Ids are ASCII, so String order equals code point order.
         val ordered = states.sortedBy { it.itemId }
         if (ordered.size > maxRecords) throw SyncFormatException("too-many-records", "${ordered.size} > $maxRecords")
@@ -80,7 +115,10 @@ object ViewFile {
         val sealed = ArrayList<JsonValue>(ordered.size)
         for (s in ordered) sealed.add(SealedItem.seal(key, s, uniqueNonce()))
         val header = CanonicalJson.encode(
-            ViewHeader(FORMAT, key.groupId, deviceId, key.epoch, counter, writtenAt).json(),
+            ViewHeader(
+                if (vaultGeneration != null) FORMAT_WITNESS else FORMAT, key.groupId, deviceId, key.epoch, counter, writtenAt,
+                vaultGeneration, w,
+            ).json(),
             Dialect.UTF8,
         )
         val nonce = uniqueNonce()
@@ -128,11 +166,14 @@ object ViewFile {
             throw SyncFormatException("bad-header", "header is not JSON")
         }
         val h = (parsed as? JsonValue.Obj)?.fields
-        if (h == null || h.keys != HEADER_FIELDS) throw SyncFormatException("bad-header", "header fields")
-        if (h["format"] != JsonValue.Int(FORMAT)) throw SyncFormatException("bad-header", "unsupported format")
+        if (h == null || "format" !in h) throw SyncFormatException("bad-header", "header fields")
+        val fmt = (h["format"] as? JsonValue.Int)?.v
+        if (fmt != FORMAT && fmt != FORMAT_WITNESS) throw SyncFormatException("bad-header", "unsupported format")
+        if (h.keys != (if (fmt == FORMAT) HEADER_FIELDS else HEADER_FIELDS_V2)) throw SyncFormatException("bad-header", "header fields")
         val groupId = (h["group_id"] as? JsonValue.Str)?.v
         if (groupId == null || !Identifier.isValid(groupId)) throw SyncFormatException("bad-header", "group_id")
         checkHeaderValues(h["device_id"], h["epoch"], h["counter"], h["written_at"])
+        if (fmt == FORMAT_WITNESS) checkWitnessValues((h["device_id"] as JsonValue.Str).v, h["vault_generation"], h["witness"])
         val canonical = try {
             CanonicalJson.encode(parsed, Dialect.UTF8)
         } catch (e: JsonException) {
@@ -143,7 +184,9 @@ object ViewFile {
         val epoch = (h["epoch"] as JsonValue.Int).v
         val counter = (h["counter"] as JsonValue.Int).v
         val writtenAt = (h["written_at"] as JsonValue.Int).v
-        return Triple(ViewHeader(FORMAT, groupId, deviceId, epoch, counter, writtenAt), headerBytes, end)
+        val generation = (h["vault_generation"] as? JsonValue.Int)?.v
+        val witness = (h["witness"] as? JsonValue.Obj)?.fields?.mapValues { (it.value as JsonValue.Int).v } ?: emptyMap()
+        return Triple(ViewHeader(fmt!!, groupId, deviceId, epoch, counter, writtenAt, generation, witness), headerBytes, end)
     }
 
     private fun openPayload(data: ByteArray, key: GroupKey, headerBytes: ByteArray, end: Int, maxRecords: Int): List<ItemState> {

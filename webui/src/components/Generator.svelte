@@ -1,6 +1,7 @@
 <script>
   /** Password generator sheet. Settings persist in Python on every Generate. */
   import { call } from '../lib/api.js';
+  import { t } from '../lib/i18n.svelte.js';
   import { notice, okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
 
@@ -12,7 +13,7 @@
 
   async function generate(changes = {}) {
     const result = await call('generator_generate', { ...(options ?? {}), ...changes });
-    if (!okOrToast(result, 'Could not generate')) return;
+    if (!okOrToast(result, t('generator.couldNotGenerate'))) return;
     value = result.value;
     health = result.health;
     if (result.options && Object.keys(result.options).length) options = result.options;
@@ -28,35 +29,35 @@
 
   async function copy() {
     const result = await call('generator_copy', value);
-    if (okOrToast(result, 'Not copied')) notice(result);
+    if (okOrToast(result, t('home.notCopied'))) notice(result);
   }
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label="Password generator">
-  <header><h2>Password generator</h2><button class="close" aria-label="Close" onclick={onclose}>✕</button></header>
+<div class="sheet glass" role="dialog" aria-modal="true" aria-label={t('generator.title')}>
+  <header><h2>{t('generator.title')}</h2><button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button></header>
   <div class="group output">
     <span class="mono">{value}</span>
     <span class="health">{health}</span>
   </div>
   {#if options}
-    <div class="section-label">Options</div>
+    <div class="section-label">{t('generator.options')}</div>
     <div class="group">
       <div class="field">
-        <span class="k">Type</span>
-        <button class="seg" class:on={options.mode === 'password'} onclick={() => generate({ mode: 'password' })}>Random</button>
-        <button class="seg" class:on={options.mode === 'passphrase'} onclick={() => generate({ mode: 'passphrase' })}>Passphrase</button>
+        <span class="k">{t('generator.type')}</span>
+        <button class="seg" class:on={options.mode === 'password'} onclick={() => generate({ mode: 'password' })}>{t('generator.random')}</button>
+        <button class="seg" class:on={options.mode === 'passphrase'} onclick={() => generate({ mode: 'passphrase' })}>{t('generator.passphrase')}</button>
       </div>
       {#if options.mode === 'passphrase'}
-        <label class="field"><span class="k">Words</span>
+        <label class="field"><span class="k">{t('generator.words')}</span>
           <input type="range" min="3" max="16" value={options.words} onchange={(e) => generate({ words: +e.currentTarget.value })} />
           <span class="n">{options.words}</span>
         </label>
       {:else}
-        <label class="field"><span class="k">Length</span>
+        <label class="field"><span class="k">{t('generator.length')}</span>
           <input type="range" min="8" max="64" value={options.length} onchange={(e) => generate({ length: +e.currentTarget.value })} />
           <span class="n">{options.length}</span>
         </label>
-        {#each [['uppercase', 'A–Z'], ['lowercase', 'a–z'], ['digits', '0–9'], ['symbols', 'Symbols']] as [key, label] (key)}
+        {#each [['uppercase', 'A–Z'], ['lowercase', 'a–z'], ['digits', '0–9'], ['symbols', t('generator.symbols')]] as [key, label] (key)}
           <label class="field"><span class="k">{label}</span>
             <input type="checkbox" checked={options[key]} onchange={(e) => generate({ [key]: e.currentTarget.checked })} />
           </label>
@@ -65,8 +66,8 @@
     </div>
   {/if}
   <footer>
-    <Button label="Generate again" onclick={() => generate()} />
-    <Button label="Copy" variant="primary" onclick={copy} />
+    <Button label={t('generator.again')} onclick={() => generate()} />
+    <Button label={t('generator.copy')} variant="primary" onclick={copy} />
   </footer>
 </div>
 

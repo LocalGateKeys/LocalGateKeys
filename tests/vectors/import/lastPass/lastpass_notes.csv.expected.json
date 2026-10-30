@@ -1,0 +1,433 @@
+{
+  "format": "lastPass",
+  "input": "tests/vectors/import/_inputs/lastpass_notes.csv",
+  "python_format": "lastpass-csv",
+  "result": {
+    "diagnostics": [],
+    "records": [
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Fax",
+            "value": "0300"
+          }
+        ],
+        "favorite": true,
+        "folder": "Personal",
+        "identity": {
+          "address_line1": "1 Example Road",
+          "city": "Exampleton",
+          "company": "Example Ltd",
+          "country": "GB",
+          "email": "alex@example.com",
+          "family_name": "Example",
+          "given_name": "Alex",
+          "middle_name": "Q",
+          "name": "Alex Q Example",
+          "phone": "0100",
+          "postal_code": "EX1 2PL"
+        },
+        "kind": "identity",
+        "modified": null,
+        "notes": "Home address\nsecond line",
+        "password": "",
+        "source_row": 2,
+        "tags": [],
+        "title": "Home",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {
+          "brand": "Visa",
+          "cardholder": "Alex Example",
+          "cvv": "123",
+          "expiry": "01/2027",
+          "number": "4111111111111111"
+        },
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Start Date",
+            "value": "January,2020"
+          }
+        ],
+        "favorite": false,
+        "folder": "Finance",
+        "identity": {},
+        "kind": "card",
+        "modified": null,
+        "notes": "Main card",
+        "password": "",
+        "source_row": 3,
+        "tags": [],
+        "title": "Visa card",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {
+          "number": "5555555555554444"
+        },
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Expiration Date",
+            "value": "sometime"
+          },
+          {
+            "hidden": true,
+            "name": "PIN code",
+            "value": "9999"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "card",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 4,
+        "tags": [],
+        "title": "Odd card",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "LastPass note type",
+            "value": "Server"
+          },
+          {
+            "hidden": false,
+            "name": "Hostname",
+            "value": "db.example.test"
+          },
+          {
+            "hidden": true,
+            "name": "Password",
+            "value": "srv-secret"
+          },
+          {
+            "hidden": false,
+            "name": "Field 0",
+            "value": "value 0"
+          },
+          {
+            "hidden": false,
+            "name": "Field 1",
+            "value": "value 1"
+          },
+          {
+            "hidden": false,
+            "name": "Field 2",
+            "value": "value 2"
+          },
+          {
+            "hidden": false,
+            "name": "Field 3",
+            "value": "value 3"
+          },
+          {
+            "hidden": false,
+            "name": "Field 4",
+            "value": "value 4"
+          },
+          {
+            "hidden": false,
+            "name": "Field 5",
+            "value": "value 5"
+          },
+          {
+            "hidden": false,
+            "name": "Field 6",
+            "value": "value 6"
+          },
+          {
+            "hidden": false,
+            "name": "Field 7",
+            "value": "value 7"
+          },
+          {
+            "hidden": false,
+            "name": "Field 8",
+            "value": "value 8"
+          },
+          {
+            "hidden": false,
+            "name": "Field 9",
+            "value": "value 9"
+          },
+          {
+            "hidden": false,
+            "name": "Field 10",
+            "value": "value 10"
+          },
+          {
+            "hidden": false,
+            "name": "Field 11",
+            "value": "value 11"
+          },
+          {
+            "hidden": false,
+            "name": "Field 12",
+            "value": "value 12"
+          },
+          {
+            "hidden": false,
+            "name": "Field 13",
+            "value": "value 13"
+          },
+          {
+            "hidden": false,
+            "name": "Field 14",
+            "value": "value 14"
+          },
+          {
+            "hidden": false,
+            "name": "Field 15",
+            "value": "value 15"
+          },
+          {
+            "hidden": false,
+            "name": "Field 16",
+            "value": "value 16"
+          },
+          {
+            "hidden": false,
+            "name": "Field 17",
+            "value": "value 17"
+          },
+          {
+            "hidden": false,
+            "name": "Field 18",
+            "value": "value 18"
+          },
+          {
+            "hidden": false,
+            "name": "Field 19",
+            "value": "value 19"
+          },
+          {
+            "hidden": false,
+            "name": "Field 20",
+            "value": "value 20"
+          },
+          {
+            "hidden": false,
+            "name": "Field 21",
+            "value": "value 21"
+          },
+          {
+            "hidden": false,
+            "name": "Field 22",
+            "value": "value 22"
+          },
+          {
+            "hidden": false,
+            "name": "Field 23",
+            "value": "value 23"
+          },
+          {
+            "hidden": false,
+            "name": "Field 24",
+            "value": "value 24"
+          },
+          {
+            "hidden": false,
+            "name": "Field 25",
+            "value": "value 25"
+          },
+          {
+            "hidden": false,
+            "name": "Field 26",
+            "value": "value 26"
+          },
+          {
+            "hidden": false,
+            "name": "Field 27",
+            "value": "value 27"
+          },
+          {
+            "hidden": false,
+            "name": "Field 28",
+            "value": "value 28"
+          },
+          {
+            "hidden": false,
+            "name": "Field 29",
+            "value": "value 29"
+          },
+          {
+            "hidden": false,
+            "name": "Field 30",
+            "value": "value 30"
+          },
+          {
+            "hidden": false,
+            "name": "Field 31",
+            "value": "value 31"
+          },
+          {
+            "hidden": false,
+            "name": "Field 32",
+            "value": "value 32"
+          },
+          {
+            "hidden": false,
+            "name": "Field 33",
+            "value": "value 33"
+          },
+          {
+            "hidden": false,
+            "name": "Field 34",
+            "value": "value 34"
+          },
+          {
+            "hidden": false,
+            "name": "Field 35",
+            "value": "value 35"
+          },
+          {
+            "hidden": false,
+            "name": "Field 36",
+            "value": "value 36"
+          },
+          {
+            "hidden": false,
+            "name": "Field 37",
+            "value": "value 37"
+          },
+          {
+            "hidden": false,
+            "name": "Field 38",
+            "value": "value 38"
+          },
+          {
+            "hidden": false,
+            "name": "Field 39",
+            "value": "value 39"
+          },
+          {
+            "hidden": false,
+            "name": "Field 40",
+            "value": "value 40"
+          },
+          {
+            "hidden": false,
+            "name": "Field 41",
+            "value": "value 41"
+          },
+          {
+            "hidden": false,
+            "name": "Field 42",
+            "value": "value 42"
+          },
+          {
+            "hidden": false,
+            "name": "Field 43",
+            "value": "value 43"
+          },
+          {
+            "hidden": false,
+            "name": "Field 44",
+            "value": "value 44"
+          },
+          {
+            "hidden": false,
+            "name": "Field 45",
+            "value": "value 45"
+          },
+          {
+            "hidden": false,
+            "name": "Field 46",
+            "value": "value 46"
+          }
+        ],
+        "favorite": false,
+        "folder": "Work/Infra",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 5,
+        "tags": [],
+        "title": "Server note",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "Just a plain note\nwith two lines",
+        "password": "",
+        "source_row": 6,
+        "tags": [],
+        "title": "Plain note",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "No URL note",
+        "password": "",
+        "source_row": 7,
+        "tags": [],
+        "title": "Loose note",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": true,
+        "folder": "Folder/Sub",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "pw",
+        "source_row": 8,
+        "tags": [],
+        "title": "https://site.example.com",
+        "totp_uri": "otpauth://totp/account?secret=JBSWY3DPEHPK3PXP",
+        "urls": [
+          "https://site.example.com"
+        ],
+        "username": "alex"
+      }
+    ],
+    "source_format": "lastpass-csv"
+  }
+}

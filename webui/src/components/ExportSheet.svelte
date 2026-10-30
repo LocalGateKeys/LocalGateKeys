@@ -1,6 +1,7 @@
 <script>
   /** Export to a file: format, optional 2FA secrets, the classic warnings; KDBX needs its own password. */
   import ErrorLogLink from './ErrorLogLink.svelte';
+  import { formatNumber, t } from '../lib/i18n.svelte.js';
   import { call } from '../lib/api.js';
   import { okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
@@ -17,7 +18,7 @@
 
   async function load() {
     const r = await call('export_formats', fmt, totp);
-    if (okOrToast(r, 'Could not open Export')) info = r;
+    if (okOrToast(r, t('exportSheet.couldNotOpen'))) info = r;
   }
   $effect(() => { fmt; totp; load(); });
   $effect(() => () => { pw = ''; pw2 = ''; });
@@ -33,30 +34,30 @@
   }
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label="Export">
+<div class="sheet glass" role="dialog" aria-label={t('exportSheet.export')}>
   <header>
-    <h2>Export…</h2>
-    <button class="close" aria-label="Close" onclick={onclose}>✕</button>
+    <h2>{t('exportSheet.title')}</h2>
+    <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
   {#if info}
     <p class="muted">{info.intro}</p>
     <div class="group">
-      <label class="row"><span>Format</span>
-        <select aria-label="Format" bind:value={fmt}>{#each info.formats as f (f.key)}<option value={f.key}>{f.label}</option>{/each}</select>
+      <label class="row"><span>{t('exportSheet.format')}</span>
+        <select aria-label={t('exportSheet.format')} bind:value={fmt}>{#each info.formats as f (f.key)}<option value={f.key}>{f.label}</option>{/each}</select>
       </label>
-      <label class="row"><input type="checkbox" bind:checked={totp} /> Include one-time password (2FA) secrets</label>
+      <label class="row"><input type="checkbox" bind:checked={totp} /> {t('exportSheet.includeTotp')}</label>
     </div>
     {#each info.warnings as w (w)}<p class="warn">{w}</p>{/each}
     {#if fmt === 'kdbx'}
       <div class="group">
-        <Field label={`KDBX password (at least ${info.min_password} characters)`} type="password" bind:value={pw} autocomplete="new-password" />
-        <Field label="Repeat the KDBX password" type="password" bind:value={pw2} autocomplete="new-password" />
+        <Field label={t('exportSheet.kdbxPassword', { min: formatNumber(info.min_password) })} type="password" bind:value={pw} autocomplete="new-password" />
+        <Field label={t('exportSheet.kdbxRepeat')} type="password" bind:value={pw2} autocomplete="new-password" />
       </div>
     {/if}
     {#if error}<p class="error" role="alert">{error}<ErrorLogLink text={error} /></p>{/if}
     <footer>
-      <Button label="Cancel" onclick={onclose} />
-      <Button label="Export" variant="primary" busy={busy} busyLabel="Exporting…" onclick={run} />
+      <Button label={t('common.cancel')} onclick={onclose} />
+      <Button label={t('exportSheet.export')} variant="primary" busy={busy} busyLabel={t('exportSheet.exporting')} onclick={run} />
     </footer>
   {/if}
 </div>

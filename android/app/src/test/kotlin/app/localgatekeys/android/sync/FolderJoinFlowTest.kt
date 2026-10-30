@@ -1,5 +1,7 @@
 package app.localgatekeys.android.sync
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.sync.SyncCoordinator.Trigger
 import app.localgatekeys.android.ui.sync.FolderJoinFlow
 import app.localgatekeys.android.ui.sync.FolderPasswordForm
@@ -71,7 +73,7 @@ class FolderJoinFlowTest {
             slots = slots, folders = folders, lan = lan, random = SystemRandomSource(), clock = clock,
             licenseKeys = emptyMap(), sleep = NoSleep().fn,
         )
-        return SyncCoordinator(store, deps, scope).also { created.add(it) }
+        return SyncCoordinator(store, deps, scope, EnglishTxt()).also { created.add(it) }
     }
 
     private fun seedEpoch1Folder() {
@@ -88,7 +90,7 @@ class FolderJoinFlowTest {
     private suspend fun CoroutineScope.joined(store: LockedStore, uri: String = "content://tree/one"): Pair<SyncCoordinator, FolderJoinFlow> {
         seedEpoch1Folder()
         val c = coordinator(store)
-        val flow = FolderJoinFlow(c)
+        val flow = FolderJoinFlow(c, EnglishTxt())
         flow.picked(FolderPick.Picked(uri))
         flow.form.value!!.update(SyncVectors.PASSWORD)
         assertTrue(c.actionError.value ?: "", flow.join())
@@ -99,7 +101,7 @@ class FolderJoinFlowTest {
         seedEpoch1Folder()
         val store = LockedStore()
         val c = coordinator(store)
-        val flow = FolderJoinFlow(c)
+        val flow = FolderJoinFlow(c, EnglishTxt())
         flow.picked(FolderPick.Picked("content://tree/one"))
         val form = flow.form.value!!
         assertEquals("content://tree/one", form.uri)
@@ -134,7 +136,7 @@ class FolderJoinFlowTest {
 
         val c = coordinator(store)
         c.refreshMembership()
-        val flow = FolderJoinFlow(c)
+        val flow = FolderJoinFlow(c, EnglishTxt())
         flow.picked(FolderPick.Picked("content://tree/attach"))
         val form = flow.form.value!! // joined by QR but no folder yet: the password is needed (attach)
         form.update(SyncVectors.str(SyncVectors.obj(existing["attach"])["password"]))
@@ -163,7 +165,7 @@ class FolderJoinFlowTest {
         seedEpoch1Folder()
         val store = LockedStore()
         val c = coordinator(store)
-        val flow = FolderJoinFlow(c)
+        val flow = FolderJoinFlow(c, EnglishTxt())
         flow.picked(FolderPick.Picked("content://tree/one"))
         flow.form.value!!.update("not the sync password")
         assertFalse(flow.join())
@@ -177,7 +179,7 @@ class FolderJoinFlowTest {
     @Test fun the_password_backoff_also_releases_the_picked_folder() = test {
         seedEpoch1Folder()
         val c = coordinator(LockedStore())
-        val flow = FolderJoinFlow(c)
+        val flow = FolderJoinFlow(c, EnglishTxt())
         repeat(5) {
             flow.picked(FolderPick.Picked("content://tree/one"))
             flow.form.value!!.update("nope nope nope")
@@ -187,7 +189,7 @@ class FolderJoinFlowTest {
         flow.picked(FolderPick.Picked("content://tree/one"))
         flow.form.value!!.update(SyncVectors.PASSWORD)
         assertFalse(flow.join())
-        assertEquals(SyncWording.PASSWORD_BACKOFF_TEXT, c.actionError.value)
+        assertEquals(EnglishTxt().s(R.string.sync_password_backoff), c.actionError.value)
         assertEquals(listOf<String?>(null), folders.kept)
     }
 
@@ -195,7 +197,7 @@ class FolderJoinFlowTest {
         seedEpoch1Folder()
         val store = LockedStore()
         val c = coordinator(store)
-        val flow = FolderJoinFlow(c)
+        val flow = FolderJoinFlow(c, EnglishTxt())
         flow.picked(FolderPick.Picked("content://tree/one"))
         val form = flow.form.value!!
         form.update("typed then cancelled")
@@ -223,12 +225,12 @@ class FolderJoinFlowTest {
 
     @Test fun a_cancelled_pick_changes_nothing_and_a_failed_pick_says_so() = test {
         val c = coordinator(LockedStore())
-        val flow = FolderJoinFlow(c)
+        val flow = FolderJoinFlow(c, EnglishTxt())
         flow.picked(FolderPick.Cancelled)
         assertNull(flow.form.value); assertNull(flow.error.value)
         flow.picked(FolderPick.Failed)
         assertNull(flow.form.value)
-        assertEquals(SyncWording.errorText("folder-error"), flow.error.value)
+        assertEquals(SyncWording(EnglishTxt()).errorText("folder-error"), flow.error.value)
         assertEquals("The folder could not be used. Check that it exists and is writable.", flow.error.value)
         flow.picked(FolderPick.Cancelled) // the next pick clears the message
         assertNull(flow.error.value)
@@ -254,7 +256,7 @@ class FolderJoinFlowTest {
             "The sync folder is not available. Check that the cloud app is running and the folder exists.",
             c.issues.value.first().text,
         )
-        assertEquals(SyncWording.text(SyncIssue("folder-missing")), c.issues.value.first().text)
+        assertEquals(SyncWording(EnglishTxt()).text(SyncIssue("folder-missing")), c.issues.value.first().text)
         assertEquals(SyncWording.Severity.ERROR, c.issues.value.first().severity)
         assertEquals(commits, store.commits) // nothing written
         assertEquals(before, store.snapshot)
@@ -304,12 +306,12 @@ class FolderJoinFlowTest {
         assertEquals(
             "Choose the folder your cloud app syncs (OneDrive, Dropbox, Nextcloud), the one that holds LocalGateKeys Sync, " +
                 "and enter the sync password.",
-            SyncScreenText.FOLDER_NOT_JOINED,
+            EnglishTxt().s(SyncScreenText.FOLDER_NOT_JOINED),
         )
         assertEquals(
             "Google Drive's Android app does not let other apps choose a folder in it. To sync with Google Drive, use Wi-Fi " +
                 "sync, or a folder-sync app that keeps a folder on this phone in step with Google Drive.",
-            FolderJoinText.GOOGLE_DRIVE_NOTICE,
+            EnglishTxt().s(FolderJoinText.GOOGLE_DRIVE_NOTICE),
         )
     }
 }

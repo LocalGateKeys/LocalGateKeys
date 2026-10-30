@@ -17,6 +17,7 @@ import zlib
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
+from ..i18n import t
 
 from . import (
     MAX_JSON_BYTES,
@@ -47,8 +48,7 @@ STATE_TRASHED = 2
 PROTON_CSV_COLUMNS = ("type", "name", "url", "email", "username", "password", "note", "totp", "createTime",
                       "modifyTime", "vault")
 ENCRYPTED_MESSAGE = (
-    "This Proton Pass export is PGP-encrypted, which LocalGateKeys cannot open. In Proton Pass choose "
-    "Settings > Export, turn off 'Encrypt with PGP' and import the resulting .zip (or export as CSV).")
+    "protonpass.thisProtonPassExportIs")
 _SUPPORTED_ZIP_METHODS = frozenset({zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED})
 
 _IDENTITY_MAP = {
@@ -124,8 +124,7 @@ def item_to_record(item: Mapping[str, Any], vault_name: str, *, source_row: int 
         if email and username and email != username:
             add_custom_field(record, "Email", email)
         if content.get("passkeys"):
-            add_custom_field(record, "Passkeys", "This login had a passkey in Proton Pass; passkeys cannot be "
-                             "exported, so sign in with the password and register a new passkey.")
+            add_custom_field(record, "Passkeys", t("protonpass.thisLoginHadAPasskey"))
     elif kind == "note":
         record = ImportedRecord(kind="note", **base)
     elif kind == "creditCard":
@@ -170,7 +169,7 @@ def item_to_record(item: Mapping[str, Any], vault_name: str, *, source_row: int 
 
 def records_from_document(document: Mapping[str, Any]) -> ImportResult:
     if document.get("encrypted") is True:
-        raise ProtonPassError(ENCRYPTED_MESSAGE)
+        raise ProtonPassError(t(ENCRYPTED_MESSAGE))
     vaults = document.get("vaults")
     if not isinstance(vaults, dict):
         raise ProtonPassError("Proton Pass export has no 'vaults' object")
@@ -186,14 +185,14 @@ def records_from_document(document: Mapping[str, Any]) -> ImportResult:
             index += 1
             check_record_count(index)
             if not isinstance(item, dict):
-                result.diagnostics.append(f"Item {index}: not an object; skipped.")
+                result.diagnostics.append(t("bitwarden.itemNotAnObjectSkipped", index=index))
                 continue
             if item.get("state") == STATE_TRASHED:
                 trashed += 1
                 continue
             result.records.append(item_to_record(item, vault_name, source_row=index))
     if trashed:
-        result.diagnostics.append(f"{trashed} items in the Proton Pass trash were not imported.")
+        result.diagnostics.append(t("protonpass.itemsInTheProtonPass", trashed=trashed))
     result.records = enforce_record_limit(result.records)
     return result
 
@@ -206,34 +205,34 @@ def read_data_json(source: Path | str | bytes) -> dict[str, Any]:
             with zipfile.ZipFile(io.BytesIO(data)) as archive:
                 names = {info.filename: info for info in archive.infolist()}
                 if PGP_MEMBER in names or any(name.endswith(".pgp") for name in names):
-                    raise ProtonPassError(ENCRYPTED_MESSAGE)
+                    raise ProtonPassError(t(ENCRYPTED_MESSAGE))
                 info = names.get(DATA_MEMBER) or next(
                     (value for name, value in names.items() if name.rsplit("/", 1)[-1] == "data.json"), None)
                 if info is None:
-                    raise ProtonPassError("The zip archive does not contain a Proton Pass data.json")
+                    raise ProtonPassError(t("protonpass.theZipArchiveDoesNot"))
                 if info.file_size > MAX_JSON_DATA_BYTES:
-                    raise ProtonPassError("data.json is too large")
+                    raise ProtonPassError(t("protonpass.dataJsonIsTooLarge"))
                 if info.flag_bits & 0x1 or info.compress_type not in _SUPPORTED_ZIP_METHODS:
-                    raise ProtonPassError("data.json is encrypted or compressed in an unsupported way")
+                    raise ProtonPassError(t("protonpass.dataJsonIsEncryptedOr"))
                 with archive.open(info) as handle:
                     raw = read_bounded(handle, MAX_JSON_DATA_BYTES)
         except ProtonPassError:
             raise
         except (zipfile.BadZipFile, zipfile.LargeZipFile, RuntimeError, NotImplementedError, OSError, EOFError,
                 ValueError, zlib.error) as exc:
-            raise ProtonPassError("The Proton Pass archive is corrupted or unsupported") from exc
+            raise ProtonPassError(t("protonpass.theProtonPassArchiveIs")) from exc
     else:
         raw = data
     if len(raw) > MAX_JSON_DATA_BYTES:
-        raise ProtonPassError("data.json is too large")
+        raise ProtonPassError(t("protonpass.dataJsonIsTooLarge"))
     if raw.lstrip()[:27] == b"-----BEGIN PGP MESSAGE-----":
-        raise ProtonPassError(ENCRYPTED_MESSAGE)
+        raise ProtonPassError(t(ENCRYPTED_MESSAGE))
     try:
         document = json.loads(decode_text(raw))
     except (ValueError, RecursionError) as exc:
-        raise ProtonPassError("Proton Pass data.json is not valid JSON") from exc
+        raise ProtonPassError(t("protonpass.protonPassDataJsonIs2")) from exc
     if not isinstance(document, dict):
-        raise ProtonPassError("Proton Pass data.json is not an export object")
+        raise ProtonPassError(t("protonpass.protonPassDataJsonIs"))
     return document
 
 
@@ -270,8 +269,7 @@ def load_protonpass_csv(source: Path | str | bytes) -> ImportResult:
                 add_custom_field(record, "URL", pick(row, "url"))
                 if kind in {"creditcard", "identity"}:
                     result.diagnostics.append(
-                        f"Row {number}: Proton Pass CSV does not include {kind} details; use the JSON export "
-                        "to import cards and identities fully.")
+                        t("protonpass.rowProtonPassCsvDoes", number=number, kind=kind))
         result.records.append(record)
         check_record_count(len(result.records))
     result.records = enforce_record_limit(result.records)

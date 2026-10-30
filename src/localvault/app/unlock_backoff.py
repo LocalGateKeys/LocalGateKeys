@@ -7,6 +7,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 from ..vault import UnlockThrottled
+from ..i18n import t
 
 
 def backoff_seconds_from_error(error: BaseException | None) -> float:
@@ -37,7 +38,7 @@ class UnlockBackoff:
         remaining = self.remaining()
         if remaining <= 0:
             return ""
-        return f"Too many incorrect attempts. Try again in {math.ceil(remaining)} s."
+        return t("unlockBackoff.tooManyIncorrectAttemptsTry", v1=math.ceil(remaining))
 
 
 @dataclass(frozen=True)
@@ -66,7 +67,7 @@ def profile_chips(profiles: Sequence[tuple[str, str]], active_id: str | None) ->
 def locked_subtitle(locked_at: float | None, now: float | None = None) -> str:
     """The line under the unlock title: "Locked 12 minutes ago", or a plain one before any lock."""
     if locked_at is None:
-        return "Your vault is locked"
+        return t("unlockBackoff.yourVaultIsLocked")
     from ..shell.overview_model import age_text
 
     now = time.time() if now is None else now

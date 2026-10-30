@@ -1,4 +1,4 @@
-"""Stage 6b: the Getting started guide for the WebView UI."""
+"""UX plan workstream 4: the five-step, skippable setup guide and its vault card."""
 from __future__ import annotations
 
 import json
@@ -39,79 +39,83 @@ def env(tmp_path, monkeypatch):
     controller.create(MASTER, MASTER)
     recovery = SimpleNamespace(verified_backup=False)
     report = {"connection": {"status": "unavailable"}}
-    service = OnboardingWebService(controller, recovery, diagnostics=lambda: report)
-    return SimpleNamespace(controller=controller, recovery=recovery, report=report, service=service)
+    phrase = {"enrolled": False}
+    service = OnboardingWebService(controller, recovery, diagnostics=lambda: report,
+                                   phrase_enrolled=lambda path: phrase["enrolled"])
+    return SimpleNamespace(controller=controller, recovery=recovery, report=report, service=service, phrase=phrase)
 
 
-def test_walks_every_stage_with_the_classic_rules(env):
+def _setup_file(env):
+    from pathlib import Path
+
+    return Path(env.controller.session.path).parent / "setup.json"
+
+
+def test_first_screen_lists_five_steps_with_the_vault_already_done(env):
+    view = env.service.view()
+    assert [s["key"] for s in view["steps"]] == ["vault", "unlock", "import", "phrase", "browser"]
+    assert view["steps"][0]["state"] == "done" and view["current"] == "unlock"
+    assert view["progress"] == "1 of 5" and view["card"] is True
+
+
+def test_skip_all_leaves_the_card_with_every_step_left(env):
+    view = env.service.skip_all()
+    assert view["current"] is None and view["card"] is True and view["progress"] == "1 of 5"
+    assert {s["state"] for s in view["steps"][1:]} == {"skipped"}
+    assert env.service.card() == {"card": True, "progress": "1 of 5", "done": 1, "total": 5}
+
+
+def test_each_step_routes_or_confirms(env):
     s = env.service
-    assert s.view()["heading"] == "Stage 1 of 7 · Welcome"
-    s.perform(False)
-    assert env.controller.settings.strict_offline_mode is False
-    assert s.perform()["open"] == {"route": "security"}
-    assert "open" not in s.perform(False)  # demo declined
-    blocked = s.perform()
-    assert blocked["stage"] == "bridge_diagnostic"
-    assert blocked["status"] == "Connection unavailable. Retry or open Connections for help."
+    assert s.perform("unlock")["open"] == {"route": "hello", "params": {"startHello": True}}
+    s.skip("unlock")
+    opened = s.perform("import")
+    assert opened["open"] == {"route": "import"} and opened["steps"][2]["state"] == "done"
+    phrase = s.perform("phrase")
+    assert phrase["open"]["route"] == "recovery" and phrase["steps"][3]["state"] != "done"
+    env.phrase["enrolled"] = True  # created and confirmed on the recovery page
+    assert s.view()["steps"][3]["state"] == "done"
+    blocked = s.perform("browser")
+    assert "did not answer" in blocked["message"] and blocked["steps"][4]["state"] == "current"
     env.report["connection"]["status"] = "connected"
-    first = s.perform()
-    assert first["stage"] == "first_item"
-    opened = s.perform()
-    assert opened["open"] == {"route": "new-item"} and opened["primary"] == "Confirm saved item"
-    assert s.perform()["status"] == "No saved item yet. Save one in Add item, then confirm below."
-    env.controller.session.item_service.create_note("First", "x")
-    backup = s.perform()
-    assert backup["stage"] == "backup"
-    assert s.perform()["open"] == {"route": "recovery", "params": {"initial": "verify"}}
-    env.recovery.verified_backup = True
-    done = s.perform()
-    assert done["stage"] == "complete"
-    assert s.perform()["done"] is True
+    assert s.perform("browser")["steps"][4]["state"] == "done"
+    view = s.view()
+    assert view["progress"] == "4 of 5" and view["card"] is True  # Windows Hello was skipped
 
 
-def test_skip_keeps_the_stage_skipped(env):
+def test_finishing_every_step_removes_the_card(env):
     s = env.service
-    view = s.skip()
-    assert view["stage"] == "security"
-    assert next(st for st in view["stages"] if st["key"] == "welcome")["state"] == "skipped"
-
-
-def test_progress_is_saved_without_secrets(env):
-    env.service.perform(True)
-    path = env.controller.profiles.vault_path(env.controller.profiles.active_profile().id).parent / "onboarding.json"
-    text = path.read_text(encoding="utf-8")
-    assert "security" in json.loads(text)["profiles"][env.controller.profiles.active_profile().id]["stage"]
-    assert MASTER not in text
-
-
-def test_offline_choice_goes_through_settings(env):
-    applied = []
-    env.service._apply_setting = lambda key, value: applied.append((key, value))
-    env.service.perform(False)
-    assert applied == [("strict_offline_mode", False)]
-
-
-def test_connection_test_is_separate_from_perform(env):
-    s = env.service
-    for _ in range(3):
-        s.perform(True if s.view()["stage"] == "welcome" else False)
-    assert s.view()["stage"] == "bridge_diagnostic"
+    env.controller.offers["hello"] = lambda: True
+    env.phrase["enrolled"] = True
     env.report["connection"]["status"] = "connected"
-    calls = []
-    s._diagnostics = lambda: calls.append(1) or env.report
-    s.test_connection()
-    assert calls == [1]
-    view = s.perform()
-    assert view["stage"] == "first_item" and calls == [1]  # perform used the stored result
+    s.perform("import")
+    view = s.perform("browser")
+    assert view["complete"] is True and view["card"] is False and view["progress"] == "5 of 5"
 
 
-def test_skip_is_saved_once_and_stays_skipped(env, monkeypatch):
+def test_hide_keeps_the_card_hidden_until_show_again(env):
     s = env.service
-    s.view()
-    saves = []
-    flow = s._flow
-    original = flow._save
-    monkeypatch.setattr(flow, "_save", lambda: saves.append(1) or original())
-    view = s.skip()
-    assert len(saves) == 1 and view["stage"] == "security"
-    assert next(st for st in view["stages"] if st["key"] == "welcome")["state"] == "skipped"
+    s.skip_all()
+    assert s.hide()["card"] is False
+    assert s.card()["card"] is False
+    again = s.show_again()
+    assert again["card"] is True and again["current"] == "unlock"
+    assert not any(step["state"] == "skipped" for step in again["steps"])
+
+
+def test_progress_is_a_local_file_without_secrets(env):
+    env.service.skip("unlock")
+    data = json.loads(_setup_file(env).read_text(encoding="utf-8"))
+    assert data == {"format": "localgatekeys-setup-v1", "done": ["vault"], "skipped": ["unlock"], "hidden": False}
+    _setup_file(env).write_text("not json", encoding="utf-8")
+    assert env.service.view()["current"] == "unlock"  # a damaged file only restarts the guide
+
+
+def test_unknown_step_and_locked_vault_are_refused(env):
+    from localvault.api.result import ApiError
+
+    with pytest.raises(ApiError):
+        env.service.perform("nope")
+    env.controller.lock()
+    with pytest.raises(ApiError):
+        env.service.view()

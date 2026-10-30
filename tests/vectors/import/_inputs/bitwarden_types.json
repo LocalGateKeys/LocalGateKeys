@@ -1,0 +1,251 @@
+{
+  "encrypted": false,
+  "folders": [
+    {
+      "id": "f1",
+      "name": "Work"
+    }
+  ],
+  "collections": [
+    {
+      "id": "c1",
+      "name": "Shared"
+    }
+  ],
+  "items": [
+    {
+      "type": 1,
+      "name": "Many URLs",
+      "folderId": "f1",
+      "favorite": true,
+      "notes": "n",
+      "creationDate": "2024-01-02T03:04:05.123Z",
+      "revisionDate": "2024-02-03T04:05:06Z",
+      "login": {
+        "username": "u",
+        "password": "p",
+        "totp": "JBSWY3DPEHPK3PXP",
+        "uris": [
+          {
+            "uri": "https://u0.example.com"
+          },
+          {
+            "uri": "https://u1.example.com"
+          },
+          {
+            "uri": "https://u2.example.com"
+          },
+          {
+            "uri": "https://u3.example.com"
+          },
+          {
+            "uri": "https://u4.example.com"
+          },
+          {
+            "uri": "https://u5.example.com"
+          },
+          {
+            "uri": "https://u6.example.com"
+          },
+          {
+            "uri": "https://u7.example.com"
+          },
+          {
+            "uri": "https://u8.example.com"
+          },
+          {
+            "uri": "https://u9.example.com"
+          },
+          {
+            "uri": "https://u10.example.com"
+          },
+          {
+            "uri": "https://u11.example.com"
+          },
+          {
+            "uri": "https://u12.example.com"
+          },
+          {
+            "uri": "https://u13.example.com"
+          },
+          {
+            "uri": "https://u14.example.com"
+          },
+          {
+            "uri": "https://u15.example.com"
+          },
+          {
+            "uri": "https://u16.example.com"
+          },
+          {
+            "uri": "https://u17.example.com"
+          },
+          {
+            "uri": "https://u18.example.com"
+          },
+          {
+            "uri": "https://u19.example.com"
+          },
+          {
+            "uri": "https://u20.example.com"
+          },
+          {
+            "uri": "https://u21.example.com"
+          },
+          {
+            "uri": "https://u22.example.com"
+          },
+          {
+            "uri": "https://u23.example.com"
+          },
+          {
+            "uri": "https://u24.example.com"
+          }
+        ],
+        "fido2Credentials": [
+          {
+            "credentialId": "x"
+          }
+        ]
+      },
+      "fields": [
+        {
+          "name": "Text",
+          "value": "t",
+          "type": 0
+        },
+        {
+          "name": "Hidden",
+          "value": "h",
+          "type": 1
+        },
+        {
+          "name": "Bool",
+          "value": "TRUE",
+          "type": 2
+        },
+        {
+          "name": "Linked",
+          "value": null,
+          "type": 3
+        },
+        {
+          "name": "",
+          "value": "no name",
+          "type": 0
+        },
+        {
+          "name": "Null",
+          "value": null,
+          "type": 0
+        },
+        {
+          "name": "Number",
+          "value": 42,
+          "type": 0
+        }
+      ]
+    },
+    {
+      "type": 1,
+      "name": "Collection only",
+      "collectionIds": [
+        "c1"
+      ],
+      "login": {
+        "username": "c"
+      }
+    },
+    {
+      "type": 2,
+      "name": "Secure note",
+      "notes": "secret text",
+      "secureNote": {
+        "type": 0
+      }
+    },
+    {
+      "type": 3,
+      "name": "Card",
+      "card": {
+        "cardholderName": "Alex",
+        "number": "4111111111111111",
+        "code": "123",
+        "brand": "Visa",
+        "expMonth": "1",
+        "expYear": "2027"
+      }
+    },
+    {
+      "type": 3,
+      "name": "Bad expiry",
+      "card": {
+        "number": "5555555555554444",
+        "expMonth": "13",
+        "expYear": "27"
+      }
+    },
+    {
+      "type": 4,
+      "name": "Identity",
+      "identity": {
+        "title": "Mr",
+        "firstName": "Alex",
+        "middleName": null,
+        "lastName": "Example",
+        "company": "Ex",
+        "email": "a@example.com",
+        "phone": "0100",
+        "address1": "1 Road",
+        "city": "Town",
+        "postalCode": "EX1",
+        "country": "GB",
+        "ssn": "000-00-0000",
+        "passportNumber": "P1",
+        "username": "alexe",
+        "address3": "Flat 2"
+      }
+    },
+    {
+      "type": 5,
+      "name": "SSH",
+      "sshKey": {
+        "privateKey": "-----BEGIN-----",
+        "publicKey": "ssh-ed25519 AAA",
+        "keyFingerprint": "SHA256:x"
+      }
+    },
+    {
+      "type": 9,
+      "name": "Future",
+      "notes": "kept",
+      "fields": [
+        {
+          "name": "F",
+          "value": "v",
+          "type": 0
+        }
+      ]
+    },
+    {
+      "type": 1,
+      "name": "Trashed",
+      "deletedDate": "2024-01-01T00:00:00Z",
+      "login": {}
+    },
+    "not an object",
+    {
+      "type": 1,
+      "name": "Epoch ms",
+      "creationDate": 1700000000000,
+      "login": {
+        "uris": [
+          {
+            "uri": null
+          },
+          "x"
+        ]
+      }
+    }
+  ]
+}

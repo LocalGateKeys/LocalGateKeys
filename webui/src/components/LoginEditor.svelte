@@ -1,11 +1,14 @@
 <script>
   /** Website and desktop login editor. The draft lives in Python; every change is sent with login_update. */
   import { call } from '../lib/api.js';
+  import { formatNumber, t } from '../lib/i18n.svelte.js';
   import { okOrToast } from '../lib/toast.js';
+  import { readPicture } from '../lib/picture.js';
   import Button from './Button.svelte';
   import QrCameraView from './QrCameraView.svelte';
 
-  let { ref = null, newPassword = false, onclose, onbinding = undefined } = $props();
+  // draft: an editor the Scan sheet already opened in Python (with a scanned 2FA key applied).
+  let { ref = null, draft = null, newPassword = false, onclose, onbinding = undefined } = $props();
 
   let view = $state(null);
   let busy = $state(false);
@@ -16,17 +19,18 @@
 
   $effect(() => {
     (async () => {
-      const result = ref ? await call('login_open', ref) : await call('login_new');
-      if (!okOrToast(result, 'Could not open the editor')) { onclose(null); return; }
+      const result = draft ?? (ref ? await call('login_open', ref) : await call('login_new'));
+      if (!okOrToast(result, t('loginEditor.couldNotOpen'))) { onclose(null); return; }
       view = result;
       if (newPassword) {
         // From Password health: a new password is ready; the user still changes it on the website.
         await regenerate('Random');
-        banner = 'New password ready. Change it on the website too, then save.';
+        banner = t('loginEditor.newPasswordReady');
       }
     })();
   });
 
+  const heading = $derived(view?.is_new ? t('loginEditor.newWebsite') : view?.kind === 'desktop' ? t('loginEditor.editDesktop') : t('loginEditor.editLogin'));
   const errorFor = (field) => view?.errors?.find((e) => e.field === field || e.field.startsWith(`${field}[`))?.message;
   let shownErrors = $state(false);
 
@@ -74,12 +78,16 @@
     ga = result.accounts.length ? result : null;
     gaIndex = result.best ?? 0;
     const more = result.batch.size > 1;
-    const batch = more ? `Code ${result.batch.index + 1} of ${result.batch.size}. ` : '';
-    const found = result.accounts.length ? `${result.accounts.length} account(s) found. ` : 'No usable accounts. ';
-    const pick = result.accounts.length ? (result.best !== null ? 'Best match selected — check it.' : 'Choose the matching account.') : '';
-    const next = more ? " Not listed? Scan the export's next code." : '';
-    const skipped = result.skipped.length ? ` Skipped: ${result.skipped.map((s) => `${s.label} (${s.reason})`).join(', ')}` : '';
-    gaStatus = batch + found + pick + next + skipped;
+    // One sentence per part, each its own catalog message, joined with spaces.
+    const parts = [];
+    if (more) parts.push(t('loginEditor.batchPart', { index: formatNumber(result.batch.index + 1), size: formatNumber(result.batch.size) }));
+    parts.push(result.accounts.length
+      ? t('loginEditor.accountsFound', { count: result.accounts.length, number: formatNumber(result.accounts.length) })
+      : t('loginEditor.noAccounts'));
+    if (result.accounts.length) parts.push(t(result.best !== null ? 'loginEditor.bestMatch' : 'loginEditor.chooseMatch'));
+    if (more) parts.push(t('loginEditor.nextCode'));
+    if (result.skipped.length) parts.push(t('loginEditor.skipped', { list: result.skipped.map((s) => t('loginEditor.skippedItem', { label: s.label, reason: s.reason })).join(', ') }));
+    gaStatus = parts.join(' ');
   }
 
   // A pasted Google Authenticator export link still works, from the Setup key field.
@@ -99,7 +107,7 @@
   async function scan(kind, image = null) {
     if (scanning) return;
     scanning = kind;
-    gaStatus = kind === 'image' ? 'Reading the QR code…' : '';
+    gaStatus = kind === 'image' ? t('loginEditor.reading') : '';
     const result = kind === 'image' ? await call('qr_scan_image', view.draft_id, image) : await call('qr_scan_camera', view.draft_id);
     scanning = null;
     gaStatus = '';
@@ -107,7 +115,7 @@
     if (result.found === 'key') {
       view = result.view;
       ga = null;
-      banner = '2FA setup key read from the QR code. Save to keep it.';
+      banner = t('loginEditor.keyRead');
     } else showAccounts(result);
   }
 
@@ -121,17 +129,42 @@
     reader.readAsDataURL(file);
   }
 
+  // A saved picture of the QR code: chosen with the file picker or dropped on the editor (Pro only, like paste).
+  async function picture(file) {
+    if (!file || !view || view.totp_allowed === false) return;
+    const read = await readPicture(file);
+    if (read.error) { gaStatus = read.error; return; }
+    scan('image', read.dataUrl);
+  }
+
+  function chosen(event) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    picture(file);
+  }
+
+  function dragover(event) {
+    if ([...(event.dataTransfer?.types ?? [])].includes('Files')) event.preventDefault();
+  }
+
+  function dropped(event) {
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) return;
+    event.preventDefault();
+    picture(file);
+  }
+
   async function gaUse() {
     const result = await call('ga_apply', view.draft_id, ga.token, Number(gaIndex));
     if (!result.ok) { gaStatus = result.error.message; return; }
     view = result;
     ga = null;
     gaStatus = '';
-    banner = '2FA setup key imported. Save to keep it.';
+    banner = t('loginEditor.keyImported');
   }
 
   async function discard() {
-    if (view?.dirty && !window.confirm?.('Discard your changes?')) return false;
+    if (view?.dirty && !window.confirm?.(t('loginEditor.discard'))) return false;
     if (view) await call('login_close', view.draft_id);
     return true;
   }
@@ -151,92 +184,95 @@
   }
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label={view?.is_new ? 'New website login' : view?.kind === 'desktop' ? 'Edit desktop login' : 'Edit login'} tabindex="-1" onkeydown={keys} onpaste={pasted}>
+<div class="sheet glass" role="dialog" aria-modal="true" aria-label={heading} tabindex="-1" onkeydown={keys} onpaste={pasted} ondragover={dragover} ondrop={dropped}>
   {#if view}
     <header>
-      <h2>{view.is_new ? 'New website login' : view.kind === 'desktop' ? 'Edit desktop login' : 'Edit login'}</h2>
-      <span class="state">{banner || (view.dirty ? 'Unsaved changes' : 'Not saved yet')}</span>
+      <h2>{heading}</h2>
+      <span class="state">{banner || (view.dirty ? t('loginEditor.unsaved') : t('loginEditor.notSaved'))}</span>
     </header>
     <div class="group">
-      <label class="field"><span class="k">Title</span>
+      <label class="field"><span class="k">{t('loginEditor.title')}</span>
         <input value={view.label} placeholder={view.label_hint} oninput={(e) => change({ label: e.currentTarget.value })} />
       </label>
       {#each view.urls as row, i (i)}
-        <label class="field" class:bad={shownErrors && errorFor(`urls[${i}]`)}><span class="k">{i === 0 ? 'Website' : ''}</span>
-          <input value={row.url} placeholder="example.com" oninput={(e) => setUrl(i, e.currentTarget.value)} />
+        <label class="field" class:bad={shownErrors && errorFor(`urls[${i}]`)}><span class="k">{i === 0 ? t('loginEditor.website') : ''}</span>
+          <input value={row.url} placeholder={t('loginEditor.websitePlaceholder')} oninput={(e) => setUrl(i, e.currentTarget.value)} />
         </label>
         {#if shownErrors && errorFor(`urls[${i}]`)}<p class="error">{errorFor(`urls[${i}]`)}</p>{/if}
       {/each}
       {#if shownErrors && view.errors.find((e) => e.field === 'urls')}<p class="error">{view.errors.find((e) => e.field === 'urls').message}</p>{/if}
       {#if view.kind === 'desktop'}
-        <div class="field"><span class="k">App</span><span class="v path">{view.app_path}</span>
-          {#if onbinding && ref}<button class="text-btn" onclick={openBinding}>App binding…</button>{/if}
+        <div class="field"><span class="k">{t('loginEditor.app')}</span><span class="v path">{view.app_path}</span>
+          {#if onbinding && ref}<button class="text-btn" onclick={openBinding}>{t('loginEditor.appBinding')}</button>{/if}
         </div>
       {/if}
-      <label class="field"><span class="k">Username</span>
-        <input value={view.username} placeholder="name@example.com" autocomplete="off" oninput={(e) => change({ username: e.currentTarget.value })} />
+      <label class="field"><span class="k">{t('loginEditor.username')}</span>
+        <input value={view.username} placeholder={t('loginEditor.usernamePlaceholder')} autocomplete="off" oninput={(e) => change({ username: e.currentTarget.value })} />
       </label>
       <div class="field">
-        <span class="k">Password</span>
+        <span class="k">{t('loginEditor.password')}</span>
         {#if changingPassword}
-          <input type="password" bind:value={password} aria-label="New password" autocomplete="new-password" />
+          <input type="password" bind:value={password} aria-label={t('loginEditor.newPassword')} autocomplete="new-password" />
         {:else}
-          <span class="v">{view.password_set ? (view.is_new ? 'Generated password' : 'New password set') : 'Unchanged'}</span>
-          <button class="text-btn" onclick={() => (changingPassword = true)}>Change</button>
+          <span class="v">{view.password_set ? (view.is_new ? t('loginEditor.generated') : t('loginEditor.newPasswordSet')) : t('loginEditor.unchanged')}</span>
+          <button class="text-btn" onclick={() => (changingPassword = true)}>{t('loginEditor.change')}</button>
         {/if}
       </div>
       <div class="field chips">
         <span class="k"></span>
-        {#each ['Passphrase', 'Random', 'PIN'] as chip (chip)}
-          <button class="chip" onclick={() => regenerate(chip)}>{chip}</button>
+        {#each [['Passphrase', 'loginEditor.chipPassphrase'], ['Random', 'loginEditor.chipRandom'], ['PIN', 'loginEditor.chipPin']] as [chip, chipLabel] (chip)}
+          <button class="chip" onclick={() => regenerate(chip)}>{t(chipLabel)}</button>
         {/each}
         {#if view.strength}<span class="strength">{view.strength.label} · {view.strength.reuse_text}</span>{/if}
       </div>
       {#if shownErrors && errorFor('password')}<p class="error">{errorFor('password')}</p>{/if}
     </div>
 
-    <div class="section-label">Two-factor</div>
+    <div class="section-label">{t('loginEditor.twoFactor')}</div>
     <div class="group">
       {#if view.totp_allowed === false}
         <div class="field">
-          <span class="k">Setup key</span>
-          <span class="muted">{view.totp_configured ? 'Configured' : 'Not set'}</span>
-          {#if view.totp_configured}<button class="text-btn" onclick={() => change({ totp_remove: true })}>Remove</button>{/if}
+          <span class="k">{t('loginEditor.setupKey')}</span>
+          <span class="muted">{view.totp_configured ? t('loginEditor.configured') : t('loginEditor.notSet')}</span>
+          {#if view.totp_configured}<button class="text-btn" onclick={() => change({ totp_remove: true })}>{t('loginEditor.remove')}</button>{/if}
         </div>
-        <p class="muted small">Adding or changing two-factor codes needs LocalGateKeys Pro. Codes you already saved keep working.</p>
+        <p class="muted small">{t('loginEditor.needsPro')}</p>
       {:else}
       <div class="field">
-        <span class="k">Setup key</span>
-        <input type="password" bind:value={totp} aria-label="Setup key" autocomplete="off" onchange={keyChanged}
-          placeholder={view.totp_configured ? 'Configured — paste a new key or QR snip' : 'Paste the key, link or a QR snip'} />
-        {#if view.totp_configured}<button class="text-btn" onclick={() => change({ totp_remove: true })}>Remove</button>{/if}
+        <span class="k">{t('loginEditor.setupKey')}</span>
+        <input type="password" bind:value={totp} aria-label={t('loginEditor.setupKey')} autocomplete="off" onchange={keyChanged}
+          placeholder={view.totp_configured ? t('loginEditor.keyPlaceholderConfigured') : t('loginEditor.keyPlaceholder')} />
+        {#if view.totp_configured}<button class="text-btn" onclick={() => change({ totp_remove: true })}>{t('loginEditor.remove')}</button>{/if}
       </div>
       {#if shownErrors && errorFor('totp')}<p class="error">{errorFor('totp')}</p>{/if}
       <div class="field scan">
         <span class="k"></span>
-        <button class="text-btn" onclick={() => scan('camera')} disabled={!!scanning}>Scan with camera</button>
+        <button class="text-btn" onclick={() => scan('camera')} disabled={!!scanning}>{t('loginEditor.scanCamera')}</button>
+        <label class="text-btn pickfile">{t('loginEditor.chooseImage')}
+          <input type="file" accept="image/png,image/jpeg,image/bmp" aria-label={t('loginEditor.chooseImage')} onchange={chosen} disabled={!!scanning} />
+        </label>
       </div>
       {/if}
       {#if ga}
         <div class="field">
-          <select aria-label="Account for this login" bind:value={gaIndex}>
-            {#each ga.accounts as account (account.index)}<option value={account.index}>{account.issuer || '(no issuer)'} — {account.label}</option>{/each}
+          <select aria-label={t('loginEditor.accountFor')} bind:value={gaIndex}>
+            {#each ga.accounts as account (account.index)}<option value={account.index}>{account.issuer || t('loginEditor.noIssuer')} — {account.label}</option>{/each}
           </select>
-          <button class="text-btn" onclick={gaUse}>Use for this login</button>
+          <button class="text-btn" onclick={gaUse}>{t('loginEditor.useFor')}</button>
         </div>
       {/if}
       {#if gaStatus}<p class="hint" role="status">{gaStatus}</p>{/if}
-      <p class="hint">QR code on screen? Press Win+Shift+S, select it, then Ctrl+V here. Moving from Google Authenticator? Show its Transfer accounts › Export code to the camera. Nothing leaves this PC.</p>
+      <p class="hint">{t('loginEditor.qrHint')}</p>
     </div>
 
-    <div class="section-label">Notes</div>
+    <div class="section-label">{t('loginEditor.notes')}</div>
     <div class="group">
-      <textarea aria-label="Notes" value={view.notes} oninput={(e) => change({ notes: e.currentTarget.value })}></textarea>
+      <textarea aria-label={t('loginEditor.notes')} value={view.notes} oninput={(e) => change({ notes: e.currentTarget.value })}></textarea>
     </div>
 
     <footer>
-      <Button label="Cancel" onclick={cancel} />
-      <Button label="Save" variant="primary" busy={busy} busyLabel="Saving…" onclick={save} />
+      <Button label={t('common.cancel')} onclick={cancel} />
+      <Button label={t('loginEditor.save')} variant="primary" busy={busy} busyLabel={t('loginEditor.saving')} onclick={save} />
     </footer>
   {/if}
 </div>
@@ -265,6 +301,9 @@
   .text-btn { background: none; border: none; color: var(--link); cursor: pointer; }
   .chips { gap: 6px; flex-wrap: wrap; }
   .scan { gap: 14px; }
+  .pickfile { position: relative; }
+  .pickfile input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .pickfile:focus-within { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 4px; }
   .text-btn:disabled { color: var(--text-faint); cursor: default; }
   .chip { height: 24px; padding: 0 10px; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--glass); cursor: pointer; font-size: 12px; }
   .strength { color: var(--text-muted); font-size: 12px; margin-left: 6px; }

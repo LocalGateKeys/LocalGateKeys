@@ -1,5 +1,6 @@
 package app.localgatekeys.android.editor
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.detail.ItemDetailModel
 import app.localgatekeys.android.detail.passkeyItem
 import app.localgatekeys.android.pro.ItemLimit
@@ -139,6 +140,25 @@ class EditorModelTest {
         assertEquals(before, encoded(store.snapshot))
     }
 
+    @Test fun a_changed_login_password_goes_into_the_history() {
+        val store = CountingStore(snapshot(listOf(webLogin)))
+        val item = items(store)[0]
+        val old = item.record.getValue("password").str()
+        val e = ed(store, item, EditorKind.WEB)
+        e.set("password", "Brand-New-Pass-42")
+        assertEquals(e.error, SaveResult.SAVED, e.save())
+        val r = store.snapshot.records.getValue(item.id).obj().fields.getValue("record").obj().fields
+        val history = app.localgatekeys.core.records.PasswordHistory.entries(r)
+        assertEquals(listOf(old), history.map { it.password })
+        assertEquals(NOW, history[0].changedAt)
+        // A save that leaves the password alone adds nothing.
+        val again = ed(store, items(store)[0], EditorKind.WEB)
+        again.set("username", "someone-else")
+        assertEquals(SaveResult.SAVED, again.save())
+        val r2 = store.snapshot.records.getValue(item.id).obj().fields.getValue("record").obj().fields
+        assertEquals(1, app.localgatekeys.core.records.PasswordHistory.entries(r2).size)
+    }
+
     @Test fun edit_restamps_and_normalises_through_lgkcore() {
         val store = CountingStore(snapshot(listOf(validCard)))
         val item = items(store)[0]
@@ -195,6 +215,7 @@ class EditorModelTest {
         val n = ed(store, kind = EditorKind.NOTE)
         n.set("title", ""); n.set("body", "x")
         assertEquals("the desktop refuses an empty title", SaveResult.INVALID, n.save())
+        assertEquals("Title can't be empty", n.error)
         assertEquals(1, ItemLimit.liveCount(store.snapshot))
         val pl = storedRecord(store).getValue("payload").obj().fields
         assertEquals(s("Ada"), pl["name"])
@@ -299,9 +320,9 @@ class EditorModelTest {
         val id = snap.records.keys.first()
         val item = VaultItem.items(snap)[0]
         // Same title: nothing written.
-        assertEquals(SaveResult.UNCHANGED, PasskeyRenameModel(store, item, clock).save())
+        assertEquals(SaveResult.UNCHANGED, PasskeyRenameModel(store, item, clock, EnglishTxt()).save())
         assertEquals(0, store.commits)
-        val m = PasskeyRenameModel(store, item, clock)
+        val m = PasskeyRenameModel(store, item, clock, EnglishTxt())
         m.setTitle("Work account")
         assertEquals(m.error, SaveResult.SAVED, m.save())
         assertEquals(1, store.commits)
@@ -323,7 +344,7 @@ class EditorModelTest {
         val again = SyncMeta.localView(store.snapshot.records, view.meta, PHONE_DEVICE, NOW + 5)
         assertEquals(view.meta[id], again.meta[id])
         // An empty title is refused (the item keeps its name).
-        val empty = PasskeyRenameModel(store, items(store)[0], clock)
+        val empty = PasskeyRenameModel(store, items(store)[0], clock, EnglishTxt())
         empty.setTitle("   ")
         assertEquals(SaveResult.INVALID, empty.save())
         assertEquals("Enter a name.", empty.error)
@@ -334,7 +355,7 @@ class EditorModelTest {
         val snap = pairedSnapshot(listOf(passkeyItem(), note))
         val store = CountingStore(snap)
         val item = VaultItem.items(snap).first { it.kind == "passkey" }
-        assertEquals(SaveResult.SAVED, PasskeyRenameModel(store, item, clock).delete())
+        assertEquals(SaveResult.SAVED, PasskeyRenameModel(store, item, clock, EnglishTxt()).delete())
         assertNull(store.snapshot.records[item.id])
         val m = store.snapshot.meta.getValue(item.id)
         assertTrue(m.deleted)
@@ -357,7 +378,7 @@ class EditorModelTest {
         store.snapshot = StoreSnapshot(revision = store.snapshot.revision + 1) // a sync removed it
         assertEquals(SaveResult.UNCHANGED, e.delete())
         assertTrue(e.alreadyRemoved)
-        assertEquals("This item was already removed", EditorModel.ALREADY_REMOVED_MESSAGE)
+        assertEquals("This item was already removed", EnglishTxt().s(EditorScreenText.ALREADY_REMOVED))
         assertNull("not an error: the screen closes after saying so", e.error)
         e.clearAlreadyRemoved()
         assertFalse(e.alreadyRemoved)
@@ -365,7 +386,7 @@ class EditorModelTest {
 
     @Test fun deleting_an_already_removed_passkey_says_so() {
         val store = CountingStore(snapshot(listOf(passkeyItem())))
-        val m = PasskeyRenameModel(store, items(store)[0], clock)
+        val m = PasskeyRenameModel(store, items(store)[0], clock, EnglishTxt())
         store.snapshot = StoreSnapshot()
         assertEquals(SaveResult.UNCHANGED, m.delete())
         assertTrue(m.alreadyRemoved)
@@ -415,7 +436,15 @@ class EditorModelTest {
             assertFalse(text, text.contains("JBSWY3DPEHPK3PXP"))
             assertFalse(text, text.contains("Sample.User"))
         }
-        val p = PasskeyRenameModel(CountingStore(snapshot(listOf(passkeyItem()))), VaultItem.items(snapshot(listOf(passkeyItem())))[0], clock)
+        val p = PasskeyRenameModel(CountingStore(snapshot(listOf(passkeyItem()))), VaultItem.items(snapshot(listOf(passkeyItem())))[0], clock, EnglishTxt())
         assertFalse(p.toString().contains("BEGIN"))
+    }
+
+    @Test fun errors_name_the_field_the_screen_shows() {
+        assertEquals("Title can't be empty", EditorKind.WEB.friendlyError("label cannot be empty", EnglishTxt()))
+        assertEquals("Title can't be empty", EditorKind.NOTE.friendlyError("title cannot be empty", EnglishTxt()))
+        assertEquals("Website is too long", EditorKind.WEB.friendlyError("origin is too long", EnglishTxt()))
+        assertEquals("Title can't be empty", EditorKind.NOTE.friendlyError("item title cannot be empty", EnglishTxt()))
+        assertEquals("something else", EditorKind.WEB.friendlyError("something else", EnglishTxt()))
     }
 }

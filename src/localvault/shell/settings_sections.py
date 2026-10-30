@@ -10,6 +10,7 @@ settings, so a new card is one function and one call::
     register_section(SettingsSection("licence", "Licence", build_licence, column=1,
                                      keywords=("pro", "key", "purchase")), before="backups")
 
+A section's ``title`` and ``subtitle`` may be catalog keys (translated when shown) or plain text.
 A registered section also gets a Ctrl+K entry ("Settings › Licence").
 Builders run on every page build, so statuses (Windows Hello, backup
 password, …) are read fresh each time; they must not keep secrets.
@@ -19,6 +20,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
+
+from ..i18n import t
 
 
 class SettingsForm(Protocol):
@@ -54,11 +57,19 @@ class SettingsForm(Protocol):
 @dataclass(frozen=True)
 class SettingsSection:
     key: str
-    title: str
+    title: str  # a catalog key (or plain text); ``title_text`` is the text in the active language
     build: Callable[[SettingsForm], None]
     column: int = 0
     keywords: tuple[str, ...] = ()
-    subtitle: str = ""
+    subtitle: str = ""  # likewise
+
+    @property
+    def title_text(self) -> str:
+        return t(self.title)
+
+    @property
+    def subtitle_text(self) -> str:
+        return t(self.subtitle) if self.subtitle else ""
 
 
 _SECTIONS: list[SettingsSection] = []
@@ -106,14 +117,14 @@ def _call(app: Any, name: str, *args: Any, **kwargs: Any) -> Callable[[], Any]:
 
 
 def build_locking(form: SettingsForm) -> None:
-    form.choice("auto_lock_seconds", "Lock after inactivity", "When you have not used your computer or the vault")
-    form.switch("lock_on_session_lock", "Lock when Windows locks", "Win+L, switching user or signing out")
-    form.switch("lock_on_sleep", "Lock on sleep", "Laptop lid closed, sleep or hibernation")
-    form.choice("max_session_seconds", "Never stay unlocked longer than", "Even while you are using it")
-    form.choice("idle_source", "Count activity from",
-                "Computer: keyboard or mouse anywhere. Vault: using or saving items.")
-    form.switch("totp_confirm", "Ask before releasing 2FA codes",
-                "Confirm on this PC each time the browser extension asks for a one-time code")
+    form.choice("auto_lock_seconds", t("settings.autoLock.title"), t("settings.autoLock.desc"))
+    form.switch("lock_on_session_lock", t("settings.lockOnSessionLock.title"), t("settings.lockOnSessionLock.desc"))
+    form.switch("lock_on_sleep", t("settings.lockOnSleep.title"), t("settings.lockOnSleep.desc"))
+    form.choice("max_session_seconds", t("settings.maxSession.title"), t("settings.maxSession.desc"))
+    form.choice("idle_source", t("settings.idleSource.title"),
+                t("settings.idleSource.desc"))
+    form.switch("totp_confirm", t("settings.totpConfirm.title"),
+                t("settings.totpConfirm.desc"))
 
 
 def _status(app: Any, name: str) -> Any:
@@ -131,83 +142,84 @@ def build_unlocking(form: SettingsForm) -> None:
     methods = _status(app, "_unlock_methods")
     if methods is not None and methods.hello_available:
         enrolled = methods.hello_enrolled
-        form.button("Windows Hello", "On · fingerprint, face or PIN" if enrolled else "Not set up",
-                    "Manage" if enrolled else "Set up", _call(app, "hello_settings_clicked"), refresh=True,
+        form.button(t("settings.hello.title"), t("settings.hello.on") if enrolled else t("settings.notSetUp"),
+                    t("settings.btn.manage") if enrolled else t("settings.btn.setUp"), _call(app, "hello_settings_clicked"), refresh=True,
                     primary=not enrolled)
-    form.switch("hello_auto_start", "Start Windows Hello automatically", "When the unlock screen opens")
+    form.switch("hello_auto_start", t("settings.helloAutoStart.title"), t("settings.helloAutoStart.desc"))
     face = _status(app, "_settings_face_state") or {}
-    form.button("Camera check", str(face.get("status", "Not set up")) + " · less secure than Windows Hello",
-                str(face.get("label", "Set up")), _call(app, "face_settings_clicked"), refresh=True)
-    form.button("Master password", "Re-encrypts this vault. Backups keep the password they were made with.",
-                "Change…", _call(app, "change_master_clicked"))
+    form.button(t("settings.camera.title"), t("settings.camera.status", status=str(face.get("status", t("settings.notSetUp")))),
+                str(face.get("label", t("settings.btn.setUp"))), _call(app, "face_settings_clicked"), refresh=True)
+    form.button(t("settings.master.title"), t("settings.master.desc"),
+                t("settings.btn.change"), _call(app, "change_master_clicked"))
     phrase = None if methods is None else methods.recovery_phrase
-    form.button("Recovery phrase",
-                {True: "Set · unlocks if you forget the master password", False: "Not set"}.get(phrase, ""),
-                "Manage" if phrase else "Set up", _call(app, "recovery_center_clicked"), refresh=True)
+    form.button(t("settings.recovery.title"),
+                {True: t("settings.recovery.set"), False: t("settings.notSet")}.get(phrase, ""),
+                t("settings.btn.manage") if phrase else t("settings.btn.setUp"), _call(app, "recovery_center_clicked"), refresh=True)
 
 
 def build_privacy(form: SettingsForm) -> None:
-    form.choice("clipboard_clear_seconds", "Clear clipboard after", "Only what LocalGateKeys copied is cleared")
-    form.switch("breach_check_enabled", "Breach checks",
-                "You start each check. It sends 5 characters of a hash, never the password.")
-    form.switch("strict_offline_mode", "Strict offline mode",
-                "Blocks background internet requests, website icons and breach checks")
-    form.switch("trash_auto_purge", "Empty trash automatically",
-                "When off, deleted items stay in the trash until you delete them")
-    form.choice("trash_retention_days", "Keep deleted items for", "Used while automatic emptying is on")
-    form.switch("document_open_enabled", "Open documents in other apps",
-                "Puts a decrypted copy on this PC while you use it; deleted when you close it")
+    form.choice("clipboard_clear_seconds", t("settings.clipboard.title"), t("settings.clipboard.desc"))
+    form.switch("breach_check_enabled", t("settings.breach.title"),
+                t("settings.breach.desc"))
+    form.switch("strict_offline_mode", t("settings.offline.title"),
+                t("settings.offline.desc"))
+    form.switch("trash_auto_purge", t("settings.trashPurge.title"),
+                t("settings.trashPurge.desc"))
+    form.choice("trash_retention_days", t("settings.trashRetention.title"), t("settings.trashRetention.desc"))
+    form.switch("document_open_enabled", t("settings.docOpen.title"),
+                t("settings.docOpen.desc"))
 
 
 def build_autofill(form: SettingsForm) -> None:
-    form.switch("browser_enabled", "Browser autofill", "Through the LocalGateKeys browser extension")
-    form.switch("passkeys_enabled", "Offer LocalGateKeys for passkeys",
-                "Create and use passkeys from this vault when a website asks. Off: the browser handles passkeys itself")
-    form.switch("desktop_overlay_enabled", "Desktop app autofill",
-                "Show a fill button beside supported desktop password fields")
-    form.switch("fill_and_sign_in", "Sign in after filling",
-                "Submit one supported sign-in form after you start a fill. CAPTCHA and MFA stay manual.")
-    form.text("quick_access_hotkey", "Quick access", "Search and copy from anywhere · Ctrl, Alt, Shift or Win + a key")
-    form.shortcut("Fill the focused app", "Desktop fill", "Ctrl+Shift+Space")
-    form.shortcut("Emergency lock", "Lock and cancel pending fills", "Ctrl+Alt+L")
+    form.switch("browser_enabled", t("settings.browser.title"), t("settings.browser.desc"))
+    form.switch("passkeys_enabled", t("settings.passkeys.title"),
+                t("settings.passkeys.desc"))
+    form.switch("desktop_overlay_enabled", t("settings.overlay.title"),
+                t("settings.overlay.desc"))
+    form.switch("fill_and_sign_in", t("settings.signIn.title"),
+                t("settings.signIn.desc"))
+    form.text("quick_access_hotkey", t("settings.quickAccess.title"), t("settings.quickAccess.desc"))
+    form.shortcut(t("settings.fillShortcut.title"), t("settings.fillShortcut.desc"), "Ctrl+Shift+Space")
+    form.shortcut(t("settings.emergencyShortcut.title"), t("settings.emergencyShortcut.desc"), "Ctrl+Alt+L")
 
 
 def build_appearance(form: SettingsForm) -> None:
     from ..version import APP_VERSION
 
-    form.segmented("appearance", "Theme", "Match Windows or choose one")
-    form.switch("start_with_windows", "Start with Windows", "Starts locked in the background for this Windows account")
-    form.switch("minimize_to_tray", "Keep running in the tray",
-                "Closing the window keeps autofill working; it does not lock the vault")
-    form.button("Updates", f"Version {APP_VERSION}", "Check now", _call(form.app, "check_updates_clicked"))
+    form.segmented("appearance", t("settings.theme.title"), t("settings.theme.desc"))
+    form.choice("language", t("settings.language.label"), t("settings.language.description"))
+    form.switch("start_with_windows", t("settings.startup.title"), t("settings.startup.desc"))
+    form.switch("minimize_to_tray", t("settings.tray.title"),
+                t("settings.tray.desc"))
+    form.button(t("settings.updates.title"), t("settings.updates.version", version=APP_VERSION), t("settings.updates.button"), _call(form.app, "check_updates_clicked"))
     from ..app import rating
 
     if rating.available():
-        form.button("Rate LocalGateKeys", "Tell others what you think on the Microsoft Store", "Rate",
+        form.button(t("settings.rate.title"), t("settings.rate.desc"), t("settings.rate.button"),
                     _call(form.app, "rate_clicked"))
 
 
 def build_backups(form: SettingsForm) -> None:
     app = form.app
-    form.choice("automatic_backup_count", "Automatic backups to keep",
-                "Copies made as you save. Older ones may still hold deleted items.")
-    form.choose_folder("backup_mirror_dir", "Cloud copy")
-    form.choice("scheduled_backup_frequency", "Scheduled backups",
-                "Runs while unlocked. A run missed while the app was closed happens at the next unlock.")
-    form.text("scheduled_backup_time", "Time of day", "24-hour local time, for example 08:30")
-    form.choice("scheduled_backup_weekday", "Day of the week", "For weekly backups")
-    form.choice("scheduled_backup_keep", "Old scheduled backups",
-                "A new backup is written and checked before the oldest is deleted")
+    form.choice("automatic_backup_count", t("settings.autoBackups.title"),
+                t("settings.autoBackups.desc"))
+    form.choose_folder("backup_mirror_dir", t("settings.cloudCopy.title"))
+    form.choice("scheduled_backup_frequency", t("settings.schedule.title"),
+                t("settings.schedule.desc"))
+    form.text("scheduled_backup_time", t("settings.scheduleTime.title"), t("settings.scheduleTime.desc"))
+    form.choice("scheduled_backup_weekday", t("settings.scheduleDay.title"), t("settings.scheduleDay.desc"))
+    form.choice("scheduled_backup_keep", t("settings.scheduleKeep.title"),
+                t("settings.scheduleKeep.desc"))
     state = _status(app, "_settings_backup_state") or {}
     has_password = bool(state.get("has_password"))
-    form.button("Backup password",
-                "Set · kept only inside your encrypted vault" if has_password
-                else "Not set · scheduled backups need one",
-                "Change…" if has_password else "Set…",
+    form.button(t("settings.backupPassword.title"),
+                t("settings.backupPassword.set") if has_password
+                else t("settings.backupPassword.notSet"),
+                t("settings.btn.change") if has_password else t("settings.btn.set"),
                 _call(app, "_settings_backup_password_action", None, clear=False), refresh=True,
                 primary=not has_password)
     if has_password:
-        form.button("Clear backup password", "Scheduled backups stop until you set one again", "Clear",
+        form.button(t("settings.backupPasswordClear.title"), t("settings.backupPasswordClear.desc"), t("settings.btn.clear"),
                     _call(app, "_settings_backup_password_action", None, clear=True), refresh=True)
     if state.get("status"):
         form.note(str(state["status"]))
@@ -223,9 +235,9 @@ def build_plan(form: SettingsForm) -> None:
         count = session.live_item_count() if session is not None and hasattr(session, "live_item_count") else None
         headline = licence_view(licensing.status(), count).headline
     except Exception:  # noqa: BLE001 - a licence problem never blocks Settings
-        headline = "Licence status unavailable"
-    form.button("Licence", headline, "Open", _call(app, "licence_clicked"))
-    form.button("Device sync", "Wi-Fi and cloud-folder sync between your devices", "Open",
+        headline = t("settings.licence.unavailable")
+    form.button(t("settings.licence.title"), headline, t("settings.btn.open"), _call(app, "licence_clicked"))
+    form.button(t("settings.sync.title"), t("settings.sync.desc"), t("settings.btn.open"),
                 _call(app, "sync_clicked"))
 
 
@@ -236,29 +248,29 @@ LICENCE_AGREEMENT_URL = "https://localgatekeys.app/legal/eula.html"
 
 def build_help(form: SettingsForm) -> None:
     app = form.app
-    form.button("Keyboard shortcuts", "Also with F1", "View", _call(app, "show_shortcuts_clicked"))
-    form.button("Setup guide", "Walk through the basics again", "Open", _call(app, "onboarding_clicked"))
-    form.button("Devices & connections", "Browser extension status and diagnostics", "Open",
+    form.button(t("settings.shortcuts.title"), t("settings.shortcuts.desc"), t("settings.btn.view"), _call(app, "show_shortcuts_clicked"))
+    form.button(t("settings.setup.title"), t("settings.setup.desc"), t("settings.btn.open"), _call(app, "onboarding_clicked"))
+    form.button(t("settings.connections.title"), t("settings.connections.desc"), t("settings.btn.open"),
                 _call(app, "connections_clicked"))
-    form.button("Error log", "Technical log files; they contain no secrets", "Open",
+    form.button(t("settings.errorLog.title"), t("settings.errorLog.desc"), t("settings.btn.open"),
                 _call(app, "open_error_log_clicked"))
-    form.link("Privacy policy", "How LocalGateKeys handles your data", "Open", PRIVACY_POLICY_URL)
-    form.link("Licence agreement", "The terms for using LocalGateKeys", "Open", LICENCE_AGREEMENT_URL)
+    form.link(t("settings.privacyPolicy.title"), t("settings.privacyPolicy.desc"), t("settings.btn.open"), PRIVACY_POLICY_URL)
+    form.link(t("settings.eula.title"), t("settings.eula.desc"), t("settings.btn.open"), LICENCE_AGREEMENT_URL)
 
 
 BUILT_IN_SECTIONS: tuple[SettingsSection, ...] = (
-    SettingsSection("locking", "Locking", build_locking, 0, ("lock", "timeout", "idle", "auto-lock", "sleep")),
-    SettingsSection("unlocking", "Unlocking", build_unlocking, 0,
+    SettingsSection("locking", "settings.section.locking", build_locking, 0, ("lock", "timeout", "idle", "auto-lock", "sleep")),
+    SettingsSection("unlocking", "settings.section.unlocking", build_unlocking, 0,
                     ("hello", "face", "camera", "biometric", "master", "recovery", "phrase")),
-    SettingsSection("privacy", "Privacy", build_privacy, 0,
+    SettingsSection("privacy", "settings.section.privacy", build_privacy, 0,
                     ("clipboard", "breach", "offline", "trash", "documents", "network")),
-    SettingsSection("autofill", "Autofill", build_autofill, 1,
+    SettingsSection("autofill", "settings.section.autofill", build_autofill, 1,
                     ("fill", "browser", "extension", "desktop", "shortcut", "hotkey")),
-    SettingsSection("appearance", "Appearance & app", build_appearance, 1,
+    SettingsSection("appearance", "settings.section.appearance", build_appearance, 1,
                     ("theme", "dark", "light", "startup", "tray", "updates", "version")),
-    SettingsSection("backups", "Backups", build_backups, 1, ("backup", "schedule", "folder", "cloud", "mirror")),
-    SettingsSection("plan", "Plan & sync", build_plan, 1, ("licence", "license", "pro", "upgrade", "sync", "devices")),
-    SettingsSection("help", "Help & diagnostics", build_help, 1,
+    SettingsSection("backups", "settings.section.backups", build_backups, 1, ("backup", "schedule", "folder", "cloud", "mirror")),
+    SettingsSection("plan", "settings.section.plan", build_plan, 1, ("licence", "license", "pro", "upgrade", "sync", "devices")),
+    SettingsSection("help", "settings.section.help", build_help, 1,
                     ("shortcuts", "guide", "diagnostics", "log", "support", "privacy", "terms", "licence",
                      "legal", "eula")),
 )

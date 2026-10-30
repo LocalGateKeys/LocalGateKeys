@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Wrong password or corrupted export (MAC mismatch)",
+    "type": "wrong_password"
+  },
+  "format": "bitwardenEncrypted",
+  "input": "tests/fixtures/imports/bitwarden_protected.json",
+  "password": "not the password",
+  "python_format": "bitwarden-encrypted-json"
+}

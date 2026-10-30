@@ -1,5 +1,7 @@
 package app.localgatekeys.android.ui.unlock
+import androidx.compose.ui.res.stringResource
 
+import app.localgatekeys.android.i18n.rememberTxt
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -43,7 +46,15 @@ import app.localgatekeys.android.ui.theme.LgkTheme
 
 /** The unlock screen for [model]; [onUnlock] and [onStartFresh] launch the model's suspend calls. */
 @Composable
-fun UnlockScreen(model: AppLockModel, onUnlock: () -> Unit, onStartFresh: () -> Unit) {
+fun UnlockScreen(
+    model: AppLockModel,
+    onUnlock: () -> Unit,
+    onStartFresh: () -> Unit,
+    onPassword: (String) -> Unit = {},
+    onRecover: (String, String) -> Unit = { _, _ -> },
+    biometricShortcut: () -> Boolean = { false },
+) {
+    val needsPassword by model.needsPassword.collectAsStateWithLifecycle()
     val state by model.state.collectAsStateWithLifecycle()
     val errorMessage by model.errorMessage.collectAsStateWithLifecycle()
     val offersStartFresh by model.offersStartFresh.collectAsStateWithLifecycle()
@@ -53,6 +64,17 @@ fun UnlockScreen(model: AppLockModel, onUnlock: () -> Unit, onStartFresh: () -> 
         offersStartFresh = offersStartFresh,
         onUnlock = onUnlock,
         onStartFresh = onStartFresh,
+        passwordPanel = if (!needsPassword) null else {
+            {
+                AppPasswordUnlockPanel(
+                    unlocking = state == AppLockModel.State.UNLOCKING,
+                    biometric = biometricShortcut(),
+                    onPassword = onPassword,
+                    onBiometric = onUnlock,
+                    onRecover = onRecover,
+                )
+            }
+        },
     )
 }
 
@@ -67,7 +89,10 @@ fun UnlockContent(
     offersStartFresh: Boolean,
     onUnlock: () -> Unit,
     onStartFresh: () -> Unit,
+    /** Task 7: shown instead of the Unlock button while the app password is needed. */
+    passwordPanel: (@Composable () -> Unit)? = null,
 ) {
+    val txt = rememberTxt()
     val colors = LgkTheme.colors
     // "Start fresh anyway": 0 none, 1 first confirmation, 2 second.
     var freshStep by rememberSaveable { mutableIntStateOf(0) }
@@ -99,11 +124,13 @@ fun UnlockContent(
             }
             if (offersStartFresh) {
                 TextButton(onClick = { freshStep = 1 }, enabled = !unlocking) {
-                    Text("Start fresh anyway", color = if (unlocking) colors.secondaryText else colors.danger)
+                    Text(stringResource(R.string.unlock_start_fresh_anyway), color = if (unlocking) colors.secondaryText else colors.danger)
                 }
             }
             Spacer(Modifier.weight(1f))
-            Button(
+            if (passwordPanel != null) {
+                Box(Modifier.padding(bottom = 32.dp).imePadding()) { passwordPanel() }
+            } else Button(
                 onClick = onUnlock,
                 enabled = !unlocking,
                 colors = ButtonDefaults.buttonColors(containerColor = colors.accent, contentColor = Color.White),
@@ -111,29 +138,29 @@ fun UnlockContent(
             ) {
                 Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Unlock", modifier = Modifier.padding(vertical = 6.dp))
+                Text(stringResource(R.string.unlock_button), modifier = Modifier.padding(vertical = 6.dp))
             }
         }
     }
     if (freshStep == 1) {
         AlertDialog(
             onDismissRequest = { freshStep = 0 },
-            text = { Text(AppLockModel.START_FRESH_CONFIRM_1) },
-            confirmButton = { TextButton(onClick = { freshStep = 2 }) { Text("Start fresh", color = colors.danger) } },
-            dismissButton = { TextButton(onClick = { freshStep = 0 }) { Text("Cancel") } },
+            text = { Text(txt.s(AppLockModel.START_FRESH_CONFIRM_1)) },
+            confirmButton = { TextButton(onClick = { freshStep = 2 }) { Text(stringResource(R.string.unlock_start_fresh), color = colors.danger) } },
+            dismissButton = { TextButton(onClick = { freshStep = 0 }) { Text(stringResource(R.string.common_cancel)) } },
         )
     }
     if (freshStep == 2) {
         AlertDialog(
             onDismissRequest = { freshStep = 0 },
-            text = { Text(AppLockModel.START_FRESH_CONFIRM_2) },
+            text = { Text(txt.s(AppLockModel.START_FRESH_CONFIRM_2)) },
             confirmButton = {
                 TextButton(onClick = {
                     freshStep = 0
                     onStartFresh()
-                }) { Text("Start fresh now", color = colors.danger) }
+                }) { Text(stringResource(R.string.unlock_start_fresh_now), color = colors.danger) }
             },
-            dismissButton = { TextButton(onClick = { freshStep = 0 }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { freshStep = 0 }) { Text(stringResource(R.string.common_cancel)) } },
         )
     }
 }

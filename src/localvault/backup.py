@@ -195,7 +195,7 @@ def export_encrypted_backup(
         "exported_at": int(time.time()),
         "profile_name": profile_name,
         "vault": read_json(vault_file),
-        "settings": read_json(settings_file) if settings_file and settings_file.exists() else None,
+        "settings": _without_language(read_json(settings_file)) if settings_file and settings_file.exists() else None,
     }
     plaintext = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
     salt = os.urandom(16)
@@ -235,7 +235,9 @@ def restore_encrypted_backup(
     # the rollback check at the next unlock until the user confirms a rollback
     # through the verified restore path.
     if settings_file is not None and isinstance(payload.get("settings"), dict):
-        atomic_write_json(settings_file, payload["settings"])
+        restored_settings = dict(payload["settings"])
+        _keep_device_language(restored_settings, _current_language(settings_file))
+        atomic_write_json(settings_file, restored_settings)
     return str(payload.get("profile_name") or "Restored profile")
 
 
@@ -351,6 +353,12 @@ def _check_restore_rollback(session: Any, vault_file: Path, *, allow_rollback: b
         raise RollbackRequiresConfirmation(current_generation=int(current), restored_generation=restored_generation)
 
 
+def _without_language(settings: Any) -> Any:
+    if isinstance(settings, dict):
+        return {k: v for k, v in settings.items() if k != "language"}
+    return settings
+
+
 def _sanitize_restored_settings(settings: dict[str, Any]) -> None:
     """Autostart, external requests and automatic sign-in are OFF for a restored profile."""
     settings.update(start_with_windows=False, fill_and_sign_in=False, breach_check_enabled=False)
@@ -414,6 +422,7 @@ def _restore_verified(payload: dict[str, Any], vault_password: SecretText, *, va
         raw = payload.get("settings")
         if isinstance(raw, dict):
             _sanitize_restored_settings(raw)
+            _keep_device_language(raw, _current_language(settings_file))
             atomic_write_json(settings_file, raw)
             AppSettings.load(settings_file).save(settings_file)
     # Restored credentials must not silently retain per-entry automatic sign-in approvals.
@@ -622,7 +631,28 @@ def _full_validate_settings(value: Any) -> dict[str, Any]:
         )
     except ValueError:
         args["quick_access_hotkey"] = defaults.quick_access_hotkey
-    return {"version": SETTINGS_VERSION, **dataclasses.asdict(AppSettings(**args))}
+    result = {"version": SETTINGS_VERSION, **dataclasses.asdict(AppSettings(**args))}
+    # The UI language is a per-device choice: never exported, never restored.
+    result.pop("language", None)
+    return result
+
+
+def _current_language(settings_file: Path | None) -> str | None:
+    """This device's stored UI language, or None when it has no settings file yet."""
+    if settings_file is None or not Path(settings_file).exists():
+        return None
+    try:
+        raw = read_json(Path(settings_file))
+    except (OSError, ValueError, TypeError, RecursionError):
+        return None
+    value = raw.get("language") if isinstance(raw, dict) else None
+    return value if isinstance(value, str) else None
+
+
+def _keep_device_language(settings: dict[str, Any], current: str | None) -> None:
+    settings.pop("language", None)
+    if current is not None:
+        settings["language"] = current
 
 
 def _full_read_settings(path: Path | None) -> dict[str, Any]:
@@ -1476,6 +1506,7 @@ def _restore_full_backup(
                 backup_password=backup_password,
             )
         if settings_file is not None:
+            _keep_device_language(settings_holder["value"], _current_language(settings_file))
             _full_atomic_bytes(stage_root / settings_file.name, _full_canonical(settings_holder["value"]))
         _full_publish(
             stage_root,

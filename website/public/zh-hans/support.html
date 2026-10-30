@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>支持与常见问题 | LocalGateKeys</title>
+  <meta name="description" content="关于 LocalGateKeys、主密码、Pro 许可证、同步和退款的常见问题解答，以及如何联系支持。">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/zh-hans/support">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/support">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/support">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/support">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/support">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/support">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/support">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/support">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/support">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/support">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/support">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/support">
+  <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../brand/icon-256.png">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">跳到正文</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../zh-hans/index.html">
+        <img src="../brand/icon.svg" alt="" width="36" height="36">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav aria-label="主导航">
+        <ul class="nav">
+          <li><a href="../zh-hans/features.html">功能</a></li>
+          <li><a href="../zh-hans/pricing.html">价格</a></li>
+          <li><a href="../zh-hans/security.html">安全</a></li>
+          <li><a href="../zh-hans/get-started.html">入门</a></li>
+          <li><a href="../zh-hans/help.html">指南</a></li>
+          <li><a href="../zh-hans/download.html">下载</a></li>
+          <li><a href="../zh-hans/support.html" aria-current="page">支持</a></li>
+          <li><a href="../buy.html">购买 Pro</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>支持与问题</h1>
+  <p class="lead">大多数答案都在下面。如有其他问题，请发邮件到 <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a>。请勿向我们发送您的主密码、恢复短语或保管库文件；我们绝不会索要。</p>
+</div>
+
+<div class="wrap page-body">
+  <h2 class="faq-group">您的保管库</h2>
+  <div class="faq">
+    <details>
+      <summary>我忘记了主密码。你们能重置吗？</summary>
+      <div>
+        <p>不能。我们从未持有您的主密码或保管库，所以没有任何可以重置的东西。如果您创建了恢复短语，请在解锁界面使用它打开保管库并设置新密码。</p>
+        <p>没有密码或恢复短语，任何人都无法打开保管库。备份使用各自的备份密码加密，因此仍能打开的备份是另一条回到保管库的路。</p>
+      </div>
+    </details>
+    <details>
+      <summary>你们会保留我的保管库副本吗？</summary>
+      <div><p>不会。没有存储保管库的 LocalGateKeys 账户或服务器。您的保管库只存在于您的设备上，以及您自己设置的备份或云文件夹中。</p></div>
+    </details>
+    <details>
+      <summary>保管库存放在我电脑上的什么位置？</summary>
+      <div><p>在您的 Windows 用户配置文件中，位于 <code>%LOCALAPPDATA%\LocalGateKeys</code>。把该文件复制到别处是安全的，因为它是加密的，但请使用定时备份，而不要复制正在使用的文件。</p></div>
+    </details>
+    <details>
+      <summary>我可以从其他密码管理器导入吗？</summary>
+      <div><p>可以。在应用中选择“导入和导出”，然后选取 1Password、Bitwarden、LastPass、Dashlane、Proton Pass、KeePass 或 KeePassXC（<code>.kdbx</code> 文件可直接打开）、Chrome、Edge、Brave、Firefox 或 Safari 的导出文件。任何其他 CSV 文件也可以：由您告诉应用哪一列是什么。写入任何内容之前，您会先检查每个项目，导入过程也绝不联网。之后请删除导出文件，因为大多数导出文件以明文保存您的密码。</p></div>
+    </details>
+    <details>
+      <summary>没有网络连接也能用吗？</summary>
+      <div><p>能，完全可以。应用只在以下情况使用网络：检查更新（同时获取许可证吊销列表）、您发起的泄露检查、您开启后的网站图标，以及您设置后的同步。默认开启的严格离线模式会阻止后台请求、网站图标和泄露检查，并在检查更新前先询问。请参阅<a href="../zh-hans/security.html">安全页面</a>。</p></div>
+    </details>
+  </div>
+
+  <h2 class="faq-group">填充登录信息</h2>
+  <div class="faq">
+    <details>
+      <summary>为什么浏览器扩展需要桌面应用？</summary>
+      <div><p>保管库保存在桌面应用中，而不是浏览器中。扩展通过一个小型本地辅助程序，向应用请求与您当前网站匹配的登录项。这样浏览器就不会持有您的整个保管库。请先安装应用，再从<a href="../zh-hans/download.html">下载页面</a>添加扩展。</p></div>
+    </details>
+    <details>
+      <summary>LocalGateKeys 支持通行密钥吗？</summary>
+      <div><p>支持，在 Windows 上的 Chrome 和 Edge 中。当网站提供通行密钥时，扩展会询问是否保存到 LocalGateKeys，您在桌面应用中批准即可。用它登录的方式相同。您始终可以改用浏览器自带的通行密钥对话框，或在应用的自动填充设置中关闭通行密钥。通行密钥计入免费版 4 个项目的限制。</p></div>
+    </details>
+    <details>
+      <summary>某个 Windows 应用无法填充，为什么？</summary>
+      <div>
+        <p>只有当应用向 Windows 公开了真正的登录字段时，Windows 应用填充才能工作。以下情况会被拒绝：</p>
+        <ul>
+          <li>应用在您绑定之后已更新，其指纹发生了变化；请重新绑定</li>
+          <li>应用以管理员身份运行，而 LocalGateKeys 不是</li>
+          <li>登录界面由游戏引擎或无法验证的嵌入式网页绘制</li>
+        </ul>
+        <p>这些拒绝是有意为之。LocalGateKeys 不会退而盲目地记录或模拟按键。</p>
+      </div>
+    </details>
+    <details>
+      <summary>LocalGateKeys 会记录我的键盘输入吗？</summary>
+      <div><p>不会。它不安装键盘钩子，也绝不监视您的输入。请参阅 <a href="../zh-hans/security.html">LocalGateKeys 绝不会做的事</a>。</p></div>
+    </details>
+  </div>
+
+  <h2 class="faq-group">Pro、许可证和付款</h2>
+  <div class="faq">
+    <details>
+      <summary>Pro 增加了什么？</summary>
+      <div><p>无限项目、设备同步、双重验证码和文档。免费版最多可保存 4 个项目：登录、笔记、支付卡、身份信息和其他各种类型都计入，回收站中的项目不计入。请参阅<a href="../zh-hans/pricing.html">价格</a>。</p></div>
+    </details>
+    <details>
+      <summary>没有 Pro 却有超过 4 个项目会怎样？</summary>
+      <div><p>不会拿走任何东西。从旧版本升级后或移除许可证后可能出现这种情况。每个项目仍然可以使用、编辑和填充；只是在您购买 Pro 或回到 4 个以内之前，无法添加新项目。</p></div>
+    </details>
+    <details>
+      <summary>更新还需要再付费吗？</summary>
+      <div><p>不需要。Pro 是一次性付款，包含今后所有更新。无订阅，无需续费。</p></div>
+    </details>
+    <details>
+      <summary>Pro 可以在几台电脑上使用？</summary>
+      <div><p>您本人使用的所有电脑。许可证供一个人使用；请为您家庭或团队的每位成员各购买一个。</p></div>
+    </details>
+    <details>
+      <summary>如何开启 Pro？丢失密钥怎么办？</summary>
+      <div><p>付款后您会立即看到许可证密钥，并附有可下载的文件。在“工具 &gt; 许可证”中粘贴密钥。密钥也会保存在您的加密保管库中，因此恢复备份就会恢复 Pro。请参阅<a href="../zh-hans/licence.html">您的 Pro 许可证</a>。</p></div>
+    </details>
+    <details>
+      <summary>可以退款吗？</summary>
+      <div><p>可以，购买后 30 天内全额退款，无需任何理由。已退款的许可证会被吊销，因此 4 个项目的限制会再次生效；所有现有项目仍然可以使用。请参阅<a href="../legal/refunds.html">退款政策</a>。</p></div>
+    </details>
+    <details>
+      <summary>谁处理付款？可以开发票吗？</summary>
+      <div><p>Paddle 作为商户记录方代我们销售 Pro。由它收款、适用相应的增值税或销售税，并开具收据和发票，包括带有贵公司增值税号的发票。</p></div>
+    </details>
+  </div>
+
+  <h2 class="faq-group">同步和 iPhone</h2>
+  <div class="faq">
+    <details>
+      <summary>Wi-Fi 同步会经过互联网吗？</summary>
+      <div><p>不会。同一网络中已配对的电脑通过经过认证的加密连接直接相互连接。两者都需要处于解锁状态。同步属于 Pro。</p></div>
+    </details>
+    <details>
+      <summary>如果通过云文件夹同步，我的云服务商能看到什么？</summary>
+      <div><p>加密文件、文件数量、大小和更改时间，以及您设备的随机 ID 和公钥列表。看不到名称、用户名、密码或保管库内的任何其他内容。您存放在服务商处的文件适用服务商自己的条款。</p></div>
+    </details>
+    <details>
+      <summary>有 iPhone 应用吗？</summary>
+      <div><p>有。<a href="https://apps.apple.com/app/id6825488435">在 App Store 获取 LocalGateKeys</a>。它可与您的 Windows 电脑同步，并且和 Windows 应用一样，不收集任何数据。</p></div>
+    </details>
+  </div>
+
+  <h2 class="faq-group">联系方式</h2>
+  <div class="prose">
+    <ul>
+      <li>问题与帮助：<a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></li>
+      <li>安全问题：<a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>，请参阅<a href="../legal/vulnerability-disclosure.html">披露政策</a></li>
+      <li>订单、付款和发票：Paddle，请使用收据中的链接</li>
+    </ul>
+    <p>如果您发送错误日志，请先打开查看：它是纯文本文件，不应包含任何机密，但由您决定分享什么。</p>
+  </div>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand">LocalGateKeys</p>
+        <p>一款 Windows 密码管理器，把您的保管库保存在您自己的设备上。</p>
+        <p class="quiet">本网站不设置 Cookie，不运行统计分析，也不加载其他公司的任何内容。</p>
+      </div>
+      <nav aria-label="产品">
+        <h2>产品</h2>
+        <ul>
+          <li><a href="../zh-hans/features.html">功能</a></li>
+          <li><a href="../zh-hans/pricing.html">价格</a></li>
+          <li><a href="../zh-hans/download.html">下载</a></li>
+          <li><a href="../zh-hans/licence.html">您的 Pro 许可证</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="帮助">
+        <h2>帮助</h2>
+        <ul>
+          <li><a href="../zh-hans/help.html">用户指南</a></li>
+          <li><a href="../zh-hans/support.html">支持与常见问题</a></li>
+          <li><a href="../zh-hans/security.html">安全</a></li>
+          <li><a href="../legal/vulnerability-disclosure.html">报告漏洞</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="法律">
+        <h2>法律</h2>
+        <p class="quiet">这些文件以英文提供，以英文版本为准并具有约束力。</p>
+        <ul>
+          <li><a href="../legal/eula.html">许可协议</a></li>
+          <li><a href="../legal/privacy.html">隐私政策</a></li>
+          <li><a href="../legal/terms-of-sale.html">销售条款</a></li>
+          <li><a href="../legal/refunds.html">退款政策</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base">
+      <p>&copy; 2026 Ilias Pelekas。联系方式：<a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows 是 Microsoft 公司集团的商标。Chrome 是 Google LLC 的商标。</p>
+      <p class="lang-switch" role="navigation" aria-label="语言"><a href="../support.html" hreflang="en" lang="en">English</a> · <a href="../es/support.html" hreflang="es" lang="es">Español</a> · <a href="../it/support.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/support.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/support.html" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a> · <a href="../ja/support.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/support.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/support.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/support.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/support.html" hreflang="nl" lang="nl">Nederlands</a></p>
+    </div>
+  </footer>
+</body>
+</html>

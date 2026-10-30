@@ -1,6 +1,10 @@
 import Foundation
 import SwiftUI
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 /// The bundled site logos (desktop `src/localvault/assets/site_logos.json`, built by
 /// `scripts/build_site_logos.mjs`): when no website icon was downloaded (`SiteIcons.swift`), a web login

@@ -7,9 +7,14 @@ LocalGateKeys Pro licences and lets the buyer retrieve them.
 | --- | --- |
 | `POST /webhooks/lemonsqueezy` | `order_created`, status `paid`; `X-Signature` HMAC-SHA256 of the body |
 | `POST /webhooks/paddle` | `transaction.completed`, `adjustment.created`, `adjustment.updated`; `Paddle-Signature: ts=...;h1=...`, ts within 5 minutes |
-| `GET /license/<token>` | Page with the `LGK1-` key and a download link (refreshes until the webhook has arrived) |
+| `GET /license/<token>` | Page with the `LGK1-` key, an "Install in LocalGateKeys" button (`localgatekeys://install-licence/<key>`) and a download link (refreshes until the webhook has arrived) |
 | `GET /license/<token>/file` | `LocalGateKeys-Pro.lgklicense` download |
 | `GET /recover`, `POST /recover` | Form: order / transaction id + purchase email -> 303 to that order's licence page (404 no match, 429 throttled) |
+| `POST /appstore/claim` | App Store transaction JWS -> `{"licence": "LGK1-..."}` (see "Store purchases") |
+| `POST /webhooks/appstore` | App Store Server Notifications V2: refunds and revocations |
+| `POST /play/claim` | Google Play purchase token -> `{"licence": "LGK1-..."}` |
+| `POST /webhooks/play` | Play Real-time Developer Notifications (Pub/Sub push, OIDC) |
+| cron `0 4 * * *` | Play voided-purchases backstop |
 
 Licences are lifetime: every one is issued with `updates_until` 9999-12-31, so
 every build is covered and Pro removes the free 4-item limit for good.
@@ -78,13 +83,15 @@ KV keys in `LICENSES`:
 
 ## Setup
 
-Deploy only once the custom domain exists: `workers_dev` is off and
-`wrangler.jsonc` has no routes yet. Add the custom-domain route there first.
+`workers_dev` and `preview_urls` are off; the Worker is reachable only on its
+custom domain `licenses.localgatekeys.app` (the `routes` entry in `wrangler.jsonc`).
+The KV namespace and D1 database below already exist and their ids are in
+`wrangler.jsonc`; the commands are for a fresh setup.
 
 ```
 npx wrangler kv namespace create LICENSES   # put the id into wrangler.jsonc
 npx wrangler d1 create lgk-licence-claims   # put the database_id into wrangler.jsonc
-npx wrangler d1 migrations apply lgk-licence-claims --remote
+npx wrangler d1 migrations apply lgk-licence-claims --remote   # 0001 claims, 0002 store claims
 npx wrangler secret put LICENSE_PRIVATE_KEY # PKCS8 DER of the licence key, base64
 npx wrangler secret put WEBHOOK_SECRET      # signing secret from the payment provider
 npx wrangler secret put PADDLE_API_KEY      # Paddle only: reads customers
@@ -97,11 +104,141 @@ Set the non-secret settings as plain `vars` in `wrangler.jsonc`, not with
 ```jsonc
 "vars": {
   "PRODUCT_IDS": "777,pro_1",   // REQUIRED: comma-separated product ids that sell Pro
-  "PROVIDER": "lemonsqueezy",    // optional: lemonsqueezy | paddle (other webhook 404s)
+  "PROVIDER": "lemonsqueezy",    // optional: lemonsqueezy | paddle (other webhook 404s); live: paddle
   "ALLOW_TEST_MODE": "",         // "1" only while testing Lemon Squeezy test orders
-  "SUPPORT_EMAIL": "support@example.com"  // shown on the pending page after 10 minutes
+  "SUPPORT_EMAIL": "support@example.com",  // shown on the pending page after 10 minutes
+  "APPSTORE_BUNDLE_IDS": "app.localgatekeys.app",  // comma list: iPhone and Mac bundle ids
+  "APPSTORE_ALLOW_SANDBOX": ""   // "1" only on test deployments: accept Sandbox transactions
 }
 ```
+
+## Store purchases (App Store, Google Play)
+
+**Sales alerts on your phone (optional).** Install the ntfy app, subscribe to a long random topic name
+(e.g. `lgk-sales-` plus 20 random characters; anyone who knows it can read the alerts), then
+`npx wrangler secret put SALES_NTFY_TOPIC` with that name. Every App Store `ONE_TIME_CHARGE`, `REFUND` and
+`REVOKE` notification and every Play purchase or voided purchase then sends a push (price and storefront for
+Apple; sandbox ones are marked). A failed push never fails the webhook.
+
+`POST /appstore/claim` with `{"jws": "<signedTransactionInfo>"}` (StoreKit 2
+`jwsRepresentation`) answers `200 {"licence": "LGK1-..."}`, `400 Invalid`
+(any check failed, no detail), `403 Revoked` or `429` (20 claims an hour per
+client IP, the `/recover` throttle keyed by an HMAC of the IP). The JWS is
+verified offline: ES256 with the leaf key of `x5c`, the chain up to Apple Root
+CA G3 (pinned by SHA-256 in `src/appstore.js`), Apple's marker OIDs, and the
+certificate dates at `signedDate`. The transaction must be `pro_unlimited`
+for a bundle in `APPSTORE_BUNDLE_IDS`, not revoked, and `Production` (Sandbox
+only with `APPSTORE_ALLOW_SANDBOX`).
+
+A client JWS stays valid after a refund, so an old one would still claim if
+the REFUND notification was missed. With the App Store Server API key set, the
+Worker also asks Apple: Get Transaction Info
+(`GET https://api.storekit.itunes.apple.com/inApps/v1/transactions/{transactionId}`,
+`api.storekit-sandbox.itunes.apple.com` for Sandbox) with an ES256 JWT (`iss`,
+`iat`, `exp` 20 minutes, `aud` `appstoreconnect-v1`, `bid`), verifies Apple's
+`signedTransactionInfo` with the same chain check, and answers `403 Revoked`
+(and writes a revoked row) if it has a `revocationDate`. An Apple error,
+timeout or unverifiable answer is `503` (the app retries); a transaction Apple
+does not know is `400`. Secrets (once, by the owner): App Store Connect >
+Users and Access > Integrations > In-App Purchase, generate a key, then
+
+```
+npx wrangler secret put APPSTORE_API_ISSUER_ID     # the Issuer ID on that page
+npx wrangler secret put APPSTORE_API_KEY_ID        # the key's Key ID
+npx wrangler secret put APPSTORE_API_PRIVATE_KEY   # the whole .p8 PEM
+```
+
+Without all three the claim trusts the client's JWS as before and logs one
+warning per isolate. There is no daily App Store re-check of old claims: it
+would cost one Apple call per claimed purchase per day, against the Worker's
+subrequest limit; App Store refunds rely on the notifications below.
+
+One licence per original purchase: the D1 tables `appstore_claims` and
+`play_claims` (migration `0002_store_claims.sql`) key on the original
+transaction id / Play order id, so Restore, reinstalls and a second device get
+the same key. Licences are signed with the licence key like web orders, named
+"App Store purchase" or "Google Play purchase", lifetime, with no email or
+other personal data (the required `email` field repeats the name).
+
+## App Store Server Notifications
+
+In App Store Connect > the app > App Information > App Store Server
+Notifications, choose Version 2 and set **both** the Production and the
+Sandbox Server URL to:
+
+```
+https://licenses.localgatekeys.app/webhooks/appstore
+```
+
+The Worker verifies `signedPayload` and the `signedTransactionInfo` inside it
+with the same chain check as claims. `REFUND` and `REVOKE` for `pro_unlimited`
+mark the purchase revoked in `appstore_claims` and write
+`adjustment:appstore:<notificationUUID>` and `revoke:<license_id>:<notificationUUID>`
+(the Paddle refund format), so the weekly revocation list picks them up. A
+refund for a purchase never claimed leaves a revoked row with no licence, and
+a later claim answers 403. Other notification types answer 200 and are
+ignored; Sandbox notifications are ignored unless `APPSTORE_ALLOW_SANDBOX` is set;
+a bad signature is 400.
+
+## Google Play claims
+
+`POST /play/claim` with `{"purchaseToken": "...", "productId": "pro_unlimited"}`
+asks the Play Developer API (`purchases.products.get` for
+`app.localgatekeys.android`) about the token. It issues only for
+`purchaseState` 0 (purchased) and `consumptionState` 0; a canceled purchase is
+`403`, test purchases (`purchaseType` 0) are `400` unless the var
+`PLAY_ALLOW_TEST` is `1`, and a Google or configuration failure is `503` (the
+app retries on its next launch). One licence per Play `orderId`; same throttle
+and answers as `/appstore/claim`.
+
+Service account (once, by the owner):
+
+1. Google Cloud console, the project linked to Play: create a service account
+   and a JSON key for it.
+2. Play Console > Users and permissions: invite the service account's email,
+   app access to LocalGateKeys, permission **View financial data, orders, and
+   cancellation survey responses** (needed for purchase and voided-purchase
+   lookups).
+3. `npx wrangler secret put PLAY_SERVICE_ACCOUNT_JSON` and paste the whole JSON
+   key. The Worker signs its own OAuth JWT (RS256, scope `androidpublisher`) and
+   never logs access or purchase tokens.
+
+## Google Play refunds
+
+Real-time Developer Notifications reach `POST /webhooks/play` through Pub/Sub
+(once, by the owner):
+
+1. Google Cloud console: create a Pub/Sub topic, e.g. `play-rtdn`, and grant
+   `google-play-developer-notifications@system.gserviceaccount.com` the
+   **Pub/Sub Publisher** role on it.
+2. Create a **push** subscription on the topic with endpoint
+   `https://licenses.localgatekeys.app/webhooks/play`, **Enable authentication**
+   on, a service account of your choice, and audience equal to the var
+   `PLAY_PUSH_AUDIENCE` (`https://licenses.localgatekeys.app/webhooks/play`).
+   Put that service account's email in the var `PLAY_PUSH_SERVICE_ACCOUNT`
+   (wrangler.jsonc). Use a dedicated account for this subscription only.
+3. Play Console > Monetize > Monetization setup: set the topic
+   (`projects/<project>/topics/play-rtdn`) and send a test notification
+   (answered 200 and ignored).
+
+The Worker checks the push's Google-signed OIDC token (Google JWKS, issuer
+accounts.google.com, audience `PLAY_PUSH_AUDIENCE`, `email` equal to
+`PLAY_PUSH_SERVICE_ACCOUNT` with `email_verified` true; 401 otherwise, and
+every push is 401 while that var is empty). The audience alone proves nothing:
+anyone can mint a Google ID token for any audience.
+
+The notification body is not trusted either. A `oneTimeProductNotification`
+of type 2 (canceled) and a `voidedPurchaseNotification` are both looked up by
+their purchase token with `purchases.products.get`; the order is revoked only
+if Google reports `purchaseState` 1 (canceled) and, for a voided notification,
+the same `orderId`. Otherwise the push is acknowledged (200) and the daily cron
+decides. A confirmed one marks the order revoked in `play_claims` and, if it
+was claimed, writes `adjustment:play:void-<orderId>` and
+`revoke:<license_id>:void-<orderId>`.
+
+A daily cron (`0 4 * * *`) reads the Voided Purchases API since the KV cursor
+`play:voided:cursor` (at most 30 days back) as a backstop for missed pushes,
+revoking the same way, claimed or not.
 
 The `key_id` is derived from `LICENSE_PRIVATE_KEY` at issue time and every new
 licence is verified against the derived public key before it is stored; a bad
@@ -181,4 +318,6 @@ no longer 404s. Signing needs the release key, which only the owner holds.
 also regenerates the cross-language vectors in `tests/vectors/license/`.
 `npm test` in this directory runs `test/*.test.mjs` (claims and the D1
 race, recovery and its throttle, idempotency, refunds and the revocation-list
-script). `test/fake-d1.mjs` is an in-memory D1 for the claim statements.
+script), and the store routes: App Store JWS with a generated test CA
+(`test/apple-test-ca.mjs`), claims, App Store and Play refunds with fake Google
+endpoints (`test/fake-google.mjs`). `test/fake-d1.mjs` is an in-memory D1.

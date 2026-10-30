@@ -263,6 +263,9 @@ button.button:disabled, .button.disabled { opacity: .55; cursor: default; }
 .plan ul { padding-left: 1.2em; }
 
 .table-wrap { overflow-x: auto; margin-bottom: 1.5rem; }
+/* Long compound words (German, Dutch, Polish) hyphenate instead of widening the table on phones. */
+:is(:lang(de), :lang(nl), :lang(pl)) .table-wrap :is(th, td) { hyphens: auto; -webkit-hyphens: auto; }
+:is(:lang(de), :lang(nl), :lang(pl)) .table-wrap :is(th, td):first-child { overflow-wrap: anywhere; }
 table { border-collapse: collapse; width: 100%; font-size: var(--step--1); }
 th, td { text-align: left; padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
 thead th { font-family: var(--display); font-weight: 600; font-size: 1rem; border-bottom: 2px solid var(--ink); }
@@ -403,3 +406,93 @@ pre {
 /* Microsoft Store button: the four-square Microsoft logo before the label */
 .button.store-button { display: inline-flex; align-items: center; gap: 0.6rem; }
 .store-button .ms-logo { flex: none; width: 1.15em; height: 1.15em; padding: 0.15em; background: #fff; border-radius: 3px; box-sizing: content-box; }
+.store-button .apple-logo { flex: none; width: 1.15em; height: 1.15em; margin-top: -0.15em; }
+
+/* In-app legal pages (legal/app/): no site header or footer, one line of links between the two. */
+.app-legal-nav { padding-block: 0 1.5rem; font-size: var(--step--1); }
+
+/* User guide: platform tabs without scripts. A panel shows when it, or
+   anything inside it, is the URL target; Windows shows when nothing is. */
+.help-tabs {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; gap: 0.25rem; overflow-x: auto;
+  margin: 0 0 1.5rem; padding: 0.5rem 0;
+  background: var(--paper); border-bottom: 1px solid var(--rule);
+  scrollbar-width: thin;
+}
+.help-tab {
+  flex: none; padding: 0.55rem 1rem; border-radius: 999px;
+  font: 600 var(--step--1)/1.2 var(--display); letter-spacing: 0.01em;
+  color: var(--steel); text-decoration: none; white-space: nowrap;
+}
+.help-tab:hover { background: var(--dial-soft); color: var(--ink); }
+.help-panel { display: none; scroll-margin-top: 5rem; }
+.help-panel:target, .help-panel:has(:target) { display: block; }
+.help:not(:has(.help-panel:target, .help-panel :target)) #windows { display: block; }
+.help:not(:has(.help-panel:target, .help-panel :target)) .help-tab[data-tab="windows"],
+.help:has(#windows:target, #windows :target) .help-tab[data-tab="windows"],
+.help:has(#extension:target, #extension :target) .help-tab[data-tab="extension"],
+.help:has(#iphone:target, #iphone :target) .help-tab[data-tab="iphone"],
+.help:has(#mac:target, #mac :target) .help-tab[data-tab="mac"],
+.help:has(#watch:target, #watch :target) .help-tab[data-tab="watch"],
+.help:has(#android:target, #android :target) .help-tab[data-tab="android"] {
+  background: var(--dial); color: var(--surface);
+}
+.help-basics {
+  margin-bottom: 2rem; padding: 1rem 1.25rem; border: 1px solid var(--rule);
+  border-radius: var(--radius-l); background: var(--surface); font-size: var(--step--1);
+}
+.help-basics h2 { font-size: var(--step-0); margin: 0 0 0.4rem; }
+.help-basics ul { margin: 0; padding-left: 1.2em; }
+.help-basics li + li { margin-top: 0.3em; }
+.panel-title { font-size: var(--step-3); margin: 0; }
+.panel-lead { color: var(--steel); max-width: var(--measure); margin-top: 0.5rem; }
+.help-layout { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: 2.5rem; margin-top: 1.5rem; align-items: start; }
+.help-toc {
+  position: sticky; top: 4.5rem; max-height: calc(100vh - 6rem); overflow: auto;
+  padding: 1rem; border: 1px solid var(--rule); border-radius: var(--radius-l);
+  background: var(--surface); font-size: var(--step--1);
+}
+.help-toc-title { margin: 0 0 0.5rem; font-weight: 600; color: var(--steel); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem; }
+.help-toc ol { margin: 0; padding-left: 1.4em; }
+.help-toc li + li { margin-top: 0.3em; }
+.help-toc a { text-decoration: none; }
+.help-toc a:hover { text-decoration: underline; }
+.help-content .topic { padding-block: 1.5rem; border-top: 1px solid var(--rule); scroll-margin-top: 5rem; }
+.help-content .topic:first-child { border-top: 0; padding-top: 0; }
+.help-content .topic:target h3 a { color: var(--dial); }
+.help-content h3 { margin-top: 0; font-size: var(--step-2); }
+.help-content h3 a { color: inherit; text-decoration: none; }
+.help-content h3 a:hover::after { content: " #"; color: var(--steel); }
+.help-content h4 { margin: 1.4em 0 0.4em; font-size: var(--step-0); }
+.help-content table { margin-block: 1rem; }
+.help-content th, .help-content td { text-align: left; vertical-align: top; padding: 0.5rem 0.75rem 0.5rem 0; border-bottom: 1px solid var(--rule); }
+.keys th { white-space: nowrap; font-weight: 400; width: 1%; padding-right: 1.5rem; }
+kbd {
+  display: inline-block; min-width: 1.6em; padding: 0.05em 0.4em; text-align: center;
+  font: 600 0.82em/1.4 var(--mono); color: var(--ink); background: var(--surface);
+  border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 5px;
+}
+.defs { display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1.25rem; }
+.defs dt { font-weight: 600; }
+.defs dd { margin: 0; }
+.tip, .note, .callout-soon { padding: 0.75rem 1rem; border-radius: var(--radius-s); border-left: 4px solid; }
+.tip { background: var(--dial-soft); border-color: var(--dial); }
+.note, .callout-soon { background: var(--warn-soft); border-color: var(--warn); }
+.callout-soon { max-width: var(--measure); }
+.badge-pro {
+  display: inline-block; margin-left: 0.4rem; padding: 0.1rem 0.55rem; border-radius: 999px;
+  font: 600 0.7rem/1.5 var(--text); letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--pro); background: var(--pro-soft); vertical-align: 0.3em;
+}
+.help-more { margin-top: 3rem; color: var(--steel); }
+@media (max-width: 860px) {
+  .help-layout { grid-template-columns: 1fr; gap: 1rem; }
+  .help-toc { position: static; max-height: none; }
+  .defs { grid-template-columns: 1fr; gap: 0.1rem; }
+  .defs dd { margin-bottom: 0.6rem; }
+}
+@media print {
+  .help-tabs, .help-toc { display: none; }
+  .help-panel { display: block !important; }
+}

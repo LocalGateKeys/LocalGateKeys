@@ -1,9 +1,10 @@
 <script>
+  import { t } from '../lib/i18n.svelte.js';
   let { status = null } = $props();
 </script>
 
 <footer class="status">
-  <span><span class="dot" aria-hidden="true">●</span> {status?.encrypted ?? 'Local · Encrypted'}</span>
+  <span><span class="dot" aria-hidden="true">●</span> {status?.encrypted ?? t('statusLine.encrypted')}</span>
   {#if status?.autolock}<span>{status.autolock}</span>{/if}
   {#if status?.clipboard}<span>{status.clipboard}</span>{/if}
   <span class="hint">{status?.hint ?? ''}</span>

@@ -23,7 +23,8 @@ EXTENSION_ID = "hojebpmbiibhbhhkohgongojilojijmb"
 # has no "key"). PLACEHOLDERS: fill in from the Chrome Web Store / Edge
 # Add-ons dashboards once the listings exist (see docs/store/SUBMISSION_CHECKLIST.md).
 # An empty string means "not assigned yet" and is ignored.
-CHROME_WEB_STORE_EXTENSION_ID = ""
+# Chrome Web Store item ID (Developer Dashboard draft, 2026-10-28).
+CHROME_WEB_STORE_EXTENSION_ID = "fcilinmkccknaoeobcdnploacggajbdg"
 # Edge Add-ons CRX ID of product 33132488-a8ea-462f-96e9-033555cc47af (Partner Center, 2026-10-19).
 EDGE_ADDONS_EXTENSION_ID = "oclkjglnfefdmhddgicmbadaoehakbjj"
 

@@ -103,3 +103,7 @@ src/localvault/assets/ui/
 *.jks
 *.keystore
 keystore.properties
+!tests/vectors/**/*.zip
+
+# Local agent reports
+.superpowers/

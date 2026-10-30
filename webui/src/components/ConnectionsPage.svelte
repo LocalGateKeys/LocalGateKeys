@@ -1,6 +1,7 @@
 <script>
   /** Devices & connections: the browser extension bridge status, repair, export report. */
   import { call } from '../lib/api.js';
+  import { t } from '../lib/i18n.svelte.js';
   import { okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
 
@@ -10,7 +11,7 @@
 
   async function load() {
     const result = await call('connections_view');
-    if (okOrToast(result, 'Could not open Connections')) data = result;
+    if (okOrToast(result, t('connectionsPage.openFailed'))) data = result;
   }
   $effect(() => { load(); });
 
@@ -21,19 +22,19 @@
   }
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label="Connections">
+<div class="sheet glass" role="dialog" aria-label={t('connectionsPage.title')}>
   <header>
-    <h2>Connections</h2>
-    <button class="close" aria-label="Close" onclick={onclose}>✕</button>
+    <h2>{t('connectionsPage.title')}</h2>
+    <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
-  <p class="muted">See the connection status first. Technical diagnostics stay available when support needs them.</p>
+  <p class="muted">{t('connectionsPage.intro')}</p>
   {#if data}
     <div class="group card">
       <h3>{data.headline}</h3>
       <p class="muted">{data.summary}</p>
       <p class="status {data.tone}">● {data.status}</p>
     </div>
-    <div class="section-label">Browser bridge</div>
+    <div class="section-label">{t('connectionsPage.bridge')}</div>
     <div class="group">
       {#each data.browsers as b (b.browser)}
         <div class="row"><span>{b.browser}</span><span class:ok={b.ok} class="state">{b.state}</span></div>
@@ -42,10 +43,10 @@
       {/each}
     </div>
     <footer>
-      <Button label="Refresh" onclick={load} />
-      {#if data.can_repair}<Button label="Repair bridge" variant="primary" onclick={() => act('connections_repair')} />{/if}
-      <Button label="Export report" onclick={() => act('connections_export')} />
-      <Button label={details ? 'Hide technical details' : 'Show technical details'} onclick={() => (details = !details)} />
+      <Button label={t('connectionsPage.refresh')} onclick={load} />
+      {#if data.can_repair}<Button label={t('connectionsPage.repair')} variant="primary" onclick={() => act('connections_repair')} />{/if}
+      <Button label={t('connectionsPage.export')} onclick={() => act('connections_export')} />
+      <Button label={details ? t('connectionsPage.hideDetails') : t('connectionsPage.showDetails')} onclick={() => (details = !details)} />
     </footer>
     {#if details}<pre class="group details">{data.details}</pre>{/if}
     <p class="muted">{data.footer}</p>

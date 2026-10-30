@@ -8,6 +8,59 @@ Current implementation and validation status: docs/NEXT_RELEASE_IMPLEMENTATION_S
 
 ## Unreleased
 
+## 0.4.10 (2026-10-30)
+
+### Desktop
+- **New logo:** the lock screen and the top of the sidebar show the LocalGateKeys logo from the website, sharp at
+  any size, with the app name above All items.
+- **Sidebar:** every entry has an icon, Settings is a gear, and pages open on the right while the sidebar stays
+  visible.
+- **Setup guide:** skippable steps (Windows Hello, import, recovery phrase, browser extension) and a
+  "Finish setting up" card until they are done or hidden. An empty vault shows an "Import your passwords" card.
+- **Sort the vault list** by title, last modified or created, with favorites first.
+- **Command palette:** Security check, Sync status and Show setup.
+- **Password history:** restore an earlier password; up to 10 are kept for a year.
+- **Secure sharing:** share an item as a `.lgkshare` file or QR code protected by a six-word code; received items
+  appear in Incoming items. A shared item burns after three wrong codes. Double-clicking a `.lgkshare` file opens
+  it in the app.
+- **Attached documents sync** with their files over the shared folder and Wi-Fi, encrypted.
+- **Phone backups** (`.lgkm`) can carry attached document files; restoring says which documents had no file.
+- **Imports keep the full login address** (for example a sign-in page path), so Open website goes to the right page.
+- **Wi-Fi sync:**
+  - The PC announces itself on private networks, so phones find it after its IP address changes.
+  - "Find again" reconnects to a paired PC that moved, from its QR code.
+  - Each paired device shows when it last synced; the sync status in the sidebar opens a Sync status sheet.
+  - Rollback protection: if a device brings back an older copy of the vault, the app warns you instead of
+    accepting it silently.
+- **Free plan and the phone apps:** a free PC paired with an iPhone or Android phone that has Pro takes the
+  licence over sync and becomes Pro.
+- **Accessibility:** muted and faint text now meets 4.5:1 contrast.
+- **Browser extension:** no identity icon on post titles, chat boxes or lone guessed fields.
+
+## 0.4.9 (2026-10-27)
+
+### Desktop
+- **Scan QR code** adds 2FA keys and Google Authenticator exports without opening an item first: paste a
+  screenshot, choose or drop an image, or use the webcam. Replacing an existing 2FA key asks first.
+- Wi-Fi sync with a phone: the PC now records syncs the phone starts ("Last synced" no longer stays at
+  "Not synced yet") and shows the new items at once instead of after a lock and unlock.
+- After a sync that added, changed or removed items, a "Synced" notice says how many.
+- Windows Hello works with key providers that refuse SHA-256 padding.
+
+### iOS
+- Import and export, in Settings, Import & Export:
+  - **Apple Passwords import (iOS 26 and later).** In the Passwords app, open the menu, choose
+    "Export Data to Another App", then pick LocalGateKeys. Logins, 2FA codes and passkeys come across
+    (passkeys with P-256 keys only).
+  - **CSV import from Files.** It accepts Apple Passwords and Chrome or Edge CSV files only. For any other
+    password manager, import in the Windows app.
+  - Importing the same file again adds nothing.
+  - On the free plan the vault holds 4 items. Extra items are not stored, and the result says how many
+    are waiting: "upgrade to Pro, then import again".
+  - **Export is free.** An encrypted backup (`.lgkm`) needs a password of at least 12 characters, typed
+    twice and never stored, and can be restored in the desktop app. A CSV is unencrypted and holds logins
+    only, because passkeys can't go in a CSV; the app warns you first.
+
 ## 0.4.8 (2026-10-25)
 
 ### Desktop

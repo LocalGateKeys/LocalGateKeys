@@ -1,0 +1,9 @@
+{
+  "error": {
+    "message": "Proton Pass export has no 'vaults' object",
+    "type": "format"
+  },
+  "format": "protonPass",
+  "input": "tests/vectors/import/_inputs/proton.zip",
+  "python_format": "protonpass-json"
+}

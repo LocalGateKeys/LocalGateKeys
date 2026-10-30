@@ -1,0 +1,94 @@
+{
+  "format": "dashlane",
+  "input": "tests/fixtures/imports/dashlane/payments.csv",
+  "python_format": "dashlane-csv",
+  "result": {
+    "diagnostics": [],
+    "records": [
+      {
+        "card": {
+          "cardholder": "Alex Example",
+          "cvv": "777",
+          "expiry": "11/2030",
+          "number": "5555555555554444"
+        },
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Issuing bank",
+            "value": "Example Bank"
+          },
+          {
+            "hidden": false,
+            "name": "Country",
+            "value": "GB"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "card",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 2,
+        "tags": [],
+        "title": "Groceries Mastercard",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Dashlane payment type",
+            "value": "bank"
+          },
+          {
+            "hidden": false,
+            "name": "Account holder",
+            "value": "Alex Example"
+          },
+          {
+            "hidden": true,
+            "name": "Account number",
+            "value": "00000000"
+          },
+          {
+            "hidden": true,
+            "name": "Routing number",
+            "value": "000000"
+          },
+          {
+            "hidden": false,
+            "name": "Bank",
+            "value": "Example Bank"
+          },
+          {
+            "hidden": false,
+            "name": "Country",
+            "value": "GB"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 3,
+        "tags": [],
+        "title": "Joint account",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      }
+    ],
+    "source_format": "dashlane-csv"
+  }
+}

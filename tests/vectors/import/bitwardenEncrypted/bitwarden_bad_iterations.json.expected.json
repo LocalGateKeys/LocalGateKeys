@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Encrypted export iteration count is outside the supported range",
+    "type": "format"
+  },
+  "format": "bitwardenEncrypted",
+  "input": "tests/vectors/import/_inputs/bitwarden_bad_iterations.json",
+  "password": "fixture export password",
+  "python_format": "bitwarden-encrypted-json"
+}

@@ -1,5 +1,6 @@
 package app.localgatekeys.android.ui.detail
 
+import app.localgatekeys.android.i18n.appTxt
 import android.os.Build
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
@@ -128,7 +129,7 @@ class ItemDetailScreenTest {
     }
 
     @Test fun tapping_a_row_opens_the_detail_and_back_returns_to_the_list() {
-        val model = VaultListModel(FakeStore(StoreSnapshot(mapOf("w1" to Wrapper.make(Namespace.ENTRY, web)))))
+        val model = VaultListModel(FakeStore(StoreSnapshot(mapOf("w1" to Wrapper.make(Namespace.ENTRY, web)))), appTxt())
         val copied = mutableListOf<String>()
         val seams = VaultSeams(clipboard = Copier { text, _ -> copied.add(text) }, clock = clock)
         rule.setContent { LgkTheme { RootScaffold(model, settings, seams, DetailSeams(clipboard, toast)) } }

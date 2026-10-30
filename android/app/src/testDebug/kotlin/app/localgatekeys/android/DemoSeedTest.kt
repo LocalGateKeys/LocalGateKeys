@@ -1,5 +1,6 @@
 package app.localgatekeys.android
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.editor.EditorKind
 import app.localgatekeys.android.editor.EditorModel
 import app.localgatekeys.android.editor.SaveResult
@@ -22,9 +23,9 @@ class DemoSeedTest {
         assertEquals(11, editable.size)
         for (item in editable) {
             // Opening and saving changes nothing: the seed is already in normal form.
-            val same = EditorModel(store, item, EditorKind.NOTE, { true }, TestClock(1_800_000_000), CountingRandom())
+            val same = EditorModel(store, item, EditorKind.NOTE, { true }, TestClock(1_800_000_000), CountingRandom(), EnglishTxt())
             assertEquals("${item.id}: ${same.error}", SaveResult.UNCHANGED, same.save())
-            val e = EditorModel(store, item, EditorKind.NOTE, { true }, TestClock(1_800_000_000), CountingRandom())
+            val e = EditorModel(store, item, EditorKind.NOTE, { true }, TestClock(1_800_000_000), CountingRandom(), EnglishTxt())
             e.set(e.titleKey, e.value(e.titleKey) + " edited")
             assertEquals("${item.id}: ${e.error}", SaveResult.SAVED, e.save())
         }

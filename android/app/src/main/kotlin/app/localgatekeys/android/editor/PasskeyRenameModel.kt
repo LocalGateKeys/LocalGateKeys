@@ -1,5 +1,8 @@
 package app.localgatekeys.android.editor
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.Txt
+import androidx.annotation.StringRes
 import app.localgatekeys.android.vault.VaultItem
 import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.primitives.UnixClock
@@ -18,7 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * the relying party) stays byte for byte as stored, so the passkey keeps signing in. Port of `PasskeyRenameModel` in
  * `ios/App/Editor/PasskeyEditor.swift`. [save] and [delete] use the store: call them off the main thread.
  */
-class PasskeyRenameModel(private val store: ItemStore, item: VaultItem, private val clock: UnixClock) {
+class PasskeyRenameModel(private val store: ItemStore, item: VaultItem, private val clock: UnixClock, private val t: Txt) {
     private val id = item.id
     private val original: String = (item.record["title"] as? JsonValue.Str)?.v ?: ""
 
@@ -46,7 +49,7 @@ class PasskeyRenameModel(private val store: ItemStore, item: VaultItem, private 
         _error.value = null
         val title = _title.value
         if (WebsiteInput.trimmed(title).isEmpty()) {
-            _error.value = "Enter a name."
+            _error.value = t.s(R.string.passkey_enter_name)
             return SaveResult.INVALID
         }
         if (title == original) return SaveResult.UNCHANGED
@@ -55,7 +58,7 @@ class PasskeyRenameModel(private val store: ItemStore, item: VaultItem, private 
             val w = (snap.records[id] as? JsonValue.Obj)?.fields
             val r = (w?.get("record") as? JsonValue.Obj)?.fields
             if (w == null || w["ns"] != JsonValue.Str(Namespace.ITEM.wire) || r == null || r["kind"] != JsonValue.Str("passkey")) {
-                _error.value = "This passkey is no longer on this phone."
+                _error.value = t.s(R.string.passkey_gone)
                 return SaveResult.FAILED
             }
             val changed = LinkedHashMap(r)
@@ -71,11 +74,11 @@ class PasskeyRenameModel(private val store: ItemStore, item: VaultItem, private 
                 _error.value = e.detail
                 SaveResult.INVALID
             } else {
-                _error.value = SAVE_FAILED
+                _error.value = t.s(SAVE_FAILED)
                 SaveResult.FAILED
             }
         } catch (_: Exception) {
-            _error.value = SAVE_FAILED
+            _error.value = t.s(SAVE_FAILED)
             SaveResult.FAILED
         }
     }
@@ -87,7 +90,7 @@ class PasskeyRenameModel(private val store: ItemStore, item: VaultItem, private 
     /** Removes the item and writes its tombstone, as for every other item ([EditorModel.delete]). */
     fun delete(): SaveResult {
         val r = EditorModel.delete(id, store, clock)
-        if (r == SaveResult.FAILED) _error.value = "The passkey could not be deleted on this device."
+        if (r == SaveResult.FAILED) _error.value = t.s(R.string.passkey_delete_failed)
         _alreadyRemoved.value = r == SaveResult.UNCHANGED
         return r
     }
@@ -95,11 +98,11 @@ class PasskeyRenameModel(private val store: ItemStore, item: VaultItem, private 
     override fun toString(): String = "PasskeyRenameModel(id=$id)"
 
     companion object {
-        const val SAVE_FAILED = "The passkey could not be saved on this device."
-        const val TITLE = "Edit passkey"
-        const val FOOTER = "Only the name can be changed. The passkey itself stays as it is."
-        const val DELETE = "Delete passkey"
-        const val DELETE_TITLE = "Delete this passkey?"
-        const val DELETE_MESSAGE = "You will no longer be able to sign in to this website with it."
+        @StringRes val SAVE_FAILED = R.string.passkey_save_failed
+        @StringRes val TITLE = R.string.typed_title_edit_passkey
+        @StringRes val FOOTER = R.string.passkey_edit_footer
+        @StringRes val DELETE = R.string.passkey_delete
+        @StringRes val DELETE_TITLE = R.string.passkey_delete_title
+        @StringRes val DELETE_MESSAGE = R.string.passkey_delete_message
     }
 }

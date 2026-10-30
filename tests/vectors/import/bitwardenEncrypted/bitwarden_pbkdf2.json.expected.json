@@ -1,0 +1,309 @@
+{
+  "format": "bitwardenEncrypted",
+  "input": "tests/vectors/import/_inputs/bitwarden_pbkdf2.json",
+  "password": "fixture export password",
+  "python_format": "bitwarden-encrypted-json",
+  "result": {
+    "diagnostics": [
+      "Item 8: unknown Bitwarden item type 9; imported as a secure note.",
+      "Item 9: in the Bitwarden trash; skipped.",
+      "Item 10: not an object; skipped.",
+      "1 login(s) have passkeys; Bitwarden does not export passkeys in a form another manager can use, so only the password was imported."
+    ],
+    "records": [
+      {
+        "card": {},
+        "created": 1704164645,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Text",
+            "value": "t"
+          },
+          {
+            "hidden": true,
+            "name": "Hidden",
+            "value": "h"
+          },
+          {
+            "hidden": false,
+            "name": "Bool",
+            "value": "true"
+          },
+          {
+            "hidden": false,
+            "name": "Number",
+            "value": "42"
+          }
+        ],
+        "favorite": true,
+        "folder": "Work",
+        "identity": {},
+        "kind": "login",
+        "modified": 1706933106,
+        "notes": "n",
+        "password": "p",
+        "source_row": 1,
+        "tags": [],
+        "title": "Many URLs",
+        "totp_uri": "otpauth://totp/Many%20URLs?secret=JBSWY3DPEHPK3PXP",
+        "urls": [
+          "https://u0.example.com",
+          "https://u1.example.com",
+          "https://u2.example.com",
+          "https://u3.example.com",
+          "https://u4.example.com",
+          "https://u5.example.com",
+          "https://u6.example.com",
+          "https://u7.example.com",
+          "https://u8.example.com",
+          "https://u9.example.com",
+          "https://u10.example.com",
+          "https://u11.example.com",
+          "https://u12.example.com",
+          "https://u13.example.com",
+          "https://u14.example.com",
+          "https://u15.example.com",
+          "https://u16.example.com",
+          "https://u17.example.com",
+          "https://u18.example.com",
+          "https://u19.example.com",
+          "https://u20.example.com",
+          "https://u21.example.com",
+          "https://u22.example.com",
+          "https://u23.example.com",
+          "https://u24.example.com"
+        ],
+        "username": "u"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "Shared",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 2,
+        "tags": [],
+        "title": "Collection only",
+        "totp_uri": "",
+        "urls": [],
+        "username": "c"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "secret text",
+        "password": "",
+        "source_row": 3,
+        "tags": [],
+        "title": "Secure note",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {
+          "brand": "Visa",
+          "cardholder": "Alex",
+          "cvv": "123",
+          "expiry": "01/2027",
+          "number": "4111111111111111"
+        },
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "card",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 4,
+        "tags": [],
+        "title": "Card",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {
+          "number": "5555555555554444"
+        },
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Expiry",
+            "value": "13/27"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "card",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 5,
+        "tags": [],
+        "title": "Bad expiry",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Title",
+            "value": "Mr"
+          },
+          {
+            "hidden": false,
+            "name": "Username",
+            "value": "alexe"
+          },
+          {
+            "hidden": false,
+            "name": "Address 3",
+            "value": "Flat 2"
+          },
+          {
+            "hidden": true,
+            "name": "SSN",
+            "value": "000-00-0000"
+          },
+          {
+            "hidden": true,
+            "name": "Passport number",
+            "value": "P1"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {
+          "address_line1": "1 Road",
+          "city": "Town",
+          "company": "Ex",
+          "country": "GB",
+          "email": "a@example.com",
+          "family_name": "Example",
+          "given_name": "Alex",
+          "name": "Alex Example",
+          "phone": "0100",
+          "postal_code": "EX1"
+        },
+        "kind": "identity",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 6,
+        "tags": [],
+        "title": "Identity",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Bitwarden item type",
+            "value": "SSH key"
+          },
+          {
+            "hidden": true,
+            "name": "Private key",
+            "value": "-----BEGIN-----"
+          },
+          {
+            "hidden": false,
+            "name": "Public key",
+            "value": "ssh-ed25519 AAA"
+          },
+          {
+            "hidden": false,
+            "name": "Fingerprint",
+            "value": "SHA256:x"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 7,
+        "tags": [],
+        "title": "SSH",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Bitwarden item type",
+            "value": "9"
+          },
+          {
+            "hidden": false,
+            "name": "F",
+            "value": "v"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "kept",
+        "password": "",
+        "source_row": 8,
+        "tags": [],
+        "title": "Future",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": 1700000000,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 11,
+        "tags": [],
+        "title": "Epoch ms",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      }
+    ],
+    "source_format": "bitwarden-encrypted-json"
+  }
+}

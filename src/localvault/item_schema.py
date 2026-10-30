@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlsplit
 
+from .i18n import t
 from .origin import (
     DEFAULT_MATCH_MODE,
     MATCH_MODES,
@@ -184,11 +185,18 @@ class ItemSummary:
     scope: dict[str, Any] | None = None
 
 
+_FIELD_LABELS = {
+    "bookmark URL": "itemSchema.field.bookmarkUrl",
+    "title": "itemSchema.field.title",
+    "name": "itemSchema.field.name",
+}
+
+
 def _text(value: Any, field: str, limit: int, *, allow_empty: bool = False) -> str:
     if not isinstance(value, str):
         raise ItemSchemaError(f"{field} must be text")
     if not allow_empty and not value:
-        raise ItemSchemaError(f"{field} cannot be empty")
+        raise ItemSchemaError(t("itemSchema.cannotBeEmpty", field=t(_FIELD_LABELS[field]) if field in _FIELD_LABELS else field))
     if len(value) > limit:
         raise ItemSchemaError(f"{field} is too long")
     if "\x00" in value:
@@ -942,6 +950,26 @@ def migrate_web_scope(scope: Any) -> dict[str, Any]:
     result["origin"] = origin
     result["urls"] = urls
     return result
+
+
+def web_page_address(scope: Any) -> str:
+    """The address to show and open for a web login: its primary origin, or the
+    first ``starts_with`` row on that same origin (an imported full page
+    address, 2026-10-29).  Display only; matching always uses every row."""
+    if not isinstance(scope, Mapping):
+        return ""
+    origin = scope.get("origin")
+    origin = origin if isinstance(origin, str) else ""
+    rows = scope.get("urls")
+    if origin and isinstance(rows, list):
+        for row in rows:
+            if isinstance(row, Mapping) and row.get("match") == "starts_with" and isinstance(row.get("url"), str):
+                try:
+                    if origin_of(row["url"]) == origin:
+                        return row["url"]
+                except OriginError:
+                    continue
+    return origin
 
 
 def web_login_host(scope: Mapping[str, Any]) -> str:

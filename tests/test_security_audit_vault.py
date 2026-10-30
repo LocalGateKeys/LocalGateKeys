@@ -17,6 +17,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 import localvault.export as export_module
 import localvault.vault as vault_module
+from localvault.i18n import t
 from localvault.attachments import AttachmentError, AttachmentStore
 from localvault.backup import (
     BackupError,
@@ -578,8 +579,8 @@ def test_plaintext_export_warns_when_acl_cannot_be_applied(tmp_path: Path, monke
     summary = export_module.export_csv(session, tmp_path / "export.csv")
     session.lock()
     assert summary.permissions_restricted is False
-    assert export_module.ExportWarning.PERMISSIONS in summary.warnings
-    assert export_module.ExportWarning.PLAINTEXT in summary.warnings
+    assert t(export_module.ExportWarning.PERMISSIONS) in summary.warnings
+    assert t(export_module.ExportWarning.PLAINTEXT) in summary.warnings
     assert summary.encrypted is False
 
 

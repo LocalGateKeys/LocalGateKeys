@@ -1,5 +1,11 @@
 package app.localgatekeys.android.sync
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.Txt
+import app.localgatekeys.core.lan.BlobFetch
+import app.localgatekeys.core.sync.AttachmentRef
+import app.localgatekeys.core.sync.AttachmentSync
+import app.localgatekeys.core.sync.Documents
 import app.localgatekeys.android.vault.Slot
 import app.localgatekeys.core.engine.ItemState
 import app.localgatekeys.core.engine.PeerView
@@ -10,6 +16,8 @@ import app.localgatekeys.core.keyring.KeyringException
 import app.localgatekeys.core.lan.Enrollment
 import app.localgatekeys.core.lan.LanAddress
 import app.localgatekeys.core.lan.LanEndpoint
+import app.localgatekeys.core.lan.LanExchange
+import app.localgatekeys.core.lan.LanPublish
 import app.localgatekeys.core.lan.LanSyncException
 import app.localgatekeys.core.lan.PairingException
 import app.localgatekeys.core.lan.PairingOffer
@@ -29,6 +37,8 @@ import app.localgatekeys.core.sync.StoreSnapshot
 import app.localgatekeys.core.sync.SyncGroupState
 import app.localgatekeys.core.sync.SyncIssue
 import app.localgatekeys.core.sync.SyncRunner
+import app.localgatekeys.core.sync.Witness
+import app.localgatekeys.core.sync.WitnessMemory
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.cancellation.CancellationException
@@ -77,7 +87,10 @@ data class SyncRunResult(
  * calls hop there themselves; the non-suspend ones must be made there (checked on the main dispatcher). Blocking
  * store, slot, folder and socket work runs on [SyncDependencies.io].
  */
-class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: CoroutineScope) {
+class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: CoroutineScope, private val t: Txt) {
+    /** The sync wording in the language of the running Activity (see `SwitchableTxt`). */
+    private val words = SyncWording(t)
+
     enum class Phase { IDLE, SYNCING, JOINING }
     enum class Trigger { APP_OPEN, PULL_TO_REFRESH, LOCAL_EDIT, MANUAL }
 
@@ -88,16 +101,57 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
         val hasFolderUri: Boolean = false,
         val peer: PinnedPeer? = null,
         val deviceId: String? = null,
+        /** The group's other folder members (sorted; not this device). */
+        val members: List<String> = emptyList(),
+        /** Peer id -> when this device last accepted its changes (Unix seconds; workstream 6). */
+        val peerSyncedAt: Map<String, Long> = emptyMap(),
     ) {
         /** The peer's public keys are not shown either. */
         override fun toString(): String =
-            "Membership(joined=$joined, hasFolder=$hasFolder, hasFolderUri=$hasFolderUri, peer=${peer?.deviceId}, deviceId=$deviceId)"
+            "Membership(joined=$joined, hasFolder=$hasFolder, hasFolderUri=$hasFolderUri, peer=${peer?.deviceId}, deviceId=$deviceId, " +
+                "members=${members.size})"
     }
 
     val gate = SessionGate()
 
     /** Every read and write of the coordinator goes through this gated view. */
     val store: ItemStore = GatedStore(store, gate)
+
+    /**
+     * The unlock session's rollback-witness memory (desktop `witness_memory`): the highest generation checked from each
+     * peer, saved throttled by LAN runs and flushed at the end of every run (so before the vault locks).
+     */
+    val witnessMemory = WitnessMemory()
+
+    /**
+     * "This was me": the user restored this vault on purpose (`vault-rollback`). Only for the explicit button, after
+     * the user confirmed and re-authenticated; nothing calls it automatically (no acknowledgement after a restore).
+     * Raises the generation above what the peers witnessed and clears the warning in one commit.
+     */
+    suspend fun acknowledgeVaultRollback(): Boolean = onConfined {
+        withContext(deps.io) {
+            try {
+                Witness.acknowledgeVaultRollback(store)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
+
+    /** The user dismissed `peer-vault-rollback` for [peerId]: accept that device's older copy. */
+    suspend fun forgetPeerGeneration(peerId: String): Boolean = onConfined {
+        withContext(deps.io) {
+            try {
+                Witness.forgetPeerGeneration(store, peerId, witnessMemory)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
 
     private val job = SupervisorJob(scope.coroutineContext[Job])
     private val scope = CoroutineScope(scope.coroutineContext + job)
@@ -246,6 +300,8 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
                 hasFolderUri = readSlotOrNull(deps, Slot.FOLDER_URI)?.let { folderAvailable(deps, it) } ?: false,
                 peer = trustedPeerOrNull(deps, state),
                 deviceId = state?.deviceId,
+                members = state?.members?.filter { it != state.deviceId }?.sorted() ?: emptyList(),
+                peerSyncedAt = state?.peerSyncedAt ?: emptyMap(),
             )
         }
         if (gate.isOpen && serial > appliedSerial) {
@@ -291,7 +347,7 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             do {
                 rerun = false
                 _phase.value = Phase.SYNCING
-                val result = runAll(store, deps)
+                val result = runAll(store, deps, witnessMemory)
                 apply(result)
                 publish(result)
             } while (rerun && gate.isOpen && currentCoroutineContext().isActive)
@@ -316,7 +372,7 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             _lastSyncedAt.value = deps.clock.now
             _conflictCopies.value += result.conflicts
             val m = _membership.value
-            _issues.value = SyncWording.views(result.issues, ownID = m.deviceId, folder = m.hasFolder)
+            _issues.value = words.views(result.issues, ownID = m.deviceId, folder = m.hasFolder)
         } else {
             _issues.value = emptyList()
         }
@@ -363,14 +419,14 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             failure == null -> {
                 _phase.value = Phase.IDLE
                 syncAfterAction = false // the first sync below includes any edit made meanwhile
-                _actionInfo.value = "This phone joined the sync group. The first sync is running."
+                _actionInfo.value = t.s(R.string.sync_joined_info)
                 refreshMembership()
                 sync(Trigger.MANUAL)
                 return true
             }
             failure is JoinCancelled || (failure is EnrollConnectException && failure.failure == LanFailure.CANCELLED) -> {
                 _phase.value = Phase.IDLE
-                _actionInfo.value = "Pairing was cancelled."
+                _actionInfo.value = t.s(R.string.sync_enroll_cancelled)
                 refreshMembership()
                 runPendingSync()
                 return false
@@ -380,6 +436,39 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
                 return false
             }
         }
+    }
+
+    /**
+     * Find again (plan 2026-10-29-sync-ip-change, section 4): the PC's fresh pairing QR, scanned when its pinned address
+     * and discovery both failed. Only the address changes, and only when the QR's group, device id, signing key and
+     * exchange key equal the pinned host's: nothing is enrolled, nothing else is stored. Another device's QR is refused.
+     */
+    suspend fun findAgain(text: String): Boolean = onConfined {
+        if (!beginAction()) return@onConfined false
+        val found: LanEndpoint = try {
+            val state = store.load().sync ?: throw SyncActionException("not-joined")
+            val deps = deps
+            withContext(deps.io) {
+                synchronized(PIN_LOCK) {
+                    val peer = trustedPeerOrNull(deps, state) ?: throw SyncActionException("find-again-not-paired")
+                    val endpoint = addressFromOffer(peer, text, deps.clock.now)
+                    if (endpoint != peer.endpoint) deps.slots.setPairedPeer(peer.copy(endpoint = endpoint))
+                    endpoint
+                }
+            }
+        } catch (e: CancellationException) {
+            _phase.value = Phase.IDLE
+            throw e
+        } catch (e: Exception) {
+            fail(if (e is SyncActionException) e else SyncActionException("find-again-failed"))
+            return@onConfined false
+        }
+        _phase.value = Phase.IDLE
+        _issues.value = _issues.value.filter { it.kind != "unreachable" }
+        _actionInfo.value = words.foundAgainText(found)
+        refreshMembership()
+        sync(Trigger.MANUAL)
+        true
     }
 
     /**
@@ -398,7 +487,7 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
         // The wrong-password back-off guards only paths that check the password; re-picking the folder of a group
         // this phone already syncs through does not.
         if (now < backoffUntil && !withContext(deps.io) { isRepick(store, deps) }) {
-            _actionError.value = SyncWording.PASSWORD_BACKOFF_TEXT
+            _actionError.value = words.passwordBackoffText
             releaseUnusedFoldersNow()
             false
         } else {
@@ -438,7 +527,7 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             _phase.value = Phase.IDLE
             apply(result)
             publish(result)
-            _actionInfo.value = "This phone now syncs through the cloud folder."
+            _actionInfo.value = t.s(R.string.sync_now_cloud_info)
             runPendingSync()
             return true
         } catch (e: CancellationException) {
@@ -459,6 +548,53 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
         }
     }
 
+    // MARK: rollback warnings (ios/App/Sync/SyncCoordinator.swift acknowledgeRollback / dismissPeerRollback)
+
+    /**
+     * "This was me — keep this copy" after the user confirmed: [reauthenticate] asks for the owner's fingerprint, face or
+     * screen lock, then the warning is acknowledged ([acknowledgeVaultRollback]). False when no warning is open, the
+     * coordinator is busy, the owner check failed, or nothing was written.
+     */
+    suspend fun acknowledgeRollback(reauthenticate: suspend () -> Boolean): Boolean = onConfined {
+        val open = try {
+            withContext(deps.io) { (store.load().sync?.rollbackSuspected ?: 0) > 0 }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            false
+        }
+        if (!open) return@onConfined false
+        runAction {
+            val confirmed = try {
+                reauthenticate()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                false
+            }
+            val done = confirmed && gate.isOpen && acknowledgeVaultRollback()
+            _phase.value = Phase.IDLE
+            if (done) {
+                _issues.value = _issues.value.filter { it.kind != "vault-rollback" }
+                _actionInfo.value = words.text(SyncIssue("rollback-acknowledged"))
+            }
+            runPendingSync()
+            done
+        }
+    }
+
+    /** Dismiss on a `peer-vault-rollback` message: accept that device's older copy and drop the message. */
+    suspend fun dismissPeerRollback(peerId: String): Boolean = onConfined {
+        if (peerId.isEmpty()) return@onConfined false
+        runAction {
+            forgetPeerGeneration(peerId)
+            _phase.value = Phase.IDLE
+            _issues.value = _issues.value.filter { !(it.kind == "peer-vault-rollback" && it.detail == peerId) }
+            runPendingSync()
+            true
+        }
+    }
+
     // MARK: leave and reset (each after two confirmations in the UI)
 
     /** Stops syncing and forgets the paired device and folder; items and their sync history stay. */
@@ -475,7 +611,7 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
         try {
             val cleared = withContext(deps.io) { clear(store, deps, history) }
             _phase.value = Phase.IDLE
-            _actionInfo.value = SyncWording.onPhone(if (history) SyncWording.resetResultText(cleared) else SyncWording.LEFT_TEXT)
+            _actionInfo.value = if (history) words.resetResultText(cleared) else words.leftText
             _issues.value = emptyList()
             refreshMembership()
             return true
@@ -521,7 +657,7 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
 
     private fun beginAction(): Boolean {
         if (_phase.value != Phase.IDLE || runner != null || actionJob != null) {
-            _actionError.value = SyncWording.errorText("busy")
+            _actionError.value = words.errorText("busy")
             return false
         }
         _actionError.value = null; _actionInfo.value = null
@@ -633,7 +769,7 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
          * One full run off the coordinator's thread: the folder (when the group uses one), then the paired LAN peer.
          * Between steps it stops as soon as the vault locks, so nothing is read, refreshed or committed after.
          */
-        suspend fun runAll(store: ItemStore, deps: SyncDependencies): SyncRunResult = withContext(deps.io) {
+        suspend fun runAll(store: ItemStore, deps: SyncDependencies, memory: WitnessMemory? = null): SyncRunResult = withContext(deps.io) {
             val snapshot = try {
                 store.load()
             } catch (e: CancellationException) {
@@ -654,7 +790,7 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             if (state.hasFolder) {
                 if (!stillOpen(store)) return@withContext SyncRunResult(issues, conflicts, ran = true)
                 // Blocking (SAF, cloud providers): already on the I/O dispatcher.
-                val report = folderRun(store, deps, installId, state)
+                val report = folderRun(store, deps, installId, state, memory)
                 issues.addAll(report.issues); conflicts += report.conflicts
             }
             val peer = try {
@@ -666,14 +802,39 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             }
             if (peer != null) {
                 if (!stillOpen(store)) return@withContext SyncRunResult(issues, conflicts, ran = true)
-                val report = lanRun(store, deps, installId, peer)
+                val report = lanRun(store, deps, installId, peer, memory)
                 issues.addAll(report.issues); conflicts += report.conflicts
             }
+            // Peer generations the LAN save throttle held back are saved at the end of every run (desktop service
+            // `flush_witness`), so a lock loses no checked value.
+            if (memory != null && stillOpen(store)) flushWitness(store, memory, peer?.deviceId, deps.clock.now)
             SyncRunResult(issues, conflicts, ran = true, publish = stillOpen(store))
         }
 
+        /** Desktop `lan_sync.flush_witness`: commit every in-memory peer generation above the stored one. */
+        fun flushWitness(store: ItemStore, memory: WitnessMemory, lanPeer: String?, now: Long): Boolean = try {
+            val snapshot = store.load()
+            val state = snapshot.sync
+            val flushed = state?.let { memory.flush(it, listOfNotNull(lanPeer)) }
+            if (flushed == null) {
+                false
+            } else {
+                store.commit(StoreChange(snapshot.revision, snapshot.records, snapshot.meta, flushed))
+                memory.markSaved(flushed.peerGenerations.keys, now)
+                true
+            }
+        } catch (e: Exception) {
+            false // witness bookkeeping never fails the run; the next run tries again
+        }
+
         /** One folder run. [state]: the group state the run starts from (decides the trusted pairing, Ruling 16); read when null. */
-        fun folderRun(store: ItemStore, deps: SyncDependencies, installId: String, state: SyncGroupState? = null): RunReport {
+        fun folderRun(
+            store: ItemStore,
+            deps: SyncDependencies,
+            installId: String,
+            state: SyncGroupState? = null,
+            memory: WitnessMemory? = null,
+        ): RunReport {
             val raw = try {
                 deps.slots.read(Slot.FOLDER_URI)
             } catch (e: Exception) {
@@ -686,7 +847,8 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
                 } catch (e: Exception) {
                     null
                 }
-                FolderSync(folder, installId, deps.licenseKeys, pairedKeys(deps, start)).runOnce(store, deps.random, deps.clock)
+                FolderSync(folder, installId, deps.licenseKeys, pairedKeys(deps, start), attachments = deps.attachments)
+                    .runOnce(store, deps.random, deps.clock, memory)
             } catch (e: Exception) {
                 RunReport(issues = listOf(SyncIssue("folder-missing", detail(e))))
             }
@@ -696,7 +858,13 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
          * One LAN sync with the paired peer (desktop `lan_sync.sync_with` + `run_merge`). Nothing is committed unless the
          * whole exchange succeeded.
          */
-        suspend fun lanRun(store: ItemStore, deps: SyncDependencies, installId: String, peer: PinnedPeer): RunReport {
+        suspend fun lanRun(
+            store: ItemStore,
+            deps: SyncDependencies,
+            installId: String,
+            peer: PinnedPeer,
+            memory: WitnessMemory? = null,
+        ): RunReport {
             fun fail(kind: String, detail: String = "") = RunReport(issues = listOf(SyncIssue(kind, detail)))
             val now = deps.clock.now
             val snapshot = try {
@@ -714,33 +882,125 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             if (!LanAddress.isLan(endpoint.host)) return fail("unreachable", "${endpoint.host} is not a private LAN address")
             val groupKey: GroupKey
             val local: List<ItemState>
+            // Attachment sync: documents go only to a peer that answered a `blob-get` (desktop `attachment_peers`).
+            val vault = deps.attachments
+            val documents = vault != null && peer.deviceId in state.attachmentPeers
             try {
                 groupKey = GroupKey(state.groupId, state.epoch, state.key)
-                local = SyncMeta.localView(snapshot.records, snapshot.meta, state.deviceId, now).states.values
-                    .sortedWith { a, b -> Scalars.compare(a.itemId, b.itemId) }
+                local = Documents.publishable(
+                    SyncMeta.localView(snapshot.records, snapshot.meta, state.deviceId, now).states.values
+                        .sortedWith { a, b -> Scalars.compare(a.itemId, b.itemId) },
+                    documents,
+                )
             } catch (e: Exception) {
                 return fail("local-data", detail(e))
             }
-            val peerStates = try {
-                runInterruptible { deps.lan.exchangeViews(peer, state.identity, groupKey, local, state.ownCounter) }
+            // Rollback witnesses (desktop `sync_with`): format 2 only to a peer that showed support.
+            val lanIds = listOf(peer.deviceId)
+            val ownGeneration = Witness.generation(snapshot)
+            val inline = ownGeneration != null && peer.deviceId in state.witnessPeers
+            val publish = ownGeneration?.let {
+                LanPublish(
+                    inline, it,
+                    Witness.ownWitness(memory?.merged(state) ?: state.peerGenerations, Witness.witnessIds(state, lanIds), state.deviceId),
+                )
+            }
+            var moved: LanEndpoint? = null
+            val exchange: LanExchange = try {
+                runInterruptible {
+                    deps.lan.exchangeWitnessing(peer, state.identity, groupKey, local, state.ownCounter, publish) { moved = it }
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: LanSyncException) {
+                if (inline && e.reason == "peer-refused" && e.detail == "bad-view") refusedFormat2(store, snapshot, peer.deviceId, memory, now)
                 return fail(if (e.reason == "bad-message") "bad-reply" else e.reason, e.detail)
             } catch (e: Exception) {
                 return fail("unreachable", detail(e))
             }
-            var report = SyncRunner.run(snapshot, listOf(PeerView(peer.deviceId, peerStates)), state.deviceId, now, deps.licenseKeys)
+            // The host answered at a new address with its pinned keys: dial it there next time (only while the same
+            // peer is still paired; a Leave or a new pairing during the run wins).
+            moved?.let { e ->
+                try {
+                    if (deps.slots.pairedPeer() == peer) deps.slots.setPairedPeer(peer.copy(endpoint = e))
+                } catch (_: Exception) {
+                }
+            }
+            val peerStates = exchange.states
+            // The phone always initiates, so it fetches the files the peer's documents name (or probes once).
+            var attachmentPeers = state.attachmentPeers
+            val fileIssues = ArrayList<SyncIssue>()
+            if (vault != null) {
+                val reached = moved?.let { peer.copy(endpoint = it) } ?: peer
+                val missing = AttachmentSync.uniqueRefs(Documents.refs(peerStates)).first.filter { !vault.has(it) }
+                val fetched = try {
+                    runInterruptible {
+                        deps.lan.fetchBlobs(reached, state.identity, groupKey, missing, probe = missing.isEmpty() && !documents)
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    BlobFetch()
+                }
+                fileIssues.addAll(fetched.issues)
+                fileIssues.addAll(Documents.importMissing(vault, peerStates) { fetched.blobs[it.blob] })
+                when (fetched.capable) {
+                    true -> if (peer.deviceId !in attachmentPeers) attachmentPeers = (attachmentPeers + peer.deviceId).sorted()
+                    false -> attachmentPeers = attachmentPeers - peer.deviceId
+                    null -> {}
+                }
+            }
+            val present: ((AttachmentRef) -> Boolean)? = vault?.let { v -> { ref: AttachmentRef -> v.has(ref) } }
+            var report = SyncRunner.run(
+                snapshot, listOf(PeerView(peer.deviceId, peerStates)), state.deviceId, now, deps.licenseKeys, documents = present,
+            )
+            report = report.copy(issues = fileIssues + report.issues)
+            if (inline) memory?.clearRefusals(peer.deviceId) // a format-2 exchange went through
+            val witnessIssues = ArrayList<SyncIssue>()
+            exchange.issue?.let { witnessIssues.add(it) }
+            var witnessState: SyncGroupState? = null
+            val obs = exchange.observation
+            if (obs != null && ownGeneration != null) {
+                val (found, changed) = Witness.applyLan(state, ownGeneration, listOf(obs), memory, lanIds, now)
+                witnessIssues.addAll(found)
+                witnessState = changed
+            }
+            report = report.copy(issues = report.issues + witnessIssues)
             val records = report.records ?: snapshot.records
             val meta = report.meta ?: snapshot.meta
-            if (records != snapshot.records || meta != snapshot.meta) {
+            val peersChanged = attachmentPeers != state.attachmentPeers
+            if (records != snapshot.records || meta != snapshot.meta || witnessState != null || peersChanged) {
+                // Workstream 6: the peer's changes were accepted now (local only; no extra commit when nothing changed).
+                val merged = records != snapshot.records || meta != snapshot.meta
+                val base = (witnessState ?: snapshot.sync)?.let { if (peersChanged) it.copy(attachmentPeers = attachmentPeers) else it }
+                val synced = if (merged) base?.syncedWith(listOf(peer.deviceId), now) else base
                 try {
-                    store.commit(StoreChange(snapshot.revision, records, meta, snapshot.sync))
+                    store.commit(StoreChange(snapshot.revision, records, meta, synced))
+                    if (witnessState != null) memory?.markSaved(witnessState.peerGenerations.keys, now)
                 } catch (e: Exception) {
                     report = report.copy(issues = report.issues + SyncIssue("busy", detail(e)))
                 }
             }
             return report.copy(wrote = true)
+        }
+
+        /**
+         * A `bad-view` refusal of a format-2 view (desktop `_refused`): only [Witness.FORMAT_REFUSALS_TO_DROP] in a row
+         * (no good format-2 exchange between, counted in the session's memory) drop the peer from `witnessPeers`, so one
+         * damaged transfer never switches a capable peer back to format 1.
+         */
+        private fun refusedFormat2(store: ItemStore, snapshot: StoreSnapshot, peerId: String, memory: WitnessMemory?, now: Long) {
+            val state = snapshot.sync ?: return
+            val count = memory?.refused(state, peerId) ?: Witness.FORMAT_REFUSALS_TO_DROP
+            if (count < Witness.FORMAT_REFUSALS_TO_DROP) return
+            memory?.clearRefusals(peerId)
+            val generation = Witness.generation(snapshot) ?: return
+            val (_, changed) = Witness.applyLan(state, generation, emptyList(), memory, listOf(peerId), now, dropCapable = peerId)
+            if (changed == null) return
+            try {
+                store.commit(StoreChange(snapshot.revision, snapshot.records, snapshot.meta, changed))
+            } catch (_: Exception) {
+            }
         }
 
         /**
@@ -919,13 +1179,41 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             return had
         }
 
-        fun text(error: Throwable): String = when (error) {
-            is EnrollConnectException -> SyncWording.enrollFailureText(error)
-            is SyncActionException -> SyncWording.errorText(error.reason)
-            is FolderSyncException -> SyncWording.errorText(error.reason)
-            is LanSyncException -> SyncWording.errorText(error.reason)
-            is KeyringException -> SyncWording.errorText(error.reason)
-            else -> SyncWording.STEP_FAILED_COPY
+        /**
+         * The address in a scanned pairing QR, accepted only for the pinned [peer]: same group, same device id, same
+         * signing and exchange keys, a LAN address. Throws [SyncActionException] `bad-offer` or `find-again-mismatch`.
+         * The offer's enrollment secrets are never used or kept.
+         */
+        /**
+         * Find again: only the address of a QR from the ALREADY paired host. Group, device id, both public keys and the
+         * certificate fingerprint must all match the pinned peer (keys compared in constant time); the code must not
+         * have expired ([now], when given); the address must be on the local network. Nothing is enrolled.
+         */
+        fun addressFromOffer(peer: PinnedPeer, text: String, now: Long? = null): LanEndpoint {
+            val offer = try {
+                PairingOffer.parseQr(text.trim())
+            } catch (e: Exception) {
+                throw SyncActionException("bad-offer")
+            }
+            // Every key is compared before any is judged, so the time taken does not say which one differed.
+            val signing = java.security.MessageDigest.isEqual(offer.inviterSigningPublic, peer.signingPublic)
+            val exchange = java.security.MessageDigest.isEqual(offer.inviterExchangePublic, peer.exchangePublic)
+            val fingerprint = java.security.MessageDigest.isEqual(offer.certificateFingerprint.toByteArray(), peer.fingerprint.toByteArray())
+            val same = offer.groupId == peer.groupId && offer.inviterDeviceId == peer.deviceId && signing && exchange && fingerprint
+            if (!same) throw SyncActionException("find-again-mismatch")
+            if (now != null && offer.expiresAt < now) throw SyncActionException("offer-used-or-expired")
+            if (!LanAddress.isLan(offer.endpoint.host) || offer.endpoint.port !in 1..65535) throw SyncActionException("bad-offer")
+            return offer.endpoint
         }
+
+    }
+
+    private fun text(error: Throwable): String = when (error) {
+        is EnrollConnectException -> words.enrollFailureText(error)
+        is SyncActionException -> words.errorText(error.reason)
+        is FolderSyncException -> words.errorText(error.reason)
+        is LanSyncException -> words.errorText(error.reason)
+        is KeyringException -> words.errorText(error.reason)
+        else -> words.stepFailedText
     }
 }

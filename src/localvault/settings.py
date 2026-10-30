@@ -90,6 +90,14 @@ class AppSettings:
     #: The endpoint the user typed or picked themselves; the pairing screen keeps it even when it is
     #: not on a gateway network (direct cable, hotspot, Hyper-V external switch).
     sync_lan_endpoint_confirmed: str = ""
+    # Vault list order on this device (app.catalog.SORT_OPTIONS); never synced.
+    # A typed search keeps its relevance order.
+    list_sort: str = "title_asc"
+    # "system" follows Windows; otherwise one of i18n.SUPPORTED.
+    language: str = "system"
+    list_favorites_first: bool = True
+    # "Not now" on the empty-vault "Import your passwords" card; this device only.
+    import_card_dismissed: bool = False
 
     @classmethod
     def load(cls, path: Path | None = None) -> AppSettings:
@@ -119,6 +127,8 @@ class AppSettings:
             sync_lan_endpoint=_validated_lan_endpoint(raw.get("sync_lan_endpoint")),
             sync_lan_endpoint_confirmed=_validated_lan_endpoint(raw.get("sync_lan_endpoint_confirmed")),
             unlock_count=_bounded(raw.get("unlock_count", 0), 0, UNLOCK_COUNT_CAP, 0),
+            list_sort=_validated_list_sort(raw.get("list_sort")),
+            language=_validated_language(raw.get("language")),
         )
         version = raw.get("version", 1)
         # v7 turned website icons back off by default; v6 files stored "on"
@@ -168,6 +178,8 @@ class AppSettings:
         payload["sync_lan_endpoint_confirmed"] = _validated_lan_endpoint(self.sync_lan_endpoint_confirmed)
         payload["quick_access_hotkey"] = normalize_hotkey(self.quick_access_hotkey)
         payload["appearance"] = _validated_appearance(self.appearance)
+        payload["list_sort"] = _validated_list_sort(self.list_sort)
+        payload["language"] = _validated_language(self.language)
         payload["generator_preferences"] = normalize_generator_options(self.generator_preferences).as_dict()
         atomic_write_json(path or settings_path(), payload)
 
@@ -220,6 +232,20 @@ def _validated_backup_count(value: Any) -> int:
 
 def _validated_frequency(value: Any) -> str:
     return value if value in FREQUENCIES else "off"
+
+LIST_SORTS = ("title_asc", "title_desc", "modified_desc", "created_desc")
+
+
+def _validated_list_sort(value: Any) -> str:
+    return value if value in LIST_SORTS else "title_asc"
+
+def _validated_language(value: Any) -> str:
+    from .i18n import PSEUDO, SUPPORTED, dev_enabled
+
+    if value == PSEUDO and dev_enabled():
+        return value
+    return value if value in SUPPORTED + ("system",) else "system"
+
 
 def _validated_keep(value: Any) -> int:
     return value if type(value) is int and value in KEEP_CHOICES else 2

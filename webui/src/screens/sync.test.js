@@ -17,6 +17,26 @@ function api(overrides = {}) {
 }
 
 describe('SyncPage', () => {
+  it('offers Find again for an unreachable paired PC and shows the not-this-device refusal', async () => {
+    const lost = { ...VIEW, cards: [{ ...VIEW.cards[0], banner: { kind: 'unreachable', severity: 'notice', text: 'Not reached.' } }, VIEW.cards[1]] };
+    const a = api({
+      sync_view: vi.fn().mockResolvedValue(lost), sync_refresh: vi.fn().mockResolvedValue(lost),
+      sync_find_again_qr: vi.fn()
+        .mockResolvedValueOnce({ ok: false, error: { code: 'not-this-device', message: 'This code is from a device this PC is not paired with.' } })
+        .mockResolvedValueOnce({ ...VIEW, message: 'Found the other device.' }),
+    });
+    render(SyncPage, { onclose: vi.fn() });
+    expect(await screen.findByText("Can't find your PC on this network")).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Find again' }));
+    await fireEvent.input(screen.getByLabelText('Code text'), { target: { value: 'lgk-pair:xyz' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText(/not paired with/)).toBeInTheDocument();
+    await fireEvent.input(screen.getByLabelText('Code text'), { target: { value: 'lgk-pair:abc' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => expect(a.sync_find_again_qr).toHaveBeenLastCalledWith('lgk-pair:abc'));
+    await waitFor(() => expect(screen.queryByText("Can't find your PC on this network")).toBeNull());
+  });
+
   it('creates a group with a folder from Python and clears the passwords', async () => {
     const a = api({
       sync_choose_folder: vi.fn().mockResolvedValue({ ok: true, token: 't1', path: 'C:\\Cloud' }),
@@ -43,6 +63,14 @@ describe('SyncPage', () => {
     expect(screen.queryByRole('button', { name: 'Create sync group' })).toBeNull();
     await fireEvent.click(screen.getByRole('button', { name: 'Enter licence' }));
     expect(onlicence).toHaveBeenCalled();
+  });
+
+  it('on the free plan with licence-only sync keeps pairing available under the Pro card', async () => {
+    const free = { ...VIEW, pro: false, licence_only: true, pro_text: 'Device sync is part of LocalGateKeys Pro.' };
+    api({ sync_view: vi.fn().mockResolvedValue(free), sync_refresh: vi.fn().mockResolvedValue(free) });
+    render(SyncPage, { onclose: vi.fn(), onlicence: vi.fn() });
+    expect(await screen.findByText('Device sync is part of LocalGateKeys Pro.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show pairing code' })).not.toBeDisabled();
   });
 
   it('shows the pairing code and cancels the offer on close', async () => {
@@ -255,5 +283,33 @@ describe('SyncPage unmount', () => {
     await screen.findByText('Code: 1');
     unmount();
     await waitFor(() => expect(a.sync_qr_close).toHaveBeenCalledWith('o9'));
+  });
+
+  const ROLLBACK = { ...VIEW, rollback: {
+    own: { kind: 'vault-rollback', severity: 'error', title: 'This vault is older than one your other devices have seen',
+      text: 'Another device in your sync group saw a newer copy of this vault.', action: 'This was me — keep this copy' },
+    peers: [{ kind: 'peer-vault-rollback', severity: 'notice', id: 'peer-1', text: 'Phone is now using an older copy of its vault.', action: 'Dismiss' }],
+  } };
+
+  it('shows the rollback warning and "This was me" calls sync_acknowledge_rollback', async () => {
+    const cleared = { ...VIEW, rollback: { own: null, peers: [] }, message: 'You restored an older backup.' };
+    const a = api({ sync_view: vi.fn().mockResolvedValue(ROLLBACK), sync_refresh: vi.fn().mockResolvedValue(ROLLBACK),
+      sync_acknowledge_rollback: vi.fn().mockResolvedValue(cleared) });
+    render(SyncPage, { onclose: vi.fn() });
+    expect(await screen.findByRole('alert', { name: 'This vault is older than one your other devices have seen' })).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'This was me — keep this copy' }));
+    await waitFor(() => expect(a.sync_acknowledge_rollback).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'This was me — keep this copy' })).toBeNull());
+  });
+
+  it('dismisses a peer rollback warning by device id', async () => {
+    const cleared = { ...VIEW, rollback: { own: null, peers: [] } };
+    const a = api({ sync_view: vi.fn().mockResolvedValue(ROLLBACK), sync_refresh: vi.fn().mockResolvedValue(ROLLBACK),
+      sync_dismiss_peer_rollback: vi.fn().mockResolvedValue(cleared) });
+    render(SyncPage, { onclose: vi.fn() });
+    expect(await screen.findByText('Phone is now using an older copy of its vault.')).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    await waitFor(() => expect(a.sync_dismiss_peer_rollback).toHaveBeenCalledWith('peer-1'));
+    await waitFor(() => expect(screen.queryByText('Phone is now using an older copy of its vault.')).toBeNull());
   });
 });

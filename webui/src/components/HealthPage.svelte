@@ -2,6 +2,7 @@
   /** Password health: local findings per login and opt-in HIBP checks with live progress. */
   import { untrack } from 'svelte';
   import { call, on } from '../lib/api.js';
+  import { t } from '../lib/i18n.svelte.js';
   import { fixActions, okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
   import { recall, remember } from '../lib/remember.js';
@@ -17,7 +18,7 @@
 
   async function load() {
     const result = await call('health_report', current);
-    if (okOrToast(result, 'Could not open Password health')) data = result;
+    if (okOrToast(result, t('healthPage.couldNotOpen'))) data = result;
   }
 
   async function scan(ids) {
@@ -46,10 +47,10 @@
   const pickedRow = $derived(data?.rows.find((r) => r.id === picked));
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label="Password health">
+<div class="sheet glass" role="dialog" aria-label={t('healthPage.title')}>
   <header>
-    <h2>Password health</h2>
-    <button class="close" aria-label="Close" onclick={onclose}>✕</button>
+    <h2>{t('healthPage.title')}</h2>
+    <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
   {#if data}
     <p class="note">{data.subtitle}</p>
@@ -77,22 +78,22 @@
           <span class="muted">{row.username}</span>
           <span class="score">{row.score}/4</span>
           <span class="muted find">{row.findings}</span>
-          <span class="breach" class:bad={row.breach.startsWith('Found')}>{row.breach}</span>
+          <span class="breach" class:bad={row.breach_state === 'found'}>{row.breach}</span>
         </button>
       {:else}
-        <p class="empty">No logins match this filter.
-          {#if current}<Button label="Show all" variant="link" onclick={() => choose(null)} />{/if}</p>
+        <p class="empty">{t('healthPage.noMatch')}
+          {#if current}<Button label={t('healthPage.showAll')} variant="link" onclick={() => choose(null)} />{/if}</p>
       {/each}
     </div>
     <footer>
       <span class="muted">{data.footer}</span>
-      <Button label="Open entry" disabled={!picked} onclick={() => onopen(picked)} />
+      <Button label={t('healthPage.openEntry')} disabled={!picked} onclick={() => onopen(picked)} />
       {#if onchangepassword}
-        <Button label="Change password" disabled={!picked} variant={pickedRow?.breach.startsWith('Found') ? 'danger' : 'glass'}
+        <Button label={t('healthPage.changePassword')} disabled={!picked} variant={pickedRow?.breach_state === 'found' ? 'danger' : 'glass'}
           onclick={() => onchangepassword(picked)} />
       {/if}
-      <Button label="Check selected with HIBP" disabled={!picked} onclick={() => scan([picked])} />
-      <Button label="Scan all with HIBP" variant="primary" onclick={() => scan(null)} />
+      <Button label={t('healthPage.checkSelected')} disabled={!picked} onclick={() => scan([picked])} />
+      <Button label={t('healthPage.scanAll')} variant="primary" onclick={() => scan(null)} />
     </footer>
   {/if}
 </div>

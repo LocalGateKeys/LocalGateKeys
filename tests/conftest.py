@@ -165,6 +165,7 @@ def _isolated_localgatekeys_data_dir(monkeypatch, tmp_path_factory):
     test that sets its own folder still wins (monkeypatch later in the test).
     """
     monkeypatch.setenv("LOCALGATEKEYS_DATA_DIR", str(tmp_path_factory.mktemp("lgk-data")))
+    monkeypatch.setenv("LOCALGATEKEYS_LANG", "en")
 
 
 @pytest.fixture(autouse=True)

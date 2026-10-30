@@ -1,0 +1,49 @@
+{
+  "format": "dashlane",
+  "input": "tests/vectors/import/_inputs/dashlane_legacy.csv",
+  "python_format": "dashlane-csv",
+  "result": {
+    "diagnostics": [],
+    "records": [
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "n",
+        "password": "pw",
+        "source_row": 2,
+        "tags": [],
+        "title": "Legacy",
+        "totp_uri": "",
+        "urls": [
+          "https://legacy.example.com"
+        ],
+        "username": "u"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "just text",
+        "password": "",
+        "source_row": 3,
+        "tags": [],
+        "title": "Note only",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      }
+    ],
+    "source_format": "dashlane-csv"
+  }
+}

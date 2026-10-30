@@ -1,5 +1,6 @@
 package app.localgatekeys.android.editor
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.detail.ItemDetailModel
 import app.localgatekeys.android.vault.snapshot
 import app.localgatekeys.android.vault.i
@@ -132,11 +133,11 @@ class EditorKindsTest {
         assertEquals(1500L, Amount.minorUnits("1500", "JPY"))
         assertEquals(1299L, Amount.minorUnits(" 12,99 ", "EUR"))
         assertEquals(0L, Amount.minorUnits("  ", "EUR"))
-        assertEquals("This currency has no decimals.", assertThrows(AmountException::class.java) { Amount.minorUnits("1.5", "JPY") }.message)
+        assertEquals("This currency has no decimals.", assertThrows(AmountException::class.java) { Amount.minorUnits("1.5", "JPY") }.text(EnglishTxt()))
         for (bad in listOf("abc", ".", "1.2.3", "-", "１２")) {
-            assertEquals(bad, "Enter the amount as a number, for example 12.99.", assertThrows(AmountException::class.java) { Amount.minorUnits(bad, "EUR") }.message)
+            assertEquals(bad, "Enter the amount as a number, for example 12.99.", assertThrows(AmountException::class.java) { Amount.minorUnits(bad, "EUR") }.text(EnglishTxt()))
         }
-        assertEquals("This amount is too large.", assertThrows(AmountException::class.java) { Amount.minorUnits("99999999999999999", "EUR") }.message)
+        assertEquals("This amount is too large.", assertThrows(AmountException::class.java) { Amount.minorUnits("99999999999999999", "EUR") }.text(EnglishTxt()))
         assertEquals(129_999L * 1, Amount.minorUnits("1299.99", "CHF"))
         assertEquals("1299.99", Amount.text(129_999, "CHF"))
         assertEquals("0.05", Amount.text(5, "EUR"))
@@ -167,7 +168,7 @@ class EditorKindsTest {
         val e = ed(store, EditorKind.WIFI)
         for ((k, v) in samples.getValue(EditorKind.WIFI)) e.set(k, v)
         assertEquals(SaveResult.SAVED, e.save())
-        val wifi = ItemDetailModel.fields(items(store)[0])
+        val wifi = ItemDetailModel.fields(items(store)[0], EnglishTxt())
         assertEquals("WPA3", wifi.first { it.id == "security" }.value)
         assertEquals("Yes", wifi.first { it.id == "hidden" }.value)
         assertEquals(true, wifi.first { it.id == "password" }.isSecret)
@@ -175,7 +176,7 @@ class EditorKindsTest {
         val p = ed(s2, EditorKind.SUBSCRIPTION)
         for ((k, v) in samples.getValue(EditorKind.SUBSCRIPTION)) p.set(k, v)
         assertEquals(SaveResult.SAVED, p.save())
-        val sub = ItemDetailModel.fields(items(s2)[0])
+        val sub = ItemDetailModel.fields(items(s2)[0], EnglishTxt())
         assertEquals("Yes", sub.first { it.id == "active" }.value)
         val amount = sub.first { it.id == "amount_minor" }.value
         assertTrue(amount, amount.contains("10.99") || amount.contains("10,99"))
@@ -185,14 +186,14 @@ class EditorKindsTest {
     @Test fun wifi_choices_and_defaults() {
         val security = EditorKind.WIFI.fields.first { it.key == "security" }
         assertEquals(EditorKind.Control.Choice(Normalise.wifiSecurityTypes), security.control)
-        assertEquals("None (open)", EditorKind.choiceLabel("none"))
-        assertEquals("WPA2 Enterprise", EditorKind.choiceLabel("wpa2-enterprise"))
-        assertEquals("wpa9", EditorKind.choiceLabel("wpa9"))
+        assertEquals("None (open)", EditorKind.choiceLabel("none", EnglishTxt()))
+        assertEquals("WPA2 Enterprise", EditorKind.choiceLabel("wpa2-enterprise", EnglishTxt()))
+        assertEquals("wpa9", EditorKind.choiceLabel("wpa9", EnglishTxt()))
         assertEquals(mapOf("security" to "wpa2"), EditorKind.WIFI.defaults())
         assertEquals(mapOf("active" to "true", "currency" to "EUR"), EditorKind.PURCHASE.defaults(java.util.Locale.GERMANY))
         assertEquals(emptyMap<String, String>(), EditorKind.NOTE.defaults())
-        assertEquals("New wi-fi network", EditorScreenText.title(EditorKind.WIFI, isNew = true))
-        assertEquals("Edit website login", EditorScreenText.title(EditorKind.WEB, isNew = false))
+        assertEquals("New wi-fi network", EditorScreenText.title(EditorKind.WIFI, isNew = true, EnglishTxt()))
+        assertEquals("Edit website login", EditorScreenText.title(EditorKind.WEB, isNew = false, EnglishTxt()))
     }
 
     @Test fun iso_dates_for_the_date_fields() {
@@ -203,6 +204,6 @@ class EditorKindsTest {
         assertEquals("2027-01-15", IsoDate.today(app.localgatekeys.android.unlock.TestClock(1_800_000_000)))
         val day = java.time.LocalDate.of(2026, 11, 1)
         assertEquals("2026-11-01", IsoDate.fromUtcMillis(IsoDate.utcMillis(day)))
-        assertEquals("•••••••• (3 lines)", EditorScreenText.hiddenLines("a\nb\n\nc"))
+        assertEquals("•••••••• (3 lines)", EditorScreenText.hiddenLines("a\nb\n\nc", EnglishTxt()))
     }
 }

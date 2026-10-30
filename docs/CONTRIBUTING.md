@@ -1,15 +1,17 @@
 # Contributing
 
 LocalGateKeys is a Windows local-first password manager written in Python
-(Tk desktop app, Chromium native-messaging host) with a Manifest V3 browser
-extension. This page is the development loop; the security model is in
+(pywebview desktop app with a Svelte UI in `webui/`, Chromium native-messaging
+host) with a Manifest V3 browser extension. iPhone and Mac apps live under
+`ios/` and an Android app under `android/`. This page is the development loop
+for the Python app and the extension; the security model is in
 [../SECURITY.md](../SECURITY.md) and [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Prerequisites
 
 - Windows 10/11 (the desktop, named-pipe and Windows Hello code paths only run here)
 - Python 3.12 or newer (CI runs 3.12 and 3.13)
-- Node.js 20+ for the browser-extension tests
+- Node.js 20+ for the browser-extension tests (CI uses Node 22)
 - Inno Setup 6 only if you build the installer
 
 ## Set up
@@ -28,7 +30,7 @@ installed editable without dependencies so the lock stays authoritative.
 
 | Step | Command | Notes |
 |---|---|---|
-| Lint | `.\.venv\Scripts\python.exe -m ruff check src tests scripts` | Rules `E F B S UP I W`; per-file ignores in `pyproject.toml`. Do not bulk-format `src/` in a PR that also changes behavior. |
+| Lint | `.\.venv\Scripts\python.exe -m ruff check src tests scripts` | Rules `E F B S UP I W`; per-file ignores in `pyproject.toml`. Advisory in CI until the existing backlog is cleared. Do not bulk-format `src/` in a PR that also changes behavior. |
 | Types | `.\.venv\Scripts\python.exe -m mypy` | Strict on `vault`, `protocol`, `native_host`, `origin`, `pipe_transport`, `sync`; lenient elsewhere. Advisory in CI until clean. |
 | Tests | `.\scripts\run_tests.ps1` or `.\.venv\Scripts\python.exe -m pytest` | `-p no:cacheprovider` is set in `pyproject.toml`; temp files go to `.pytest-tmp/` (absolute, gitignored). |
 | Fuzz | `pytest -m fuzz` / skip with `-m "not fuzz"` | Seeded mutation fuzzing of the vault, backup, transfer, IPC frame and otpauth-migration parsers (~20 s, part of the default run). `LGK_FUZZ_ITERATIONS` scales it. |
@@ -66,8 +68,10 @@ opens weekly PRs for pip, npm and GitHub Actions.
 ## Pull requests
 
 - One topic per PR; include the test that demonstrates the change.
-- CI must be green: ruff, pytest on 3.12 and 3.13, Node tests, build smoke.
-  mypy is advisory for now; do not add new errors to the strict modules.
+- CI must be green: pytest on 3.12 and 3.13, Node tests, build smoke, and the
+  Swift job (`swift test` for `ios/LGKCore`, then `xcodebuild test` of the iOS
+  app on a Simulator, on macOS). Ruff and mypy are advisory for now; do not add
+  new findings, and no new errors in the mypy strict modules.
 - Add a line to `CHANGELOG.md` under *Unreleased*.
 - Security-relevant changes (crypto, IPC, native host, extension messaging)
   need a note in `SECURITY.md` or `docs/ARCHITECTURE.md` explaining the

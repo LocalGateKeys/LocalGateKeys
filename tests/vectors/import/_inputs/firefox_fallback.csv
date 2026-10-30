@@ -1,0 +1,3 @@
+url,username,password,httpRealm,formActionOrigin,guid,timeCreated,timeLastUsed,timePasswordChanged
+,alex,pw,,https://form.example.com,{g},1700000000000,1700000100000,
+https://x.example.com,,,,,{g2},,,

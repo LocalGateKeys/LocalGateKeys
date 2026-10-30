@@ -15,6 +15,7 @@ from typing import Any
 from ..access_policy import normalized_policy
 from ..api.result import ApiError
 from ..origin import host_of
+from ..i18n import t
 from ..password_tools import vault_health
 from ..shell.nav import build_nav, recent_ids
 from ..shell.overview_model import backup_status, health_overview, upcoming_lines
@@ -26,31 +27,35 @@ from .catalog import (
     filter_options,
     kind_label,
     matches_filter,
+    DEFAULT_SORT,
+    SORT_OPTIONS,
+    sort_label,
     rank_search_results,
     row_target,
     search_fields,
+    sort_items,
 )
-from .presentation import ENCRYPTED_TEXT, SHORTCUT_HINT, auto_lock_text
+from .presentation import auto_lock_text, encrypted_text, shortcut_hint
 from .secrets import live_code
 
-SETTINGS_ENTRY = {"label": "Settings", "action": "settings_clicked"}
+SETTINGS_ENTRY = {"label": "home.settings", "action": "settings_clicked"}  # label: catalog key
 STALE_BACKUP_SECONDS = 7 * 86400
 CHIPS = ("attention", "no2fa", "expiring")
 
-_CONTEXT = {
-    "all": "Everything safe to browse in this profile.",
-    "favorite": "Items you marked as favorites in this profile.",
-    "recent": "The items you changed most recently.",
-    "web": "Browser logins within All items.",
-    "desktop": "Desktop logins within All items.",
-    "collection": "Items in this collection.",
-    "view": "Items matched by this pinned smart view.",
-}
-_EMPTY_LOCKED = {"title": "Vault locked", "text": "Unlock this profile to browse its items.", "action": "Unlock vault"}
-_EMPTY_FILTERED = {"title": "No matching items",
-                   "text": "Try another name, username or tag, or clear your filters.", "action": "Clear filters"}
-_EMPTY_NONE = {"title": "No items yet",
-               "text": "Add a website login, desktop login, or typed item to get started.", "action": "New item"}
+# Catalog keys; the page context and empty states are translated when the list is built.
+_CONTEXT_KEYS = {key: f"home.context.{key}" for key in
+                 ("all", "favorite", "recent", "web", "desktop", "collection", "view")}
+# ``id`` is what the page acts on; the shown action text is translated.
+_EMPTY_LOCKED = {"key": "home.empty.locked", "id": "unlock"}
+_EMPTY_FILTERED = {"key": "home.empty.filtered", "id": "clear_filters"}
+_EMPTY_NONE = {"key": "home.empty.none", "id": "new_item"}
+
+
+def _empty(spec: dict[str, str]) -> dict[str, str]:
+    return {"title": t(spec["key"] + ".title"), "text": t(spec["key"] + ".text"),
+            "action": t(spec["key"] + ".action"), "action_id": spec["id"]}
+
+
 _FLAG_ORDER = ("breached", "weak", "reused")
 
 
@@ -82,7 +87,7 @@ class HomeService:
     def quick_search(self, query: str, kind: str) -> dict[str, Any]:
         """Metadata search for Quick access (classic window): favourites first, then title."""
         if kind and kind not in self.QUICK_KINDS:
-            raise ValueError("Unknown item type.")
+            raise ValueError(t("home.error.unknownType"))
         profile = self._controller.profiles.active_profile().name
         session = self._session()
         if session is None:
@@ -165,7 +170,7 @@ class HomeService:
             "groups": [{"name": g.name, "entries": [
                 {"label": e.label, "icon": e.icon, "token": e.token, "count": e.count, "action": e.action}
                 for e in g.entries]} for g in groups],
-            "settings": dict(SETTINGS_ENTRY),
+            "settings": {**SETTINGS_ENTRY, "label": t(SETTINGS_ENTRY["label"])},
         }
 
     # ----------------------------------------------------------------- list
@@ -175,13 +180,13 @@ class HomeService:
         query = str(query or "").strip()
         if session is None:
             return {"items": [], "count": 0, "chips": dict.fromkeys(CHIPS, 0),
-                    "context": {"title": "All items", "text": _CONTEXT["all"]}, "empty": dict(_EMPTY_LOCKED)}
+                    "context": {"title": t("home.title.all"), "text": t(_CONTEXT_KEYS["all"])}, "empty": _empty(_EMPTY_LOCKED), "import_card": False}
         summaries = self._summaries(session)
         self._refresh_health(session, summaries)
         collections, views = self._collections_and_views(session)
         options = filter_options(summaries, collections, views)
         labels = {option.kind: option.label for option in options}
-        labels["recent"] = "Recently used"
+        labels["recent"] = t("home.title.recent")
         valid = set(labels) | {None}
         if filter_kind not in valid:
             filter_kind = None
@@ -220,19 +225,70 @@ class HomeService:
             ordered = rank_search_results([(s, search_fields(s, t)) for s, t in rows], query)
             rows = [(s, targets[id(s)]) for s in ordered]
         else:
-            rows.sort(key=lambda pair: (not getattr(pair[0], "favorite", False), _summary_title(pair[0]).casefold()))
+            option, favorites_first = self._sort_choice()
+            targets = {id(s): t for s, t in rows}
+            ordered = sort_items([s for s, _t in rows], option, favorites_first, title=_summary_title)
+            rows = [(s, targets[id(s)]) for s in ordered]
 
         items = [self._row(summary, target, icons) for summary, target in rows]
         key = _filter_key(filter_kind)
-        title = "All items" if filter_kind is None else labels.get(filter_kind) or (
+        title = t("home.title.all") if filter_kind is None else labels.get(filter_kind) or (
             filter_kind_label(filter_kind) if filter_kind in _FILTER_LABELS_STATIC or ":" not in filter_kind
-            else "All types")
-        text = _CONTEXT.get(key) or f"{kind_label(filter_kind or '')} items within All items."
+            else t("home.title.allTypes"))
+        text = (t(_CONTEXT_KEYS[key]) if key in _CONTEXT_KEYS
+                else t("home.context.kind", kind=kind_label(filter_kind or "")))
         empty = None
         if not items:
-            empty = dict(_EMPTY_FILTERED if (query or filter_kind or chip) else _EMPTY_NONE)
+            empty = _empty(_EMPTY_FILTERED if (query or filter_kind or chip) else _EMPTY_NONE)
         return {"items": items, "count": len(items), "chips": chips,
-                "context": {"title": title, "text": text}, "empty": empty}
+                "context": {"title": title, "text": text}, "empty": empty, "sort": self.sort_state(),
+                "import_card": not summaries and not self._import_card_dismissed()}
+
+    # ---------------------------------------------------------- import card
+    def _import_card_dismissed(self) -> bool:
+        settings = getattr(self._controller, "settings", None)
+        return getattr(settings, "import_card_dismissed", False) is True
+
+    def dismiss_import_card(self) -> dict[str, Any]:
+        """Hide the empty-vault import card on this device ("Not now")."""
+        settings = getattr(self._controller, "settings", None)
+        if settings is not None:
+            settings.import_card_dismissed = True
+            try:
+                settings.save()
+            except OSError:
+                pass  # hidden until the app closes
+        return {"import_card": False}
+
+    # ----------------------------------------------------------------- sort
+    def _sort_choice(self) -> tuple[str, bool]:
+        settings = getattr(self._controller, "settings", None)
+        option = getattr(settings, "list_sort", DEFAULT_SORT)
+        favorites_first = getattr(settings, "list_favorites_first", True)
+        return (option if option in SORT_OPTIONS else DEFAULT_SORT,
+                favorites_first if isinstance(favorites_first, bool) else True)
+
+    def sort_state(self) -> dict[str, Any]:
+        """The list sort choice (this device only) and the menu's options."""
+        option, favorites_first = self._sort_choice()
+        return {"option": option, "favorites_first": favorites_first,
+                "options": [{"value": value, "label": sort_label(value)} for value in SORT_OPTIONS]}
+
+    def set_sort(self, option: Any, favorites_first: Any) -> dict[str, Any]:
+        """Remember the list sort in this device's settings (never synced)."""
+        if option not in SORT_OPTIONS:
+            raise ApiError("invalid", t("home.error.chooseSort"))
+        if not isinstance(favorites_first, bool):
+            raise ApiError("invalid", t("home.error.favoritesFirst"))
+        settings = getattr(self._controller, "settings", None)
+        if settings is not None:
+            settings.list_sort = option
+            settings.list_favorites_first = favorites_first
+            try:
+                settings.save()
+            except OSError:
+                pass  # the choice still applies until the app closes
+        return self.sort_state()
 
     # ---------------------------------------------------------------- codes
     def codes(self) -> dict[str, Any]:
@@ -367,7 +423,7 @@ class HomeService:
         lines = upcoming_lines(reminder_rows, date.today())
         backup_dir = getattr(session, "backup_dir", None) or self._controller.profiles.backups_dir(
             self._controller.profiles.active_profile().id)
-        warning = "Last automatic backup failed" if getattr(session, "backup_warning", None) else ""
+        warning = t("home.backupFailed") if getattr(session, "backup_warning", None) else ""
         backup = backup_status(backup_dir, warning)
         return {
             "health": None if health is None else {"score": health.score, "label": health.label, "weak": health.weak,
@@ -386,7 +442,7 @@ class HomeService:
         left = clipboard.remaining() if clipboard is not None else None
         return {
             "autolock": auto_lock_text(controller.idle_lock_remaining(), unlocked=unlocked),
-            "clipboard": f"Clipboard clears in {left}s" if left is not None else "",
-            "encrypted": ENCRYPTED_TEXT,
-            "hint": SHORTCUT_HINT,
+            "clipboard": t("status.clipboard", seconds=left) if left is not None else "",
+            "encrypted": encrypted_text(),
+            "hint": shortcut_hint(),
         }

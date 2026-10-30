@@ -4,6 +4,7 @@ from __future__ import annotations
 import pytest
 
 from localvault.app import sync_view as ui
+from localvault.i18n import t
 from localvault.sync.runner import SyncIssue
 from localvault.sync.service import SyncStatusView, TransportStatus
 
@@ -85,11 +86,11 @@ def test_issue_copy_names_the_file_or_device():
 
 
 def test_password_reuse_warning_copy_is_exact():
-    assert ui.PASSWORD_ADVICE == "Write this password down. Never reuse an earlier sync password."
+    assert t(ui.PASSWORD_ADVICE) == "Write this password down. Never reuse an earlier sync password."
 
 
 def test_leave_copy_tells_the_others_to_remove_this_device():
-    assert "remove this" in ui.LEAVE_TEXT.lower()
+    assert "remove this" in t(ui.LEAVE_TEXT).lower()
 
 
 def test_stop_kinds_offer_reset():
@@ -230,8 +231,8 @@ def test_wifi_only_group_offers_add_and_use_folder():
     assert view.folder.state == "lan-only"
     assert view.folder.actions == frozenset({"add-folder", "use-folder"}) and view.folder.hint
     assert "leave" not in view.folder.hint.lower()
-    assert ui._ACTION_LABELS["add-folder"] == "Add a cloud folder to this group…"
-    assert ui._ACTION_LABELS["use-folder"] == "Use this group's cloud folder…"
+    assert t(ui._ACTION_LABELS["add-folder"]) == "Add a cloud folder to this group…"
+    assert t(ui._ACTION_LABELS["use-folder"]) == "Use this group's cloud folder…"
     assert {"show-qr", "sync-now", "remove-device", "leave", "wifi-disable"} <= view.wifi.actions
     assert "join-qr" not in view.wifi.actions
     # never for a folder group, a group-less vault, or a group set up on another PC
@@ -527,7 +528,7 @@ def test_wifi_only_remove_device_copy_says_remove_it_on_every_paired_pc():
 def test_leave_copy_differs_for_wifi_only_groups():
     folder = ui.leave_text(_group())
     wifi = ui.leave_text(_group(folder=None, members=()))
-    assert folder == ui.LEAVE_TEXT and "remove this" in folder.lower()
+    assert folder == t(ui.LEAVE_TEXT) and "remove this" in folder.lower()
     assert wifi != folder and "sync folder" not in wifi and "Wi-Fi" in wifi and "pair" in wifi.lower()
 
 

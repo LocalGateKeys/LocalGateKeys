@@ -189,17 +189,17 @@ public enum TOTP {
     /// Short user-facing text for a parse error.
     public static func message(for error: TOTPError) -> String {
         switch error {
-        case .emptySecret: "The 2FA secret is empty."
-        case .invalidBase32, .invalidSecretLength: "The 2FA secret is not valid Base32."
-        case .secretTooShort: "The 2FA secret is too short."
-        case .secretTooLong: "The 2FA secret is too long."
-        case .unsupportedDigits: "This 2FA setup uses an unsupported digit count."
-        case .unsupportedPeriod: "This 2FA setup uses an unsupported period."
-        case .unsupportedAlgorithm: "This 2FA setup uses an unsupported algorithm."
-        case .notOtpauthURI: "Enter a Base32 secret or an otpauth://totp link."
-        case .duplicateParameter, .invalidParameter: "The otpauth link has an invalid parameter."
-        case .labelTooLong: "The otpauth link's label or issuer is too long."
-        case .invalidTimestamp: "The 2FA secret is not valid."
+        case .emptySecret: String(localized: "The 2FA secret is empty.", bundle: .module)
+        case .invalidBase32, .invalidSecretLength: String(localized: "The 2FA secret is not valid Base32.", bundle: .module)
+        case .secretTooShort: String(localized: "The 2FA secret is too short.", bundle: .module)
+        case .secretTooLong: String(localized: "The 2FA secret is too long.", bundle: .module)
+        case .unsupportedDigits: String(localized: "This 2FA setup uses an unsupported digit count.", bundle: .module)
+        case .unsupportedPeriod: String(localized: "This 2FA setup uses an unsupported period.", bundle: .module)
+        case .unsupportedAlgorithm: String(localized: "This 2FA setup uses an unsupported algorithm.", bundle: .module)
+        case .notOtpauthURI: String(localized: "Enter a Base32 secret or an otpauth://totp link.", bundle: .module)
+        case .duplicateParameter, .invalidParameter: String(localized: "The otpauth link has an invalid parameter.", bundle: .module)
+        case .labelTooLong: String(localized: "The otpauth link's label or issuer is too long.", bundle: .module)
+        case .invalidTimestamp: String(localized: "The 2FA secret is not valid.", bundle: .module)
         }
     }
 }

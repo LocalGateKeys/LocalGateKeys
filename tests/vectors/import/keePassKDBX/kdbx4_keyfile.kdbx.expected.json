@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Wrong password or key file (header HMAC mismatch)",
+    "type": "wrong_password"
+  },
+  "format": "keePassKDBX",
+  "input": "tests/vectors/import/_inputs/kdbx4_keyfile.kdbx",
+  "password": "kdbx fixture password",
+  "python_format": "kdbx"
+}

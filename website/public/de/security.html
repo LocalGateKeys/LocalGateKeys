@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sicherheit | LocalGateKeys</title>
+  <meta name="description" content="Wie LocalGateKeys Ihren Tresor schützt und wogegen es nicht schützt.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/de/security">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/security">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/security">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/security">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/security">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/security">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/security">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/security">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/security">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/security">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/security">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/security">
+  <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../brand/icon-256.png">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">Zum Inhalt springen</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../de/index.html">
+        <img src="../brand/icon.svg" alt="" width="36" height="36">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav aria-label="Hauptnavigation">
+        <ul class="nav">
+          <li><a href="../de/features.html">Funktionen</a></li>
+          <li><a href="../de/pricing.html">Preise</a></li>
+          <li><a href="../de/security.html" aria-current="page">Sicherheit</a></li>
+          <li><a href="../de/get-started.html">Erste Schritte</a></li>
+          <li><a href="../de/help.html">Handbuch</a></li>
+          <li><a href="../de/download.html">Download</a></li>
+          <li><a href="../de/support.html">Support</a></li>
+          <li><a href="../buy.html">Pro kaufen</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Das Sicherheitsmodell in einfachen Worten</h1>
+  <p class="lead">Was LocalGateKeys schützen soll und was es nicht schützen kann.</p>
+</div>
+
+<div class="wrap page-body">
+  <div class="prose">
+    <h2>Wie Ihr Tresor verschlüsselt wird</h2>
+    <p>Ein zufälliger 256-Bit-Schlüssel verschlüsselt den Tresor. Dieser Schlüssel wird nie unverändert gespeichert; er wird von jeder Entsperrmethode separat umhüllt (verschlüsselt), sodass eine Passwortänderung kein erneutes Verschlüsseln von allem bedeutet und eine aus einem anderen Tresor kopierte Hülle abgelehnt wird.</p>
+  </div>
+  <dl class="spec">
+    <dt>Tresorverschlüsselung</dt><dd>AES-256-GCM mit einer neuen zufälligen Nonce bei jedem Speichern</dd>
+    <dt>Master-Passwort</dt><dd>Argon2id, 64 MiB Speicher, 3 Durchläufe, Parallelität 4, zufälliger Salt pro Hülle</dd>
+    <dt>Wiederherstellungsphrase</dt><dd>Optionale BIP39-Phrase aus 24 Wörtern (256 Bit), erweitert mit HKDF-SHA256</dd>
+    <dt>Windows Hello</dt><dd>Umhüllt den Tresorschlüssel, nie das Master-Passwort</dd>
+    <dt>Backups und Übertragungen</dt><dd>Argon2id und AES-256-GCM mit den im authentifizierten Header gespeicherten Parametern</dd>
+    <dt>Geräte-Synchronisierung</dt><dd>Ein zufälliger Gruppenschlüssel, mit X25519 und HKDF-SHA256 an jedes Gerät übergeben und, bei einem Cloud-Ordner, zusätzlich mit Argon2id durch Ihr Sync-Passwort umhüllt; jeder Datensatz mit AES-256-GCM versiegelt und an seinen Eintrag, seine Version und seine Schlüsselepoche gebunden; jede Gerätedatei an das Gerät gebunden, das sie geschrieben hat</dd>
+    <dt>Passkeys</dt><dd>ES256-Schlüssel (P-256), im verschlüsselten Tresor gehalten; die App erstellt die signierten Daten aus dem vom Browser gemeldeten Origin, nie aus der Seite</dd>
+    <dt>Schreibzugriffe auf die Festplatte</dt><dd>Temporäre Datei, Flush, dann atomares Ersetzen, sodass ein Absturz keinen halben Tresor hinterlassen kann</dd>
+  </dl>
+
+  <div class="ledger">
+    <section aria-labelledby="protects">
+      <h2 id="protects">Schutz gedacht gegen</h2>
+      <ul>
+        <li>Jemanden, der Ihre Tresordatei oder ein Backup kopiert und Ihr Master-Passwort nicht kennt</li>
+        <li>Eine Website, die Logins oder Passkeys erhält, die für eine andere Website gespeichert sind</li>
+        <li>Ein anderes Programm auf Ihrem PC, das mit LocalGateKeys spricht, ohne das Sitzungsgeheimnis zu kennen, das es seinem eigenen Browser-Helfer übergibt</li>
+        <li>Das Ausfüllen einer Desktop-App, die seit der Verknüpfung ausgetauscht, aktualisiert oder verändert wurde</li>
+        <li>Unverschlüsselt auf der Festplatte liegende Passwörter</li>
+        <li>Formulare, die ohne Sie abgeschickt werden</li>
+        <li>Ihren Cloud-Anbieter, der synchronisierte Daten liest: Er speichert nur Chiffretext</li>
+      </ul>
+    </section>
+    <section class="not" aria-labelledby="not-protects">
+      <h2 id="not-protects">Kein Schutz möglich gegen</h2>
+      <ul>
+        <li>Schadsoftware oder jemanden mit Administratorrechten, die bereits auf Ihrem PC läuft</li>
+        <li>Einen kompromittierten Browser, eine kompromittierte Windows-Installation oder Abhängigkeit</li>
+        <li>Eine Website, in die Sie absichtlich ein Passwort eingeben</li>
+        <li>Jemanden, der Ihren PC nutzt, während der Tresor entsperrt ist</li>
+        <li>Phishing innerhalb einer echten App, die vom Angreifer kontrollierte Inhalte anzeigt</li>
+        <li>Den Verlust von Tresor, Backups und Master-Passwort ohne Wiederherstellungsphrase: Niemand, auch wir nicht, kann ihn öffnen</li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="prose">
+    <h2>Was LocalGateKeys nie tut</h2>
+    <p>Manche Arten, Passwörter auszufüllen, lassen sich nicht von Spyware unterscheiden und sind deshalb von vornherein ausgeschlossen. LocalGateKeys enthält keine:</p>
+    <ul>
+      <li>Tastatur-Hooks oder Aufzeichnung von Tastenanschlägen</li>
+      <li>Überwachung der Zwischenablage</li>
+      <li>Bildschirmauslesung oder OCR, um Zugangsdaten zu finden</li>
+      <li>Durchsuchung des Speichers anderer Programme</li>
+      <li>Entschlüsselung der Passwortdatenbank Ihres Browsers</li>
+      <li>Code-Einschleusung in andere Programme oder Spiele</li>
+      <li>Absenden einer Anmeldung, die Sie nicht gestartet haben</li>
+    </ul>
+
+    <h2>Das Netzwerk, ehrlich</h2>
+    <p>Es gibt kein LocalGateKeys-Konto und keinen Server, der Tresore speichert. Die App verbindet sich nur in diesen Fällen mit dem Internet:</p>
+    <ul>
+      <li><strong>Update-Prüfungen.</strong> Wenn Sie „Nach Updates suchen“ wählen, lädt die App eine kleine Datei herunter und prüft ihre Signatur mit einem in der App eingebauten Schlüssel. Sie lädt oder startet nie von selbst einen Installer.</li>
+      <li><strong>Sperrliste für Lizenzen.</strong> Zusammen mit jeder Update-Prüfung lädt die App eine signierte Liste erstattungsbedingt widerrufener Lizenzen herunter und gleicht Ihre Lizenz auf Ihrem PC damit ab. Sie sendet nichts über Ihre Lizenz.</li>
+      <li><strong>Website-Symbole.</strong> Um das Symbol einer Website anzuzeigen, lädt die App es von der eigenen Adresse dieser Website herunter. Es werden weder Benutzername noch Passwort noch Tresordaten gesendet, aber jeder Download verrät dieser Website und jedem, der das Netzwerk beobachtet, dass Ihr Tresor dort ein Konto hat. Das ist standardmäßig aus und geschieht nur, wenn Sie in den Einstellungen „Website-Symbole anzeigen“ einschalten; der strenge Offline-Modus blockiert es.</li>
+      <li><strong>Prüfung auf Datenlecks, wenn Sie sie einschalten.</strong> Wenn Sie eine Prüfung starten, sendet die App die ersten fünf Zeichen des SHA-1-Hashes jedes Passworts an Have I Been Pwned. Der Dienst sieht Ihre IP-Adresse, nie das Passwort, den vollständigen Hash, den Benutzernamen oder die Website.</li>
+      <li><strong>Synchronisierung, wenn Sie sie einrichten.</strong> Im Heimnetz sprechen die Geräte direkt miteinander. Über einen Cloud-Ordner übernimmt Ihre Cloud-Speicher-App das Hochladen.</li>
+    </ul>
+    <p>Der strenge Offline-Modus ist standardmäßig an. Er blockiert Internetanfragen im Hintergrund, Website-Symbole und Prüfungen auf Datenlecks, und vor einer Update-Prüfung wird zuerst gefragt. Die <a href="../legal/privacy.html">Datenschutzerklärung</a> listet genau auf, was unsere Server sehen, wenn Sie nach Updates suchen.</p>
+
+    <h2>Bekannte Einschränkungen</h2>
+    <ul>
+      <li>Das Master-Passwort wird in einen löschbaren Puffer verschoben, sobald es die App erreicht, und gelöscht, wenn der Vorgang, der es brauchte, endet. Die Seite, in die Sie es eintippen, läuft in Microsoft Edge WebView2, und die Übergabe von dieser Seite an die App erzeugt eine kurzlebige Kopie; keine der beiden Kopien kann von der App gelöscht werden.</li>
+      <li>Das Entsperren per Kamera ist eine Komfortprüfung, kein zertifizierter Schutz vor Fotos oder Masken. Windows Hello ist die stärkere Wahl.</li>
+      <li>Das Ausfüllen in Windows-Apps funktioniert nicht mit Programmen, die als Administrator laufen, mit selbst gezeichneten Spieloberflächen oder mit eingebetteten Web-Ansichten, die es nicht prüfen kann.</li>
+      <li>Der Tresor erkennt, wenn er auf eine ältere Kopie zurückgesetzt wird. Wenn Sie die Synchronisierung nutzen, merken sich Ihre anderen Geräte auch, wie neu Ihr Tresor war, sodass das gemeinsame Löschen von Tresor und Ankerdatei bei der nächsten Synchronisierung auffällt (vorerst Windows-PCs; die Apps für iPhone, Mac und Android folgen). Ohne Synchronisierung kann jemand, der beide Dateien ersetzen kann, die Prüfung weiterhin umgehen.</li>
+      <li>Passkeys funktionieren nur in Chrome und Edge und nur für die Seite selbst: Eine Anmeldung in einem Frame einer anderen Website nutzt den eigenen Passkey-Dialog des Browsers. Bricht eine Website ab, nachdem Sie einen neuen Passkey bestätigt haben, bleibt der Passkey möglicherweise in Ihrem Tresor; löschen Sie ihn in der App.</li>
+    </ul>
+
+    <h2>Sicherheitslücke melden</h2>
+    <p>Schreiben Sie an <a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>. Die <a href="../legal/vulnerability-disclosure.html">Richtlinie zur Offenlegung von Sicherheitslücken</a> erklärt, was zum Geltungsbereich gehört, wie schnell wir antworten und wie wir Forschende nennen.</p>
+  </div>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand">LocalGateKeys</p>
+        <p>Ein Passwortmanager für Windows, der Ihren Tresor auf Ihren eigenen Geräten behält.</p>
+        <p class="quiet">Diese Website setzt keine Cookies, verwendet keine Analysen und lädt nichts von anderen Unternehmen.</p>
+      </div>
+      <nav aria-label="Produkt">
+        <h2>Produkt</h2>
+        <ul>
+          <li><a href="../de/features.html">Funktionen</a></li>
+          <li><a href="../de/pricing.html">Preise</a></li>
+          <li><a href="../de/download.html">Download</a></li>
+          <li><a href="../de/licence.html">Ihre Pro-Lizenz</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Hilfe">
+        <h2>Hilfe</h2>
+        <ul>
+          <li><a href="../de/help.html">Benutzerhandbuch</a></li>
+          <li><a href="../de/support.html">Support und FAQ</a></li>
+          <li><a href="../de/security.html">Sicherheit</a></li>
+          <li><a href="../legal/vulnerability-disclosure.html">Sicherheitslücke melden</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Rechtliches">
+        <h2>Rechtliches</h2>
+        <p class="quiet">Diese Dokumente liegen auf Englisch vor, und es gilt die englische Fassung, die verbindlich ist.</p>
+        <ul>
+          <li><a href="../legal/eula.html">Lizenzvereinbarung</a></li>
+          <li><a href="../legal/privacy.html">Datenschutzerklärung</a></li>
+          <li><a href="../legal/terms-of-sale.html">Verkaufsbedingungen</a></li>
+          <li><a href="../legal/refunds.html">Rückerstattungsrichtlinie</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base">
+      <p>&copy; 2026 Ilias Pelekas. Kontakt: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows ist eine Marke der Microsoft-Unternehmensgruppe. Chrome ist eine Marke von Google LLC.</p>
+      <p class="lang-switch" role="navigation" aria-label="Sprache"><a href="../security.html" hreflang="en" lang="en">English</a> · <a href="../es/security.html" hreflang="es" lang="es">Español</a> · <a href="../it/security.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/security.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/security.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../ja/security.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/security.html" hreflang="de" lang="de" aria-current="true">Deutsch</a> · <a href="../pt-br/security.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/security.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/security.html" hreflang="nl" lang="nl">Nederlands</a></p>
+    </div>
+  </footer>
+</body>
+</html>

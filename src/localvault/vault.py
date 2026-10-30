@@ -30,6 +30,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 from . import secret_text
+from .i18n import t
 from .secret_text import SecretText, as_secret
 from .access_policy import normalized_policy
 from .config import atomic_write_json, read_json, replace_with_retry
@@ -121,9 +122,7 @@ class UnlockThrottled(VaultError):
 
     def __init__(self, retry_after: float):
         self.retry_after = max(0.0, float(retry_after))
-        super().__init__(
-            f"Too many incorrect master-password attempts. Try again in {int(self.retry_after + 0.999)} s."
-        )
+        super().__init__(t("vault.tooManyIncorrectAttempts", seconds=int(self.retry_after + 0.999)))
 
 
 class RollbackRequiresConfirmation(VaultError):
@@ -132,25 +131,22 @@ class RollbackRequiresConfirmation(VaultError):
     def __init__(self, *, current_generation: int, restored_generation: int):
         self.current_generation = int(current_generation)
         self.restored_generation = int(restored_generation)
-        super().__init__(
-            "This backup is older than the vault currently on disk "
-            f"(generation {self.restored_generation} < {self.current_generation}). "
-            "Confirm explicitly to roll the vault back to it."
-        )
+        super().__init__(t("vault.backupOlderThanVault", restored=self.restored_generation,
+                           current=self.current_generation))
 
 
 class LoginChangedError(VaultError):
     """The login was changed (or removed) since its edit token was issued."""
 
-    def __init__(self, message: str = "This login was changed elsewhere."):
-        super().__init__(message)
+    def __init__(self, message: str | None = None):
+        super().__init__(message or t("vault.loginChangedElsewhere"))
 
 
 class DuplicateLoginError(VaultError):
     """A website login for the same canonical origin and username already exists."""
 
-    def __init__(self, existing_id: str, message: str = "A login for this site and username already exists."):
-        super().__init__(message)
+    def __init__(self, existing_id: str, message: str | None = None):
+        super().__init__(message or t("vault.loginAlreadyExists"))
         self.existing_id = str(existing_id)
 
 
@@ -158,8 +154,7 @@ class ItemLimitReached(VaultError):
     """Creating a new live item would exceed the free plan's item limit."""
 
     def __init__(self, limit: int, count: int):
-        super().__init__(f"The free plan holds up to {limit} items. "
-                         "Upgrade to LocalGateKeys Pro for unlimited items.")
+        super().__init__(t("vault.freePlanHoldsItems", limit=limit))
         self.limit = int(limit)
         self.count = int(count)
 
@@ -172,16 +167,13 @@ class ProFeatureRequired(VaultError):
     """
 
     MESSAGES = {
-        "totp": "Adding or changing two-factor codes needs LocalGateKeys Pro. "
-                "Codes you already saved keep working.",
-        "attachments": "Adding or replacing attachments needs LocalGateKeys Pro. "
-                       "Files you already saved stay available.",
-        "sync": "Device sync needs LocalGateKeys Pro. "
-                "Everything already on this PC stays here and keeps working.",
+        "totp": "vault.proNeededTotp",
+        "attachments": "vault.proNeededAttachments",
+        "sync": "vault.proNeededSync",
     }
 
     def __init__(self, feature: str):
-        super().__init__(self.MESSAGES.get(feature, "This needs LocalGateKeys Pro."))
+        super().__init__(t(self.MESSAGES.get(feature, "vault.proNeededDefault")))
         self.feature = str(feature)
 
 
@@ -440,21 +432,21 @@ def _master_secret(value: Any, message: str) -> tuple[SecretText, bool]:
     try:
         return as_secret(value)
     except ValueError:
-        raise VaultError("Invalid master password text") from None
+        raise VaultError(t("vault.err.passwordTextInvalid")) from None
 
 
 def _derive_key(password: str | SecretText, kdf: dict[str, Any]) -> bytearray:
     if not isinstance(password, (str, SecretText)):
-        raise InvalidMasterPassword("Master password cannot be empty")
+        raise InvalidMasterPassword(t("vault.err.passwordEmpty"))
     try:
         secret, owned = as_secret(password)
     except ValueError:
-        raise VaultError("Invalid master password text") from None
+        raise VaultError(t("vault.err.passwordTextInvalid")) from None
     try:
         if secret.char_count == 0:
-            raise InvalidMasterPassword("Master password cannot be empty")
+            raise InvalidMasterPassword(t("vault.err.passwordEmpty"))
         if secret.char_count > MAX_MASTER_PASSWORD_LENGTH:
-            raise InvalidMasterPassword("Master password is too long")
+            raise InvalidMasterPassword(t("vault.err.passwordTooLong"))
         if kdf.get("name") != "argon2id":
             raise VaultError("Unsupported KDF")
 
@@ -974,7 +966,7 @@ def _check_generation_anchor(path: Path, payload: dict[str, Any], anchor_key: by
                and not _generation_anchor_path(path).exists())
     anchor, needs_upgrade = _read_generation_anchor(path, anchor_key, vault_id, require_mac=require_mac)
     if generation < anchor:
-        raise VaultError("Vault rollback detected; the encrypted file is older than the last committed version")
+        raise VaultError(t("vault.err.rollbackOlder"))
     if generation > anchor or needs_upgrade:
         try:
             _write_generation_anchor(path, generation, anchor_key, vault_id)
@@ -1399,6 +1391,25 @@ def remaining_backoff_seconds(path: Path) -> float:
 
 
 # --------------------------------------------------------------------------
+
+# Password history (UX plan workstream 8). Up to 10 rows are read; rows older than 365 days are
+# dropped when the next password change is written. This
+# release still writes at most 5: Windows 0.4.9 and the iPhone refuse synced records with more than
+# 5 rows, so the write limit is raised in a later release, once every reader accepts 10.
+PASSWORD_HISTORY_WRITE_LIMIT = 5
+PASSWORD_HISTORY_READ_LIMIT = 10
+PASSWORD_HISTORY_MAX_AGE = 365 * 24 * 3600
+
+
+def push_password_history(history: Any, previous: str, now: int) -> list[dict[str, Any]]:
+    """The history after ``previous`` was replaced at ``now``: newest first, capped and aged out."""
+    rows = [row for row in (history if isinstance(history, list) else []) if isinstance(row, dict)]
+    rows.insert(0, {"password": previous, "changed_at": now})
+    cutoff = now - PASSWORD_HISTORY_MAX_AGE
+    kept = [row for row in rows if not isinstance(row.get("changed_at"), int) or row["changed_at"] >= cutoff]
+    return kept[:PASSWORD_HISTORY_WRITE_LIMIT]
+
+
 # Recovery phrase (BIP39 English, 24 words = 256 bits of entropy + checksum)
 # --------------------------------------------------------------------------
 
@@ -1433,10 +1444,10 @@ def phrase_from_entropy(entropy: bytes) -> str:
 
 def normalize_recovery_phrase(text: str) -> list[str]:
     if not isinstance(text, str) or len(text) > 2048:
-        raise RecoveryPhraseError("The recovery phrase is malformed")
+        raise RecoveryPhraseError(t("vault.err.recoveryMalformed"))
     tokens = unicodedata.normalize("NFKD", text).casefold().split()
     if len(tokens) != 24:
-        raise RecoveryPhraseError("A recovery phrase has exactly 24 words")
+        raise RecoveryPhraseError(t("vault.err.recovery24Words"))
     return tokens
 
 
@@ -1448,12 +1459,12 @@ def entropy_from_phrase(text: str) -> bytes:
     for token in tokens:
         index = lookup.get(token)
         if index is None:
-            raise RecoveryPhraseError("The recovery phrase contains a word that is not in the word list")
+            raise RecoveryPhraseError(t("vault.err.recoveryUnknownWord"))
         bits = (bits << 11) | index
     checksum = bits & 0xFF
     entropy = (bits >> 8).to_bytes(32, "big")
     if hashlib.sha256(entropy).digest()[0] != checksum:
-        raise RecoveryPhraseError("The recovery phrase checksum does not match; check the word order")
+        raise RecoveryPhraseError(t("vault.err.recoveryChecksum"))
     return entropy
 
 
@@ -1599,6 +1610,8 @@ class VaultSession:
         # Pro-only features this session may add or change (licensing.Feature
         # values); None means unrestricted.  Set by the app with item_limit.
         self.pro_features: frozenset[str] | None = None
+        # Lowest generation the next save may write (raise_generation_floor).
+        self._generation_floor = 0
 
     @property
     def is_unlocked(self) -> bool:
@@ -1611,12 +1624,28 @@ class VaultSession:
 
     def _require_payload(self) -> dict[str, Any]:
         if self._payload is None or self._key is None:
-            raise VaultLockedError("Vault is locked")
+            raise VaultLockedError(t("vault.err.locked"))
         return self._payload
 
     @property
     def catalog_version(self) -> int:
         return self._catalog_version
+
+    @property
+    def generation(self) -> int:
+        """The committed vault generation (``payload["generation"]``); it grows with every save.
+
+        Sync publishes it so peers can tell when this vault went back to an older copy.
+        """
+        if self._committed_payload is None:
+            raise VaultLockedError(t("vault.err.locked"))
+        return int(self._committed_payload.get("generation", 0))
+
+    def raise_generation_floor(self, minimum: int) -> None:
+        """Make the next save write a generation of at least *minimum* (never lowers it)."""
+        if type(minimum) is not int or not 0 <= minimum <= 2**63 - 1:
+            raise VaultError("Generation floor is malformed")
+        self._generation_floor = max(self._generation_floor, minimum)
 
     @property
     def last_catalog_migration_result(self) -> dict[str, Any] | None:
@@ -1630,7 +1659,7 @@ class VaultSession:
     def _require_typed_catalog(self) -> dict[str, Any]:
         payload = self._require_payload()
         if self._catalog_version != CATALOG_VERSION or payload.get("version") != CATALOG_VERSION:
-            raise VaultError("This vault uses the legacy catalog; migrate it before adding typed items")
+            raise VaultError(t("vault.err.legacyCatalog"))
         return payload
 
     @property
@@ -1748,10 +1777,10 @@ class VaultSession:
     def _verified_pre_migration_backup(self) -> Path:
         """Create and authenticate an encrypted v1 snapshot before promotion."""
         if self._key is None or not self.path.exists():
-            raise VaultLockedError("Vault key is unavailable")
+            raise VaultLockedError(t("vault.err.keyUnavailable"))
         source_bytes = self.path.read_bytes()
         if self._disk_digest is not None and hashlib.sha256(source_bytes).digest() != self._disk_digest:
-            raise VaultError("Vault changed on disk. Lock and reopen it before migrating.")
+            raise VaultError(t("vault.err.changedOnDiskMigrate"))
         directory = self.backup_dir or (self.path.parent / "Backups")
         directory.mkdir(parents=True, exist_ok=True)
         destination = directory / f"migration-v{_header_version(self._header)}-{time.time_ns()}.json"
@@ -1798,7 +1827,7 @@ class VaultSession:
         key with itself.
         """
         if self._key is None:
-            raise VaultLockedError("Vault key is unavailable")
+            raise VaultLockedError(t("vault.err.keyUnavailable"))
         catalog = CATALOG_FORMAT if catalog_version == CATALOG_VERSION else LEGACY_CATALOG_IDENTIFIER
         source = self._header if _header_version(self._header) == FORMAT_VERSION else self._pending_v3_header
         if source is not None:
@@ -1807,7 +1836,7 @@ class VaultSession:
             header["catalog"] = catalog
             return header
         if password is None:
-            raise VaultError("The master password is required to upgrade this vault's format")
+            raise VaultError(t("vault.err.upgradeNeedsPassword"))
         current_kdf = self._header.get("kdf", {})
         base = {name: current_kdf[name] for name in ("time_cost", "memory_cost_kib", "parallelism", "hash_len")
                 if name in current_kdf}
@@ -2029,15 +2058,15 @@ class VaultSession:
         for item in payload["entries"]:
             if secrets.compare_digest(str(item.get("id", "")).encode("utf-8"), str(entry_id).encode("utf-8")):
                 if expected_revision is not None and not _same_revision(expected_revision, self._entry_revision(item)):
-                    raise VaultError("This credential changed. Close and reopen it before revealing the password.")
+                    raise VaultError(t("vault.err.changedBeforeReveal"))
                 return str(item.get("password", ""))
-        raise VaultError("Credential is no longer available")
+        raise VaultError(t("vault.err.credentialGone"))
 
     def entry_revision(self, entry_id: str) -> int:
         """This credential's conflict token (see ``credential_detail``); VaultError if it is gone."""
         item = next((e for e in self._require_payload()["entries"] if e.get("id") == entry_id), None)
         if item is None:
-            raise VaultError("Credential is no longer available")
+            raise VaultError(t("vault.err.credentialGone"))
         return self._entry_revision(item)
 
     def _entry_revision(self, item: Mapping[str, Any]) -> int:
@@ -2144,9 +2173,8 @@ class VaultSession:
         item = self._web_login_match(canonical, username)
         if item is not None:
             if item.get("password") != password:
-                history = list(item.get("password_history", []))
-                history.insert(0, {"password": item.get("password", ""), "changed_at": now})
-                item["password_history"] = history[:5]
+                item["password_history"] = push_password_history(
+                    item.get("password_history"), item.get("password", ""), now)
             item.update({"password": password, "updated_at": now})
             # Keep a name the user chose; only an explicit label renames it.
             if explicit_label:
@@ -2193,7 +2221,7 @@ class VaultSession:
         from .item_schema import migrate_web_scope
 
         if not isinstance(urls, list) or not urls or not isinstance(urls[0], dict):
-            raise VaultError("A website login needs at least one URL")
+            raise VaultError(t("vault.err.loginNeedsUrl"))
         try:
             existing = self.find_web_login(urls[0].get("url", ""), username)
         except OriginError as exc:
@@ -2293,7 +2321,7 @@ class VaultSession:
             # Per-credential check: sync metadata saves and edits of other items do not count.
             item = next((e for e in payload["entries"] if e.get("id") == entry_id), None)
             if item is not None and not _same_revision(expected_revision, self._entry_revision(item)):
-                raise VaultError("This credential changed. Close and reopen it before saving.")
+                raise VaultError(t("vault.err.changedBeforeSave"))
         if self._apply_entry_fields(entry_id, label=label, username=username, password=password):
             self.save()
             return True
@@ -2304,7 +2332,7 @@ class VaultSession:
         """Apply label/username/password to one credential in memory, without saving.
 
         Shared by ``update_entry_fields`` and ``save_login``; a changed password
-        is pushed onto the five-deep password history.
+        is pushed onto the password history (``push_password_history``).
         """
         payload = self._require_payload()
         for item in payload["entries"]:
@@ -2314,7 +2342,7 @@ class VaultSession:
                 if any(other.get("id") != entry_id and other.get("kind") == "web" and
                        other.get("scope", {}).get("origin") == item.get("scope", {}).get("origin") and
                        other.get("username") == username for other in payload["entries"]):
-                    raise VaultError("This site already has an entry for that username. Edit that entry instead.")
+                    raise VaultError(t("vault.err.usernameExists"))
             if label is not None:
                 item["label"] = _validated_text(label, "label", 512, allow_empty=False)
             if username is not None:
@@ -2323,12 +2351,8 @@ class VaultSession:
                 validated_password = _validated_text(password, "password", 4096, allow_empty=False)
                 previous = str(item.get("password", ""))
                 if previous and not secrets.compare_digest(previous.encode("utf-8"), validated_password.encode("utf-8")):
-                    history = item.setdefault("password_history", [])
-                    if not isinstance(history, list):
-                        history = []
-                        item["password_history"] = history
-                    history.insert(0, {"password": previous, "changed_at": int(time.time())})
-                    del history[5:]
+                    item["password_history"] = push_password_history(
+                        item.get("password_history"), previous, int(time.time()))
                 item["password"] = validated_password
             now = int(time.time())
             item["updated_at"] = now
@@ -2347,17 +2371,17 @@ class VaultSession:
         """
         payload = self._require_payload()
         if self._edit_token_key is None:
-            raise VaultLockedError("Vault is locked")
+            raise VaultLockedError(t("vault.err.locked"))
         item = next((e for e in payload["entries"] if e.get("id") == entry_id), None)
         if item is None:
-            raise VaultError("Credential not found")
+            raise VaultError(t("vault.err.credentialNotFound"))
         return self._entry_token(item)
 
     def _entry_token(self, item: Mapping[str, Any]) -> str:
         """HMAC-SHA256 (per-unlock key) over one credential's canonical JSON minus ignored keys."""
         key = self._edit_token_key
         if key is None:
-            raise VaultLockedError("Vault is locked")
+            raise VaultLockedError(t("vault.err.locked"))
         content = {name: value for name, value in item.items() if name not in _EDIT_TOKEN_IGNORED_KEYS}
         # Fed in small pieces: no immutable copy of the whole login (password
         # included) is built just to compute the token.
@@ -2579,8 +2603,10 @@ class VaultSession:
         if isinstance(history, list):
             for item in history:
                 if isinstance(item, dict) and isinstance(item.get("password"), str):
-                    result.append({"password": item["password"],
-                                   "changed_at": int(item.get("changed_at", item.get("replaced_at", 0)))})
+                    changed_at = int(item.get("changed_at", item.get("replaced_at", 0)))
+                    result.append({"password": item["password"], "changed_at": changed_at})
+                    if len(result) == PASSWORD_HISTORY_READ_LIMIT:
+                        break
         entry.clear()
         return result
 
@@ -2625,13 +2651,13 @@ class VaultSession:
         """Constant-time compare with the data key; a lock during the KDF reports locked."""
         with self._state_lock:
             if self._key is None:
-                raise VaultLockedError("Vault is locked")
+                raise VaultLockedError(t("vault.err.locked"))
             return hmac.compare_digest(candidate, self._key)
 
     def _password_wrapper_matches(self, password: SecretText) -> bool:
         """Derive the KEK and compare the unwrapped data key; no file is written."""
         if self._key is None:
-            raise VaultLockedError("Vault is locked")
+            raise VaultLockedError(t("vault.err.locked"))
         header = self._header
         kek = _derive_key(password, header["kdf"])
         try:
@@ -2656,17 +2682,17 @@ class VaultSession:
         self._require_payload()
         throttle = UnlockThrottle(self.path)
         throttle.check()
-        secret, owned = _master_secret(password, "Incorrect master password")
+        secret, owned = _master_secret(password, t("vault.err.wrongPassword"))
         try:
             try:
                 if not self._password_wrapper_matches(secret):
                     throttle.record_failure()
-                    raise InvalidMasterPassword("Incorrect master password")
+                    raise InvalidMasterPassword(t("vault.err.wrongPassword"))
             except InvalidMasterPassword:
                 raise
             except VaultError as exc:
                 # Malformed wrappers must not count as a password failure nor pass.
-                raise VaultError(f"Master password could not be verified: {exc}") from exc
+                raise VaultError(t("vault.err.passwordNotVerified", detail=exc)) from exc
         finally:
             if owned:
                 secret.wipe()
@@ -2675,7 +2701,7 @@ class VaultSession:
 
     def _password_wrapper(self, header: dict[str, Any], password: SecretText, kdf: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(password, SecretText) or not 12 <= password.char_count <= MAX_MASTER_PASSWORD_LENGTH:
-            raise VaultError("Use a master password between 12 and 4096 characters")
+            raise VaultError(t("vault.err.passwordLength"))
         kek = _derive_key(password, kdf)
         try:
             header["kdf"] = kdf
@@ -2711,13 +2737,13 @@ class VaultSession:
         camera verification always need to be set up again; the caller removes
         their sidecars and OS keys with ``cleanup_after_password_change``.
         """
-        new_secret, new_owned = _master_secret(new_password, "Use a master password between 12 and 4096 characters")
+        new_secret, new_owned = _master_secret(new_password, t("vault.err.passwordLength"))
         current_secret = None
         current_owned = False
         try:
             if not 12 <= new_secret.char_count <= 4096:
-                raise VaultError("Use a master password between 12 and 4096 characters")
-            current_secret, current_owned = _master_secret(current_password, "Incorrect master password")
+                raise VaultError(t("vault.err.passwordLength"))
+            current_secret, current_owned = _master_secret(current_password, t("vault.err.wrongPassword"))
             self.verify_master_password(current_secret)
             return self._rotate_data_key(current_secret, new_secret, recovery_phrase=recovery_phrase,
                                          remove_unlock_envelopes=False)
@@ -2741,13 +2767,13 @@ class VaultSession:
         wrap the retired data key).  Returns the ``_rotate_data_key`` result.
         """
         if not self.recovery_unlocked:
-            raise VaultError("A new master password without the current one requires a recovery-phrase unlock")
-        new_secret, new_owned = _master_secret(new_password, "Use a master password between 12 and 4096 characters")
+            raise VaultError(t("vault.err.newPasswordNeedsRecovery"))
+        new_secret, new_owned = _master_secret(new_password, t("vault.err.passwordLength"))
         try:
             if not 12 <= new_secret.char_count <= 4096:
-                raise VaultError("Use a master password between 12 and 4096 characters")
+                raise VaultError(t("vault.err.passwordLength"))
             if _header_version(self._header) != FORMAT_VERSION:
-                raise VaultError("Only a format-3 vault can be recovered with a recovery phrase")
+                raise VaultError(t("vault.err.recoveryNeedsFormat3"))
             entropy = self._recovery_entropy
             result = self._rotate_data_key(None, new_secret, recovery_phrase=None, recovery_entropy=entropy,
                                            remove_unlock_envelopes=False)
@@ -2809,7 +2835,7 @@ class VaultSession:
         ``last_recovery_phrase_change``.  A first phrase, with no older
         wrapper anywhere, is only an added wrapper.
         """
-        secret, owned = _master_secret(current_password, "Incorrect master password")
+        secret, owned = _master_secret(current_password, t("vault.err.wrongPassword"))
         try:
             self.verify_master_password(secret)
             words = bip39_words()  # fail early if the word list is damaged
@@ -2844,7 +2870,7 @@ class VaultSession:
 
         Returns the rotation result, or ``None`` when no phrase was enrolled.
         """
-        secret, owned = _master_secret(current_password, "Incorrect master password")
+        secret, owned = _master_secret(current_password, t("vault.err.wrongPassword"))
         try:
             self.verify_master_password(secret)
             if not self.has_recovery_phrase():
@@ -2867,7 +2893,7 @@ class VaultSession:
         Attachment sidecars keep their per-file keys, which live inside the
         re-encrypted catalog, so they stay readable without being rewritten.
         """
-        secret, owned = _master_secret(current_password, "Incorrect master password")
+        secret, owned = _master_secret(current_password, t("vault.err.wrongPassword"))
         try:
             self.verify_master_password(secret)
             return self._rotate_data_key(secret, secret, recovery_phrase=recovery_phrase)
@@ -2902,7 +2928,7 @@ class VaultSession:
         payload = self._require_payload()
         old_key = self._key
         if old_key is None:
-            raise VaultLockedError("Vault key is unavailable")
+            raise VaultLockedError(t("vault.err.keyUnavailable"))
         if recovery_phrase is not None:
             recovery_entropy = entropy_from_phrase(recovery_phrase)
         if new_recovery_entropy is not None:
@@ -3035,7 +3061,7 @@ class VaultSession:
         header = self._header
         wrapper = header.get("wrappers", {}).get("recovery") if _header_version(header) == FORMAT_VERSION else None
         if not isinstance(wrapper, dict):
-            raise RecoveryPhraseError("This vault has no recovery phrase")
+            raise RecoveryPhraseError(t("vault.err.noRecoveryPhrase"))
         return _unwrap_recovery_wrapper(header, wrapper, entropy)
 
     def purge_rolling_backups_older_than(self, generation: int) -> int:
@@ -3128,7 +3154,7 @@ class VaultSession:
     def set_scheduled_backup_password(self, password: str | None) -> None:
         if password is not None and (not isinstance(password, str) or len(password) < 12
                                      or len(password) > 1024 or "\x00" in password):
-            raise VaultError("The backup password must contain at least 12 characters")
+            raise VaultError(t("vault.err.backupPasswordShort"))
         payload = self._require_payload()
         prefs = payload.setdefault("preferences", {})
         if not isinstance(prefs, dict):
@@ -3205,7 +3231,7 @@ class VaultSession:
     def set_favorite(self, entry_id: str, favorite: bool) -> None:
         payload = self._require_payload()
         item = next((e for e in payload["entries"] if e["id"] == entry_id), None)
-        if item is None: raise VaultError("Credential not found")
+        if item is None: raise VaultError(t("vault.err.credentialNotFound"))
         previous = (item.get("favorite", False), item.get("updated_at"))
         item.update(favorite=bool(favorite), updated_at=int(time.time()))
         try:
@@ -3220,19 +3246,19 @@ class VaultSession:
                     custom_fields: list[dict[str, Any]] | None = None) -> None:
         payload = self._require_payload()
         item = next((e for e in payload["entries"] if e["id"] == entry_id), None)
-        if item is None: raise VaultError("Credential not found")
+        if item is None: raise VaultError(t("vault.err.credentialNotFound"))
         tags = list(dict.fromkeys(_validated_text(t.strip(), "tag", 40, allow_empty=False) for t in (tags or []) if t.strip()))
-        if len(tags) > 20: raise VaultError("At most 20 tags per credential")
+        if len(tags) > 20: raise VaultError(t("vault.err.tooManyTags"))
         codes = [_validated_text(c, "recovery code", 512, allow_empty=False) for c in (recovery_codes or [])]
-        if len(codes) > 100: raise VaultError("At most 100 recovery codes")
+        if len(codes) > 100: raise VaultError(t("vault.err.tooManyRecoveryCodes"))
         if custom_fields is not None and (not isinstance(custom_fields, list) or not all(isinstance(f, dict) for f in custom_fields)):
-            raise VaultError("Custom fields must be a list of objects")
+            raise VaultError(t("vault.err.customFieldsList"))
         fields = []
         for field in (custom_fields or []):
             fields.append({"name": _validated_text(field.get("name", ""), "field name", 100, allow_empty=False),
                            "value": _validated_text(field.get("value", ""), "field value", 4096, allow_empty=True),
                            "hidden": field.get("hidden", True) is True})
-        if len(fields) > 50: raise VaultError("At most 50 custom fields")
+        if len(fields) > 50: raise VaultError(t("vault.err.tooManyCustomFields"))
         if totp:
             totp = {"secret": normalize_secret(str(totp.get("secret", ""))),
                     "algorithm": str(totp.get("algorithm", "SHA1")).upper(),
@@ -3253,10 +3279,10 @@ class VaultSession:
         Returns False (and writes nothing) when the icon is unchanged.
         """
         if not isinstance(png, (bytes, bytearray)) or not png.startswith(PNG_SIGNATURE) or len(png) > MAX_SITE_ICON_BYTES:
-            raise VaultError("Site icon must be a small PNG image")
+            raise VaultError(t("vault.err.iconMustBePng"))
         item = next((e for e in self._require_payload()["entries"] if e["id"] == entry_id), None)
         if item is None or item.get("kind") != "web":
-            raise VaultError("Credential not found")
+            raise VaultError(t("vault.err.credentialNotFound"))
         encoded = base64.b64encode(bytes(png)).decode("ascii")
         if item.get("site_icon") == encoded:
             return False
@@ -3285,9 +3311,9 @@ class VaultSession:
 
     def consume_recovery_code(self, entry_id: str, index: int) -> str:
         entry = next((e for e in self._require_payload()["entries"] if e["id"] == entry_id), None)
-        if entry is None: raise VaultError("Credential not found")
+        if entry is None: raise VaultError(t("vault.err.credentialNotFound"))
         codes = entry.get("recovery_codes", [])
-        if not 0 <= index < len(codes): raise VaultError("Recovery code is no longer available")
+        if not 0 <= index < len(codes): raise VaultError(t("vault.err.recoveryCodeGone"))
         code = codes.pop(index)
         self.save()
         return code
@@ -3334,12 +3360,12 @@ class VaultSession:
     def restore_deleted(self, entry_id: str) -> None:
         payload = self._require_payload()
         record = next((x for x in payload.get("trash", []) if x["entry"]["id"] == entry_id), None)
-        if not record: raise VaultError("Deleted credential was not found")
+        if not record: raise VaultError(t("vault.err.deletedNotFound"))
         restored = record["entry"]
         if any(e["id"] == entry_id or (restored["kind"] == "web" and e["kind"] == "web" and
                     e["username"] == restored["username"] and e["scope"] == restored["scope"])
                for e in payload["entries"]):
-            raise VaultError("A matching live credential already exists; no entry was overwritten")
+            raise VaultError(t("vault.err.liveExists"))
         self._check_can_create()
         policy = normalized_policy(restored.get("policy"))
         policy["sign_in"] = "never"
@@ -3410,12 +3436,12 @@ class VaultSession:
                 self._save_locked()
         except OSError:
             self._payload = copy.deepcopy(self._committed_payload)
-            raise VaultError("Could not write the vault. Another writer may be active, or storage is unavailable.") from None
+            raise VaultError(t("vault.err.writeFailed")) from None
 
     def _save_locked(self) -> None:
         payload = self._require_payload()
         if self._key is None or len(self._key) != 32:
-            raise VaultLockedError("Vault key is unavailable")
+            raise VaultLockedError(t("vault.err.keyUnavailable"))
         old_header = copy.deepcopy(self._header)
         if _header_version(self._header) != FORMAT_VERSION and self._pending_v3_header is not None:
             # The first write after a master-password unlock publishes format v3
@@ -3437,7 +3463,7 @@ class VaultSession:
             # Detect another process/recovery operation replacing this vault.
             actual = hashlib.sha256(self.path.read_bytes()).digest() if self.path.exists() else None
             if actual != self._disk_digest:
-                raise VaultError("Vault changed on disk. Lock and reopen it before making changes.")
+                raise VaultError(t("vault.err.changedOnDiskChanges"))
             anchor_key = _rollback_anchor_key(self._key)
             vault_id = str(self._header.get("vault_id", ""))
             try:
@@ -3447,8 +3473,9 @@ class VaultSession:
                 _zero(anchor_key)
             current_generation = int(payload.get("generation", 0))
             if current_generation < anchor_generation:
-                raise VaultError("Vault rollback detected; lock and reopen the newest vault copy.")
-            payload["generation"] = max(1, current_generation, anchor_generation + (1 if self._disk_digest is not None else 0))
+                raise VaultError(t("vault.err.rollbackNewest"))
+            payload["generation"] = max(1, current_generation, self._generation_floor,
+                                        anchor_generation + (1 if self._disk_digest is not None else 0))
             if _header_version(self._header) == FORMAT_VERSION:
                 # Authenticated record that this vault always has a MAC anchor,
                 # so a deleted anchor is detected at the next unlock.
@@ -3467,7 +3494,7 @@ class VaultSession:
             plaintext = _canonical_json_buffer(payload)
             try:
                 if len(plaintext) > MAX_VAULT_BYTES // 2:
-                    raise VaultError("Vault has exceeded the prototype size limit")
+                    raise VaultError(t("vault.err.tooLarge"))
                 ciphertext = AESGCM(self._key).encrypt(nonce, plaintext, _aad(header))
             finally:
                 _zero(plaintext)
@@ -3567,8 +3594,8 @@ def create_vault(
     backup_count: int = 0,
 ) -> VaultSession:
     if path.exists():
-        raise VaultError(f"Vault already exists at {path}")
-    secret, owned = _master_secret(master_password, "Use a master password of at least 12 characters for this prototype")
+        raise VaultError(t("vault.err.exists", path=path))
+    secret, owned = _master_secret(master_password, t("vault.err.passwordTooShortPrototype"))
     try:
         return _create_vault_with(path, secret, kdf_overrides, backup_dir, backup_count)
     finally:
@@ -3579,7 +3606,7 @@ def create_vault(
 def _create_vault_with(path: Path, secret: SecretText, kdf_overrides: dict[str, int] | None,
                        backup_dir: Path | None, backup_count: int) -> VaultSession:
     if secret.char_count < 12:
-        raise VaultError("Use a master password of at least 12 characters for this prototype")
+        raise VaultError(t("vault.err.passwordTooShortPrototype"))
 
     kdf = dict(DEFAULT_KDF)
     if kdf_overrides:
@@ -3662,11 +3689,11 @@ def _reject_json_constant(name: str) -> Any:
 def _read_vault_header(path: Path) -> tuple[dict[str, Any], bytes]:
     try:
         if path.stat().st_size > MAX_VAULT_BYTES:
-            raise VaultError("Vault exceeds the accepted size limit")
+            raise VaultError(t("vault.err.tooLargeAccepted"))
         with path.open("rb") as handle:
             source_bytes = handle.read(MAX_VAULT_BYTES + 1)
         if len(source_bytes) > MAX_VAULT_BYTES:
-            raise VaultError("Vault exceeds the accepted size limit")
+            raise VaultError(t("vault.err.tooLargeAccepted"))
         # NaN/Infinity are not JSON and the writer never emits them; refusing them here keeps
         # int() on KDF fields from raising OverflowError.
         header = json.loads(source_bytes, parse_constant=_reject_json_constant)
@@ -3674,7 +3701,7 @@ def _read_vault_header(path: Path) -> tuple[dict[str, Any], bytes]:
             raise VaultError("Vault header must be an object")
     except (OSError, ValueError, RecursionError) as exc:
         # RecursionError: Python 3.14's C decoder raises it for deeply nested input.
-        raise VaultError(f"Unable to read vault: {exc}") from exc
+        raise VaultError(t("vault.err.unableToRead", detail=exc)) from exc
     if header.get("version") not in SUPPORTED_FORMAT_VERSIONS:
         raise VaultError("Unsupported vault format version")
     if header.get("version") == CATALOG_ENVELOPE_VERSION:
@@ -3730,7 +3757,7 @@ def _decrypt_vault(path: Path, header: dict[str, Any], source_bytes: bytes,
     except BaseException as exc:
         key[:] = b"\0" * len(key)
         if isinstance(exc, (InvalidTag, UnicodeDecodeError, json.JSONDecodeError, KeyError)):
-            raise InvalidMasterPassword("Incorrect master password or modified vault") from exc
+            raise InvalidMasterPassword(t("vault.err.wrongPasswordOrModified")) from exc
         raise
 
 
@@ -3744,7 +3771,7 @@ def _unwrap_password_wrapper(header: dict[str, Any], master_password: SecretText
         try:
             return _unwrap_key(kek, nonce, ciphertext, _wrapper_aad(header, "password", {"kdf": header["kdf"]}))
         except InvalidTag as exc:
-            raise InvalidMasterPassword("Incorrect master password or modified vault") from exc
+            raise InvalidMasterPassword(t("vault.err.wrongPasswordOrModified")) from exc
     finally:
         _zero(kek)
 
@@ -3759,7 +3786,7 @@ def _unwrap_recovery_wrapper(header: dict[str, Any], wrapper: dict[str, Any], en
         try:
             return _unwrap_key(recovery_key, nonce, ciphertext, _wrapper_aad(header, "recovery", metadata))
         except InvalidTag as exc:
-            raise RecoveryPhraseError("This recovery phrase does not belong to this vault, or it was regenerated") from exc
+            raise RecoveryPhraseError(t("vault.err.recoveryWrongVault")) from exc
     finally:
         _zero(recovery_key)
 
@@ -3797,8 +3824,8 @@ def unlock_vault(path: Path, master_password: str | SecretText, *, backup_dir: P
     """
     path = Path(path)
     if not isinstance(master_password, (str, SecretText)):
-        raise InvalidMasterPassword("Master password cannot be empty")
-    secret, owned = _master_secret(master_password, "Invalid master password text")
+        raise InvalidMasterPassword(t("vault.err.passwordEmpty"))
+    secret, owned = _master_secret(master_password, t("vault.err.passwordTextInvalid"))
     try:
         throttle = UnlockThrottle(path)
         throttle.check()
@@ -3842,7 +3869,7 @@ def unlock_with_recovery_phrase(path: Path, phrase: str, *, backup_dir: Path | N
     header, source_bytes = _read_vault_header(path)
     wrapper = header.get("wrappers", {}).get("recovery") if _header_version(header) == FORMAT_VERSION else None
     if not isinstance(wrapper, dict):
-        raise RecoveryPhraseError("This vault has no recovery phrase")
+        raise RecoveryPhraseError(t("vault.err.noRecoveryPhrase"))
     try:
         data_key = _unwrap_recovery_wrapper(header, wrapper, entropy)
     except RecoveryPhraseError:
@@ -3867,15 +3894,15 @@ def _unlock_vault_with_key(path: Path, key: bytearray, *, expected_context: str,
     session = None
     try:
         if not expected_binding:
-            raise VaultError("Windows Hello has not been authorized for this vault")
+            raise VaultError(t("vault.err.helloNotAuthorized"))
         header, source_bytes = _read_vault_header(path)
         context = unlock_context_for_header(header)
         if not secrets.compare_digest(context, expected_context):
-            raise VaultError("The vault password or header changed. Use your master password.")
+            raise VaultError(t("vault.err.passwordOrHeaderChanged"))
         session = _decrypt_vault(path, header, source_bytes, key, backup_dir=backup_dir,
                                   backup_count=backup_count)
         if not secrets.compare_digest(session.hello_binding(), expected_binding):
-            raise VaultError("Windows Hello setup was revoked or belongs to a different vault.")
+            raise VaultError(t("vault.err.helloRevoked"))
         return session
     except BaseException:
         if session is not None:
@@ -3896,15 +3923,15 @@ def _unlock_vault_with_face_key(path: Path, key: bytearray, *, expected_context:
     session = None
     try:
         if not expected_binding:
-            raise VaultError("Camera verification has not been authorized for this vault")
+            raise VaultError(t("vault.err.cameraNotAuthorized"))
         header, source_bytes = _read_vault_header(path)
         context = unlock_context_for_header(header)
         if not secrets.compare_digest(context, expected_context):
-            raise VaultError("The vault password or header changed. Use your master password.")
+            raise VaultError(t("vault.err.passwordOrHeaderChanged"))
         session = _decrypt_vault(path, header, source_bytes, key, backup_dir=backup_dir,
                                   backup_count=backup_count)
         if not secrets.compare_digest(session.face_binding(), expected_binding):
-            raise VaultError("Camera verification was revoked or belongs to a different vault.")
+            raise VaultError(t("vault.err.cameraRevoked"))
         return session
     except BaseException:
         if session is not None:

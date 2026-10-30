@@ -262,6 +262,19 @@ def test_licence_adopted_by_sync_reapplies_the_limit(env):
     assert seen == [1]
 
 
+def test_items_brought_by_sync_refresh_the_item_list(env):
+    env.bus.events.clear()
+    env.service._status_changed(env.fake, SimpleNamespace(items_changed=3))
+    assert [name for name, _ in env.bus.events] == ["sync.status", "items.changed", "toast"]
+    assert env.bus.events[-1][1]["message"] == "3 items updated from your other devices."
+    env.bus.events.clear()
+    env.service._status_changed(env.fake, SimpleNamespace(items_changed=1))
+    assert env.bus.events[-1][1]["message"] == "1 item updated from your other devices."
+    env.bus.events.clear()
+    env.service._status_changed(env.fake, SimpleNamespace(items_changed=0))
+    assert [name for name, _ in env.bus.events] == ["sync.status"]
+
+
 # ----------------------------------------------------------- review fixes
 def test_sync_waits_for_the_vault_lock_and_gives_up_when_cancelled():
     import threading
@@ -714,3 +727,55 @@ def test_paired_device_is_named_with_an_undo(env, monkeypatch):
     assert polled["state"] == "paired"
     assert polled["device"] == {"id": "device-2abcdef", "name": "Device device-2", "fingerprint": "0123 4567 89ab cdef"}
     assert "Undo" in polled["message"] and "0123 4567" in polled["message"]
+
+
+# ------------------------------------------------------------------ AddressFollower (task 11)
+class _FollowSettings:
+    def __init__(self, value, confirmed=""):
+        self.sync_lan_endpoint = value
+        self.sync_lan_endpoint_confirmed = confirmed
+        self.saves = 0
+
+    def save(self):
+        self.saves += 1
+
+
+def _moved_snapshot():
+    from localvault.sync.lan_interfaces import Interface, NetworkSnapshot
+
+    return NetworkSnapshot(interfaces=(Interface("Wi-Fi", ("192.168.1.23",)),), primary="192.168.1.23")
+
+
+def test_address_follower_moves_saves_and_throttles():
+    from localvault.app.sync import AddressFollower
+
+    settings = _FollowSettings("192.168.1.10:47821", confirmed="192.168.1.10:47821")
+    probes, now = [], [100.0]
+
+    def probe():
+        probes.append(1)
+        return _moved_snapshot()
+
+    follower = AddressFollower(settings, probe=probe, clock=lambda: now[0], min_interval=30)
+    assert follower() == "192.168.1.23:47821"
+    assert settings.sync_lan_endpoint == settings.sync_lan_endpoint_confirmed == "192.168.1.23:47821"
+    assert settings.saves == 1 and follower.moved == ("192.168.1.10:47821", "192.168.1.23:47821")
+    now[0] += 10
+    assert follower() == "192.168.1.23:47821" and len(probes) == 1  # throttled
+    now[0] += 30
+    assert follower() == "192.168.1.23:47821" and len(probes) == 2 and settings.saves == 1  # already there
+
+
+def test_address_follower_keeps_the_value_when_the_probe_fails_or_wifi_is_off():
+    from localvault.app.sync import AddressFollower
+
+    def broken():
+        raise OSError("no adapters")
+
+    settings = _FollowSettings("192.168.1.10:47821")
+    assert AddressFollower(settings, probe=broken)() == "192.168.1.10:47821" and settings.saves == 0
+    off = _FollowSettings("")
+    assert AddressFollower(off, probe=_moved_snapshot)() == "" and off.saves == 0
+    unconfirmed = _FollowSettings("192.168.1.10:47821", confirmed="")
+    AddressFollower(unconfirmed, probe=_moved_snapshot)()
+    assert unconfirmed.sync_lan_endpoint_confirmed == ""  # an unconfirmed suggestion stays unconfirmed

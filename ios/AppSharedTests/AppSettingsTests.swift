@@ -48,6 +48,14 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(ClipboardExpiry.allCases.map(\.rawValue), [30, 60, 120, 300])
     }
 
+    func test_import_card_not_now_is_remembered() {
+        let d = fresh()
+        XCTAssertFalse(AppSettings(defaults: d).importCardDismissed)
+        AppSettings(defaults: d).importCardDismissed = true
+        XCTAssertTrue(AppSettings(defaults: d).importCardDismissed)
+        XCTAssertTrue(AppSettings.Key.all.contains(AppSettings.Key.importCardDismissed))
+    }
+
     func test_round_trip_through_defaults() {
         let d = fresh()
         let s = AppSettings(defaults: d)

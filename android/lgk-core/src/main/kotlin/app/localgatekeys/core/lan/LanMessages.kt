@@ -24,6 +24,12 @@ sealed interface LanMessage {
     data class Ack(val transfer: String, val seq: Long) : LanMessage
 
     data class Error(val reason: String) : LanMessage
+
+    /**
+     * `{"type":"witness","group_id","epoch","view"}` (2026-10-29): [view] is standard base64 of a witness file (view
+     * format 2, zero records, at most [app.localgatekeys.core.sync.Witness.MAX_WITNESS_BYTES]).
+     */
+    data class Witness(val groupId: String, val epoch: Long, val view: String) : LanMessage
 }
 
 object LanMessages {
@@ -48,7 +54,11 @@ object LanMessages {
         "next" to setOf("type", "transfer", "seq"),
         "ack" to setOf("type", "transfer", "seq"),
         "error" to setOf("type", "reason"),
+        "witness" to setOf("type", "group_id", "epoch", "view"),
     )
+
+    /** Longest `view` text of a `witness` message (base64 of [app.localgatekeys.core.sync.Witness.MAX_WITNESS_BYTES]). */
+    val MAX_WITNESS_CHARS: Int = 4 * ((app.localgatekeys.core.sync.Witness.MAX_WITNESS_BYTES + 2) / 3)
 
     /** Canonical ASCII JSON of the message. */
     fun encode(m: LanMessage): ByteArray {
@@ -61,6 +71,10 @@ object LanMessages {
             is LanMessage.Next -> mapOf("type" to JsonValue.Str("next"), "transfer" to JsonValue.Str(m.transfer), "seq" to JsonValue.Int(m.seq))
             is LanMessage.Ack -> mapOf("type" to JsonValue.Str("ack"), "transfer" to JsonValue.Str(m.transfer), "seq" to JsonValue.Int(m.seq))
             is LanMessage.Error -> mapOf("type" to JsonValue.Str("error"), "reason" to JsonValue.Str(m.reason))
+            is LanMessage.Witness -> mapOf(
+                "type" to JsonValue.Str("witness"), "group_id" to JsonValue.Str(m.groupId), "epoch" to JsonValue.Int(m.epoch),
+                "view" to JsonValue.Str(m.view),
+            )
         }
         return CanonicalJson.encode(JsonValue.Obj(o), Dialect.ASCII)
     }
@@ -87,6 +101,14 @@ object LanMessages {
             val r = (o["reason"] as? JsonValue.Str)?.v
             if (r == null || Scalars.count(r) !in 1..64) throw bad()
             return LanMessage.Error(r)
+        }
+        if (type == "witness") {
+            val group = (o["group_id"] as? JsonValue.Str)?.v
+            val epoch = int(o["epoch"], 1)
+            val view = (o["view"] as? JsonValue.Str)?.v
+            if (group == null || epoch == null || view == null) throw bad()
+            if (view.length > MAX_WITNESS_CHARS) throw LanSyncException("too-large")
+            return LanMessage.Witness(group, epoch, view)
         }
         val transfer = (o["transfer"] as? JsonValue.Str)?.v ?: throw bad()
         val tb = transfer.toByteArray(Charsets.UTF_8)

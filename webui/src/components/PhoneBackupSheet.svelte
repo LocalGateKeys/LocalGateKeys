@@ -1,6 +1,7 @@
 <script>
   /** Restore items from an Android or iPhone backup file: choose, preview, then restore explicitly. */
   import ErrorLogLink from './ErrorLogLink.svelte';
+  import { t } from '../lib/i18n.svelte.js';
   import { call } from '../lib/api.js';
   import { toast } from '../lib/toast.js';
   import Button from './Button.svelte';
@@ -17,7 +18,7 @@
 
   $effect(() => () => { pw = ''; call('phone_backup_cancel'); });
 
-  const heading = $derived(file ? `${file.platform === 'ios' ? 'iPhone' : 'Android'} backup from ${file.created}` : 'No backup file chosen');
+  const heading = $derived(file ? t(file.platform === 'ios' ? 'phoneBackup.ios' : 'phoneBackup.android', { date: file.created }) : t('phoneBackup.none'));
 
   async function choose() {
     if (busy) return;
@@ -37,10 +38,10 @@
   async function restore() {
     if (busy || !token) return;
     busy = 'restore'; error = '';
-    const t = token;
+    const pending = token;
     token = null;
     pw = ''; // never kept after a restore attempt, whatever the outcome
-    const r = await call('phone_backup_commit', t, file?.handle ?? '');
+    const r = await call('phone_backup_commit', pending, file?.handle ?? '');
     busy = '';
     if (!r.ok) {
       lines = [];
@@ -53,26 +54,26 @@
   }
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label="Restore phone backup">
+<div class="sheet glass" role="dialog" aria-label={t('phoneBackup.title')}>
   <header>
-    <h2>Restore phone backup</h2>
-    <button class="close" aria-label="Close" onclick={onclose}>✕</button>
+    <h2>{t('phoneBackup.title')}</h2>
+    <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
-  <p class="muted">Bring back items from an Android or iPhone backup file. Nothing changes until you press Restore.</p>
+  <p class="muted">{t('phoneBackup.intro')}</p>
   <div class="pathrow">
     <span class="path">{heading}</span>
-    <Button label="Choose file…" disabled={!!busy} onclick={choose} />
+    <Button label={t('common.chooseFile')} disabled={!!busy} onclick={choose} />
   </div>
   <div class="group">
-    <Field label="Backup password" type="password" bind:value={pw} oninput={() => { token = null; }} disabled={!!busy} autocomplete="off" />
+    <Field label={t('phoneBackup.password')} type="password" bind:value={pw} oninput={() => { token = null; }} disabled={!!busy} autocomplete="off" />
   </div>
-  {#if lines.length}<pre class="group summary" aria-label="Preview">{lines.join('\n')}</pre>{/if}
+  {#if lines.length}<pre class="group summary" aria-label={t('phoneBackup.previewLabel')}>{lines.join('\n')}</pre>{/if}
   {#if status}<p class="muted" role="status">{status}</p>{/if}
   {#if error}<p class="error" role="alert">{error}<ErrorLogLink text={error} /></p>{/if}
   <footer>
-    <Button label="Cancel" onclick={onclose} />
-    <Button label="Preview" busy={busy === 'preview'} busyLabel="Checking…" disabled={!file || !pw || !!busy} onclick={doPreview} />
-    <Button label="Restore" variant="primary" busy={busy === 'restore'} busyLabel="Restoring…" disabled={!token || !!busy} onclick={restore} />
+    <Button label={t('common.cancel')} onclick={onclose} />
+    <Button label={t('common.preview')} busy={busy === 'preview'} busyLabel={t('phoneBackup.checking')} disabled={!file || !pw || !!busy} onclick={doPreview} />
+    <Button label={t('phoneBackup.restore')} variant="primary" busy={busy === 'restore'} busyLabel={t('phoneBackup.restoring')} disabled={!token || !!busy} onclick={restore} />
   </footer>
 </div>
 

@@ -1,8 +1,11 @@
 name: LocalGateKeys
 options:
   bundleIdPrefix: app.localgatekeys
+  # English is the development language; the catalogs (Localizable/InfoPlist .xcstrings) add the other nine.
+  developmentLanguage: en
   deploymentTarget:
     iOS: "17.0"
+    macOS: "14.0"
   createIntermediateGroups: true
 settings:
   base:
@@ -12,6 +15,12 @@ settings:
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    # One version train for iPhone and Mac (universal purchase).
+    LGK_MARKETING_VERSION: "1.1"
+    LGK_BUILD: "12"
+    MARKETING_VERSION: $(LGK_MARKETING_VERSION)
+    CURRENT_PROJECT_VERSION: $(LGK_BUILD)
     LGK_APP_GROUP: group.$(BUNDLE_PREFIX).localgatekeys
     LGK_KEYCHAIN_GROUP: $(AppIdentifierPrefix)$(BUNDLE_PREFIX).shared
     # Main app only: sync slots (paired peer, install id, folder bookmark) the AutoFill extension must not read.
@@ -22,6 +31,61 @@ settings:
 packages:
   LGKCore:
     path: LGKCore
+targetTemplates:
+  # The Mac app's sources minus its @main file, compiled into both LocalGateKeysMac and LocalGateKeysMacTests.
+  # New files under Mac/ are picked up automatically; an App/ model file is added once, as an extra source
+  # path in this list (e.g. `- App/Vault/ItemModel.swift`).
+  MacAppSources:
+    sources:
+      - path: Mac
+        # InfoPlist.xcstrings belongs to the app target only (listed there), not the tests.
+        excludes: [LocalGateKeysMacApp.swift, Info.plist, Mac.entitlements, InfoPlist.xcstrings]
+      # Model files shared with the iPhone app (no UIKit).
+      - App/Vault/VaultItem.swift
+      - App/Vault/VaultSearch.swift
+      - App/Vault/VaultListModel.swift
+      - App/Debug/DemoData.swift
+      - App/Vault/SiteIcons.swift
+      - App/Vault/SiteLogos.swift
+      - App/Detail/ItemDetailModel.swift
+      - App/Detail/SecretCopying.swift
+      # Attachments (task 12): local encrypted files, add/open/rename (no UIKit).
+      - App/Detail/DocumentFiles.swift
+      - App/Editor/EditorKind.swift
+      - App/Editor/EditorModel.swift
+      - App/Editor/WebsiteInput.swift
+      - App/Generator/PasswordGenerator.swift
+      - App/Generator/GeneratorModel.swift
+      - App/Generator/GeneratorStrength.swift
+      - App/Generator/FallbackWordlist.swift
+      - path: App/Generator/passphrase_wordlist.txt
+        buildPhase: resources
+      - App/Pro/ProModel.swift
+      - App/Pro/LicenceClaim.swift
+      - App/Sync/BackgroundTask.swift
+      # The iPhone's sync client (no UIKit): coordinator, copy, Wi-Fi transport and cloud folder access.
+      - App/Sync/SyncCoordinator.swift
+      - App/Sync/SyncWording.swift
+      - App/Sync/NWLanConnection.swift
+      - App/Sync/HostDiscovery.swift
+      - App/Sync/LanDiagnostics.swift
+      - App/Sync/CoordinatedFolder.swift
+      # The Safari inbox import at unlock (the iPhone's importer and review model).
+      # The 2FA QR scan (camera on the iPhone, images on the Mac).
+      - App/Scan/TwoFactorScanModel.swift
+      - App/Import/VaultImporter.swift
+      - App/Import/ImportReviewModel.swift
+      # Import & export page: the iPhone's exporter and Credential Exchange mapping (no UIKit).
+      - App/Import/VaultExporter.swift
+      - App/Import/CredentialExchangeImport.swift
+      # Secure sharing (UX workstream 9): seal, inbox and save of `.lgkshare` items (no UIKit).
+      - App/Share/ShareFlow.swift
+      - App/Safari/SafariImporter.swift
+      # AutoFill identity publishing (IdentityStoreSync uses the matcher and the Public Suffix List).
+      - AutoFill/IdentityStoreSync.swift
+      - AutoFill/Matcher.swift
+      - path: ../src/localvault/assets/public_suffix_list.dat
+        buildPhase: resources
 targets:
   AppShared:
     type: framework
@@ -34,8 +98,6 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).AppShared
-        MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "7"
         GENERATE_INFOPLIST_FILE: YES
         APPLICATION_EXTENSION_API_ONLY: YES
   LocalGateKeys:
@@ -44,6 +106,9 @@ targets:
     sources:
       - path: App
         excludes: ["StoreKit/**"]
+      # The UI string catalog shared by the iPhone, Mac, Watch and AutoFill targets (App/ models are compiled
+      # into both apps). App/InfoPlist.xcstrings (usage descriptions) comes with the App folder.
+      - Shared/Localizable.xcstrings
       # After each sync the app replaces the AutoFill identities (IdentityStoreSync uses the matcher).
       - AutoFill/IdentityStoreSync.swift
       - AutoFill/Matcher.swift
@@ -57,12 +122,15 @@ targets:
       - target: AutoFill
       # The Safari Web Extension that offers to save logins (embedded like AutoFill).
       - target: SafariSave
+      # The Apple Watch app (UX workstream 12), embedded in the app's Watch folder.
+      - target: LocalGateKeysWatch
       - sdk: StoreKit.framework
     info:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: LocalGateKeys
-        CFBundleVersion: "7"
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
         UILaunchScreen: {}
         LGKAppGroup: $(LGK_APP_GROUP)
         LGKKeychainGroup: $(LGK_KEYCHAIN_GROUP)
@@ -72,11 +140,29 @@ targets:
         # Export compliance (owner decision 2026-10-18, RELEASE.md) is answered in App Store Connect for each
         # build: without a compliance code, ITSAppUsesNonExemptEncryption true makes the upload fail.
         NSCameraUsageDescription: Scan the pairing QR code your PC shows to join its sync group, and the 2FA setup QR codes websites show.
-        # Wi-Fi sync connects only to the PC you paired, at the private address in its QR code. The desktop
-        # does not advertise over Bonjour; pairing browses this service type briefly only so iOS shows the
-        # Local Network prompt (and lists the app there) even when the code's address is off-link.
+        # Wi-Fi sync connects only to the PC you paired, at the private address in its QR code. Pairing browses
+        # this service type briefly so iOS shows the Local Network prompt (and lists the app there) even when the
+        # code's address is off-link; when the pinned address stops answering, a sync browses it for 3 s to find
+        # the paired host's new address (HostDiscovery.swift; the pinned keys are still checked).
         NSLocalNetworkUsageDescription: Sync with the PC you paired, over your home Wi-Fi.
         NSBonjourServices: [_lgksync._tcp]
+        # Credential Exchange import (iOS 26): the value of the SDK's ASCredentialExchangeActivity.
+        NSUserActivityTypes: [ASCredentialExchangeActivity]
+        # Secure sharing (UX workstream 9, docs/formats/LGKSHARE_V1.md): the app opens `.lgkshare` files (AirDrop,
+        # Files, Finder) and copies them into private storage; the delivered copy is not edited in place.
+        LSSupportsOpeningDocumentsInPlace: false
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: LocalGateKeys shared item
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Owner
+            LSItemContentTypes: [$(BUNDLE_PREFIX).lgkshare]
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: $(BUNDLE_PREFIX).lgkshare
+            UTTypeDescription: LocalGateKeys shared item
+            UTTypeConformsTo: [public.data, public.content]
+            UTTypeTagSpecification:
+              public.filename-extension: [lgkshare]
+              public.mime-type: [application/vnd.localgatekeys.share+json]
     entitlements:
       path: App/LocalGateKeys.entitlements
       properties:
@@ -96,9 +182,12 @@ targets:
     platform: iOS
     sources:
       # IdentityStoreSync too: after creating a passkey the extension republishes the identities.
+      # AutoFill/InfoPlist.xcstrings (its Face ID usage description) comes with the folder.
       - AutoFill
+      - Shared/Localizable.xcstrings
       # The app's local-only, 60-second clipboard, for the TOTP code copied on fill.
       - App/Detail/SecretClipboard.swift
+      - App/Detail/SecretCopying.swift
       # The desktop's Public Suffix List snapshot (base_domain matching), never a copy.
       - path: ../src/localvault/assets/public_suffix_list.dat
         buildPhase: resources
@@ -111,7 +200,8 @@ targets:
       path: AutoFill/Info.plist
       properties:
         CFBundleDisplayName: LocalGateKeys
-        CFBundleVersion: "7"
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
         LGKAppGroup: $(LGK_APP_GROUP)
         LGKKeychainGroup: $(LGK_KEYCHAIN_GROUP)
         NSFaceIDUsageDescription: Unlock your vault with Face ID to fill passwords.
@@ -122,6 +212,11 @@ targets:
             ASCredentialProviderExtensionCapabilities:
               ProvidesPasskeys: true
               ProvidesPasswords: true
+              # iOS 18+: "AutoFill > Passwords" on any text field offers card and identity fields (UX ws 11).
+              ProvidesTextToInsert: true
+              # Lists the app as a destination for Export Data to Another App (iOS 26).
+              SupportsCredentialExchange: true
+              SupportedCredentialExchangeVersions: ["1.0"]
     entitlements:
       path: AutoFill/AutoFill.entitlements
       properties:
@@ -144,6 +239,11 @@ targets:
       # A group, not a folder reference: each file is copied flat to the appex root, where Safari reads
       # manifest.json (the generated resources are already flat, icons included).
       - path: SafariSave/Resources
+        excludes: ["_locales/**"]
+        buildPhase: resources
+      # _locales must keep its folder structure (Safari reads _locales/<lang>/messages.json), so a folder reference.
+      - path: SafariSave/Resources/_locales
+        type: folder
         buildPhase: resources
       # Public Suffix List for same_site (a sign-in that moves to another subdomain keeps its prompt).
       - path: ../src/localvault/assets/public_suffix_list.dat
@@ -157,7 +257,8 @@ targets:
       path: SafariSave/Info.plist
       properties:
         CFBundleDisplayName: LocalGateKeys
-        CFBundleVersion: "7"
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
         LGKAppGroup: $(LGK_APP_GROUP)
         LGKSafariKeychainGroup: $(LGK_SAFARI_KEYCHAIN_GROUP)
         NSExtension:
@@ -198,7 +299,9 @@ targets:
       - AutoFill/CredentialFlow.swift
       - AutoFill/PasskeyFlow.swift
       - AutoFill/IdentityStoreSync.swift
+      - AutoFill/TextInsertion.swift
       - App/Detail/SecretClipboard.swift
+      - App/Detail/SecretCopying.swift
       - path: ../src/localvault/assets/public_suffix_list.dat
         buildPhase: resources
     dependencies:
@@ -225,6 +328,280 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).LocalGateKeysTests
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/LocalGateKeys.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/LocalGateKeys
         BUNDLE_LOADER: $(TEST_HOST)
+  # UX plan workstream 13: XCUITest accessibility audits (performAccessibilityAudit, iOS 17+). Its own scheme,
+  # so the unit-test scheme is unchanged.
+  LocalGateKeysUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [LocalGateKeysUITests]
+    dependencies:
+      - target: LocalGateKeys
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).LocalGateKeysUITests
+        TEST_TARGET_NAME: LocalGateKeys
+  # Apple Watch app (UX workstream 12): the 2FA codes pinned on the iPhone, generated on the watch with
+  # LGKCore's TOTP. Codes only (no passwords), only inside the app (no complication), kept in the watch
+  # Keychain only. Received over WatchConnectivity from the iPhone app; it opens no network connection.
+  LocalGateKeysWatch:
+    type: application
+    platform: watchOS
+    deploymentTarget: "10.0"
+    sources:
+      - Watch
+      - Shared/Localizable.xcstrings
+    dependencies:
+      - package: LGKCore
+    info:
+      path: Watch/Info.plist
+      properties:
+        CFBundleDisplayName: LocalGateKeys
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        # A single-target watch app with an iPhone companion (not installable on its own).
+        WKApplication: true
+        WKCompanionAppBundleIdentifier: $(BUNDLE_PREFIX).app
+        WKRunsIndependentlyOfCompanionApp: false
+    settings:
+      base:
+        # Must sit under the iPhone app's bundle id.
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).app.watchkitapp
+        WATCHOS_DEPLOYMENT_TARGET: "10.0"
+        # The iPhone icon, single-size (watchOS masks it to a circle).
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  # The watch's inbox and list logic plus the TOTP vectors, run on watchOS (unhosted).
+  LocalGateKeysWatchTests:
+    type: bundle.unit-test
+    platform: watchOS
+    deploymentTarget: "10.0"
+    sources:
+      - WatchTests
+      - Watch/WatchCodeStore.swift
+      - Watch/WatchSession.swift
+    dependencies:
+      - package: LGKCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).LocalGateKeysWatchTests
+  # Mac app (Phase 1). AppSharedMac compiles the same AppShared sources for macOS.
+  AppSharedMac:
+    type: framework
+    platform: macOS
+    sources: [AppShared]
+    dependencies:
+      - package: LGKCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).AppSharedMac
+        GENERATE_INFOPLIST_FILE: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+  LocalGateKeysMac:
+    type: application
+    platform: macOS
+    # Shared sources come from the MacAppSources template (also compiled into the tests); only @main here.
+    templates: [MacAppSources]
+    sources:
+      - Mac/LocalGateKeysMacApp.swift
+      - Shared/Localizable.xcstrings
+      # The Mac's usage descriptions (excluded from the MacAppSources template).
+      - Mac/InfoPlist.xcstrings
+      # The bundled site logos (SiteLogos.swift), as on the iPhone.
+      - App/SiteLogos.xcassets
+      # The website logo (vector) for the sidebar and lock screen (Image("BrandMark")).
+      - Mac/Brand.xcassets
+      # The app icon (macOS grid, made from the iPhone artwork).
+      - Mac/AppIcon.xcassets
+      - path: ../src/localvault/assets/site_logos.json
+        buildPhase: resources
+    dependencies:
+      - target: AppSharedMac
+      # The AutoFill credential provider (passwords and one-time codes), embedded in PlugIns.
+      - target: AutoFillMac
+      # The Safari Web Extension (save prompts only), embedded in PlugIns.
+      - target: SafariMac
+    info:
+      path: Mac/Info.plist
+      properties:
+        CFBundleDisplayName: LocalGateKeys
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        LSApplicationCategoryType: public.app-category.utilities
+        LGKAppGroup: $(LGK_APP_GROUP)
+        LGKKeychainGroup: $(LGK_KEYCHAIN_GROUP)
+        LGKAppKeychainGroup: $(LGK_APP_KEYCHAIN_GROUP)
+        LGKSafariKeychainGroup: $(LGK_SAFARI_KEYCHAIN_GROUP)
+        NSLocalNetworkUsageDescription: Sync with the devices you paired, over your home Wi-Fi.
+        # Wi-Fi sync hosting announces this service (LanListener.swift) so paired phones find a new address.
+        NSBonjourServices: [_lgksync._tcp]
+        # Credential Exchange import (macOS 26): the Passwords app's Export Data to Another App opens the app
+        # with this activity (the value of the SDK's ASCredentialExchangeActivity).
+        NSUserActivityTypes: [ASCredentialExchangeActivity]
+        # Secure sharing (UX workstream 9, docs/formats/LGKSHARE_V1.md): the app opens `.lgkshare` files (Finder,
+        # AirDrop) and copies them into private storage. (macOS rejects LSSupportsOpeningDocumentsInPlace = NO.)
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: LocalGateKeys shared item
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Owner
+            LSItemContentTypes: [$(BUNDLE_PREFIX).lgkshare]
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: $(BUNDLE_PREFIX).lgkshare
+            UTTypeDescription: LocalGateKeys shared item
+            UTTypeConformsTo: [public.data, public.content]
+            UTTypeTagSpecification:
+              public.filename-extension: [lgkshare]
+              public.mime-type: [application/vnd.localgatekeys.share+json]
+    entitlements:
+      path: Mac/Mac.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.application-groups: [$(LGK_APP_GROUP)]
+        keychain-access-groups: [$(LGK_KEYCHAIN_GROUP), $(LGK_APP_KEYCHAIN_GROUP), $(LGK_SAFARI_KEYCHAIN_GROUP)]
+        com.apple.security.files.user-selected.read-write: true
+        com.apple.security.network.client: true
+        # Wi-Fi sync: the Mac listens for paired devices on the local network.
+        com.apple.security.network.server: true
+        # The cloud sync folder is kept as an app-scoped, security-scoped bookmark.
+        com.apple.security.files.bookmarks.app-scope: true
+        # The app publishes the AutoFill identities (MacIdentityPublisher).
+        com.apple.developer.authentication-services.autofill-credential-provider: true
+    settings:
+      base:
+        # Same bundle ID as the iPhone app (universal purchase).
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).app
+        PRODUCT_NAME: LocalGateKeys
+        ENABLE_HARDENED_RUNTIME: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  # Mac AutoFill credential provider. Its flow (MacAutoFillFlow.swift) is UI-free and also compiled into
+  # LocalGateKeysMacTests; the matcher is the iPhone's.
+  AutoFillMac:
+    type: app-extension
+    platform: macOS
+    sources:
+      - AutoFillMac
+      - Shared/Localizable.xcstrings
+      - AutoFill/Matcher.swift
+      # Passkeys: the iPhone's UI-free passkey work and its create sheet; identities republished after a
+      # passkey is created (the extension cannot call the app's MacIdentityPublisher).
+      - AutoFill/PasskeyFlow.swift
+      - AutoFill/PasskeyCreateSheet.swift
+      - AutoFill/IdentityStoreSync.swift
+      # Card and identity fields for text insertion (UX workstream 11), UI-free.
+      - AutoFill/TextInsertion.swift
+      - path: ../src/localvault/assets/public_suffix_list.dat
+        buildPhase: resources
+    dependencies:
+      - target: AppSharedMac
+      - sdk: AuthenticationServices.framework
+      - sdk: StoreKit.framework
+    info:
+      path: AutoFillMac/Info.plist
+      properties:
+        CFBundleDisplayName: LocalGateKeys
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        LGKAppGroup: $(LGK_APP_GROUP)
+        LGKKeychainGroup: $(LGK_KEYCHAIN_GROUP)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.authentication-services-credential-provider-ui
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CredentialProviderViewController
+          NSExtensionAttributes:
+            ASCredentialProviderExtensionCapabilities:
+              ProvidesPasswords: true
+              ProvidesPasskeys: true
+              # macOS 15+: verification codes through the one-time-code provider, never the clipboard.
+              ProvidesOneTimeCodes: true
+              # Lists the app as a destination for Export Data to Another App (macOS 26).
+              SupportsCredentialExchange: true
+              SupportedCredentialExchangeVersions: ["1.0"]
+    entitlements:
+      path: AutoFillMac/AutoFillMac.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.application-groups: [$(LGK_APP_GROUP)]
+        # Shared group only: the vault's local key and the Touch ID item. Never the app-only or Safari group.
+        keychain-access-groups: [$(LGK_KEYCHAIN_GROUP)]
+        com.apple.developer.authentication-services.autofill-credential-provider: true
+    settings:
+      base:
+        # Same bundle ID as the iPhone extension (universal purchase).
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).app.autofill
+        ENABLE_HARDENED_RUNTIME: YES
+  # Mac Safari Web Extension: the iPhone's SafariSave on macOS. Its native handler only classifies a login and
+  # seals it into the app-group inbox (SafariSaveService); it never reads the vault, syncs or opens a network
+  # connection. The web resources are generated by browser-extension/build-safari-extension.cjs (macOS output).
+  SafariMac:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: SafariMac
+        excludes: ["Resources/**"]
+      # A group, not a folder reference: each file is copied flat to the appex resources, where Safari reads
+      # manifest.json.
+      - path: SafariMac/Resources
+        excludes: ["_locales/**"]
+        buildPhase: resources
+      # _locales must keep its folder structure (Safari reads _locales/<lang>/messages.json), so a folder reference.
+      - path: SafariMac/Resources/_locales
+        type: folder
+        buildPhase: resources
+      # Public Suffix List for same_site.
+      - path: ../src/localvault/assets/public_suffix_list.dat
+        buildPhase: resources
+    dependencies:
+      - target: AppSharedMac
+      - sdk: SafariServices.framework
+      - sdk: StoreKit.framework
+    info:
+      path: SafariMac/Info.plist
+      properties:
+        CFBundleDisplayName: LocalGateKeys
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        LGKAppGroup: $(LGK_APP_GROUP)
+        LGKSafariKeychainGroup: $(LGK_SAFARI_KEYCHAIN_GROUP)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.Safari.web-extension
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).SafariWebExtensionHandler
+    entitlements:
+      path: SafariMac/SafariMac.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.application-groups: [$(LGK_APP_GROUP)]
+        # Only its own group: safariIndexKey and safariInboxKey. Never the shared or app-only group.
+        keychain-access-groups: [$(LGK_SAFARI_KEYCHAIN_GROUP)]
+    settings:
+      base:
+        # Same bundle ID as the iPhone extension (universal purchase).
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).app.safari
+        ENABLE_HARDENED_RUNTIME: YES
+        # The icons are copied as plain resources: keep them standard PNGs for Safari to read.
+        COMPRESS_PNG_FILES: NO
+        STRIP_PNG_TEXT: NO
+  LocalGateKeysMacTests:
+    type: bundle.unit-test
+    platform: macOS
+    # The app's sources compiled straight in (like AutoFillTests): unsigned CI cannot host tests in the app.
+    templates: [MacAppSources]
+    sources:
+      - MacTests
+      # The shared 2FA QR image reader's tests (also in AppSharedTests on the iPhone).
+      - AppSharedTests/TwoFactorQRDecoderTests.swift
+      - LocalGateKeysTests/TwoFactorScanModelTests.swift
+      # The AutoFill extension's UI-free flow (the matcher comes with MacAppSources).
+      - AutoFillMac/MacAutoFillFlow.swift
+      - AutoFill/PasskeyFlow.swift
+      - AutoFill/TextInsertion.swift
+      # The iPhone's StoreKit configuration (same `pro_unlimited` product), for SKTestSession.
+      - path: App/StoreKit/LocalGateKeys.storekit
+        buildPhase: resources
+    dependencies:
+      - target: AppSharedMac
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).LocalGateKeysMacTests
 schemes:
   LocalGateKeys:
     build:
@@ -237,3 +614,28 @@ schemes:
       storeKitConfiguration: App/StoreKit/LocalGateKeys.storekit
     test:
       targets: [AppSharedTests, AutoFillTests, LocalGateKeysTests]
+  LocalGateKeysUITests:
+    build:
+      targets:
+        LocalGateKeys: all
+        LocalGateKeysUITests: [test]
+    test:
+      targets: [LocalGateKeysUITests]
+  LocalGateKeysWatch:
+    build:
+      targets:
+        LocalGateKeysWatch: all
+        LocalGateKeysWatchTests: [test]
+    test:
+      targets: [LocalGateKeysWatchTests]
+  LocalGateKeysMac:
+    build:
+      targets:
+        LocalGateKeysMac: all
+        AppSharedMac: all
+        AutoFillMac: all
+        SafariMac: all
+    run:
+      storeKitConfiguration: App/StoreKit/LocalGateKeys.storekit
+    test:
+      targets: [LocalGateKeysMacTests]

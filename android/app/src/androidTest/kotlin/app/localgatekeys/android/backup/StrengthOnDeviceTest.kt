@@ -1,5 +1,6 @@
 package app.localgatekeys.android.backup
 
+import app.localgatekeys.android.i18n.appTxt
 import androidx.test.platform.app.InstrumentationRegistry
 import app.localgatekeys.android.generator.PassphraseWordlist
 import app.localgatekeys.core.password.StrengthEstimator
@@ -32,7 +33,10 @@ class StrengthOnDeviceTest {
         }
         assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
         // The gate itself, as the export screen calls it.
-        assertEquals(1, BackupPasswordCheck.check("Password123!", "Password123!").score)
-        assertTrue(BackupPasswordCheck.check("qwxzvbnmlkjh", "qwxzvbnmlkjh").ok)
+        assertEquals(1, BackupPasswordCheck.check("Password123!", "Password123!", EnglishLikeTxt).score)
+        assertTrue(BackupPasswordCheck.check("qwxzvbnmlkjh", "qwxzvbnmlkjh", EnglishLikeTxt).ok)
     }
 }
+
+private val EnglishLikeTxt: app.localgatekeys.android.i18n.Txt
+    get() = appTxt()

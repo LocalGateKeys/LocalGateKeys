@@ -1,0 +1,754 @@
+{
+  "bg_err_agent_access_denied": {
+    "message": "Windows heeft de toegang tot de bridge geweigerd. Voer de browser en LocalGateKeys uit als dezelfde Windows-gebruiker zonder beheerdersmodus en herstel dan de bridge van de huidige gebruiker."
+  },
+  "bg_err_agent_busy": {
+    "message": "De bridge is bezig. Rond openstaande LocalGateKeys-dialogen af en probeer het opnieuw."
+  },
+  "bg_err_agent_connection_changed": {
+    "message": "De verbinding wijst naar een andere app-instantie. Start LocalGateKeys opnieuw vanuit de repository die is gebruikt om de bridge te herstellen."
+  },
+  "bg_err_agent_connection_lost": {
+    "message": "De lokale bridge werd verbroken voordat hij antwoordde. Herstel de bridge als dit zich herhaalt. Er is niet automatisch opnieuw geprobeerd."
+  },
+  "bg_err_agent_offline": {
+    "message": "De oudere native host kon de app niet bereiken. Als LocalGateKeys al open is, werk dan de desktop-app bij, herstel de bridge en start hem opnieuw."
+  },
+  "bg_err_agent_state_invalid": {
+    "message": "De opgeslagen bridgeverbinding is ongeldig of verouderd. Sluit LocalGateKeys volledig af, ook in het systeemvak, en start de repositorykopie opnieuw."
+  },
+  "bg_err_agent_state_missing": {
+    "message": "Er is geen actieve verbinding gevonden. Rond het kiezen van een profiel in LocalGateKeys af. Als het hoofdvenster al open is, start de app dan opnieuw vanuit dezelfde repository als de bridge."
+  },
+  "bg_err_agent_unavailable": {
+    "message": "De appverbinding accepteert geen verzoeken. Sluit LocalGateKeys volledig af (ook in het systeemvak) en start hem opnieuw vanuit de repository die is gebruikt om de bridge te herstellen."
+  },
+  "bg_err_bridge_dependencies_missing": {
+    "message": "Bij de native host ontbreken vereiste Python-pakketten. Vernieuw de omgeving van de repository en voer dan scripts/repair_browser_bridge.ps1 uit."
+  },
+  "bg_err_bridge_internal_error": {
+    "message": "De native bridge is op een fout gestuit. Voer scripts/test_browser_bridge.ps1 uit en deel het opgeschoonde rapport."
+  },
+  "bg_err_bridge_protocol_error": {
+    "message": "De lokale bridge gaf een ongeldig antwoord. Werk alle bridgebestanden samen bij en start LocalGateKeys opnieuw."
+  },
+  "bg_err_busy": {
+    "message": "Rond eerst de openstaande LocalGateKeys-prompt af."
+  },
+  "bg_err_caller_not_browser": {
+    "message": "LocalGateKeys accepteert alleen verzoeken van een native host die door een ondertekende browser is gestart. Start de browser opnieuw; als dit zich herhaalt, herstel dan de bridge via Verbindingen in LocalGateKeys."
+  },
+  "bg_err_card_not_found": {
+    "message": "In dit profiel is geen betaalkaart opgeslagen."
+  },
+  "bg_err_client_not_allowed": {
+    "message": "LocalGateKeys heeft de identiteit van de native host afgewezen. Sluit de app af, voer scripts/repair_browser_bridge.ps1 uit vanuit de repository en start LocalGateKeys opnieuw."
+  },
+  "bg_err_destination_changed": {
+    "message": "De pagina of het actieve tabblad is gewijzigd. Klik opnieuw op het pictogram in het bedoelde inlogformulier."
+  },
+  "bg_err_gesture_nonce_invalid": {
+    "message": "De klik is verlopen of hoort bij een andere pagina. Klik opnieuw."
+  },
+  "bg_err_gesture_nonce_required": {
+    "message": "Werk de browserextensie bij: deze actie heeft een nieuwe gesture-nonce nodig."
+  },
+  "bg_err_identity_not_found": {
+    "message": "In dit profiel is geen identiteitsprofiel beschikbaar."
+  },
+  "bg_err_integration_disabled": {
+    "message": "Browserintegratie is onderbroken in LocalGateKeys."
+  },
+  "bg_err_invalid_approval": {
+    "message": "De identiteitsgoedkeuring is ongeldig of verlopen. Begin opnieuw."
+  },
+  "bg_err_invalid_card_fields": {
+    "message": "Kies alleen de gecontroleerde kaartvelden."
+  },
+  "bg_err_invalid_identity_fields": {
+    "message": "Kies alleen de gecontroleerde contact- of adresvelden."
+  },
+  "bg_err_invalid_request": {
+    "message": "Het identiteitsverzoek is afgewezen omdat de paginacontext is gewijzigd."
+  },
+  "bg_err_not_found": {
+    "message": "Geen toegestane opgeslagen login voor precies deze website. Sla een login op of controleer het invulbeleid ervan."
+  },
+  "bg_err_origin_mismatch": {
+    "message": "De oorsprong van de pagina is gewijzigd. Begin het invullen van de identiteit opnieuw op de bedoelde pagina."
+  },
+  "bg_err_rate_limited": {
+    "message": "Te veel wachtwoordcontroles vanaf deze site in korte tijd. Wacht een minuut en probeer het opnieuw."
+  },
+  "bg_err_session_changed": {
+    "message": "De kluis is vergrendeld, het profiel is gewijzigd of dit verzoek is verlopen. Klik opnieuw op het pictogram."
+  },
+  "bg_err_totp_not_found": {
+    "message": "Geen opgeslagen login voor precies deze site heeft een 2FA-installatiesleutel."
+  },
+  "bg_err_unauthorized": {
+    "message": "Het bridgetoken komt niet meer overeen met de app. Sluit LocalGateKeys volledig af, start de repositorykopie opnieuw en laad deze pagina opnieuw."
+  },
+  "bg_err_unsupported_request": {
+    "message": "Deze extensie-actie wordt niet ondersteund door de huidige bridge."
+  },
+  "bg_err_user_cancelled": {
+    "message": "Het invullen van de identiteit is geannuleerd voordat een veld is vrijgegeven."
+  },
+  "bg_err_user_gesture_required": {
+    "message": "Start deze actie vanuit de extensie of vanuit een LocalGateKeys-knop op de pagina."
+  },
+  "bg_err_version_mismatch": {
+    "message": "Werk de extensie bij of laad hem opnieuw en start LocalGateKeys opnieuw. De versies komen niet overeen."
+  },
+  "bg_full_notice": {
+    "message": "Je gratis kluis is vol. Upgrade in LocalGateKeys om meer op te slaan."
+  },
+  "bg_host_exited": {
+    "message": "De native host is onverwacht gestopt. Open Verbindingen in LocalGateKeys voor diagnose."
+  },
+  "bg_host_failed": {
+    "message": "Browserverbinding mislukt. Open Verbindingen in LocalGateKeys."
+  },
+  "bg_host_forbidden": {
+    "message": "Het extensie-ID is niet toegestaan door de registratie van de native host. Herstel de bridge."
+  },
+  "bg_host_not_registered": {
+    "message": "De native host is niet geregistreerd. Herstel de browserverbinding vanuit LocalGateKeys."
+  },
+  "bg_not_waiting": {
+    "message": "Deze login wacht niet meer om te worden opgeslagen."
+  },
+  "bg_rate_limited": {
+    "message": "Te veel logincontroles vanaf deze site. Wacht een minuut en probeer het opnieuw."
+  },
+  "bg_save_inbox_full": {
+    "message": "Er wachten te veel logins. Open LocalGateKeys om ze te importeren en meld je daarna opnieuw aan om hem op te slaan."
+  },
+  "bg_save_invalid": {
+    "message": "Deze login kon niet worden opgeslagen."
+  },
+  "bg_save_unavailable": {
+    "message": "Open LocalGateKeys en ontgrendel het één keer om opslaan vanuit Safari in te schakelen, en meld je daarna opnieuw aan om op te slaan."
+  },
+  "bg_saved_notice": {
+    "message": "Opgeslagen. Hij verschijnt in LocalGateKeys de volgende keer dat je het opent."
+  },
+  "bg_timeout": {
+    "message": "De LocalGateKeys-bridge antwoordde niet. Sluit verouderde desktopprompts en probeer het opnieuw."
+  },
+  "content_autosignin_skipped": {
+    "message": "Ingevuld. Automatisch aanmelden is overgeslagen omdat dit formulier niet wordt ondersteund of dubbelzinnig is. Meld handmatig aan."
+  },
+  "content_cancel": {
+    "message": "Annuleren"
+  },
+  "content_card": {
+    "message": "Kaart"
+  },
+  "content_card_approval_invalid": {
+    "message": "De kaartgoedkeuring was ongeldig."
+  },
+  "content_card_brand": {
+    "message": "Kaartmerk"
+  },
+  "content_card_cvv": {
+    "message": "Beveiligingscode (CVV)"
+  },
+  "content_card_expiry": {
+    "message": "Vervaldatum"
+  },
+  "content_card_expiry_month": {
+    "message": "Vervalmaand"
+  },
+  "content_card_expiry_year": {
+    "message": "Vervaljaar"
+  },
+  "content_card_name": {
+    "message": "Naam kaarthouder"
+  },
+  "content_card_no_fields": {
+    "message": "Deze kaart heeft geen van de velden van dit betaalformulier."
+  },
+  "content_card_number": {
+    "message": "Kaartnummer"
+  },
+  "content_card_origin": {
+    "message": "Kaart: $CARD$\nOorsprong: $ORIGIN$",
+    "placeholders": {
+      "card": {
+        "content": "$1"
+      },
+      "origin": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_choose_account": {
+    "message": "Kies een account"
+  },
+  "content_choose_card": {
+    "message": "Kies een kaart"
+  },
+  "content_choose_card_fields": {
+    "message": "Kies kaartvelden"
+  },
+  "content_choose_identity": {
+    "message": "Kies identiteit"
+  },
+  "content_choose_identity_fields": {
+    "message": "Kies identiteitsvelden"
+  },
+  "content_close": {
+    "message": "Sluiten"
+  },
+  "content_confirm_in_app": {
+    "message": "Wijzigingen worden in de desktop-app bevestigd."
+  },
+  "content_cvv_note": {
+    "message": "De beveiligingscode is standaard uitgevinkt; vink hem alleen aan als deze betaling hem nodig heeft."
+  },
+  "content_err_card_not_found": {
+    "message": "In dit profiel is geen betaalkaart opgeslagen."
+  },
+  "content_err_fill_disabled": {
+    "message": "Invullen is uitgeschakeld voor deze login."
+  },
+  "content_err_generic": {
+    "message": "Dit verzoek kon niet worden voltooid. Open Verbindingen in LocalGateKeys."
+  },
+  "content_err_gesture_required": {
+    "message": "Start deze actie vanuit de extensie of vanuit een LocalGateKeys-knop op de pagina."
+  },
+  "content_err_invalid_approval": {
+    "message": "De goedkeuring is ongeldig of verlopen. Begin opnieuw."
+  },
+  "content_err_invalid_card_fields": {
+    "message": "Kies alleen de gecontroleerde kaartvelden."
+  },
+  "content_err_nonce_invalid": {
+    "message": "De klik is verlopen of hoort bij een andere pagina. Klik opnieuw."
+  },
+  "content_err_nonce_required": {
+    "message": "Werk de browserextensie bij en laad deze pagina opnieuw."
+  },
+  "content_err_not_found": {
+    "message": "Geen opgeslagen login voor deze site."
+  },
+  "content_err_session_changed": {
+    "message": "Kluis of profiel gewijzigd. Klik opnieuw op het pictogram."
+  },
+  "content_err_totp_not_found": {
+    "message": "Geen opgeslagen login voor precies deze site heeft een 2FA-installatiesleutel."
+  },
+  "content_err_user_cancelled": {
+    "message": "Ontgrendelen of bevestiging geannuleerd."
+  },
+  "content_fill_card_title": {
+    "message": "Kaart invullen met LocalGateKeys"
+  },
+  "content_fill_identity_title": {
+    "message": "Identiteit invullen met LocalGateKeys"
+  },
+  "content_fill_otp_title": {
+    "message": "2FA-code invullen met LocalGateKeys"
+  },
+  "content_fill_title": {
+    "message": "Invullen met LocalGateKeys"
+  },
+  "content_item_limit": {
+    "message": "Je gratis LocalGateKeys bevat $LIMIT$ items. Upgrade naar Pro voor een onbeperkt aantal.",
+    "placeholders": {
+      "limit": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_login_typed_on": {
+    "message": "Een login getypt op $ORIGIN$",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_match_domain": {
+    "message": "komt overeen met domein"
+  },
+  "content_match_host": {
+    "message": "komt overeen met host"
+  },
+  "content_match_prefix": {
+    "message": "komt overeen met URL-voorvoegsel"
+  },
+  "content_never_site": {
+    "message": "Nooit op deze site"
+  },
+  "content_no_new_password": {
+    "message": "Er zijn geen ondubbelzinnige velden voor een nieuw wachtwoord gevonden."
+  },
+  "content_no_username": {
+    "message": "Geen gebruikersnaam"
+  },
+  "content_not_now": {
+    "message": "Niet nu"
+  },
+  "content_page_changed_click_again": {
+    "message": "De pagina is gewijzigd. Klik opnieuw."
+  },
+  "content_profile": {
+    "message": "Profiel: $PROFILE$",
+    "placeholders": {
+      "profile": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_profile_origin": {
+    "message": "Profiel: $PROFILE$\nOorsprong: $ORIGIN$",
+    "placeholders": {
+      "profile": {
+        "content": "$1"
+      },
+      "origin": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_pw_generated": {
+    "message": "Wachtwoord gegenereerd"
+  },
+  "content_pw_generated_body": {
+    "message": "De velden voor een nieuw wachtwoord zijn ingevuld. Sla dit wachtwoord op voordat je de pagina verlaat."
+  },
+  "content_reload_extension_and_page": {
+    "message": "Laad de extensie en deze pagina opnieuw."
+  },
+  "content_reload_page": {
+    "message": "Laad deze pagina opnieuw nadat je de extensie hebt bijgewerkt."
+  },
+  "content_review_approve": {
+    "message": "Bekijken en goedkeuren"
+  },
+  "content_save": {
+    "message": "Opslaan"
+  },
+  "content_save_deferred": {
+    "message": "De login is vastgelegd terwijl LocalGateKeys vergrendeld was. Ontgrendel de desktop-app om te beoordelen of hij overeenkomt met een opgeslagen login."
+  },
+  "content_save_exists": {
+    "message": "Dit account staat al in LocalGateKeys. Deze aanmelding naar de app sturen? Die toont of er iets is gewijzigd voordat er wordt opgeslagen."
+  },
+  "content_save_in_vault": {
+    "message": "In kluis opslaan"
+  },
+  "content_save_login": {
+    "message": "Login opslaan"
+  },
+  "content_save_new": {
+    "message": "Aanmelden voltooid. Opslaan in je lokale versleutelde kluis?"
+  },
+  "content_save_title": {
+    "message": "Deze login opslaan?"
+  },
+  "content_save_uncertain": {
+    "message": "LocalGateKeys heeft een aanmeldpoging vastgelegd maar kon de geslaagd-status van de site niet bevestigen. Sla alleen op als het aanmelden is gelukt."
+  },
+  "content_save_update": {
+    "message": "Opslaan / bijwerken"
+  },
+  "content_save_update_title": {
+    "message": "Opslaan / bijwerken in LocalGateKeys?"
+  },
+  "content_signin_question": {
+    "message": "Heb je zojuist aangemeld?"
+  },
+  "content_tampered": {
+    "message": "Deze pagina heeft een LocalGateKeys-knop verborgen, verplaatst of bedekt, dus de klik is genegeerd."
+  },
+  "content_totp_waiting": {
+    "message": "Even wachten op een nieuwe 2FA-code…"
+  },
+  "content_unlock_in_desktop": {
+    "message": "Ontgrendel in het LocalGateKeys-bureaubladvenster. Op deze website wordt je hoofdwachtwoord nooit gevraagd."
+  },
+  "content_unlock_review": {
+    "message": "Ontgrendelen om te bekijken"
+  },
+  "content_unlock_review_title": {
+    "message": "Ontgrendel om deze login te bekijken"
+  },
+  "content_waiting_title": {
+    "message": "Wachten op LocalGateKeys…"
+  },
+  "content_which_totp": {
+    "message": "Van welk account is de 2FA-code?"
+  },
+  "err_card_ambiguous": {
+    "message": "De pagina heeft een ontbrekend of dubbelzinnig kaartveld."
+  },
+  "err_card_approved_changed": {
+    "message": "De goedgekeurde kaartvelden zijn gewijzigd."
+  },
+  "err_card_field_gone": {
+    "message": "Een goedgekeurd kaartveld is niet meer zichtbaar."
+  },
+  "err_card_field_hidden": {
+    "message": "Het kaartveld is verborgen, bedekt of maakt geen deel meer uit van een betaalformulier."
+  },
+  "err_card_form_changed": {
+    "message": "Het betaalformulier is gewijzigd vóór het invullen."
+  },
+  "err_card_form_changed_filling": {
+    "message": "Het betaalformulier is gewijzigd tijdens het invullen."
+  },
+  "err_card_unapproved": {
+    "message": "De kaartvrijgave bevatte niet-goedgekeurde velden."
+  },
+  "err_code_boxes": {
+    "message": "Dit codeveld heeft een onverwacht aantal vakjes."
+  },
+  "err_code_field_hidden": {
+    "message": "Het codeveld is verborgen, bedekt of geen 2FA-veld meer."
+  },
+  "err_form_other_origin": {
+    "message": "Het formulier verwijst naar een andere oorsprong. LocalGateKeys vult het niet in."
+  },
+  "err_form_other_origin_short": {
+    "message": "Het formulier verwijst naar een andere oorsprong."
+  },
+  "err_identity_ambiguous": {
+    "message": "De pagina heeft een ontbrekend of dubbelzinnig identiteitsveld."
+  },
+  "err_identity_approved_changed": {
+    "message": "De goedgekeurde identiteitsvelden zijn gewijzigd."
+  },
+  "err_identity_field_gone": {
+    "message": "Een goedgekeurd identiteitsveld is niet meer zichtbaar."
+  },
+  "err_identity_field_hidden": {
+    "message": "Het identiteitsveld is verborgen, bedekt of wordt niet ondersteund."
+  },
+  "err_identity_form_changed": {
+    "message": "Het identiteitsformulier is gewijzigd vóór het invullen."
+  },
+  "err_login_form_changed": {
+    "message": "Het inlogformulier is gewijzigd tijdens het invullen."
+  },
+  "err_request_cancelled": {
+    "message": "Het verzoek is geannuleerd vóór het invullen."
+  },
+  "err_review_required": {
+    "message": "Controleer de vereiste velden voordat je aanmeldt."
+  },
+  "err_signin_cancelled_changed": {
+    "message": "Aanmelden geannuleerd: kluis, profiel of pagina is gewijzigd."
+  },
+  "err_signin_cancelled_form": {
+    "message": "Aanmelden geannuleerd omdat het formulier is gewijzigd."
+  },
+  "err_target_field_hidden": {
+    "message": "Het doelveld is verborgen, bedekt of geen inlogveld meer."
+  },
+  "ext_description": {
+    "message": "Vul logins in en sla ze op met de wachtwoordmanager LocalGateKeys voor Windows. De extensie praat alleen met de app op je eigen pc."
+  },
+  "ext_description_ios": {
+    "message": "Biedt aan om de logins waarmee je in Safari aanmeldt op te slaan in LocalGateKeys op deze iPhone."
+  },
+  "ext_description_macos": {
+    "message": "Biedt aan om de logins waarmee je in Safari aanmeldt op te slaan in LocalGateKeys op deze Mac."
+  },
+  "ext_name": {
+    "message": "LocalGateKeys"
+  },
+  "popup_actions_unavailable": {
+    "message": "Veldacties zijn niet beschikbaar. Open LocalGateKeys en herstel de browserverbinding, en vernieuw daarna."
+  },
+  "popup_auto_need_page": {
+    "message": "Open een http- of https-pagina voordat je automatisch opslaan wijzigt."
+  },
+  "popup_auto_now_off": {
+    "message": "Automatisch opslaan staat uit voor deze site."
+  },
+  "popup_auto_now_on": {
+    "message": "Automatisch opslaan staat aan. Er wordt gevraagd voordat een login wordt opgeslagen."
+  },
+  "popup_auto_off_hint": {
+    "message": "Uit: LocalGateKeys biedt op deze site niet aan om op te slaan"
+  },
+  "popup_auto_on_hint": {
+    "message": "Aan: er wordt gevraagd na een geslaagde aanmelding hier"
+  },
+  "popup_auto_read_failed": {
+    "message": "De instelling voor automatisch opslaan van deze site kon niet worden gelezen. Probeer het opnieuw."
+  },
+  "popup_auto_turn_off": {
+    "message": "Opslaanprompts op deze site uitzetten"
+  },
+  "popup_auto_turn_on": {
+    "message": "Opslaanprompts op deze site aanzetten"
+  },
+  "popup_auto_update_failed": {
+    "message": "Automatisch opslaan voor deze site kon niet worden bijgewerkt. Probeer het opnieuw."
+  },
+  "popup_checking_connection": {
+    "message": "Verbinding controleren…"
+  },
+  "popup_checking_connection_desc": {
+    "message": "LocalGateKeys wordt benaderd zonder je kluis te ontgrendelen."
+  },
+  "popup_checking_page": {
+    "message": "Deze pagina controleren…"
+  },
+  "popup_cmd_busy": {
+    "message": "Rond de openstaande LocalGateKeys-prompt af en probeer het opnieuw."
+  },
+  "popup_cmd_cancelled": {
+    "message": "Het invullen is geannuleerd voordat een veld is vrijgegeven."
+  },
+  "popup_cmd_card_form_not_found": {
+    "message": "Op deze pagina is geen betaalformulier gevonden. Open een afrekenformulier met een kaartnummerveld en probeer het opnieuw."
+  },
+  "popup_cmd_card_not_found": {
+    "message": "In dit profiel is geen betaalkaart opgeslagen. Voeg eerst een kaart toe in LocalGateKeys."
+  },
+  "popup_cmd_destination_changed": {
+    "message": "Deze pagina is gewijzigd. Open de pop-up opnieuw op het bedoelde inlogformulier."
+  },
+  "popup_cmd_identity_not_found": {
+    "message": "Op deze pagina is geen identiteitsveld gevonden. Open een contact- of adresformulier en probeer het opnieuw."
+  },
+  "popup_cmd_invalid_card": {
+    "message": "De pagina vroeg om een niet-ondersteund kaartveld. Kies alleen kaartvelden."
+  },
+  "popup_cmd_invalid_identity": {
+    "message": "De pagina vroeg om een niet-ondersteund identiteitsveld. Kies alleen contact- of adresvelden."
+  },
+  "popup_cmd_nonce_invalid": {
+    "message": "De klik is verlopen of hoort bij een andere pagina. Kies de actie opnieuw."
+  },
+  "popup_cmd_nonce_required": {
+    "message": "Werk de extensie bij en laad hem opnieuw: deze actie heeft een nieuwe gesture-nonce nodig."
+  },
+  "popup_cmd_not_found": {
+    "message": "Voor deze site is geen opgeslagen login gevonden. Sla eerst een login op of controleer het invulbeleid ervan."
+  },
+  "popup_cmd_offline": {
+    "message": "LocalGateKeys is offline. Open de desktop-app en herstel de browserverbinding."
+  },
+  "popup_cmd_origin_mismatch": {
+    "message": "De oorsprong van deze pagina is gewijzigd. Open de extensie opnieuw op de bedoelde pagina."
+  },
+  "popup_cmd_session_changed": {
+    "message": "De kluis is vergrendeld of het profiel is gewijzigd. Klik opnieuw op Login invullen om door te gaan."
+  },
+  "popup_cmd_version_mismatch": {
+    "message": "Werk de extensie en LocalGateKeys bij en laad ze opnieuw voordat je identiteitsvelden invult."
+  },
+  "popup_connection_unavailable": {
+    "message": "Verbinding niet beschikbaar. $DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_current_site": {
+    "message": "Huidige site"
+  },
+  "popup_diag_agent_offline": {
+    "message": "Open LocalGateKeys, herstel de browserverbinding en probeer het opnieuw."
+  },
+  "popup_diag_connection_lost": {
+    "message": "De bridge is verbroken. Herstel de browserverbinding en probeer het opnieuw."
+  },
+  "popup_diag_default": {
+    "message": "Open LocalGateKeys en herstel de browserverbinding, en probeer het opnieuw."
+  },
+  "popup_diag_native_host": {
+    "message": "De native host kon niet worden bereikt. Herstel de browserverbinding in LocalGateKeys."
+  },
+  "popup_diag_state_invalid": {
+    "message": "Start LocalGateKeys opnieuw en herstel de browserverbinding."
+  },
+  "popup_diag_state_missing": {
+    "message": "Rond het kiezen van een profiel in LocalGateKeys af en probeer het opnieuw."
+  },
+  "popup_diag_timeout": {
+    "message": "De bridge deed er te lang over om te antwoorden. Sluit desktopprompts en probeer het opnieuw."
+  },
+  "popup_diag_unavailable": {
+    "message": "Start LocalGateKeys opnieuw en vernieuw dan de verbinding."
+  },
+  "popup_diag_version_mismatch": {
+    "message": "Werk de extensie en LocalGateKeys bij en start beide opnieuw."
+  },
+  "popup_fb_generate": {
+    "message": "Er zijn geen ondubbelzinnige velden voor een nieuw wachtwoord gevonden. Open een registratie- of wachtwoordwijzigingsformulier en probeer het opnieuw."
+  },
+  "popup_fb_identity": {
+    "message": "Er is geen ondersteund contact- of adresveld gevonden. Open een identiteitsformulier en probeer het opnieuw."
+  },
+  "popup_fb_login": {
+    "message": "Er is geen ondersteund inlogveld gevonden. Open een aanmeldformulier en probeer het opnieuw."
+  },
+  "popup_fb_save": {
+    "message": "Er is geen huidig inlogveld gevonden. Voer een login in en probeer het opnieuw."
+  },
+  "popup_fill_card": {
+    "message": "Kaart invullen…"
+  },
+  "popup_fill_card_desc": {
+    "message": "Kies een kaart, vink velden aan, bevestig in de app"
+  },
+  "popup_fill_card_label": {
+    "message": "Kaart invullen"
+  },
+  "popup_fill_identity": {
+    "message": "Identiteit invullen"
+  },
+  "popup_fill_identity_desc": {
+    "message": "Controleer contactvelden voordat je invult"
+  },
+  "popup_fill_login": {
+    "message": "Login invullen"
+  },
+  "popup_fill_login_desc": {
+    "message": "Kies een opgeslagen login voor deze pagina"
+  },
+  "popup_finish_setup_refresh": {
+    "message": "Rond de installatie van LocalGateKeys af en vernieuw dan de verbinding voordat je veldacties gebruikt."
+  },
+  "popup_footer": {
+    "message": "Lokaal versleuteld op dit apparaat"
+  },
+  "popup_generate_password": {
+    "message": "Wachtwoord genereren"
+  },
+  "popup_generate_password_desc": {
+    "message": "Een wachtwoord maken voor registratie"
+  },
+  "popup_guidance_checking": {
+    "message": "LocalGateKeys wordt gecontroleerd voordat de acties van deze pagina worden ingeschakeld."
+  },
+  "popup_guidance_connected": {
+    "message": "Alleen de oorsprong van deze site wordt gecontroleerd. Er wordt niets ingevuld totdat je een actie kiest."
+  },
+  "popup_guidance_locked": {
+    "message": "Kies een actie om te ontgrendelen; er wordt niets automatisch ingevuld."
+  },
+  "popup_guidance_offline": {
+    "message": "Verbind LocalGateKeys opnieuw om de acties van deze site te gebruiken."
+  },
+  "popup_guidance_setup": {
+    "message": "Rond de installatie van LocalGateKeys af voordat je de acties van deze site gebruikt."
+  },
+  "popup_integration_disabled": {
+    "message": "Browserintegratie is onderbroken. Schakel haar weer in via de instellingen van LocalGateKeys."
+  },
+  "popup_local_vault": {
+    "message": "LOKALE KLUIS"
+  },
+  "popup_locked_desc": {
+    "message": "Kies een actie om door te gaan; de desktop-app vraagt toestemming vóór het ontgrendelen."
+  },
+  "popup_looking": {
+    "message": "$ACTION$ zoekt naar ondersteunde velden…",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_manual_by_design": {
+    "message": "BEWUST HANDMATIG"
+  },
+  "popup_need_login_page": {
+    "message": "Open eerst een http- of https-pagina met een inlogformulier."
+  },
+  "popup_page_unavailable": {
+    "message": "Deze pagina is niet beschikbaar voor LocalGateKeys."
+  },
+  "popup_page_unavailable_hint": {
+    "message": "Open een standaard http- of https-inlogpagina om deze acties te gebruiken."
+  },
+  "popup_page_unreachable": {
+    "message": "Deze pagina kon niet worden bereikt. Laad de pagina opnieuw en probeer het nogmaals."
+  },
+  "popup_quick_actions": {
+    "message": "Snelle acties"
+  },
+  "popup_ready_version": {
+    "message": "LocalGateKeys is gereed$VERSION$. Er wordt niets ontgrendeld totdat je een actie kiest.",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_refresh_connection": {
+    "message": "Verbindingsstatus vernieuwen"
+  },
+  "popup_refreshed_locked": {
+    "message": "Verbinding vernieuwd. Ontgrendelen gebeurt pas nadat je een actie kiest."
+  },
+  "popup_refreshed_ready": {
+    "message": "Verbinding vernieuwd. LocalGateKeys is gereed."
+  },
+  "popup_refreshed_setup": {
+    "message": "Verbinding vernieuwd. Rond de installatie van LocalGateKeys af en vernieuw dan."
+  },
+  "popup_save_login": {
+    "message": "Login opslaan"
+  },
+  "popup_save_login_desc": {
+    "message": "Deze inlogvelden opslaan"
+  },
+  "popup_setup_desc": {
+    "message": "LocalGateKeys meldde geen gereed browserprofiel. Rond de installatie af en vernieuw dan."
+  },
+  "popup_site_hint": {
+    "message": "Acties blijven op deze pagina en vereisen jouw keuze."
+  },
+  "popup_started": {
+    "message": "$ACTION$ is gestart op deze pagina.",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_state_connected": {
+    "message": "Verbonden"
+  },
+  "popup_state_locked": {
+    "message": "Vergrendeld"
+  },
+  "popup_state_offline": {
+    "message": "Offline"
+  },
+  "popup_state_setup": {
+    "message": "Installatie vereist"
+  },
+  "popup_tagline": {
+    "message": "Jouw sleutels. Jouw controle."
+  },
+  "popup_this_page": {
+    "message": "DEZE PAGINA"
+  },
+  "popup_unlock_on_action": {
+    "message": "Ontgrendelen wordt pas gevraagd nadat je een veldactie kiest."
+  },
+  "popup_version_suffix": {
+    "message": " (LocalGateKeys $VERSION$)",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_wait_checking": {
+    "message": "LocalGateKeys wordt nog gecontroleerd. Wacht op de verbindingsstatus en probeer het opnieuw."
+  }
+}

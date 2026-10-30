@@ -1,11 +1,11 @@
 ---
-title: Buy Pro
-description: Buy LocalGateKeys Pro, a one-time licence that removes the 4-item limit, through Paddle's secure checkout.
+title: [[t:buy.title]]
+description: [[t:buy.description]]
 referrer: strict-origin-when-cross-origin
 ---
 <div class="wrap page-head">
-  <h1>Buy LocalGateKeys Pro</h1>
-  <p class="lead">{{PRICE}} once, plus VAT or sales tax where it applies. Every future update included, nothing to renew.</p>
+  <h1>[[t:buy.buy-localgatekeys-pro.1]]</h1>
+  <p class="lead">[[t:buy.buy-localgatekeys-pro.2]]</p>
 </div>
 
 <div class="wrap page-body prose" id="buy"
@@ -13,32 +13,32 @@ referrer: strict-origin-when-cross-origin
      data-price-id="{{PADDLE_PRICE_ID}}"
      data-licence-base="https://{{LICENCE_HOST}}/license/">
   <div class="actions">
-    <button type="button" class="button primary" id="open-checkout" disabled>Open secure checkout</button>
+    <button type="button" class="button primary" id="open-checkout" disabled>[[t:buy.buy-localgatekeys-pro.3]]</button>
   </div>
-  <p id="checkout-status" class="quiet" role="status">Loading the checkout&hellip;</p>
+  <p id="checkout-status" class="quiet" role="status">[[t:buy.buy-localgatekeys-pro.4]]</p>
 
   <div id="after-purchase" hidden>
-    <h2>Thank you</h2>
-    <p>Your licence key is on this page. Bookmark it; it shows the key again whenever you need it:</p>
-    <p><a id="licence-link" href="#">Open your licence page</a></p>
+    <h2>[[t:buy.thank-you.1]]</h2>
+    <p>[[t:buy.thank-you.2]]</p>
+    <p><a id="licence-link" href="#">[[t:buy.thank-you.3]]</a></p>
   </div>
 
   <noscript>
-    <p><strong>The checkout needs JavaScript.</strong> This is the only page on this site that uses it, to load {{MERCHANT_OF_RECORD}}'s payment form. You can also email <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a> and we will help you buy.</p>
+    <p>[[t:buy.thank-you.4]]</p>
   </noscript>
 
-  <h2>What happens</h2>
+  <h2>[[t:buy.what-happens.1]]</h2>
   <ol>
-    <li>{{MERCHANT_OF_RECORD}}'s checkout opens on this page. {{MERCHANT_OF_RECORD}} is our reseller: it takes the payment, adds the right tax and sends your receipt.</li>
-    <li>After paying you go straight to your licence page. It shows your key, which starts with <code>LGK1-</code>, and a licence file to download. It may take up to a minute to appear.</li>
-    <li>In the app, go to Tools &gt; Licence, paste the key and choose Install. Use the same key on every PC you use. See <a href="[[root]]licence.html">your Pro licence</a>.</li>
+    <li>[[t:buy.what-happens.2]]</li>
+    <li>[[t:buy.what-happens.3]]</li>
+    <li>[[t:buy.what-happens.4]]</li>
   </ol>
 
-  <h2>Before you buy</h2>
+  <h2>[[t:buy.before-you-buy.1]]</h2>
   <ul>
-    <li>Try Free first: it holds up to 4 items with everything except sync, two-factor codes and documents. <a href="[[root]]download.html">Download</a>.</li>
-    <li>Changed your mind? You can ask for a refund within 30 days; see the <a href="[[root]]legal/refunds.html">refund policy</a>.</li>
-    <li>The purchase is covered by the <a href="[[root]]legal/terms-of-sale.html">terms of sale</a> and the <a href="[[root]]legal/eula.html">licence agreement</a>. How your order data is handled: <a href="[[root]]legal/privacy.html">privacy policy</a>.</li>
+    <li>[[t:buy.before-you-buy.2]]</li>
+    <li>[[t:buy.before-you-buy.3]]</li>
+    <li>[[t:buy.before-you-buy.4]]</li>
   </ul>
 </div>
 <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>

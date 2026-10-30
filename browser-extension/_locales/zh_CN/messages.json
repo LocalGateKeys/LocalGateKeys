@@ -1,0 +1,754 @@
+{
+  "bg_err_agent_access_denied": {
+    "message": "Windows 拒绝访问桥接。请以相同的 Windows 用户运行浏览器和 LocalGateKeys，且不要使用管理员模式，然后修复当前用户的桥接。"
+  },
+  "bg_err_agent_busy": {
+    "message": "桥接正忙。请先完成所有打开的 LocalGateKeys 对话框，然后再试一次。"
+  },
+  "bg_err_agent_connection_changed": {
+    "message": "该连接指向另一个应用实例。请从用于修复桥接的存储库重新启动 LocalGateKeys。"
+  },
+  "bg_err_agent_connection_lost": {
+    "message": "本地桥接在回复之前断开了连接。如果反复出现，请修复桥接。未进行自动重试。"
+  },
+  "bg_err_agent_offline": {
+    "message": "较旧的原生主机无法连接到应用。如果 LocalGateKeys 已打开，请更新桌面应用、修复桥接并重新启动它。"
+  },
+  "bg_err_agent_state_invalid": {
+    "message": "已保存的桥接连接无效或已过期。请完全退出 LocalGateKeys（包括托盘），然后重新启动存储库中的副本。"
+  },
+  "bg_err_agent_state_missing": {
+    "message": "未找到正在运行的连接。请在 LocalGateKeys 中完成配置文件的选择。如果主窗口已打开，请从与桥接相同的存储库重新启动应用。"
+  },
+  "bg_err_agent_unavailable": {
+    "message": "应用连接不接受请求。请完全退出 LocalGateKeys（包括托盘），然后从用于修复桥接的存储库重新启动它。"
+  },
+  "bg_err_bridge_dependencies_missing": {
+    "message": "原生主机缺少所需的 Python 包。请刷新存储库环境，然后运行 scripts/repair_browser_bridge.ps1。"
+  },
+  "bg_err_bridge_internal_error": {
+    "message": "原生桥接遇到错误。请运行 scripts/test_browser_bridge.ps1 并分享其脱敏后的报告。"
+  },
+  "bg_err_bridge_protocol_error": {
+    "message": "本地桥接返回了无效的响应。请同时更新所有桥接文件，并重新启动 LocalGateKeys。"
+  },
+  "bg_err_busy": {
+    "message": "请先完成已打开的 LocalGateKeys 提示。"
+  },
+  "bg_err_caller_not_browser": {
+    "message": "LocalGateKeys 只接受由已签名浏览器启动的原生主机发出的请求。请重新启动浏览器；如果反复出现，请在 LocalGateKeys 的“连接”中修复桥接。"
+  },
+  "bg_err_card_not_found": {
+    "message": "此配置文件中没有保存支付卡。"
+  },
+  "bg_err_client_not_allowed": {
+    "message": "LocalGateKeys 拒绝了该原生主机的身份。请退出应用，从存储库运行 scripts/repair_browser_bridge.ps1，然后重新启动 LocalGateKeys。"
+  },
+  "bg_err_destination_changed": {
+    "message": "页面或活动标签页已更改。请在目标登录表单上再次点击该图标。"
+  },
+  "bg_err_gesture_nonce_invalid": {
+    "message": "点击已过期，或属于另一个页面。请再点击一次。"
+  },
+  "bg_err_gesture_nonce_required": {
+    "message": "请更新浏览器扩展：此操作需要新的手势随机数。"
+  },
+  "bg_err_identity_not_found": {
+    "message": "此配置文件中没有可用的身份资料。"
+  },
+  "bg_err_integration_disabled": {
+    "message": "LocalGateKeys 中的浏览器集成已暂停。"
+  },
+  "bg_err_invalid_approval": {
+    "message": "身份批准无效或已过期。请重新开始。"
+  },
+  "bg_err_invalid_card_fields": {
+    "message": "请只选择已检查的卡片字段。"
+  },
+  "bg_err_invalid_identity_fields": {
+    "message": "请只选择已检查的联系方式或地址字段。"
+  },
+  "bg_err_invalid_request": {
+    "message": "身份请求被拒绝，因为其页面上下文已更改。"
+  },
+  "bg_err_not_found": {
+    "message": "此确切网站没有获准的已保存登录。请保存一个登录，或检查其填充策略。"
+  },
+  "bg_err_origin_mismatch": {
+    "message": "页面来源已更改。请在目标页面上重新开始身份填充。"
+  },
+  "bg_err_rate_limited": {
+    "message": "此网站在短时间内发起了过多的密码检查。请等待一分钟后再试。"
+  },
+  "bg_err_session_changed": {
+    "message": "保管库已锁定、配置文件已更改，或此请求已过期。请再次点击该图标。"
+  },
+  "bg_err_totp_not_found": {
+    "message": "此确切网站没有任何已保存的登录带有 2FA 设置密钥。"
+  },
+  "bg_err_unauthorized": {
+    "message": "桥接令牌与应用不再匹配。请完全退出 LocalGateKeys，重新启动存储库中的副本，并重新加载此页面。"
+  },
+  "bg_err_unsupported_request": {
+    "message": "当前桥接不支持此扩展操作。"
+  },
+  "bg_err_user_cancelled": {
+    "message": "在释放任何字段之前，身份填充已被取消。"
+  },
+  "bg_err_user_gesture_required": {
+    "message": "请从扩展或页面内的 LocalGateKeys 按钮发起此操作。"
+  },
+  "bg_err_version_mismatch": {
+    "message": "请更新或重新加载扩展并重新启动 LocalGateKeys。它们的版本不匹配。"
+  },
+  "bg_full_notice": {
+    "message": "您的免费保管库已满。请在 LocalGateKeys 中升级以保存更多。"
+  },
+  "bg_host_exited": {
+    "message": "原生主机意外停止。请在 LocalGateKeys 中打开“连接”查看诊断信息。"
+  },
+  "bg_host_failed": {
+    "message": "浏览器连接失败。请在 LocalGateKeys 中打开“连接”。"
+  },
+  "bg_host_forbidden": {
+    "message": "扩展 ID 不被原生主机注册所允许。请修复桥接。"
+  },
+  "bg_host_not_registered": {
+    "message": "原生主机未注册。请在 LocalGateKeys 中修复浏览器连接。"
+  },
+  "bg_not_waiting": {
+    "message": "此登录已不再等待保存。"
+  },
+  "bg_rate_limited": {
+    "message": "此网站发起了过多的登录检查。请等待一分钟后再试。"
+  },
+  "bg_save_inbox_full": {
+    "message": "等待处理的登录过多。请打开 LocalGateKeys 导入它们，然后重新登录以保存此登录。"
+  },
+  "bg_save_invalid": {
+    "message": "无法保存此登录。"
+  },
+  "bg_save_unavailable": {
+    "message": "请打开 LocalGateKeys 并解锁一次以开启从 Safari 保存，然后重新登录以保存此登录。"
+  },
+  "bg_saved_notice": {
+    "message": "已保存。下次打开 LocalGateKeys 时它就会出现。"
+  },
+  "bg_timeout": {
+    "message": "LocalGateKeys 桥接没有响应。请关闭任何过时的桌面提示，然后再试一次。"
+  },
+  "content_autosignin_skipped": {
+    "message": "已填充。由于此表单不受支持或不明确，已跳过自动登录。请手动登录。"
+  },
+  "content_cancel": {
+    "message": "取消"
+  },
+  "content_card": {
+    "message": "卡片"
+  },
+  "content_card_approval_invalid": {
+    "message": "卡片批准无效。"
+  },
+  "content_card_brand": {
+    "message": "卡品牌"
+  },
+  "content_card_cvv": {
+    "message": "安全码 (CVV)"
+  },
+  "content_card_expiry": {
+    "message": "有效期"
+  },
+  "content_card_expiry_month": {
+    "message": "有效期（月）"
+  },
+  "content_card_expiry_year": {
+    "message": "有效期（年）"
+  },
+  "content_card_name": {
+    "message": "持卡人姓名"
+  },
+  "content_card_no_fields": {
+    "message": "此卡片没有此支付表单中的任何字段。"
+  },
+  "content_card_number": {
+    "message": "卡号"
+  },
+  "content_card_origin": {
+    "message": "卡片：$CARD$\n来源：$ORIGIN$",
+    "placeholders": {
+      "card": {
+        "content": "$1"
+      },
+      "origin": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_choose_account": {
+    "message": "选择账户"
+  },
+  "content_choose_card": {
+    "message": "选择卡片"
+  },
+  "content_choose_card_fields": {
+    "message": "选择卡片字段"
+  },
+  "content_choose_identity": {
+    "message": "选择身份"
+  },
+  "content_choose_identity_fields": {
+    "message": "选择身份字段"
+  },
+  "content_close": {
+    "message": "关闭"
+  },
+  "content_confirm_in_app": {
+    "message": "更改需在桌面应用中确认。"
+  },
+  "content_cvv_note": {
+    "message": "安全码默认不勾选；仅在此次支付需要时才勾选。"
+  },
+  "content_err_card_not_found": {
+    "message": "此配置文件中没有保存支付卡。"
+  },
+  "content_err_fill_disabled": {
+    "message": "此登录已禁用填充。"
+  },
+  "content_err_generic": {
+    "message": "无法完成此请求。请在 LocalGateKeys 中打开“连接”。"
+  },
+  "content_err_gesture_required": {
+    "message": "请从扩展或页面内的 LocalGateKeys 按钮发起此操作。"
+  },
+  "content_err_invalid_approval": {
+    "message": "批准无效或已过期。请重新开始。"
+  },
+  "content_err_invalid_card_fields": {
+    "message": "请只选择已检查的卡片字段。"
+  },
+  "content_err_nonce_invalid": {
+    "message": "点击已过期，或属于另一个页面。请再点击一次。"
+  },
+  "content_err_nonce_required": {
+    "message": "请更新浏览器扩展并重新加载此页面。"
+  },
+  "content_err_not_found": {
+    "message": "此网站没有已保存的登录。"
+  },
+  "content_err_session_changed": {
+    "message": "保管库或配置文件已更改。请再次点击该图标。"
+  },
+  "content_err_totp_not_found": {
+    "message": "此确切网站没有任何已保存的登录带有 2FA 设置密钥。"
+  },
+  "content_err_user_cancelled": {
+    "message": "解锁或确认已取消。"
+  },
+  "content_fill_card_title": {
+    "message": "使用 LocalGateKeys 填充卡片"
+  },
+  "content_fill_identity_title": {
+    "message": "使用 LocalGateKeys 填充身份"
+  },
+  "content_fill_otp_title": {
+    "message": "使用 LocalGateKeys 填充 2FA 验证码"
+  },
+  "content_fill_title": {
+    "message": "使用 LocalGateKeys 填充"
+  },
+  "content_item_limit": {
+    "message": "您的免费版 LocalGateKeys 最多可容纳 $LIMIT$ 个项目。升级到 Pro 即可不限数量。",
+    "placeholders": {
+      "limit": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_login_typed_on": {
+    "message": "在 $ORIGIN$ 上输入的登录",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_match_domain": {
+    "message": "匹配域名"
+  },
+  "content_match_host": {
+    "message": "匹配主机"
+  },
+  "content_match_prefix": {
+    "message": "匹配 URL 前缀"
+  },
+  "content_never_site": {
+    "message": "在此网站上不再提示"
+  },
+  "content_no_new_password": {
+    "message": "未找到明确的新密码字段。"
+  },
+  "content_no_username": {
+    "message": "无用户名"
+  },
+  "content_not_now": {
+    "message": "暂不"
+  },
+  "content_page_changed_click_again": {
+    "message": "页面已更改。请再点击一次。"
+  },
+  "content_profile": {
+    "message": "配置文件：$PROFILE$",
+    "placeholders": {
+      "profile": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_profile_origin": {
+    "message": "配置文件：$PROFILE$\n来源：$ORIGIN$",
+    "placeholders": {
+      "profile": {
+        "content": "$1"
+      },
+      "origin": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_pw_generated": {
+    "message": "密码已生成"
+  },
+  "content_pw_generated_body": {
+    "message": "已填充新密码字段。离开页面之前请保存此密码。"
+  },
+  "content_reload_extension_and_page": {
+    "message": "请重新加载扩展和此页面。"
+  },
+  "content_reload_page": {
+    "message": "更新扩展后请重新加载此页面。"
+  },
+  "content_review_approve": {
+    "message": "检查并批准"
+  },
+  "content_save": {
+    "message": "保存"
+  },
+  "content_save_deferred": {
+    "message": "该登录是在 LocalGateKeys 锁定时捕获的。请解锁桌面应用，查看它是否与已保存的登录相符。"
+  },
+  "content_save_exists": {
+    "message": "此账户已在 LocalGateKeys 中。要将此次登录发送到应用吗？保存之前，它会显示是否有任何更改。"
+  },
+  "content_save_in_vault": {
+    "message": "保存到保管库"
+  },
+  "content_save_login": {
+    "message": "保存登录"
+  },
+  "content_save_new": {
+    "message": "登录已完成。要将其保存到您本地的加密保管库吗？"
+  },
+  "content_save_title": {
+    "message": "要保存此登录吗？"
+  },
+  "content_save_uncertain": {
+    "message": "LocalGateKeys 捕获到一次登录尝试，但无法确认该网站的成功状态。只有在登录成功时才保存。"
+  },
+  "content_save_update": {
+    "message": "保存 / 更新"
+  },
+  "content_save_update_title": {
+    "message": "要在 LocalGateKeys 中保存或更新吗？"
+  },
+  "content_signin_question": {
+    "message": "您刚刚登录了吗？"
+  },
+  "content_tampered": {
+    "message": "此页面隐藏、移动或遮盖了 LocalGateKeys 按钮，因此该次点击已被忽略。"
+  },
+  "content_totp_waiting": {
+    "message": "稍等片刻，正在获取新的 2FA 验证码…"
+  },
+  "content_unlock_in_desktop": {
+    "message": "请在 LocalGateKeys 桌面窗口中解锁。此网站绝不会索要您的主密码。"
+  },
+  "content_unlock_review": {
+    "message": "解锁以查看"
+  },
+  "content_unlock_review_title": {
+    "message": "解锁以查看此登录"
+  },
+  "content_waiting_title": {
+    "message": "正在等待 LocalGateKeys…"
+  },
+  "content_which_totp": {
+    "message": "要哪个账户的 2FA 验证码？"
+  },
+  "err_card_ambiguous": {
+    "message": "页面缺少卡片字段，或卡片字段不明确。"
+  },
+  "err_card_approved_changed": {
+    "message": "获批的卡片字段已更改。"
+  },
+  "err_card_field_gone": {
+    "message": "某个获批的卡片字段已不再可见。"
+  },
+  "err_card_field_hidden": {
+    "message": "该卡片字段被隐藏、被遮盖，或已不属于支付表单。"
+  },
+  "err_card_form_changed": {
+    "message": "支付表单在填充之前发生了变化。"
+  },
+  "err_card_form_changed_filling": {
+    "message": "支付表单在填充期间发生了变化。"
+  },
+  "err_card_unapproved": {
+    "message": "卡片释放包含未获批准的字段。"
+  },
+  "err_code_boxes": {
+    "message": "此验证码字段的输入框数量异常。"
+  },
+  "err_code_field_hidden": {
+    "message": "该验证码字段被隐藏、被遮盖，或已不再是 2FA 字段。"
+  },
+  "err_form_other_origin": {
+    "message": "该表单指向另一个来源。LocalGateKeys 不会填充它。"
+  },
+  "err_form_other_origin_short": {
+    "message": "该表单指向另一个来源。"
+  },
+  "err_identity_ambiguous": {
+    "message": "页面缺少身份字段，或身份字段不明确。"
+  },
+  "err_identity_approved_changed": {
+    "message": "获批的身份字段已更改。"
+  },
+  "err_identity_field_gone": {
+    "message": "某个获批的身份字段已不再可见。"
+  },
+  "err_identity_field_hidden": {
+    "message": "该身份字段被隐藏、被遮盖，或不受支持。"
+  },
+  "err_identity_form_changed": {
+    "message": "身份表单在填充之前发生了变化。"
+  },
+  "err_login_form_changed": {
+    "message": "登录表单在填充期间发生了变化。"
+  },
+  "err_request_cancelled": {
+    "message": "请求在填充之前已被取消。"
+  },
+  "err_review_required": {
+    "message": "登录之前请检查必填字段。"
+  },
+  "err_signin_cancelled_changed": {
+    "message": "登录已取消：保管库、配置文件或页面发生了变化。"
+  },
+  "err_signin_cancelled_form": {
+    "message": "由于表单发生了变化，登录已取消。"
+  },
+  "err_target_field_hidden": {
+    "message": "目标字段被隐藏、被遮盖，或已不再是登录字段。"
+  },
+  "ext_description": {
+    "message": "使用适用于 Windows 的 LocalGateKeys 密码管理器填充并保存登录。该扩展只与您自己电脑上的应用通信。"
+  },
+  "ext_description_ios": {
+    "message": "提示将您在 Safari 中登录所用的登录保存到此 iPhone 上的 LocalGateKeys。"
+  },
+  "ext_description_macos": {
+    "message": "提示将您在 Safari 中登录所用的登录保存到此 Mac 上的 LocalGateKeys。"
+  },
+  "ext_name": {
+    "message": "LocalGateKeys"
+  },
+  "popup_actions_unavailable": {
+    "message": "字段操作不可用。请打开 LocalGateKeys 并修复浏览器连接，然后刷新。"
+  },
+  "popup_auto_need_page": {
+    "message": "更改自动保存之前，请先打开 http 或 https 页面。"
+  },
+  "popup_auto_now_off": {
+    "message": "此网站的自动保存已关闭。"
+  },
+  "popup_auto_now_on": {
+    "message": "自动保存已开启。保存登录之前会先询问您。"
+  },
+  "popup_auto_off_hint": {
+    "message": "关闭：LocalGateKeys 不会在此网站上提示保存"
+  },
+  "popup_auto_on_hint": {
+    "message": "开启：在此成功登录后会询问您"
+  },
+  "popup_auto_read_failed": {
+    "message": "无法读取此网站的自动保存设置。请重试。"
+  },
+  "popup_auto_turn_off": {
+    "message": "在此网站上关闭保存提示"
+  },
+  "popup_auto_turn_on": {
+    "message": "在此网站上开启保存提示"
+  },
+  "popup_auto_update_failed": {
+    "message": "无法更新此网站的自动保存。请重试。"
+  },
+  "popup_checking_connection": {
+    "message": "正在检查连接…"
+  },
+  "popup_checking_connection_desc": {
+    "message": "正在联系 LocalGateKeys，不会解锁您的保管库。"
+  },
+  "popup_checking_page": {
+    "message": "正在检查此页面…"
+  },
+  "popup_cmd_busy": {
+    "message": "请先完成已打开的 LocalGateKeys 提示，然后再试一次。"
+  },
+  "popup_cmd_cancelled": {
+    "message": "在释放任何字段之前，填充已被取消。"
+  },
+  "popup_cmd_card_form_not_found": {
+    "message": "此页面上未找到支付表单。请打开带有卡号字段的结账表单后再试。"
+  },
+  "popup_cmd_card_not_found": {
+    "message": "此配置文件中没有保存支付卡。请先在 LocalGateKeys 中添加卡片。"
+  },
+  "popup_cmd_destination_changed": {
+    "message": "此页面已更改。请在目标登录表单上再次打开弹出窗口。"
+  },
+  "popup_cmd_identity_not_found": {
+    "message": "此页面上未找到身份字段。请打开联系方式或地址表单后再试。"
+  },
+  "popup_cmd_invalid_card": {
+    "message": "页面请求了不受支持的卡片字段。请只选择卡片字段。"
+  },
+  "popup_cmd_invalid_identity": {
+    "message": "页面请求了不受支持的身份字段。请只选择联系方式或地址字段。"
+  },
+  "popup_cmd_nonce_invalid": {
+    "message": "点击已过期，或属于另一个页面。请重新选择该操作。"
+  },
+  "popup_cmd_nonce_required": {
+    "message": "请更新并重新加载扩展：此操作需要新的手势随机数。"
+  },
+  "popup_cmd_not_found": {
+    "message": "未找到此网站的已保存登录。请先保存一个登录，或检查其填充策略。"
+  },
+  "popup_cmd_offline": {
+    "message": "LocalGateKeys 处于离线状态。请打开桌面应用并修复浏览器连接。"
+  },
+  "popup_cmd_origin_mismatch": {
+    "message": "此页面的来源已更改。请在目标页面上再次打开扩展。"
+  },
+  "popup_cmd_session_changed": {
+    "message": "保管库已锁定或配置文件已更改。请再次点击“填充登录”以继续。"
+  },
+  "popup_cmd_version_mismatch": {
+    "message": "填充身份字段之前，请更新并重新加载扩展和 LocalGateKeys。"
+  },
+  "popup_connection_unavailable": {
+    "message": "连接不可用。$DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_current_site": {
+    "message": "当前网站"
+  },
+  "popup_diag_agent_offline": {
+    "message": "请打开 LocalGateKeys，修复浏览器连接，然后再试一次。"
+  },
+  "popup_diag_connection_lost": {
+    "message": "桥接已断开。请修复浏览器连接后再试。"
+  },
+  "popup_diag_default": {
+    "message": "请打开 LocalGateKeys 并修复浏览器连接，然后再试一次。"
+  },
+  "popup_diag_native_host": {
+    "message": "无法连接到原生主机。请在 LocalGateKeys 中修复浏览器连接。"
+  },
+  "popup_diag_state_invalid": {
+    "message": "请重新启动 LocalGateKeys 并修复浏览器连接。"
+  },
+  "popup_diag_state_missing": {
+    "message": "请在 LocalGateKeys 中完成配置文件的选择，然后再试一次。"
+  },
+  "popup_diag_timeout": {
+    "message": "桥接响应耗时过长。请关闭任何桌面提示后再试。"
+  },
+  "popup_diag_unavailable": {
+    "message": "请重新启动 LocalGateKeys，然后刷新连接。"
+  },
+  "popup_diag_version_mismatch": {
+    "message": "请更新扩展和 LocalGateKeys，然后将两者都重新启动。"
+  },
+  "popup_fb_generate": {
+    "message": "未找到明确的新密码字段。请打开注册或更改密码的表单后再试。"
+  },
+  "popup_fb_identity": {
+    "message": "未找到受支持的联系方式或地址字段。请打开身份表单后再试。"
+  },
+  "popup_fb_login": {
+    "message": "未找到受支持的登录字段。请打开登录表单后再试。"
+  },
+  "popup_fb_save": {
+    "message": "未找到当前的登录字段。请输入登录信息后再试。"
+  },
+  "popup_fill_card": {
+    "message": "填充卡片…"
+  },
+  "popup_fill_card_desc": {
+    "message": "选择一张卡片，勾选字段，在应用中确认"
+  },
+  "popup_fill_card_label": {
+    "message": "填充卡片"
+  },
+  "popup_fill_identity": {
+    "message": "填充身份"
+  },
+  "popup_fill_identity_desc": {
+    "message": "填充之前请检查联系方式字段"
+  },
+  "popup_fill_login": {
+    "message": "填充登录"
+  },
+  "popup_fill_login_desc": {
+    "message": "为此页面选择一个已保存的登录"
+  },
+  "popup_finish_setup_refresh": {
+    "message": "请先完成 LocalGateKeys 设置，然后刷新连接，再使用字段操作。"
+  },
+  "popup_footer": {
+    "message": "在此设备上本地加密"
+  },
+  "popup_generate_password": {
+    "message": "生成密码"
+  },
+  "popup_generate_password_desc": {
+    "message": "为注册创建密码"
+  },
+  "popup_guidance_checking": {
+    "message": "正在检查 LocalGateKeys，之后才会启用此页面的操作。"
+  },
+  "popup_guidance_connected": {
+    "message": "仅检查此网站的来源。在您选择操作之前不会填充任何内容。"
+  },
+  "popup_guidance_locked": {
+    "message": "选择一个操作以请求解锁；不会自动填充任何内容。"
+  },
+  "popup_guidance_offline": {
+    "message": "请重新连接 LocalGateKeys 以使用此网站的操作。"
+  },
+  "popup_guidance_setup": {
+    "message": "请先完成 LocalGateKeys 设置，再使用此网站的操作。"
+  },
+  "popup_integration_disabled": {
+    "message": "浏览器集成已暂停。请在 LocalGateKeys 设置中重新启用。"
+  },
+  "popup_local_vault": {
+    "message": "本地保管库"
+  },
+  "popup_locked_desc": {
+    "message": "选择一个操作以继续；桌面应用会在解锁之前询问。"
+  },
+  "popup_looking": {
+    "message": "$ACTION$正在查找受支持的字段…",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_manual_by_design": {
+    "message": "设计上需手动操作"
+  },
+  "popup_need_login_page": {
+    "message": "请先打开带有登录表单的 http 或 https 页面。"
+  },
+  "popup_page_unavailable": {
+    "message": "LocalGateKeys 无法使用此页面。"
+  },
+  "popup_page_unavailable_hint": {
+    "message": "请打开标准的 http 或 https 登录页面以使用这些操作。"
+  },
+  "popup_page_unreachable": {
+    "message": "无法访问此页面。请重新加载页面后再试。"
+  },
+  "popup_quick_actions": {
+    "message": "快捷操作"
+  },
+  "popup_ready_version": {
+    "message": "LocalGateKeys 已就绪$VERSION$。在您选择操作之前不会解锁任何内容。",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_refresh_connection": {
+    "message": "刷新连接状态"
+  },
+  "popup_refreshed_locked": {
+    "message": "连接已刷新。只有在您选择操作之后才会解锁。"
+  },
+  "popup_refreshed_ready": {
+    "message": "连接已刷新。LocalGateKeys 已就绪。"
+  },
+  "popup_refreshed_setup": {
+    "message": "连接已刷新。请先完成 LocalGateKeys 设置，然后刷新。"
+  },
+  "popup_save_login": {
+    "message": "保存登录"
+  },
+  "popup_save_login_desc": {
+    "message": "保存这些登录字段"
+  },
+  "popup_setup_desc": {
+    "message": "LocalGateKeys 未报告已就绪的浏览器配置文件。请完成设置，然后刷新。"
+  },
+  "popup_site_hint": {
+    "message": "操作仅限于此页面，并需要您来选择。"
+  },
+  "popup_started": {
+    "message": "$ACTION$已在此页面上开始。",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_state_connected": {
+    "message": "已连接"
+  },
+  "popup_state_locked": {
+    "message": "已锁定"
+  },
+  "popup_state_offline": {
+    "message": "离线"
+  },
+  "popup_state_setup": {
+    "message": "需要设置"
+  },
+  "popup_tagline": {
+    "message": "您的密钥，由您掌控。"
+  },
+  "popup_this_page": {
+    "message": "此页面"
+  },
+  "popup_unlock_on_action": {
+    "message": "只有在您选择字段操作之后才会请求解锁。"
+  },
+  "popup_version_suffix": {
+    "message": " （LocalGateKeys $VERSION$）",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_wait_checking": {
+    "message": "仍在检查 LocalGateKeys。请等待连接状态，然后再试一次。"
+  }
+}

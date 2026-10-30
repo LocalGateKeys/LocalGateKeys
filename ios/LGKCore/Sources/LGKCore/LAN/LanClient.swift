@@ -171,10 +171,20 @@ public final class LanClient: Sendable {
     /// (informational on LAN, never reserved).
     public func sync(peer: PinnedPeer, localStates: [ItemState], ownCounter: Int64,
                      connector: any LanConnector) async throws -> [ItemState] {
+        try await exchange(peer: peer, localStates: localStates, ownCounter: ownCounter, connector: connector).states
+    }
+
+    /// `sync`, returning the peer's view header too (its generation and witness when it is format 2). With
+    /// `vaultGeneration` the own view is sent as format 2 (2026-10-29 rollback witnesses); send that only to a
+    /// peer listed in `witnessPeers`. A refusal of the view throws `LanSyncError` `peer-refused` (detail: the
+    /// responder's reason, `bad-view` when it could not read the view).
+    public func exchange(peer: PinnedPeer, localStates: [ItemState], ownCounter: Int64, connector: any LanConnector,
+                         vaultGeneration: Int64? = nil, witness: [String: Int64]? = nil) async throws -> LanExchange {
         let raw: [UInt8]
         do {
             raw = try ViewFile.encode(key: groupKey, deviceID: identity.deviceID, counter: ownCounter,
-                                      states: localStates, now: AnyClock(clock), random: AnyRandom(random))
+                                      states: localStates, now: AnyClock(clock), random: AnyRandom(random),
+                                      vaultGeneration: vaultGeneration, witness: vaultGeneration == nil ? nil : (witness ?? [:]))
         } catch let e as SyncFormatError { throw LanSyncError("too-large", e.reason) }
         let parts = LanMessages.splitView(raw)
         guard raw.count <= LanMessages.maxViewBytes, Int64(parts.count) <= LanMessages.maxChunks else {
@@ -193,7 +203,51 @@ public final class LanClient: Sendable {
         return try await receiveView(reply, peer: peer, connector: connector)
     }
 
-    private func receiveView(_ first: LanMessage, peer: PinnedPeer, connector: any LanConnector) async throws -> [ItemState] {
+    /// After a format-1 exchange: sends this device's witness file (`Witness.lanWitnessFile`) in one `witness`
+    /// message and returns the answer (a `witness` message from a responder of this version; an older one
+    /// answers `error` `bad-message`, which the caller ignores).
+    public func sendWitness(_ raw: [UInt8], peer: PinnedPeer, connector: any LanConnector) async throws -> LanMessage {
+        try await call(.witness(groupID: groupKey.groupID, epoch: groupKey.epoch, view: Base64.encode(raw)),
+                       peer: peer, connector: connector)
+    }
+
+    /// Attachment sync: fetches the blob of `ref` chunk by chunk (`blob-get`), checks every chunk and the
+    /// content address, and opens it against `ref` (nothing is returned that would not import). Throws
+    /// `LanSyncError` `no-blob` (the peer lacks it), `peer-refused` / `bad-message` (an older peer),
+    /// `attachment-refused` (a tampered or malformed blob) or the transport's errors.
+    public func fetchBlob(_ ref: AttachmentRef, peer: PinnedPeer, connector: any LanConnector) async throws -> [UInt8] {
+        var download = BlobDownload(ref: ref)
+        var seq: Int64 = 0
+        while true {
+            let reply = try await call(.blobGet(blob: ref.blob, seq: seq), peer: peer, connector: connector)
+            if case .error(let reason) = reply {
+                throw reason == "no-blob" ? LanSyncError("no-blob", ref.attachmentID) : LanSyncError("peer-refused", reason)
+            }
+            do {
+                if let blob = try download.add(reply) {
+                    _ = try AttachmentSync.openBlob(blob, ref: ref)
+                    return blob
+                }
+            } catch let e as AttachmentSyncError {
+                throw LanSyncError("attachment-refused", "\(ref.attachmentID): \(e.reason)")
+            }
+            seq = download.nextSeq
+        }
+    }
+
+    /// The capability probe (`blob-get` of the zero id): true when the peer knows `blob-get` (`no-blob` or a
+    /// well-formed chunk), false when it is an older build (`bad-message`), nil for any other answer (unchanged).
+    public func probeAttachments(peer: PinnedPeer, connector: any LanConnector) async throws -> Bool? {
+        let reply = try await call(.blobGet(blob: AttachmentSync.probeBlob, seq: 0), peer: peer, connector: connector)
+        switch reply {
+        case .blob: return true
+        case .error("no-blob"): return true
+        case .error("bad-message"): return false
+        default: return nil
+        }
+    }
+
+    private func receiveView(_ first: LanMessage, peer: PinnedPeer, connector: any LanConnector) async throws -> LanExchange {
         guard case let .view(group, epoch, transfer, _, total, size, _) = first else { throw Self.replyIssue(first) }
         guard group == groupKey.groupID else { throw LanSyncError("group-mismatch", peer.deviceID) }
         guard epoch == groupKey.epoch else {
@@ -218,11 +272,19 @@ public final class LanClient: Sendable {
         }
         guard received == size else { throw LanSyncError("bad-chunk") }
         do {
-            return try ViewFile.decode(parts.flatMap { $0 }, key: groupKey, expectedDeviceID: peer.deviceID).states
+            let view = try ViewFile.decode(parts.flatMap { $0 }, key: groupKey, expectedDeviceID: peer.deviceID)
+            return LanExchange(states: view.states, header: view.header)
         } catch let e as SyncFormatError {
             throw LanSyncError(e.reason == "device-mismatch" ? "device-mismatch" : "bad-peer-data", "\(peer.deviceID): \(e.reason)")
         }
     }
+}
+
+/// The peer's answer to one LAN view exchange: its states and its view header (format, generation, witness).
+public struct LanExchange: Equatable, Sendable {
+    public var states: [ItemState]
+    public var header: ViewHeader?
+    public init(states: [ItemState], header: ViewHeader? = nil) { self.states = states; self.header = header }
 }
 
 private struct AnyClock: UnixClock {

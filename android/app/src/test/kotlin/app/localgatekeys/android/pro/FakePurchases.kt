@@ -17,6 +17,9 @@ class FakePurchases : ProPurchasing {
     var priceCalls = 0
     var entitledCalls = 0
 
+    /** The acknowledged purchase's token ([purchaseToken]); null when none. */
+    var token: String? = null
+
     /** Runs while the entitlement read is "in flight" (a slow Play answer). */
     var duringIsEntitled: (() -> Unit)? = null
 
@@ -51,6 +54,8 @@ class FakePurchases : ProPurchasing {
         if (restoreFinds) entitled = true
         return entitled
     }
+
+    override suspend fun purchaseToken(): String? = if (entitled) token else null
 
     override fun entitlementChanges(): Flow<Unit> = changes
 }

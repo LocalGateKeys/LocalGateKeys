@@ -6,17 +6,17 @@ from typing import Any
 
 from .. import licensing
 from ..licensing import FREE_ITEM_LIMIT, LicenseStatus
+from ..i18n import t
 
 # The Paddle checkout on the website; the "Buy Pro" button stays hidden while empty.
 PURCHASE_URL = "https://localgatekeys.app/buy"
 
 
-PRO_PITCH = ("LocalGateKeys Pro: unlimited items, device sync, two-factor codes and attachments — "
-             "US$4.99 once, lifetime updates.")
+PRO_PITCH = ("licenceView.localgatekeysProUnlimitedItemsDevice")
 
 
 def limit_headline(limit: int = FREE_ITEM_LIMIT) -> str:
-    return f"The free plan holds up to {limit} items."
+    return t("licenceView.theFreePlanHoldsUp", limit=limit)
 
 
 @dataclass(frozen=True)
@@ -33,14 +33,14 @@ def _holder_lines(st: LicenseStatus) -> tuple[str, ...]:
         return ()
     # Paddle's checkout asks for no name, so the name is often the email itself.
     holder = lic.email if lic.name == lic.email else f"{lic.name} ({lic.email})"
-    return (f"Licensed to: {holder}",
-            f"Updates until: {lic.updates_until.isoformat()}")
+    return (t("licenceView.licensedTo", holder=holder),
+            t("licenceView.updatesUntil", v1=lic.updates_until.isoformat()))
 
 
 def _usage_lines(st: LicenseStatus, item_count: int | None) -> tuple[str, ...]:
     if item_count is None or licensing.item_limit(st) is None:
         return ()
-    return (f"Free plan: {item_count} of {FREE_ITEM_LIMIT} items used",)
+    return (t("licenceView.freePlanOfItemsUsed", item_count=item_count, FREE_ITEM_LIMIT=FREE_ITEM_LIMIT),)
 
 
 def licence_view(st: LicenseStatus, item_count: int | None = None) -> LicenceView:
@@ -53,25 +53,24 @@ def licence_view(st: LicenseStatus, item_count: int | None = None) -> LicenceVie
     holder = _holder_lines(st)
     usage = _usage_lines(st, item_count)
     if st.state == "pro":
-        return LicenceView("LocalGateKeys Pro", holder, True, False)
+        return LicenceView(t("licenceView.localgatekeysPro"), holder, True, False)
     if st.state == "unconfigured":
-        return LicenceView("Pro features are enabled in this build",
-                           ("No licence is needed in this build.",),
+        return LicenceView(t("licenceView.proFeaturesAreEnabledIn"),
+                           (t("licenceView.noLicenceIsNeededIn"),),
                            False, False)
     if st.state == "expired_for_this_build":
         return LicenceView(
-            "Licence does not cover this version",
-            holder + ("This version was released after your updates ended, so Pro is off here; "
-                      "an older version, or a licence with newer updates, restores it.",) + usage,
+            t("status.licence.expiredBuild"),
+            holder + (t("licenceView.thisVersionWasReleasedAfter"),) + usage,
             True, True)
     if st.state == "revoked":
-        return LicenceView("Licence revoked",
-                           holder + (st.message or "This licence has been revoked.",) + usage, True, True)
+        return LicenceView(t("status.licence.revoked"),
+                           holder + (st.message or t("licenceView.thisLicenceHasBeenRevoked"),) + usage, True, True)
     if st.state == "invalid":
-        return LicenceView("Licence could not be verified",
-                           (st.message or "The installed licence could not be verified.",) + usage,
+        return LicenceView(t("licenceView.licenceCouldNotBeVerified"),
+                           (st.message or t("licenceView.theInstalledLicenceCouldNot"),) + usage,
                            True, True)
-    return LicenceView("Free", (usage or (limit_headline(),)) + (PRO_PITCH,), False, False)
+    return LicenceView(t("licenceView.free"), (usage or (limit_headline(),)) + (t(PRO_PITCH),), False, False)
 
 
 _LICENCE_PROBLEM_STATES = ("expired_for_this_build", "revoked", "invalid")
@@ -85,16 +84,15 @@ def upgrade_prompt_text(st: LicenseStatus, limit: int = FREE_ITEM_LIMIT) -> tupl
     """
     if st.state in _LICENCE_PROBLEM_STATES:
         return st.message or limit_headline(limit), (
-            f"Pro is off until this is resolved, so the free plan applies: up to {limit} items, and no "
-            "device sync or new two-factor codes and attachments. Your vault and data are not affected.")
-    return limit_headline(limit), PRO_PITCH
+            t("licenceView.proIsOffUntilThis", limit=limit))
+    return limit_headline(limit), t(PRO_PITCH)
 
 
 def install_result_text(st: LicenseStatus, lic: licensing.License) -> str:
     """Message shown after a successful install, reflecting the resulting status."""
     if st.state in ("pro", "unconfigured"):
-        return f"Licence installed for {lic.name}."
-    return f"Licence installed, but Pro is not active. {st.message}"
+        return t("licenceView.licenceInstalledFor", name=lic.name)
+    return t("licenceView.licenceInstalledButProIs", message=st.message)
 
 
 def pro_required(port: Any, exc: Exception) -> Any:

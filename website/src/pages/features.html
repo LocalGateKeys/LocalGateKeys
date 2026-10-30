@@ -1,98 +1,98 @@
 ---
-title: Features
-description: What LocalGateKeys does, edition by edition: encrypted vault, browser and desktop fill, passkeys, Windows Hello, two-factor codes, imports, backups and device sync.
+title: [[t:features.title]]
+description: [[t:features.description]]
 ---
 <div class="wrap page-head">
-  <h1>Everything it does, and where it does it</h1>
-  <p class="lead">All of this runs on your own devices. Free holds up to 4 items; <a href="[[root]]pricing.html">Pro</a> removes the limit and adds sync, two-factor codes and documents.</p>
+  <h1>[[t:features.everything-it-does-and.1]]</h1>
+  <p class="lead">[[t:features.everything-it-does-and.2]]</p>
 </div>
 <div class="wrap">
-  <figure class="shot"><picture><source srcset="[[root]]screenshots/home-vault-light.webp" media="(prefers-color-scheme: light)"><img src="[[root]]screenshots/home-vault-dark.webp" width="2880" height="1800" alt="The LocalGateKeys Home page: password health, upcoming reminders, a one-time codes card with live two-factor codes, and a list of logins with site logos." loading="lazy" decoding="async"></picture><figcaption>Home: password health, reminders, live two-factor codes and your items. Demo vault with made-up accounts.</figcaption></figure>
+  <figure class="shot"><picture><source srcset="[[root]]screenshots/home-vault-light.webp" media="(prefers-color-scheme: light)"><img src="[[root]]screenshots/home-vault-dark.webp" width="2880" height="1800" alt="[[t:features.everything-it-does-and.3]]" loading="lazy" decoding="async"></picture><figcaption>[[t:features.everything-it-does-and.4]]</figcaption></figure>
 </div>
 
 <div class="wrap page-body">
   <section class="feature-group" aria-labelledby="f-vault">
-    <h2 id="f-vault">The vault</h2>
+    <h2 id="f-vault">[[t:features.the-vault.1]]</h2>
     <dl>
-      <div><dt>Encrypted on your disk</dt><dd>Everything you save is encrypted with a key protected by your master password, using Argon2id and AES-256-GCM. Names, usernames and websites are encrypted too, not just passwords.</dd></div>
-      <div><dt>More than passwords</dt><dd>Website and desktop app logins, passkeys, payment cards, bank accounts, identities, secure notes, documents, SSH keys, API keys, Wi-Fi networks, bookmarks, software licences, subscriptions, warranties and purchases, each with its own fields.</dd></div>
-      <div><dt>Documents (Pro)</dt><dd>Keep files such as scanned documents in the vault, up to 25 MB each. Each file is encrypted with its own key. You can preview a document, save a copy, or open it in another app.</dd></div>
-      <div><dt>Two-factor codes (Pro)</dt><dd>Store a site's setup key and LocalGateKeys shows the current code at the top of the login, and on a One-time codes card on the Home page. Codes follow the TOTP standard (RFC 6238): 6 to 8 digits, 15 to 120 seconds, SHA-1, SHA-256 or SHA-512.</dd></div>
-      <div><dt>Add a code from a QR code</dt><dd>Snip the QR code on the site's two-factor setup page with Win+Shift+S and paste it, or hold it up to your webcam. A Google Authenticator export QR code works too. The image is read on your PC and never saved.</dd></div>
-      <div><dt>Password generator</dt><dd>Random passwords of 8 to 256 characters, or passphrases of 3 to 16 words.</dd></div>
-      <div><dt>Password health</dt><dd>See which saved passwords are weak, reused, more than a year old or missing a two-factor code. Breach checks against Have I Been Pwned are off until you turn them on, run only when you start them, and send only five characters of a hash, never the password.</dd></div>
-      <div><dt>Site logos and kind icons</dt><dd>Each item shows the site's icon, a built-in logo for well-known sites, or an icon for its kind, so you can spot it at a glance.</dd></div>
-      <div><dt>Search and collections</dt><dd>Find items with a command palette (Ctrl+K), filter chips, favourites and your own collections. Arrow keys, Enter and Ctrl+C work in the item list straight from the search box.</dd></div>
-      <div><dt>Trash and undo</dt><dd>Deleted items go to the trash, and the message that confirms it has an Undo button. The trash empties itself after 30 days, or keeps everything until you empty it.</dd></div>
-      <div><dt>Password history</dt><dd>When a login's password changes, the last five old passwords are kept in its encrypted history.</dd></div>
+      <div><dt>[[t:features.the-vault.2]]</dt><dd>[[t:features.the-vault.3]]</dd></div>
+      <div><dt>[[t:features.the-vault.4]]</dt><dd>[[t:features.the-vault.5]]</dd></div>
+      <div><dt>[[t:features.the-vault.6]]</dt><dd>[[t:features.the-vault.7]]</dd></div>
+      <div><dt>[[t:features.the-vault.8]]</dt><dd>[[t:features.the-vault.9]]</dd></div>
+      <div><dt>[[t:features.the-vault.10]]</dt><dd>[[t:features.the-vault.11]]</dd></div>
+      <div><dt>[[t:features.the-vault.12]]</dt><dd>[[t:features.the-vault.13]]</dd></div>
+      <div><dt>[[t:features.the-vault.14]]</dt><dd>[[t:features.the-vault.15]]</dd></div>
+      <div><dt>[[t:features.the-vault.16]]</dt><dd>[[t:features.the-vault.17]]</dd></div>
+      <div><dt>[[t:features.the-vault.18]]</dt><dd>[[t:features.the-vault.19]]</dd></div>
+      <div><dt>[[t:features.the-vault.20]]</dt><dd>[[t:features.the-vault.21]]</dd></div>
+      <div><dt>[[t:features.the-vault.22]]</dt><dd>[[t:features.the-vault.23]]</dd></div>
     </dl>
     <div class="shots">
-      <figure class="shot"><picture><source srcset="[[root]]screenshots/item-2fa-code-light.webp" media="(prefers-color-scheme: light)"><img src="[[root]]screenshots/item-2fa-code-dark.webp" width="2880" height="1800" alt="A GitHub login open in LocalGateKeys, with its current two-factor code at the top, then username, hidden password, website, notes and recovery codes." loading="lazy" decoding="async"></picture><figcaption>The current two-factor code sits at the top of the login.</figcaption></figure>
-      <figure class="shot"><picture><source srcset="[[root]]screenshots/generator-light.webp" media="(prefers-color-scheme: light)"><img src="[[root]]screenshots/generator-dark.webp" width="2880" height="1800" alt="The password generator with a random 20-character password and options for length, letters, digits and symbols." loading="lazy" decoding="async"></picture><figcaption>The generator makes random passwords or passphrases.</figcaption></figure>
-      <figure class="shot"><picture><source srcset="[[root]]screenshots/security-center-light.webp" media="(prefers-color-scheme: light)"><img src="[[root]]screenshots/security-center-dark.webp" width="2880" height="1800" alt="The Security center showing a score of 77 out of 100, with weak, reused, no two-factor and old passwords to review, and unlock and backup checks." loading="lazy" decoding="async"></picture><figcaption>The Security center lists what to fix first.</figcaption></figure>
+      <figure class="shot"><picture><source srcset="[[root]]screenshots/item-2fa-code-light.webp" media="(prefers-color-scheme: light)"><img src="[[root]]screenshots/item-2fa-code-dark.webp" width="2880" height="1800" alt="[[t:features.the-vault.24]]" loading="lazy" decoding="async"></picture><figcaption>[[t:features.the-vault.25]]</figcaption></figure>
+      <figure class="shot"><picture><source srcset="[[root]]screenshots/generator-light.webp" media="(prefers-color-scheme: light)"><img src="[[root]]screenshots/generator-dark.webp" width="2880" height="1800" alt="[[t:features.the-vault.26]]" loading="lazy" decoding="async"></picture><figcaption>[[t:features.the-vault.27]]</figcaption></figure>
+      <figure class="shot"><picture><source srcset="[[root]]screenshots/security-center-light.webp" media="(prefers-color-scheme: light)"><img src="[[root]]screenshots/security-center-dark.webp" width="2880" height="1800" alt="[[t:features.the-vault.28]]" loading="lazy" decoding="async"></picture><figcaption>[[t:features.the-vault.29]]</figcaption></figure>
     </div>
   </section>
 
   <section class="feature-group" aria-labelledby="f-move">
-    <h2 id="f-move">Moving in and out</h2>
+    <h2 id="f-move">[[t:features.moving-in-and-out.1]]</h2>
     <dl>
-      <div><dt>Import from other password managers</dt><dd>Bring in exports from 1Password, Bitwarden, LastPass, Dashlane, Proton Pass, KeePass and KeePassXC (including <code>.kdbx</code> files), Chrome, Edge, Brave, Firefox and Safari, or any other CSV file. You review every item before anything is written, and the import never goes online.</dd></div>
-      <div><dt>Export</dt><dd>Export to an encrypted KeePass KDBX 4 file, or to Bitwarden-compatible CSV or JSON, or KeePass XML. Every export asks for your master password first.</dd></div>
+      <div><dt>[[t:features.moving-in-and-out.2]]</dt><dd>[[t:features.moving-in-and-out.3]]</dd></div>
+      <div><dt>[[t:features.moving-in-and-out.4]]</dt><dd>[[t:features.moving-in-and-out.5]]</dd></div>
     </dl>
   </section>
 
   <section class="feature-group" aria-labelledby="f-fill">
-    <h2 id="f-fill">Filling sign-ins</h2>
+    <h2 id="f-fill">[[t:features.filling-sign-ins.1]]</h2>
     <dl>
-      <div><dt>Chrome and Edge extension</dt><dd>Fill and save logins on websites, including sign-ins that ask for the username and password on separate pages. The extension asks the app on your PC for logins that match the exact site, through a local helper. It also fills two-factor codes, addresses and payment cards.</dd></div>
-      <div><dt>Save prompts you control</dt><dd>After you sign in, the extension offers to save a new login or update a changed password. You can turn the prompt off for any site from the toolbar button.</dd></div>
-      <div><dt>You start every fill</dt><dd>Nothing is filled until you pick an account. Forms are not submitted for you unless you turn on "Sign in after filling" in Settings, and then only after a fill you started.</dd></div>
-      <div><dt>Passkeys</dt><dd>When a website in Chrome or Edge offers a passkey, LocalGateKeys can save it in your vault and sign you in with it. You approve every passkey in the desktop app, with Windows Hello or your master password, and the browser's own passkey dialog is always one click away. The private key never leaves the app.</dd></div>
-      <div><dt>Windows app fill</dt><dd>Fill sign-in windows of Windows programs with a fill button beside the password field or a hotkey (Ctrl+Shift+Space). Each app is bound once, and fill is refused if the program, its window or its fields have changed since.</dd></div>
-      <div><dt>Quick access</dt><dd>Search your vault and copy from anywhere with a hotkey (Ctrl+Alt+K by default). Ctrl+Alt+L locks the vault at once.</dd></div>
-      <div><dt>No keylogging, ever</dt><dd>LocalGateKeys installs no keyboard hook, reads no screen content to find passwords, and injects nothing into other programs. If an app does not expose proper sign-in fields, it is not filled.</dd></div>
+      <div><dt>[[t:features.filling-sign-ins.2]]</dt><dd>[[t:features.filling-sign-ins.3]]</dd></div>
+      <div><dt>[[t:features.filling-sign-ins.4]]</dt><dd>[[t:features.filling-sign-ins.5]]</dd></div>
+      <div><dt>[[t:features.filling-sign-ins.6]]</dt><dd>[[t:features.filling-sign-ins.7]]</dd></div>
+      <div><dt>[[t:features.filling-sign-ins.8]]</dt><dd>[[t:features.filling-sign-ins.9]]</dd></div>
+      <div><dt>[[t:features.filling-sign-ins.10]]</dt><dd>[[t:features.filling-sign-ins.11]]</dd></div>
+      <div><dt>[[t:features.filling-sign-ins.12]]</dt><dd>[[t:features.filling-sign-ins.13]]</dd></div>
+      <div><dt>[[t:features.filling-sign-ins.14]]</dt><dd>[[t:features.filling-sign-ins.15]]</dd></div>
     </dl>
-    <figure class="shot shot-small"><img src="[[root]]screenshots/browser-fill.webp" width="480" height="540" alt="A sign-in page with the LocalGateKeys browser extension offering two saved accounts for that site." loading="lazy" decoding="async"><figcaption>The extension offers only the logins saved for the site you are on.</figcaption></figure>
+    <figure class="shot shot-small"><img src="[[root]]screenshots/browser-fill.webp" width="480" height="540" alt="[[t:features.filling-sign-ins.16]]" loading="lazy" decoding="async"><figcaption>[[t:features.filling-sign-ins.17]]</figcaption></figure>
   </section>
 
   <section class="feature-group" aria-labelledby="f-unlock">
-    <h2 id="f-unlock">Unlocking</h2>
+    <h2 id="f-unlock">[[t:features.unlocking.1]]</h2>
     <dl>
-      <div><dt>Master password</dt><dd>At least 12 characters, never written to disk. It is the one thing that opens your vault, and we cannot reset it.</dd></div>
-      <div><dt>Windows Hello</dt><dd>Unlock with your fingerprint, face or PIN through Windows Hello, after you set it up in LocalGateKeys.</dd></div>
-      <div><dt>Camera check</dt><dd>An optional webcam face check for PCs without Windows Hello. It is a convenience, not certified anti-spoofing; prefer Windows Hello when you can.</dd></div>
-      <div><dt>Recovery phrase</dt><dd>An optional 24-word phrase that can open the vault if you forget the master password. It is shown once and never stored by the app.</dd></div>
-      <div><dt>Auto-lock and clipboard clearing</dt><dd>The vault locks after a period you choose, and copied passwords are cleared from the clipboard. Only what LocalGateKeys copied is cleared.</dd></div>
+      <div><dt>[[t:features.unlocking.2]]</dt><dd>[[t:features.unlocking.3]]</dd></div>
+      <div><dt>[[t:features.unlocking.4]]</dt><dd>[[t:features.unlocking.5]]</dd></div>
+      <div><dt>[[t:features.unlocking.6]]</dt><dd>[[t:features.unlocking.7]]</dd></div>
+      <div><dt>[[t:features.unlocking.8]]</dt><dd>[[t:features.unlocking.9]]</dd></div>
+      <div><dt>[[t:features.unlocking.10]]</dt><dd>[[t:features.unlocking.11]]</dd></div>
     </dl>
   </section>
 
   <section class="feature-group" aria-labelledby="f-backup">
-    <h2 id="f-backup">Backups</h2>
+    <h2 id="f-backup">[[t:features.backups.1]]</h2>
     <dl>
-      <div><dt>Scheduled encrypted backups</dt><dd>Daily or weekly, at a time you set. Each backup is a full encrypted file, checked after writing, with attachments included.</dd></div>
-      <div><dt>Extra copy in a folder you choose</dt><dd>Have each backup copied to a OneDrive, Google Drive, Dropbox or Proton Drive folder, or anywhere else. Only encrypted backup files are copied, never the live vault.</dd></div>
-      <div><dt>Encrypted transfer packages</dt><dd>Move selected items to another vault in an encrypted file protected by its own password.</dd></div>
+      <div><dt>[[t:features.backups.2]]</dt><dd>[[t:features.backups.3]]</dd></div>
+      <div><dt>[[t:features.backups.4]]</dt><dd>[[t:features.backups.5]]</dd></div>
+      <div><dt>[[t:features.backups.6]]</dt><dd>[[t:features.backups.7]]</dd></div>
     </dl>
   </section>
 
   <section class="feature-group" aria-labelledby="f-sync">
-    <h2 id="f-sync">Sync between your devices (Pro)</h2>
+    <h2 id="f-sync">[[t:features.sync-between-your-devices.1]]</h2>
     <dl>
-      <div><dt>Over your home Wi-Fi</dt><dd>Pair a PC once with a one-use QR code (between PCs you paste its text). When both are unlocked on the same network, they exchange changes directly over an authenticated, encrypted connection. Nothing goes through the internet.</dd></div>
-      <div><dt>Through your own cloud folder</dt><dd>If your PCs are rarely on the same network, sync through a OneDrive, Dropbox, Google Drive or iCloud Drive folder you already use, protected by a sync password. The provider only ever stores encrypted files. You can use both routes.</dd></div>
-      <div><dt>What syncs</dt><dd>Website and desktop app logins, and other items such as notes and bookmarks. Collections, documents and attachments do not sync yet. Edits made on two PCs at once keep both versions, and a delete moves the item to the trash on the other PCs.</dd></div>
-      <div><dt>iPhone</dt><dd><!-- if:IPHONE_BETA_URL -->The iPhone app syncs with your Windows PC. It is in public beta: <a href="{{IPHONE_BETA_URL}}">join it through TestFlight</a>.<!-- else -->An iPhone app is coming. It will sync with your Windows PC. It is not available yet.<!-- /if --></dd></div>
+      <div><dt>[[t:features.sync-between-your-devices.2]]</dt><dd>[[t:features.sync-between-your-devices.3]]</dd></div>
+      <div><dt>[[t:features.sync-between-your-devices.4]]</dt><dd>[[t:features.sync-between-your-devices.5]]</dd></div>
+      <div><dt>[[t:features.sync-between-your-devices.6]]</dt><dd>[[t:features.sync-between-your-devices.7]]</dd></div>
+      <div><dt>[[t:features.sync-between-your-devices.8]]</dt><dd>[[t:features.sync-between-your-devices.9]]</dd></div>
     </dl>
   </section>
 
   <section class="feature-group" aria-labelledby="f-privacy">
-    <h2 id="f-privacy">Privacy</h2>
+    <h2 id="f-privacy">[[t:features.privacy.1]]</h2>
     <dl>
-      <div><dt>No account</dt><dd>You never sign up or sign in. A Pro licence is a key you keep, checked on your PC.</dd></div>
-      <div><dt>No telemetry</dt><dd>The app sends no usage data, crash reports or analytics.</dd></div>
-      <div><dt>Strict offline mode</dt><dd>On by default. It blocks background internet requests and breach checks, and an update check asks you first.</dd></div>
-      <div><dt>Website icons, your choice</dt><dd>To show a site's icon, the app downloads it from that site. This tells the site you have an account there, and nothing else. It is off by default: turn on "Show website icons" in Settings (strict offline mode must be off).</dd></div>
-      <div><dt>Update checks you start</dt><dd>Checking for updates downloads one small signed file. The app never downloads or installs anything by itself.</dd></div>
+      <div><dt>[[t:features.privacy.2]]</dt><dd>[[t:features.privacy.3]]</dd></div>
+      <div><dt>[[t:features.privacy.4]]</dt><dd>[[t:features.privacy.5]]</dd></div>
+      <div><dt>[[t:features.privacy.6]]</dt><dd>[[t:features.privacy.7]]</dd></div>
+      <div><dt>[[t:features.privacy.8]]</dt><dd>[[t:features.privacy.9]]</dd></div>
+      <div><dt>[[t:features.privacy.10]]</dt><dd>[[t:features.privacy.11]]</dd></div>
     </dl>
   </section>
 </div>

@@ -72,7 +72,7 @@ struct GeneratorView: View {
             }
             .buttonStyle(.plain)
             .disabled(model.value.isEmpty)
-            .accessibilityLabel(model.copied ? "Copied" : "Copy")
+            .accessibilityLabel(model.copied ? String(localized: "Copied") : String(localized: "Copy"))
         }
     }
 }
@@ -87,10 +87,10 @@ struct GeneratorHeroCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text(model.options.mode == .password ? "Password" : "Passphrase")
+                Text(model.options.mode == .password ? String(localized: "Password") : String(localized: "Passphrase"))
                     .font(.subheadline).foregroundStyle(Palette.secondaryText)
                 Spacer()
-                Text(model.copied ? "Copied" : "Tap to copy")
+                Text(model.copied ? String(localized: "Copied") : String(localized: "Tap to copy"))
                     .font(.footnote).foregroundStyle(model.copied ? Palette.success : Palette.secondaryText)
                     .accessibilityHidden(true)
             }
@@ -177,8 +177,8 @@ struct GlassModePicker: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            segment(.password, "Password")
-            segment(.passphrase, "Passphrase")
+            segment(.password, String(localized: "Password"))
+            segment(.passphrase, String(localized: "Passphrase"))
         }
         .padding(4)
         .frame(minHeight: 48)
@@ -213,30 +213,30 @@ struct GeneratorOptionsCard: View {
     @Binding var options: GeneratorOptions
 
     static let sliderLengthRange = 8...64
-    static let separators: [(String, String)] = [("-", "Dash"), (" ", "Space"), (".", "Dot"), ("_", "Underscore"), ("", "None")]
+    static let separators: [(String, String)] = [("-", String(localized: "Dash")), (" ", String(localized: "Space")), (".", String(localized: "Dot")), ("_", String(localized: "Underscore")), ("", String(localized: "None"))]
 
     var body: some View {
         VStack(spacing: 0) {
             if options.mode == .password {
                 lengthRow
                 divider
-                toggle("Lowercase (a-z)", "textformat.abc", $options.lowercase)
+                toggle(String(localized: "Lowercase (a-z)"), "textformat.abc", $options.lowercase)
                 divider
-                toggle("Uppercase (A-Z)", "textformat", $options.uppercase)
+                toggle(String(localized: "Uppercase (A-Z)"), "textformat", $options.uppercase)
                 divider
-                toggle("Digits (0-9)", "number", $options.digits)
+                toggle(String(localized: "Digits (0-9)"), "number", $options.digits)
                 divider
-                toggle("Symbols", "asterisk", $options.symbols)
+                toggle(String(localized: "Symbols"), "asterisk", $options.symbols)
                 divider
-                toggle("Avoid look-alike characters", "eye.slash", $options.avoidAmbiguous)
+                toggle(String(localized: "Avoid look-alike characters"), "eye.slash", $options.avoidAmbiguous)
             } else {
                 wordsRow
                 divider
                 separatorRow
                 divider
-                toggle("Capitalize words", "textformat.size.larger", $options.capitalize)
+                toggle(String(localized: "Capitalize words"), "textformat.size.larger", $options.capitalize)
                 divider
-                toggle("Add a number", "number", $options.appendNumber)
+                toggle(String(localized: "Add a number"), "number", $options.appendNumber)
             }
         }
         .padding(.vertical, 4)
@@ -350,7 +350,7 @@ extension View {
         if #available(iOS 26, *) {
             buttonStyle(.glassProminent).tint(Palette.accent)
         } else {
-            buttonStyle(.borderedProminent).tint(Palette.accent)
+            buttonStyle(.borderedProminent).tint(Palette.accent).foregroundStyle(Palette.onAccent)
         }
     }
 }

@@ -1,5 +1,6 @@
 package app.localgatekeys.android.ui.sync
 
+import app.localgatekeys.android.i18n.Txt
 import app.localgatekeys.android.sync.SyncCoordinator
 import app.localgatekeys.android.sync.SyncWording
 import kotlinx.coroutines.flow.Flow
@@ -81,7 +82,9 @@ class FolderPasswordForm(val uri: String) {
  * and join (new member) or attach (already in the group by QR) through [sync]. Every end that does not keep the picked
  * folder gives its permission up again.
  */
-class FolderJoinFlow(private val sync: SyncCoordinator) {
+class FolderJoinFlow(private val sync: SyncCoordinator, t: Txt) {
+    private val words = SyncWording(t)
+
     private val _form = MutableStateFlow<FolderPasswordForm?>(null)
     /** The password sheet (null: closed). */
     val form: StateFlow<FolderPasswordForm?> = _form.asStateFlow()
@@ -94,7 +97,7 @@ class FolderJoinFlow(private val sync: SyncCoordinator) {
         _error.value = null
         when (result) {
             FolderPick.Cancelled -> {}
-            FolderPick.Failed -> _error.value = SyncWording.errorText("folder-error")
+            FolderPick.Failed -> _error.value = words.errorText("folder-error")
             is FolderPick.Picked -> {
                 sync.refreshMembership()
                 if (sync.membership.value.hasFolder) {

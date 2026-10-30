@@ -1,6 +1,10 @@
 import Foundation
 import Observation
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 // MARK: seams
 
@@ -27,6 +31,48 @@ protocol LanTransporting: Sendable {
     /// The one enrollment request of a scanned offer; returns the inviter's reply bytes. `onConnected` is
     /// called once the connection is up (the screen then stops offering Cancel).
     func enroll(endpoint: LanEndpoint, request: [UInt8], onConnected: @escaping @Sendable () -> Void) async throws -> [UInt8]
+    /// `exchangeViews`, and when the pinned address does not answer, the paired host found by Bonjour
+    /// (`HostFinder`): `moved` is the address it answered at with its pinned keys.
+    func exchangeViewsFindingHost(peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey, localStates: [ItemState],
+                                  ownCounter: Int64) async throws -> HostFinder.Result
+    /// `exchangeViewsFindingHost` carrying rollback witnesses (2026-10-29): with `vaultGeneration` the own view is
+    /// format 2; the result keeps the peer's view header. Default (older fakes): no witness, no header.
+    func exchangeWitnessViews(peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey, localStates: [ItemState],
+                              ownCounter: Int64, vaultGeneration: Int64?,
+                              witness: [String: Int64]?) async throws -> HostFinder.Result
+    /// One LAN `witness` message after a format-1 exchange; returns the peer's answer. Default: nil (not sent).
+    func sendWitness(_ raw: [UInt8], peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey) async throws -> LanMessage?
+    /// Attachment sync: one verified blob from the peer. Default (older fakes): an older peer.
+    func fetchBlob(_ ref: AttachmentRef, peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey) async throws -> [UInt8]
+    /// Attachment sync probe: true reads documents, false an older build, nil unknown. Default: nil.
+    func probeAttachments(peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey) async throws -> Bool?
+}
+
+extension LanTransporting {
+    func exchangeWitnessViews(peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey, localStates: [ItemState],
+                              ownCounter: Int64, vaultGeneration: Int64?,
+                              witness: [String: Int64]?) async throws -> HostFinder.Result {
+        try await exchangeViewsFindingHost(peer: peer, identity: identity, groupKey: groupKey, localStates: localStates,
+                                           ownCounter: ownCounter)
+    }
+
+    func sendWitness(_ raw: [UInt8], peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey) async throws -> LanMessage? {
+        nil
+    }
+
+    /// Attachment sync: one blob from the peer (`LanClient.fetchBlob`). Default (older fakes): an older peer.
+    func fetchBlob(_ ref: AttachmentRef, peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey) async throws -> [UInt8] {
+        throw LanSyncError("peer-refused", "bad-message")
+    }
+
+    /// Attachment sync: whether the peer knows `blob-get` (`LanClient.probeAttachments`). Default: no.
+    func probeAttachments(peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey) async throws -> Bool? { nil }
+    /// No discovery: the pinned address only.
+    func exchangeViewsFindingHost(peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey, localStates: [ItemState],
+                                  ownCounter: Int64) async throws -> HostFinder.Result {
+        HostFinder.Result(states: try await exchangeViews(peer: peer, identity: identity, groupKey: groupKey,
+                                                          localStates: localStates, ownCounter: ownCounter), moved: nil)
+    }
 }
 
 /// `LanClient` over Network.framework with the retry-once connector; hello counters in the Keychain.
@@ -35,12 +81,51 @@ struct LiveLanTransport: LanTransporting {
     let counters: HelloCounterSource
     let random: any RandomSource
     let clock: any UnixClock
+    /// Bonjour browse used when the pinned address does not answer (the iPhone); nil: no discovery.
+    var browser: (any ServiceBrowsing)? = nil
 
     func exchangeViews(peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey, localStates: [ItemState],
                        ownCounter: Int64) async throws -> [ItemState] {
         let client = LanClient(identity: identity, groupKey: groupKey, counters: counters, random: random, clock: clock)
         let connector = PairedLanConnector(paired: peer, dialer: dialer)
         return try await client.sync(peer: peer, localStates: localStates, ownCounter: ownCounter, connector: connector)
+    }
+
+    func exchangeViewsFindingHost(peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey, localStates: [ItemState],
+                                  ownCounter: Int64) async throws -> HostFinder.Result {
+        let client = LanClient(identity: identity, groupKey: groupKey, counters: counters, random: random, clock: clock)
+        let dialer = self.dialer
+        return try await HostFinder.exchange(peer: peer, groupKey: groupKey, now: clock.now, browser: browser) { p in
+            try await client.sync(peer: p, localStates: localStates, ownCounter: ownCounter,
+                                  connector: PairedLanConnector(paired: p, dialer: dialer))
+        }
+    }
+
+    func exchangeWitnessViews(peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey, localStates: [ItemState],
+                              ownCounter: Int64, vaultGeneration: Int64?,
+                              witness: [String: Int64]?) async throws -> HostFinder.Result {
+        let client = LanClient(identity: identity, groupKey: groupKey, counters: counters, random: random, clock: clock)
+        let dialer = self.dialer
+        return try await HostFinder.exchangeWithHeader(peer: peer, groupKey: groupKey, now: clock.now, browser: browser) { p in
+            try await client.exchange(peer: p, localStates: localStates, ownCounter: ownCounter,
+                                      connector: PairedLanConnector(paired: p, dialer: dialer),
+                                      vaultGeneration: vaultGeneration, witness: witness)
+        }
+    }
+
+    func sendWitness(_ raw: [UInt8], peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey) async throws -> LanMessage? {
+        let client = LanClient(identity: identity, groupKey: groupKey, counters: counters, random: random, clock: clock)
+        return try await client.sendWitness(raw, peer: peer, connector: PairedLanConnector(paired: peer, dialer: dialer))
+    }
+
+    func fetchBlob(_ ref: AttachmentRef, peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey) async throws -> [UInt8] {
+        let client = LanClient(identity: identity, groupKey: groupKey, counters: counters, random: random, clock: clock)
+        return try await client.fetchBlob(ref, peer: peer, connector: PairedLanConnector(paired: peer, dialer: dialer))
+    }
+
+    func probeAttachments(peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey) async throws -> Bool? {
+        let client = LanClient(identity: identity, groupKey: groupKey, counters: counters, random: random, clock: clock)
+        return try await client.probeAttachments(peer: peer, connector: PairedLanConnector(paired: peer, dialer: dialer))
     }
 
     func enroll(endpoint: LanEndpoint, request: [UInt8], onConnected: @escaping @Sendable () -> Void) async throws -> [UInt8] {
@@ -64,16 +149,28 @@ struct SyncDependencies: Sendable {
     var editDebounceNanos: UInt64 = 2_000_000_000
     /// This phone's Wi-Fi IPv4 subnet, read before a pairing dial (nil: unknown, nothing is compared).
     var localSubnet: @Sendable () -> IPv4Subnet? = { nil }
+    /// Set when this build cannot keep the sync secrets safely (Mac Release without the app-only Keychain
+    /// group): sync stays off, every action is refused and this text is the one issue shown.
+    var unavailableText: String? = nil
+    /// The unlock session's in-memory peer generations (rollback witnesses), shared by the folder run, the LAN
+    /// initiator and the Mac's responder; saved throttled and flushed at the end of every run.
+    var witnessMemory = WitnessMemory()
+    /// This device's attachment files (attachment sync); nil: documents are neither published nor received.
+    var attachmentBlobs: (any AttachmentBlobStore)? = nil
+    /// Wi-Fi peers that read documents (answered or sent a `blob-get` this session), shared with the Mac's responder.
+    var attachmentPeers = AttachmentPeerMemory()
 
     /// The app's dependencies for an unlocked vault (main app only; AutoFill never syncs).
     static func live(keychain: any KeychainVault) -> SyncDependencies {
         let clock = SystemClock(), random = SystemRandomSource()
         let counters = HelloCounterSource(store: VaultCounterStore(vault: keychain), clock: clock)
         return SyncDependencies(keychain: keychain, folders: SecurityScopedFolderOpener(),
-                                lan: LiveLanTransport(dialer: NWLanDialer(), counters: counters, random: random, clock: clock),
+                                lan: LiveLanTransport(dialer: NWLanDialer(), counters: counters, random: random, clock: clock,
+                                                     browser: NWServiceBrowser()),
                                 autoFill: IdentityStoreSync(), random: random, clock: clock,
                                 licenseKeys: LicenseKeys.production,
-                                localSubnet: { IPv4Interface.currentWiFiSubnet() })
+                                localSubnet: { IPv4Interface.currentWiFiSubnet() },
+                                attachmentBlobs: AttachmentFiles.localFolder())
     }
 }
 
@@ -95,6 +192,8 @@ struct EnrollConnectError: Error, Equatable {
 struct SyncRunResult: Sendable, Equatable {
     var issues: [SyncIssue] = []
     var conflicts = 0
+    /// Items this run added, changed or deleted here (conflict copies included): shown as "N items updated".
+    var changed = 0
     var ran = false
     /// The run ended with the store still open: republish the AutoFill identities (through the coordinator's
     /// ordered `refreshIdentities` chain, never from inside the run).
@@ -145,6 +244,12 @@ final class SyncCoordinator {
         var hasBookmark = false
         var peer: PinnedPeer?
         var deviceID: String?
+        /// Workstream 6 (Sync status): keyring members, Wi-Fi peers (the paired host and any devices this Mac
+        /// pinned), their enrolled names and when each one's changes were last accepted here (local only).
+        var members: [String] = []
+        var wifiPeers: [String] = []
+        var names: [String: String] = [:]
+        var peerSyncedAt: [String: Int64] = [:]
     }
 
     static let maxPasswordAttempts = 5
@@ -158,6 +263,13 @@ final class SyncCoordinator {
     private(set) var conflictCopies = 0
     /// Bumped after every run, so lists reload.
     private(set) var completedRuns = 0
+    /// Shows "N items updated from your other devices" after a run that changed items here.
+    /// The Mac window sets its own toast (CopyToast is iPhone-only).
+    #if os(iOS)
+    @ObservationIgnored var announce: @MainActor (String) -> Void = { CopyToast.shared.show($0, for: .seconds(3)) }
+    #else
+    @ObservationIgnored var announce: @MainActor (String) -> Void = { _ in }
+    #endif
     /// Text for the last refused action (join, leave, reset), desktop `error_text` wording.
     private(set) var actionError: String?
     /// Text for the last completed action.
@@ -189,7 +301,11 @@ final class SyncCoordinator {
 
     init(store: any ItemStore, deps: SyncDependencies, background: (any BackgroundTasking)? = nil) {
         self.store = GatedStore(store, gate: gate); self.deps = deps
-        self.background = background ?? UIKitBackgroundTasks()
+        self.background = background ?? PlatformBackgroundTasks.make()
+        if let text = deps.unavailableText {
+            issues = [SyncWording.IssueView(kind: "sync-unavailable", severity: .error, text: text, resetOffered: false)]
+            return
+        }
         refreshMembership()
     }
 
@@ -243,13 +359,27 @@ final class SyncCoordinator {
                                 hasBookmark: ((try? deps.keychain.readSlot(.folderBookmark)) ?? nil) != nil,
                                 peer: state == nil ? nil : (try? deps.keychain.pairedPeer()) ?? nil,
                                 deviceID: state?.deviceID)
+        if let state {
+            let lan = state.lanPeers.filter { !$0.revoked }
+            var wifi = Set(lan.map(\.deviceID))
+            if let paired = membership.peer?.deviceID { wifi.insert(paired) }
+            membership.members = state.members
+            membership.wifiPeers = wifi.sorted()
+            membership.names = Dictionary(lan.compactMap { p in p.name.map { (p.deviceID, $0) } }) { first, _ in first }
+            membership.peerSyncedAt = state.peerSyncedAt
+        }
+    }
+
+    /// The Sync status pill and sheet (workstream 6); nil when this device does not sync.
+    func statusSummary(now: Int64? = nil) -> SyncStatusSummary? {
+        SyncStatusSummary.make(membership: membership, issues: issues, lastSyncedAt: lastSyncedAt, now: now ?? deps.clock.now)
     }
 
     // MARK: sync
 
     /// Runs one sync, or joins the one in flight and asks it for one more run.
     func sync(_ trigger: Trigger = .manual) async {
-        guard gate.isOpen else { return }
+        guard gate.isOpen, deps.unavailableText == nil else { return }
         if phase == .joining { syncAfterAction = true; return }   // run once the join/leave has finished
         if let runner { rerun = true; await runner.value; return }
         let task = Task { await self.runLoop() }
@@ -299,6 +429,7 @@ final class SyncCoordinator {
             lastSyncedAt = deps.clock.now
             conflictCopies += result.conflicts
             issues = SyncWording.views(result.issues, ownID: membership.deviceID, folder: membership.hasFolder)
+            if result.changed > 0 { announce(SyncWording.itemsUpdated(result.changed)) }
         } else {
             issues = []
         }
@@ -340,6 +471,7 @@ final class SyncCoordinator {
                 }
             }
             out.issues += report.issues; out.conflicts += report.conflicts
+            out.changed += report.applied + report.deleted + report.conflicts
         }
         let peer: PinnedPeer?
         do { peer = try deps.keychain.pairedPeer() } catch {
@@ -350,7 +482,11 @@ final class SyncCoordinator {
             guard stillOpen(store) else { return out }
             let report = await lanRun(store: store, deps: deps, installID: installID, peer: peer)
             out.issues += report.issues; out.conflicts += report.conflicts
+            out.changed += report.applied + report.deleted + report.conflicts
         }
+        // Peer generations the LAN save throttle held back are saved at the end of every run, so a lock loses at
+        // most one run's rises, never a stored value (desktop `SyncService._run_transports` flush).
+        if stillOpen(store) { Witness.flush(store: store, memory: deps.witnessMemory, extra: witnessExtra(deps)) }
         out.publish = stillOpen(store)
         return out
     }
@@ -373,12 +509,95 @@ final class SyncCoordinator {
             let (folder, refreshed) = try deps.folders.open(bookmark: bookmark)
             if let refreshed { try? deps.keychain.writeSlot(.folderBookmark, refreshed) }
             let fs = try FolderSync(access: folder, installID: installID, licenseKeys: deps.licenseKeys,
-                                    pairedKeys: pairedKeys(deps))
+                                    pairedKeys: pairedKeys(deps), witnessMemory: deps.witnessMemory,
+                                    attachmentBlobs: deps.attachmentBlobs)
             return fs.runOnce(store: store, random: deps.random, clock: deps.clock)
         } catch {
             fail.issues = [SyncIssue("folder-missing", "\(error)")]
             return fail
         }
+    }
+
+    /// Peers whose generations this device publishes besides the state's members and LAN peers: the paired PC.
+    nonisolated static func witnessExtra(_ deps: SyncDependencies) -> Set<String> {
+        guard let peer = (try? deps.keychain.pairedPeer()) ?? nil else { return [] }
+        return [peer.deviceID]
+    }
+
+    /// After a LAN exchange (desktop `sync_with`): check the peer's format-2 header, or after a format-1 exchange
+    /// send one `witness` message and check the answer. A peer of an older version answers `bad-message`, and a
+    /// lost connection gives nothing: both are silent (the next exchange tries again).
+    nonisolated static func lanWitness(store: any ItemStore, deps: SyncDependencies, peer: PinnedPeer,
+                                       header: ViewHeader?, inline: Bool) async -> [SyncIssue] {
+        guard stillOpen(store) else { return [] }
+        let extra = witnessExtra(deps).union([peer.deviceID])
+        if let header, let obs = Witness.observation(header) {
+            return Witness.apply(store: store, observations: [obs], memory: deps.witnessMemory, extra: extra)
+        }
+        guard !inline, let snapshot = try? store.load(), let state = snapshot.sync,
+              let raw = try? Witness.lanWitnessFile(snapshot, memory: deps.witnessMemory, extra: extra,
+                                                     now: deps.clock, random: deps.random),
+              let groupKey = try? GroupKey(groupID: state.groupID, epoch: state.epoch, key: state.key) else { return [] }
+        guard let reply = try? await deps.lan.sendWitness(raw, peer: peer, identity: state.identity, groupKey: groupKey),
+              case let .witness(g, e, v) = reply, stillOpen(store) else { return [] }
+        switch Witness.openLanWitness(state, peerID: peer.deviceID, groupID: g, epoch: e, view: v) {
+        case .failure(let refusal): return [refusal.issue]
+        case .success(let obs): return Witness.apply(store: store, observations: [obs], memory: deps.witnessMemory, extra: extra)
+        }
+    }
+
+    /// A refused LAN exchange: a `bad-view` refusal of a format-2 view counts, and `Witness.formatRefusalsToDrop`
+    /// in a row (no successful format-2 exchange in between) drop the peer from `witnessPeers`, so the next
+    /// exchange is format 1 (an older app's refusal carries no reason; one damaged transfer must not switch back).
+    nonisolated static func noteRefusal(_ error: LanSyncError, store: any ItemStore, deps: SyncDependencies,
+                                        peer: PinnedPeer, state: SyncGroupState, inline: Bool) {
+        guard inline, error.reason == "peer-refused", error.detail == "bad-view" else { return }
+        let count = deps.witnessMemory.noteRefusal(peer.deviceID, groupID: state.groupID, deviceID: state.deviceID)
+        guard count >= Witness.formatRefusalsToDrop else { return }
+        deps.witnessMemory.clearRefusals(peer.deviceID)
+        _ = Witness.apply(store: store, observations: [], memory: deps.witnessMemory,
+                          extra: witnessExtra(deps).union([peer.deviceID]), dropCapable: peer.deviceID)
+    }
+
+    /// Attachment sync after the view exchange (desktop `lan_sync._fetch_blobs` + `attachment_flow.import_missing`):
+    /// fetches every file the peer's live documents name that this device lacks, verifies it and stores it, so the
+    /// merge can apply those documents. When nothing was needed and the peer is not known to read documents, one
+    /// probe `blob-get` finds out. A file that fails stays missing: its document waits (`attachment-missing`).
+    /// Returns the issues and what was learnt about the peer (true reads documents, false older, nil unknown);
+    /// the caller saves the latter in the run's one commit.
+    nonisolated static func fetchAttachments(peerStates: [ItemState], deps: SyncDependencies, peer: PinnedPeer,
+                                             state: SyncGroupState, groupKey: GroupKey) async -> (issues: [SyncIssue], capable: Bool?) {
+        guard let blobs = deps.attachmentBlobs else { return ([], nil) }
+        var issues: [SyncIssue] = []
+        let wanted: [AttachmentRef]
+        do { wanted = try AttachmentSync.wanted(AttachmentDocuments.refs(peerStates), presentBlobs: blobs.ids()) } catch {
+            return ([SyncIssue("attachment-refused", "\(error)")], nil)
+        }
+        // Only `no-blob` or a valid chunk marks the peer as reading documents; `bad-message` (an older build)
+        // removes it; any other failure leaves what is known unchanged.
+        var answered: Bool?
+        for ref in wanted {
+            do {
+                let blob = try await deps.lan.fetchBlob(ref, peer: peer, identity: state.identity, groupKey: groupKey)
+                answered = true
+                try blobs.write(blob)
+            } catch let e as LanSyncError {
+                switch e.reason {
+                case "no-blob": answered = true
+                case "attachment-refused": issues.append(SyncIssue("attachment-refused", e.detail))
+                case "peer-refused" where e.detail == "bad-message": answered = false
+                default: break
+                }
+                if answered == false { break }
+            } catch {
+                issues.append(SyncIssue("attachment-missing", "\(ref.attachmentID): \(error)"))
+            }
+        }
+        if wanted.isEmpty && !deps.attachmentPeers.contains(peer.deviceID) && !state.attachmentPeers.contains(peer.deviceID) {
+            answered = (try? await deps.lan.probeAttachments(peer: peer, identity: state.identity, groupKey: groupKey)) ?? nil
+        }
+        if let answered { deps.attachmentPeers.set(peer.deviceID, capable: answered) }
+        return (issues, answered)
     }
 
     /// One LAN sync with the paired peer (desktop `lan_sync.sync_with` + `run_merge`). Nothing is
@@ -403,30 +622,68 @@ final class SyncCoordinator {
         let local: [ItemState]
         do {
             groupKey = try GroupKey(groupID: state.groupID, epoch: state.epoch, key: state.key)
-            local = try SyncMeta.localView(records: snapshot.records, meta: snapshot.meta, device: state.deviceID, now: now)
+            let all = try SyncMeta.localView(records: snapshot.records, meta: snapshot.meta, device: state.deviceID, now: now)
                 .states.values.sorted { $0.itemID < $1.itemID }
+            // Documents only to a peer that showed it reads them (attachment sync); older builds would refuse them.
+            local = AttachmentDocuments.publishable(all, documents: deps.attachmentBlobs != nil
+                                                        && (state.attachmentPeers.contains(peer.deviceID)
+                                                            || deps.attachmentPeers.contains(peer.deviceID)))
         } catch {
             fail.issues = [SyncIssue("local-data", "\(error)")]; return fail
         }
         let peerStates: [ItemState]
+        let moved: LanEndpoint?
+        let peerHeader: ViewHeader?
+        // Format 2 only to a peer that showed support (`witnessPeers`); else format 1 and a `witness` message after.
+        let generation = Witness.generation(snapshot)
+        let inline = generation != nil && state.witnessPeers.contains(peer.deviceID)
         do {
-            peerStates = try await deps.lan.exchangeViews(peer: peer, identity: state.identity, groupKey: groupKey,
-                                                          localStates: local, ownCounter: state.ownCounter)
+            let witness = inline
+                ? Witness.publishedWitness(state, memory: deps.witnessMemory, extra: witnessExtra(deps).union([peer.deviceID]))
+                : nil
+            let found = try await deps.lan.exchangeWitnessViews(peer: peer, identity: state.identity, groupKey: groupKey,
+                                                                localStates: local, ownCounter: state.ownCounter,
+                                                                vaultGeneration: inline ? generation : nil, witness: witness)
+            peerStates = found.states; moved = found.moved; peerHeader = found.header
         } catch let e as LanSyncError {
+            noteRefusal(e, store: store, deps: deps, peer: peer, state: state, inline: inline)
             fail.issues = [SyncIssue(e.reason == "bad-message" ? "bad-reply" : e.reason, e.detail)]; return fail
         } catch {
             fail.issues = [SyncIssue("unreachable", "\(error)")]; return fail
         }
+        // The host answered at a new address with its pinned keys: dial it there next time (only while the same
+        // peer is still paired; a Leave or a new pairing during the run wins).
+        if let moved, stillOpen(store), (try? deps.keychain.pairedPeer()) == peer {
+            try? deps.keychain.setPairedPeer(PinnedPeer(deviceID: peer.deviceID, groupID: peer.groupID,
+                                                        signingPublic: peer.signingPublic,
+                                                        exchangePublic: peer.exchangePublic, endpoint: moved))
+        }
+        let attachments = await fetchAttachments(peerStates: peerStates, deps: deps, peer: peer, state: state,
+                                                 groupKey: groupKey)
         var report = SyncRunner.run(store: snapshot, views: [PeerView(deviceID: peer.deviceID, states: peerStates)],
-                                    device: state.deviceID, now: now, licenseKeys: deps.licenseKeys)
+                                    device: state.deviceID, now: now, licenseKeys: deps.licenseKeys, blobs: deps.attachmentBlobs)
+        report.issues += attachments.issues
         let records = report.records ?? snapshot.records, meta = report.meta ?? snapshot.meta
+        // The peer's attachment capability is saved in the same commit (desktop `attachment_peers`).
+        var sync = snapshot.sync
+        if let capable = attachments.capable, var st = sync,
+           let next = AttachmentDocuments.peers(st.attachmentPeers, setting: peer.deviceID, capable: capable) {
+            st.attachmentPeers = next
+            sync = st
+        }
+        // Workstream 6: the peer's changes were accepted now (local only; no extra commit when nothing changed).
         if records != snapshot.records || meta != snapshot.meta {
+            sync = sync?.synced(with: [peer.deviceID], now: now)
+        }
+        if records != snapshot.records || meta != snapshot.meta || sync != snapshot.sync {
             do {
-                try store.commit(StoreChange(baseRevision: snapshot.revision, records: records, meta: meta, sync: snapshot.sync))
+                try store.commit(StoreChange(baseRevision: snapshot.revision, records: records, meta: meta, sync: sync))
             } catch {
                 report.issues.append(SyncIssue("busy", "\(error)"))
             }
         }
+        if inline { deps.witnessMemory.clearRefusals(peer.deviceID) }   // a format-2 exchange went through
+        report.issues += await lanWitness(store: store, deps: deps, peer: peer, header: peerHeader, inline: inline)
         report.wrote = true
         return report
     }
@@ -457,14 +714,14 @@ final class SyncCoordinator {
             joinTask = nil; connecting = nil; verificationCode = nil
             phase = .idle
             syncAfterAction = false   // the first sync below includes any edit made meanwhile
-            actionInfo = "This iPhone joined the sync group. The first sync is running."
+            actionInfo = String(localized: "This \(SyncWording.thisDevice) joined the sync group. The first sync is running.")
             refreshMembership()
             await sync(.manual)
             return true
         } catch let e as EnrollConnectError where e.failure == .cancelled {
             joinTask = nil; connecting = nil; verificationCode = nil
             phase = .idle
-            actionInfo = "Pairing was cancelled."
+            actionInfo = String(localized: "Pairing was cancelled.")
             refreshMembership()
             runPendingSync()
             return false
@@ -473,6 +730,37 @@ final class SyncCoordinator {
             fail(error)
             return false
         }
+    }
+
+    /// The last Wi-Fi run could not reach the paired PC, at its pinned address or by discovery: the Sync screen
+    /// shows "Can't find your PC on this network" with Find again.
+    var hostNotFound: Bool {
+        membership.peer != nil && issues.contains { $0.kind == "unreachable" || $0.kind == "no-endpoint" }
+    }
+
+    /// Find again: a fresh pairing QR from the paired PC moves its pinned address (keys must match; no
+    /// enrollment), then syncs. Another device's QR is refused and nothing changes.
+    @discardableResult
+    func findAgain(_ text: String) async -> Bool {
+        if let unavailable = deps.unavailableText { actionError = unavailable; return false }
+        guard phase == .idle, runner == nil else { actionError = SyncWording.errorText(reason: "busy"); return false }
+        actionError = nil; actionInfo = nil; actionOffersSettings = false
+        guard let peer = (try? deps.keychain.pairedPeer()) ?? nil else {
+            actionError = SyncWording.findAgainText(.otherDevice); return false
+        }
+        let moved: PinnedPeer
+        do { moved = try PeerAddressRefresh.refreshed(peer, qrText: text) } catch let r as PeerAddressRefresh.Refusal {
+            actionError = SyncWording.findAgainText(r); return false
+        } catch {
+            actionError = SyncWording.findAgainText(.notAPairingCode); return false
+        }
+        do { try deps.keychain.setPairedPeer(moved) } catch {
+            actionError = SyncWording.stepFailedCopy; return false
+        }
+        refreshMembership()
+        if let ep = moved.endpoint { actionInfo = SyncWording.foundAgainText(ep) }
+        await sync(.manual)
+        return true
     }
 
     /// Stops a QR join that is still connecting (the Cancel button next to "Connecting to …"). Once the
@@ -549,6 +837,7 @@ final class SyncCoordinator {
     /// phone is already in the group by QR (P4). Both run the first sync.
     @discardableResult
     func joinFolder(bookmark: [UInt8], password: String) async -> Bool {
+        if let text = deps.unavailableText { actionError = text; return false }
         let now = deps.clock.now
         // The wrong-password back-off guards only paths that check the password; re-picking the folder
         // of a group this phone already syncs through does not.
@@ -563,7 +852,7 @@ final class SyncCoordinator {
             refreshMembership()
             apply(result)
             await publish(result)
-            actionInfo = "This iPhone now syncs through the cloud folder."
+            actionInfo = String(localized: "This \(SyncWording.thisDevice) now syncs through the cloud folder.")
             runPendingSync()
             return true
         } catch let e as FolderSyncError where e.reason == "password" {
@@ -578,6 +867,60 @@ final class SyncCoordinator {
             fail(error)
             return false
         }
+    }
+
+    /// Cloud folder, desktop side: start a new group in the picked folder (`add == false`, vault not in a
+    /// group) or give this vault's Wi-Fi-only group the folder (`add == true`), each with a new sync password,
+    /// then store the bookmark and run once. The caller checks Pro first.
+    @discardableResult
+    func createFolder(bookmark: [UInt8], password: String, add: Bool, freshKey: Bool = false) async -> Bool {
+        if let text = deps.unavailableText { actionError = text; return false }
+        guard beginAction() else { return false }
+        do {
+            let result = try await Self.createFolderWork(bookmark: bookmark, password: password, add: add,
+                                                         freshKey: freshKey, store: store, deps: deps)
+            phase = .idle
+            refreshMembership()
+            apply(result)
+            await publish(result)
+            actionInfo = String(localized: "This \(SyncWording.thisDevice) now syncs through the cloud folder.")
+            runPendingSync()
+            return true
+        } catch {
+            fail(error)
+            return false
+        }
+    }
+
+    nonisolated static func createFolderWork(bookmark: [UInt8], password: String, add: Bool, freshKey: Bool = false,
+                                             store: any ItemStore, deps: SyncDependencies) async throws -> SyncRunResult {
+        let folder: any FolderAccess
+        let refreshed: [UInt8]?
+        do { (folder, refreshed) = try deps.folders.open(bookmark: bookmark) } catch { throw SyncActionError("folder-missing") }
+        let installID = try deps.keychain.installID(random: deps.random)
+        let fs = try FolderSync(access: folder, installID: installID, licenseKeys: deps.licenseKeys,
+                                pairedKeys: pairedKeys(deps), attachmentBlobs: deps.attachmentBlobs)
+        let report = add
+            ? try fs.addFolder(toGroup: store, password: password, deviceName: deps.deviceName, freshKey: freshKey, random: deps.random, clock: deps.clock)
+            : try fs.create(store: store, password: password, deviceName: deps.deviceName, random: deps.random, clock: deps.clock)
+        try deps.keychain.writeSlot(.folderBookmark, refreshed ?? bookmark)
+        var out = SyncRunResult(issues: report.issues, conflicts: report.conflicts, ran: true)
+        out.publish = stillOpen(store)
+        return out
+    }
+
+    /// "Choose the folder again": stores the bookmark of this group's folder, never joining. When this vault is no
+    /// longer a re-pick (left, or set up on another installation) it is refused, and the back-off is untouched.
+    @discardableResult
+    func repickFolder(bookmark: [UInt8]) async -> Bool {
+        if let text = deps.unavailableText { actionError = text; return false }
+        guard Self.isRepick(store: store, deps: deps) else {
+            actionInfo = nil; actionOffersSettings = false
+            let hasFolder = (try? store.load())?.sync?.hasFolder ?? false
+            actionError = SyncWording.errorText(reason: hasFolder ? "rejoin-required" : "not-joined")
+            return false
+        }
+        return await joinFolder(bookmark: bookmark, password: "")
     }
 
     /// True when `joinFolderWork` would take the "choose the folder again" branch (no password).
@@ -595,7 +938,7 @@ final class SyncCoordinator {
         do { (folder, refreshed) = try deps.folders.open(bookmark: bookmark) } catch { throw SyncActionError("folder-missing") }
         let installID = try deps.keychain.installID(random: deps.random)
         let fs = try FolderSync(access: folder, installID: installID, licenseKeys: deps.licenseKeys,
-                                pairedKeys: pairedKeys(deps))
+                                pairedKeys: pairedKeys(deps), attachmentBlobs: deps.attachmentBlobs)
         let snapshot = try store.load()
         let report: RunReport
         if let state = snapshot.sync, state.hasFolder, state.installID == installID {
@@ -629,6 +972,54 @@ final class SyncCoordinator {
         return out
     }
 
+    // MARK: rollback warnings (desktop `acknowledge_rollback` / `dismiss_peer_rollback`)
+
+    /// "This was me — keep this copy" for `vault-rollback`, after the UI's confirmation. `reauthenticate` is the
+    /// screen's prompt (Face ID or the device passcode on the iPhone, Touch ID or the master password on the Mac);
+    /// nothing changes unless it succeeds. Raises the vault generation above every witness and clears the warning
+    /// in one commit. There is no automatic acknowledgement: only this explicit, re-authenticated step clears it.
+    @discardableResult
+    func acknowledgeRollback(reauthenticate: @MainActor () async -> Bool) async -> Bool {
+        // The warning may come from this run or from a served exchange (Mac host); the store says whether one is open.
+        guard ((try? store.load())?.sync?.rollbackSuspected ?? 0) > 0 else { return false }
+        guard beginAction() else { return false }
+        guard await reauthenticate(), gate.isOpen else {
+            phase = .idle
+            runPendingSync()
+            return false
+        }
+        do {
+            guard try Witness.acknowledgeRollback(store: store) else {
+                phase = .idle; runPendingSync(); return false
+            }
+            phase = .idle
+            issues.removeAll { $0.kind == "vault-rollback" }
+            actionInfo = SyncWording.text(SyncIssue("rollback-acknowledged"))
+            runPendingSync()
+            return true
+        } catch {
+            fail(error)
+            return false
+        }
+    }
+
+    /// Dismiss `peer-vault-rollback` for one device: its older copy is accepted from now on.
+    @discardableResult
+    func dismissPeerRollback(_ deviceID: String) async -> Bool {
+        guard !deviceID.isEmpty else { return false }
+        guard beginAction() else { return false }
+        do {
+            try Witness.forgetPeerGeneration(store: store, peerID: deviceID, memory: deps.witnessMemory)
+            phase = .idle
+            issues.removeAll { $0.kind == "peer-vault-rollback" && $0.detail == deviceID }
+            runPendingSync()
+            return true
+        } catch {
+            fail(error)
+            return false
+        }
+    }
+
     // MARK: leave and reset (each after two confirmations in the UI)
 
     /// Stops syncing and forgets the paired device and folder; items and their sync history stay.
@@ -637,7 +1028,7 @@ final class SyncCoordinator {
         do {
             try Self.clear(store: store, deps: deps, history: false)
             phase = .idle
-            actionInfo = SyncWording.onPhone(SyncWording.leftText)
+            actionInfo = SyncWording.leftText
             issues = []
             refreshMembership()
         } catch { fail(error) }
@@ -649,7 +1040,7 @@ final class SyncCoordinator {
         do {
             let cleared = try Self.clear(store: store, deps: deps, history: true)
             phase = .idle
-            actionInfo = SyncWording.onPhone(SyncWording.resetResultText(cleared))
+            actionInfo = SyncWording.resetResultText(cleared)
             issues = []
             refreshMembership()
         } catch { fail(error) }
@@ -675,6 +1066,7 @@ final class SyncCoordinator {
     // MARK: helpers
 
     private func beginAction() -> Bool {
+        if let text = deps.unavailableText { actionError = text; return false }
         guard phase == .idle, runner == nil else { actionError = SyncWording.errorText(reason: "busy"); return false }
         actionError = nil; actionInfo = nil; actionOffersSettings = false
         phase = .joining

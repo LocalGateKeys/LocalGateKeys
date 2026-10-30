@@ -2,6 +2,7 @@
   /** Settings: the classic sections and rows, saved as you change them. Buttons open the matching page. */
   import { untrack } from 'svelte';
   import { call, on } from '../lib/api.js';
+  import { t } from '../lib/i18n.svelte.js';
   import { okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
   import ErrorLogLink from './ErrorLogLink.svelte';
@@ -18,7 +19,7 @@
 
   async function load() {
     const result = await call('settings_page');
-    if (!okOrToast(result, 'Could not open Settings')) { onclose(); return; }
+    if (!okOrToast(result, t('settingsPage.openFailed'))) { onclose(); return; }
     data = result;
     if (!active || !result.sections.some((s) => s.key === active)) active = result.sections[0]?.key;
   }
@@ -38,7 +39,7 @@
     errors = { ...errors, [row.key]: '' };
     const result = await call('settings_set', row.key, value);
     if (result.ok) { flashSaved(); await load(); return; }
-    if (result.error.code !== 'cancelled') errors = { ...errors, [row.key]: result.error.message || 'That value cannot be used.' };
+    if (result.error.code !== 'cancelled') errors = { ...errors, [row.key]: result.error.message || t('settingsPage.badValue') };
     await load(); // revert the control to the saved value
   }
 
@@ -119,9 +120,9 @@
             oninput={(e) => (drafts = { ...drafts, [row.key]: e.currentTarget.value })}
             onchange={(e) => { const v = e.currentTarget.value; drafts = { ...drafts, [row.key]: undefined }; set(row, v); }} />
         {:else if row.type === 'folder'}
-          <span class="desc path">{row.value || 'Not set'}</span>
-          {#if row.value}<Button label="Clear" onclick={() => set(row, '')} />{/if}
-          <Button label="Choose…" onclick={() => chooseFolder(row)} />
+          <span class="desc path">{row.value || t('settingsPage.notSet')}</span>
+          {#if row.value}<Button label={t('settingsPage.clear')} onclick={() => set(row, '')} />{/if}
+          <Button label={t('settingsPage.choose')} onclick={() => chooseFolder(row)} />
         {:else if row.type === 'shortcut'}
           <kbd>{row.keys}</kbd>
         {:else if row.type === 'link'}
@@ -135,28 +136,28 @@
 
 <svelte:window onkeydowncapture={searchKeys} />
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label="Settings" bind:this={sheetEl}>
+<div class="sheet glass" role="dialog" aria-label={t('settingsPage.title')} bind:this={sheetEl}>
   <header>
-    <h2>Settings</h2>
-    <input class="search" type="search" placeholder="Search settings" aria-label="Search settings"
+    <h2>{t('settingsPage.title')}</h2>
+    <input class="search" type="search" placeholder={t('settingsPage.search')} aria-label={t('settingsPage.search')}
       bind:this={searchBox} bind:value={query} />
-    <span class="pill" class:on={saved} role="status">{saved ? 'Saved' : data?.saved_text ?? ''}</span>
-    <button class="close" aria-label="Close" onclick={onclose}>✕</button>
+    <span class="pill" class:on={saved} role="status">{saved ? t('settingsPage.saved') : data?.saved_text ?? ''}</span>
+    <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
   {#if data}
     <div class="body">
-      <nav aria-label="Settings sections">
+      <nav aria-label={t('settingsPage.sections')}>
         {#each data.sections as s (s.key)}
           <button class:on={!results && s.key === active} aria-current={s.key === active ? 'page' : undefined} onclick={() => showSection(s.key)}>{s.title}</button>
         {/each}
       </nav>
       {#if results}
-        <section class="rows" aria-label="Search results">
+        <section class="rows" aria-label={t('settingsPage.results')}>
           {#each results as section (section.key)}
             <h3 class="hit"><button class="section-link" onclick={() => showSection(section.key)}>{section.title}</button></h3>
             <div class="group">{#each section.rows as row, i (row.key ?? row.title ?? i)}{@render rowView(row)}{/each}</div>
           {:else}
-            <p class="note">No settings match “{query}”.</p>
+            <p class="note">{t('settingsPage.noMatch', { query })}</p>
           {/each}
         </section>
       {:else if current}

@@ -5,16 +5,71 @@ import AppShared
 
 /// Face ID / Touch ID with the device passcode as fallback (`.deviceOwnerAuthentication`). The same
 /// authenticated `LAContext` opens the Keychain items, so one prompt covers the unlock.
+///
+/// Task 7: with the app password on (`app-password.json`), never the passcode: the password, the recovery phrase, or
+/// the Face ID shortcut (`.deviceOwnerAuthenticationWithBiometrics` + the `.biometryCurrentSet` item). The local key is
+/// then held in memory only (`AppPasswordKeyVault`).
 @MainActor
 final class SystemUnlocker: Unlocking {
     private static let log = Logger(subsystem: "app.localgatekeys.app", category: "keychain")
     private var context = LAContext()
     private(set) var keychain: (any KeychainVault)?
+    let appPassword: AppPasswordStore?
+
+    init(appPassword: AppPasswordStore? = AppPasswordStore.shared()) { self.appPassword = appPassword }
+
+    var passwordOn: Bool { appPassword?.isOn ?? false }
+    var biometricShortcut: Bool { appPassword?.biometricOn ?? false }
 
     func unlock(reason: String) async throws -> any ItemStore {
+        if let appPassword, appPassword.isOn {
+            guard appPassword.biometricOn else { throw AppPasswordError.required }
+            let ctx = LAContext()
+            ctx.touchIDAuthenticationAllowableReuseDuration = 0
+            ctx.localizedFallbackTitle = String(localized: "Use App Password")
+            do {
+                try await ctx.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason)
+            } catch let e as LAError where e.code == .userFallback {
+                throw AppPasswordError.required
+            }
+            let key: [UInt8]
+            do { key = try appPassword.biometric.load(context: ctx) } catch AppPasswordError.biometricChanged {
+                try? appPassword.biometric.remove()
+                throw AppPasswordError.biometricChanged
+            }
+            return try openWithKey(key, context: ctx)
+        }
         let ctx = LAContext()
         ctx.touchIDAuthenticationAllowableReuseDuration = 0
         try await ctx.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason)
+        return try openSystem(context: ctx)
+    }
+
+    func unlock(password: String) async throws -> any ItemStore {
+        guard let appPassword, appPassword.isOn else { throw AppPasswordError.required }
+        let key = try await Task.detached(priority: .userInitiated) { try appPassword.open(password: password) }.value
+        return try openWithKey(key, context: LAContext())
+    }
+
+    func recover(phrase: String, newPassword: String) async throws -> any ItemStore {
+        guard let appPassword, appPassword.isOn else { throw AppPasswordError.required }
+        let key = try await Task.detached(priority: .userInitiated) { () throws -> [UInt8] in
+            let k = try appPassword.open(phrase: phrase)
+            try appPassword.write(try appPassword.withNewPassword(try appPassword.readFile(), localKey: k,
+                                                                    password: newPassword, random: SystemRandomSource()))
+            return k
+        }.value
+        return try openWithKey(key, context: LAContext())
+    }
+
+    /// Password mode: the other slots carry no `.userPresence`, so an unevaluated context reads them. A passcode
+    /// item of the local key left by an interrupted turn-on is deleted.
+    private func openWithKey(_ key: [UInt8], context ctx: LAContext) throws -> any ItemStore {
+        try? SystemKeychainVault(context: ctx).delete(.localKey)
+        return try openSystem(context: ctx, localKey: key)
+    }
+
+    private func openSystem(context ctx: LAContext, localKey: [UInt8]? = nil) throws -> any ItemStore {
         context = ctx
         let shared = SystemKeychainVault(context: ctx)
         // Sync-only slots live in the app-only group. When that group is unusable (no team prefix in unsigned
@@ -39,8 +94,14 @@ final class SystemUnlocker: Unlocking {
                 Self.log.error("Keychain migration to the Safari group failed: \(String(describing: error), privacy: .public)")  // status codes and slot names only
             }
         }
-        keychain = vault
-        let store = try LocalStore.bootstrap(directory: try AppGroup.vaultDirectory(), vault: vault)
+        let opened: any KeychainVault = localKey.map { AppPasswordKeyVault(localKey: $0, base: vault) } ?? vault
+        keychain = opened
+        // Task 7: an app-password turn-on or turn-off a crash or an error interrupted is finished now, in both modes
+        // (the sync slots get the access flags the password file says). Idempotent; retried at the next unlock.
+        do { try AppPasswordKeychainMigration.repairAtUnlock(vault) } catch {
+            Self.log.error("App password Keychain repair failed: \(String(describing: error), privacy: .public)")  // status codes only
+        }
+        let store = try LocalStore.bootstrap(directory: try AppGroup.vaultDirectory(), vault: opened)
         // Every commit republishes the Safari fingerprint index. Its key has no `.userPresence`, so a vault
         // without this unlock's context reads it (a commit still finishing after a lock invalidated it).
         store.safariIndex = SafariIndexPublisher(keychain: SafariKeys.appVault(base: SystemKeychainVault(), group: safariGroup))
@@ -49,6 +110,7 @@ final class SystemUnlocker: Unlocking {
 
     func lock() {
         context.invalidate()
+        (keychain as? AppPasswordKeyVault)?.clear()   // zero the in-memory local key
         keychain = nil
         context = LAContext()
     }

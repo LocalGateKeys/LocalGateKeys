@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 import AppShared
 
 struct EditorView: View {
@@ -7,9 +8,16 @@ struct EditorView: View {
     /// Called after a save or delete that changed the store.
     let onDone: (SaveResult) -> Void
     @Environment(\.dismiss) private var dismiss
+    /// Task 6: leaving the app with the editor open keeps the form as an encrypted draft (EditorDraft.swift).
+    @Environment(\.editorDrafts) private var drafts
+    @Environment(\.scenePhase) private var scenePhase
+    /// Recently deleted (UX plan workstream 3): a delete goes there, with an Undo toast.
+    @Environment(\.phoneTrash) private var trash
     @State private var generatorFor: String?
     @State private var confirmDelete = false
     @State private var scanningTOTP = false
+    /// A photo chosen for the 2FA field (PhotosPicker: no photo-library permission).
+    @State private var totpPhoto: PhotosPickerItem?
 
     var body: some View {
         NavigationStack {
@@ -30,33 +38,46 @@ struct EditorView: View {
             }
             .scrollContentBackground(.hidden)
             .lgkAuroraBackground()
-            .navigationTitle(model.isNew ? "New \(model.kind.label.lowercased())" : "Edit \(model.kind.label.lowercased())")
+            .navigationTitle(model.isNew ? model.kind.newTitle : model.kind.editTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { drafts?.delete(); dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         let r = model.save()
-                        if r == .saved || r == .unchanged { onDone(r); dismiss() }
+                        if r == .saved || r == .unchanged { drafts?.delete(); onDone(r); dismiss() }
                     }
                 }
             }
-            .confirmationDialog("Delete this item?", isPresented: $confirmDelete, titleVisibility: .visible) {
+            // An alert with a visible Cancel (tester feedback 1): iOS 26 shows a destructive-only dialog as a
+            // popover with no way out but tapping outside it.
+            .alert("Delete this item?", isPresented: $confirmDelete) {
                 Button("Delete", role: .destructive) {
-                    if model.delete() == .saved { onDone(.saved); dismiss() }
+                    if model.delete(using: trash?.mover) == .saved {
+                        trash?.offerUndo(); drafts?.delete(); onDone(.saved); dismiss()
+                    }
                 }
+                Button("Cancel", role: .cancel) {}
             } message: {
-                Text("It is removed from this iPhone and from your other devices at the next sync.")
+                Text(trash == nil ? String(localized: "It is removed from this iPhone and from your other devices at the next sync.")
+                     : String(localized: "It moves to Recently deleted on this iPhone and is removed from your other devices at the next sync."))
             }
             .alert(EditorModel.alreadyRemovedMessage,
                    isPresented: Binding(get: { model.alreadyRemoved }, set: { if !$0 { model.clearAlreadyRemoved() } })) {
                 // The list reloads (the item is gone) and the sheet closes.
-                Button("OK") { onDone(.saved); dismiss() }
+                Button("OK") { drafts?.delete(); onDone(.saved); dismiss() }
             }
             .sheet(item: Binding(get: { generatorFor.map(GeneratorTarget.init) }, set: { generatorFor = $0?.key })) { target in
                 GeneratorView { model.set(target.key, $0) }
             }
             .sheet(isPresented: $model.showUpgrade) { UpgradeView(pro: pro) }
+            // `.inactive` comes before `.background`, where the lock may drop the Keychain: saved while it is open.
+            .onChange(of: scenePhase) { _, phase in
+                if phase != .active { drafts?.save(model.draft(now: SystemClock().now)) }
+            }
+            // Closed while the app is in front (Cancel, swipe down, Save): the draft goes. A lock while in the
+            // background closes it too, and keeps the draft for the next unlock.
+            .onDisappear { if scenePhase == .active { drafts?.delete() } }
             .sheet(isPresented: $scanningTOTP) {
                 NavigationStack {
                     QRScanner(onCode: { code in scanningTOTP = false; model.scanTOTP(code) },
@@ -66,6 +87,20 @@ struct EditorView: View {
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { scanningTOTP = false } } }
                 }
+            }
+        }
+    }
+
+    /// Reads the 2FA QR code in the chosen photo into the field (a setup key first, else an export).
+    private func readTOTPPhoto(_ item: PhotosPickerItem?) {
+        guard let item else { return }
+        totpPhoto = nil
+        Task {
+            switch await PhotoQRLoader.payloads(from: item) {
+            case .success(let payloads):
+                let key = payloads.first { $0.lowercased().hasPrefix("otpauth://") } ?? payloads.first
+                if let key { model.scanTOTP(key) }
+            case .failure(let f): model.totpScanFailed(f.message)
             }
         }
     }
@@ -113,6 +148,11 @@ struct EditorView: View {
                 if field.key == "totp" {
                     Button { scanningTOTP = true } label: { Image(systemName: "qrcode.viewfinder") }
                         .buttonStyle(.borderless).accessibilityLabel("Scan QR code")
+                    PhotosPicker(selection: $totpPhoto, matching: .images, photoLibrary: .shared()) {
+                        Image(systemName: "photo.on.rectangle")
+                    }
+                    .buttonStyle(.borderless).accessibilityLabel("Choose from Photos")
+                    .onChange(of: totpPhoto) { _, item in readTOTPPhoto(item) }
                 }
             }
             .textInputAutocapitalization(Self.capitalization(field.caps))
@@ -295,7 +335,7 @@ struct SecretField: View {
             SecureInputField(placeholder: label, text: $text, revealed: revealed && !captured, keyboard: keyboard)
                 .frame(minHeight: 22)
             Button { revealed.toggle() } label: { Image(systemName: revealed ? "eye.slash" : "eye") }
-                .buttonStyle(.borderless).accessibilityLabel(revealed ? "Hide" : "Reveal")
+                .buttonStyle(.borderless).accessibilityLabel(revealed ? String(localized: "Hide") : String(localized: "Reveal"))
                 .disabled(captured)
         }
         .onChange(of: captured) { _, now in if now { revealed = false } }
@@ -305,9 +345,19 @@ struct SecretField: View {
 /// Picks the kind of a new item.
 struct NewItemMenu<MenuLabel: View>: View {
     let onPick: (EditorKind) -> Void
+    /// "Scan QR code" (a 2FA setup code or an authenticator export), shown first when set.
+    var onScan: (() -> Void)? = nil
+    /// "Attach a file" (a document item from Files, Photos or the camera), shown when set.
+    var onAddFile: (() -> Void)? = nil
     @ViewBuilder let label: () -> MenuLabel
     var body: some View {
         Menu {
+            if let onScan {
+                Section { Button(action: onScan) { Label("Scan QR code", systemImage: "qrcode.viewfinder") } }
+            }
+            if let onAddFile {
+                Section { Button(action: onAddFile) { Label("Attach a file", systemImage: "paperclip") } }
+            }
             ForEach(Array(EditorKind.menuSections.enumerated()), id: \.offset) { _, section in
                 Section {
                     ForEach(section) { k in
@@ -334,12 +384,12 @@ struct SecretMultilineField: View {
                 TextField(label, text: $text, axis: .vertical).lineLimit(3...12)
                     .font(.system(.footnote, design: .monospaced))
             } else {
-                Text(text.isEmpty ? "Empty. Tap the eye to paste or type it." : "•••••••• (\(text.split(whereSeparator: \.isNewline).count) lines)")
+                Text(text.isEmpty ? String(localized: "Empty. Tap the eye to paste or type it.") : String(localized: "•••••••• (\(text.split(whereSeparator: \.isNewline).count) lines)"))
                     .foregroundStyle(Palette.secondaryText)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             Button { revealed.toggle() } label: { Image(systemName: revealed ? "eye.slash" : "eye") }
-                .buttonStyle(.borderless).accessibilityLabel(revealed ? "Hide" : "Reveal")
+                .buttonStyle(.borderless).accessibilityLabel(revealed ? String(localized: "Hide") : String(localized: "Reveal"))
                 .disabled(captured)
         }
         .onChange(of: captured) { _, now in if now { revealed = false } }
@@ -374,7 +424,7 @@ struct OptionalDateField: View {
                            displayedComponents: .date)
                     .environment(\.timeZone, TimeZone(identifier: "UTC")!)
                 Button { text = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(Palette.secondaryText) }
-                    .buttonStyle(.borderless).accessibilityLabel("Clear \(label.lowercased())")
+                    .buttonStyle(.borderless).accessibilityLabel(String(localized: "Clear \(EditorKind.midSentence(label))"))
             }
         } else {
             VStack(alignment: .leading, spacing: 4) {

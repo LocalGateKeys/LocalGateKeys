@@ -54,7 +54,10 @@ public enum Wrapper {
         if case .int(let s)? = wrapper?["schema"], s > schema {
             throw RecordError("update-needed", id, "written by a newer LocalGateKeys")
         }
-        let required: Set<String> = ["ns", "schema", "updated_at", "record"]
+        // A document (attachment sync, 2026-10-29) carries one more key: `attachment`, its file's reference.
+        let document = AttachmentDocuments.isDocument(state.item)
+        let base: Set<String> = ["ns", "schema", "updated_at", "record"]
+        let required = document ? base.union(["attachment"]) : base
         let allowed = isCopy ? required.union(["id"]) : required
         guard let item = wrapper, required.isSubset(of: item.keys), Set(item.keys).isSubset(of: allowed) else {
             throw bad("malformed wrapper")
@@ -77,7 +80,11 @@ public enum Wrapper {
             throw bad("state does not match its record")
         }
         if nsOf(record) != ns { throw bad("wrong namespace") }
-        if ns == .item, case .string(let k)? = record["kind"], unsyncedItemKinds.contains(k) {
+        if document {
+            do { _ = try AttachmentDocuments.checkRemote(wrapper: item, record: record) } catch {
+                throw bad("malformed attachment (\(error))")
+            }
+        } else if ns == .item, case .string(let k)? = record["kind"], unsyncedItemKinds.contains(k) {
             throw bad("a kind that does not sync")
         }
         return (ns, .object(record))

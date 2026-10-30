@@ -6,14 +6,15 @@ from typing import Any
 
 from ..api.result import ApiError
 from ..password_tools import (
-    STRENGTH_LABELS,
     estimate_strength,
     generate_from_options,
     generate_username,
     load_wordlist,
     normalize_generator_options,
+    strength_label,
 )
-from ..shell.commands import COMMANDS, palette_results, registered_section_commands
+from ..i18n import t
+from ..shell.commands import COMMANDS, group_label, palette_results, registered_section_commands
 from .setting_links import clipboard_result
 
 
@@ -42,12 +43,12 @@ class GeneratorService:
     @staticmethod
     def _health(value: str, options: Any) -> str:
         estimate = estimate_strength(value)
-        label = STRENGTH_LABELS[max(0, min(4, estimate.score))]
+        label = strength_label(estimate.score)
         if options.mode == "passphrase":
             bits = round(options.words * math.log2(max(2, len(load_wordlist()))))
-            return (f"{options.words} randomly selected words · about {bits} bits from the word list · "
-                    f"{label}, {estimate.crack_time_display} to guess offline")
-        return f"{label} · {estimate.crack_time_display} to guess offline · Local estimate, not a security guarantee"
+            return t("generator.healthPassphrase", words=options.words, bits=bits, label=label,
+                     time=estimate.crack_time_display)
+        return t("generator.healthRandom", label=label, time=estimate.crack_time_display)
 
     def username(self, style: str) -> dict[str, Any]:
         try:
@@ -58,7 +59,7 @@ class GeneratorService:
     def copy(self, value: str) -> dict[str, Any]:
         clipboard = self._controller.clipboard
         clipboard.copy(str(value))
-        return clipboard_result("Generated password copied.", clipboard)
+        return clipboard_result(t("generator.copied"), clipboard)
 
 
 # Commands the classic window has but this window has no page for.
@@ -67,13 +68,19 @@ NOT_IN_WINDOW = frozenset({"safe-workspace", "typed-items"})
 _NAVIGATE = {
     "generate-password": {"navigate": "generator"},
     "new-item": {"navigate": "new-item"},
+    "scan-qr": {"navigate": "scan-qr"},
     "settings": {"navigate": "settings"},
     "security-center": {"navigate": "security"},
+    "security-check": {"navigate": "health"},
+    "sync-status": {"navigate": "sync-status"},
+    "show-setup": {"navigate": "onboarding"},
     "change-master": {"navigate": "master"},
     "backup-now": {"navigate": "recovery", "initial": "create"},
     "backup-verify": {"navigate": "recovery", "initial": "verify"},
     "backup-restore": {"navigate": "recovery", "initial": "restore"},
     "recovery-kit": {"navigate": "recovery", "initial": "kit"},
+    "share-item": {"navigate": "share-item"},
+    "receive-share": {"navigate": "receive-share"},
 }
 
 
@@ -110,14 +117,14 @@ class PaletteService:
                 summaries = []
         if collection_ids is not None:
             matched = [s for s in summaries if set(map(str, getattr(s, "collection_ids", ()) or ())) & collection_ids]
-            rows = [{"kind": "item", "title": str(getattr(s, "title", "")), "subtitle": "", "group": "Items",
+            rows = [{"kind": "item", "title": str(getattr(s, "title", "")), "subtitle": "", "group": group_label("Items"),
                      "ref": self._ref(s)} for s in matched[:12]]
             return {"rows": rows}
         out = []
         for row in palette_results(text, summaries, unlocked=unlocked, scope=scope):
             if row.kind != "item" and row.ref.id in NOT_IN_WINDOW:
                 continue  # no page for it in this window yet: don't offer a dead end
-            entry = {"kind": row.kind, "title": row.title, "subtitle": row.subtitle, "group": row.group}
+            entry = {"kind": row.kind, "title": row.title, "subtitle": row.subtitle, "group": group_label(row.group)}
             if row.kind == "item":
                 entry["ref"] = self._ref(row.ref)
             else:
@@ -133,17 +140,17 @@ class PaletteService:
     def run(self, command_id: str) -> dict[str, Any]:
         command = self._all_commands().get(str(command_id))
         if command is None:
-            raise ApiError("not_found", "Unknown command.")
+            raise ApiError("not_found", t("error.unknownCommand"))
         if command.requires_unlock and not self._controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile first.")
+            raise ApiError("locked", t("error.lockedProfile"))
         if command.id == "lock-now":
             self._controller.lock()
-            return {"done": "Vault locked."}
+            return {"done": t("palette.vaultLocked")}
         if command.id == "emergency-lock":
             from .lockmodes import LockModes
 
             LockModes(self._controller).emergency_lock()
-            return {"done": "Emergency lock."}
+            return {"done": t("palette.emergencyLock")}
         if command.id in _NAVIGATE:
             return dict(_NAVIGATE[command.id])
         kwargs = dict(command.kwargs)

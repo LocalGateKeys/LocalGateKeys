@@ -7,9 +7,10 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..password_tools import STRENGTH_LABELS, estimate_strength
+from ..password_tools import estimate_strength, strength_label
 from ..sync.keyring import UNNAMED_DEVICE
 from ..sync.lan_address import is_lan_address
+from ..i18n import t
 
 #: Fixed port suggested for this PC's Wi-Fi sync listener.
 DEFAULT_LAN_PORT = 47821
@@ -30,22 +31,16 @@ MIN_SYNC_PASSWORD_SCORE = 3
 STALE_AFTER_SECONDS = 365 * 86400
 
 
-PASSWORD_ADVICE = "Write this password down. Never reuse an earlier sync password."  # noqa: S105 - user copy
+PASSWORD_ADVICE = "sync.writeThisPasswordDownNever"  # noqa: S105 - user copy
 
 
 LEAVE_TEXT = (
-    "Leave sync on this PC?\n\n"
-    "This PC stops syncing. Your items stay on this PC. Its last sync file stays in the sync folder, "
-    "so your other devices still receive the changes made here.\n\n"
-    "On one of your other devices, open Sync and remove this PC (Remove a device). That deletes its "
-    "file and changes the sync password, so this PC can no longer read anything new."
+    "sync.leaveSyncOnThisPc"
 )
 
 
 LEAVE_WIFI_TEXT = (
-    "Leave sync on this PC?\n\n"
-    "This PC stops Wi-Fi sync and forgets its paired devices. Your items stay on this PC.\n\n"
-    "On your other devices, remove this PC from their paired devices. To sync again, pair again with a QR code."
+    "sync.leaveSyncOnThisPc2"
 )
 
 
@@ -54,37 +49,32 @@ QR_CLIPBOARD_SECONDS = 120
 
 
 RESET_TEXT_1 = (
-    "Reset sync on this PC?\n\n"
-    "This forgets this vault's sync group, its keys and its sync history. Your items stay on this PC. "
-    "To sync again you join a folder or pair again."
+    "sync.resetSyncOnThisPc"
 )
 
 
-RESET_TEXT_2 = "Are you sure? This cannot be undone. Reset sync on this PC now?"
+RESET_TEXT_2 = "sync.areYouSureThisCannot"
 
 
 LAN_ONLY_FOLDER_HINT = (
-    "To sync through a cloud folder too, add one to this group with a new sync password, or use the folder "
-    "another device in this group already added. Your Wi-Fi pairings stay as they are."
+    "sync.toSyncThroughACloud"
 )
 
 
 def leave_text(group: Any) -> str:
     """Leave confirmation: the cloud-folder text, or the Wi-Fi-only text for a group without a folder."""
-    return LEAVE_TEXT if getattr(group, "folder_path", None) else LEAVE_WIFI_TEXT
+    return t(LEAVE_TEXT if getattr(group, "folder_path", None) else LEAVE_WIFI_TEXT)
 
 
 def remove_wifi_device_text(name: str) -> str:
     """Confirmation for removing a Wi-Fi-only paired device (no sync password to change)."""
-    return (f"Remove {name} from Wi-Fi sync?\n\nIt stops syncing with this PC but keeps what it already has.\n\n"
-            f"Wi-Fi pairing is per PC: also remove {name} on every other PC it is paired with, or it keeps "
-            "syncing with those PCs.")
+    return t("sync.removeWifiDevice", name=name)
 
 
 def reset_result_text(cleared: bool | None) -> str:
     if cleared is None:
-        return "Sync could not be reset on this PC. Details are in the error log. Try again after unlocking."
-    return "Sync was reset on this PC." if cleared else "There was nothing to reset."
+        return t("sync.syncCouldNotBeReset")
+    return t("sync.syncWasResetOnThis") if cleared else t("sync.thereWasNothingToReset")
 
 
 def should_clear_clipboard(current: Any, payload: str) -> bool:
@@ -94,14 +84,12 @@ def should_clear_clipboard(current: Any, payload: str) -> bool:
 
 def rotation_intro(group: Any, *, removing: str | None = None) -> str:
     """Copy for a password change (rotation), naming QR-paired devices that must pair again."""
-    text = ("Enter a NEW sync password. Your other cloud-folder devices pick up the change on their next sync; "
-            "a device set up later joins with the new password.")
+    text = (t("sync.enterANewSyncPassword"))
     peers = [p for p in getattr(group, "lan_peers", ()) or () if p.device_id != removing]
     if peers:
         names = group.names() if hasattr(group, "names") else {}
         shown = ", ".join(sanitize_name(names.get(p.device_id) or short_id(p.device_id)) for p in peers)
-        text += ("\n\nDevices paired by QR code can't follow a password change and must be paired again "
-                 f"afterwards: {shown}.")
+        text += t("sync.qrPairedMustRepair", shown=shown)
     plan = rotation_plan(group, removing=() if removing is None else (removing,))
     if plan.text:
         text += "\n\n" + plan.text
@@ -138,27 +126,23 @@ def rotation_plan(group: Any, *, removing: Iterable[str] = ()) -> RotationPlan:
     unacked = set(getattr(group, "unacked", ()) or ())
     keep = tuple(m.device_id for m in members
                  if not m.is_self and m.device_id not in gone and m.device_id not in unacked)
-    shown = [_member_name(group, d) for d in keep] + ["this PC"]
-    text = f"The new sync key goes only to: {', '.join(shown)}."
+    shown = [_member_name(group, d) for d in keep] + [t("sync.thisPc")]
+    text = t("sync.newKeyGoesOnlyTo", shown=", ".join(shown))
     lose = [_member_name(group, m.device_id) for m in members
             if m.device_id in unacked and m.device_id not in gone and not m.is_self]
     if lose:
-        text += (f" Not confirmed, so they lose access: {', '.join(lose)}. To keep one, cancel and choose "
-                 "These are my devices first.")
+        text += t("sync.notConfirmedLoseAccess", shown=", ".join(lose))
     return RotationPlan(keep, text)
 
 
 def lan_removed_folder_text(group: Any) -> str:
     """Confirmation for adding a cloud folder after a Wi-Fi device was removed (audit M9)."""
     peers = [p.device_id for p in getattr(group, "lan_peers", ()) or ()]
-    text = ("A Wi-Fi device was removed from this group, and it still knows the current sync key. So the cloud "
-            "folder gets a NEW key instead, and the removed device cannot read it.")
+    text = (t("sync.aWiFiDeviceWas"))
     if peers:
         shown = ", ".join(_member_name(group, d) for d in peers)
-        text += (f"\n\nYour other paired devices can't receive a new key over Wi-Fi: {shown}. Afterwards pair "
-                 "each of them again (leave sync there, then scan a new QR code), or use Join a folder there with "
-                 "the new sync password. Until then they don't sync with this PC.")
-    return text + "\n\nContinue?"
+        text += t("sync.lanPeersCannotRekey", shown=shown)
+    return text + "\n\n" + t("common.continueQuestion")
 
 
 def sanitize_name(value: Any, limit: int = NAME_LIMIT) -> str:
@@ -190,133 +174,118 @@ def default_device_name() -> str:
 
 
 def short_id(device_id: str) -> str:
-    return f"Device {sanitize_name(device_id, limit=9)[:8]}"
+    return t("sync.deviceShortId", id=sanitize_name(device_id, limit=9)[:8])
 
 
 #: User copy per issue kind; ``{subject}`` is the file or device the issue is about.
 ISSUE_COPY: Mapping[str, str] = {
     # keyring and membership (cloud folder)
-    "keyring-restored": "The sync folder had an older or altered key file. This PC put the trusted copy back; "
-                        "sync continues.",
-    "folder-has-other-group": "This sync folder now holds a different sync group. Sync stopped and nothing was "
-                              "written. Leave sync, or reset sync on this PC, then join the right folder.",
-    "rotation-conflict": "Two devices changed the sync password at the same time. Sync stopped. Join the folder "
-                         "again with the newest sync password.",
-    "removed-or-conflict": "This device may have been removed from sync. Re-join if that isn't expected.",
-    "rejoin-required": "This PC must join sync again (it missed a password change, or it was removed). Join the "
-                       "folder again with the current sync password.",
-    "member-dropped": "{subject} disappeared from the member list without a password change. If you did not "
-                      "remove it, change the sync password.",
-    "member-added": "{subject} was added to this sync group by another device. If it is yours, choose These are "
-                    "my devices. If not, remove it (Remove a device): the new sync password goes only to devices "
-                    "you confirmed.",
-    "old-key-known": "A Wi-Fi device removed from this PC still knows the current sync key and could read the "
-                     "cloud folder. Change the sync password to cut it off.",
-    "tampered": "The key file in the sync folder was altered. Sync stopped. If this keeps happening, reset sync "
-                "on this PC and join again.",
-    "keyring-corrupt": "The key file in the sync folder is damaged. Reset sync on this PC, or restore the folder.",
-    "keyring-missing": "The key file in the sync folder is missing. Check the folder, or reset sync on this PC.",
-    "keyring-unreadable": "The key file in the sync folder could not be read. Check that the cloud app has "
-                          "downloaded it.",
-    "unsafe-member": "A device in the member list has a name that is not a safe file name; it is ignored.",
-    "bad-name": "The name of {subject} in the key file could not be read; it is shown as Unnamed device. "
-                "Sync continues.",
-    "state-corrupt": "This vault's sync settings are damaged. Reset sync on this PC, then join again.",
-    "identity-mismatch": "This PC's sync identity does not match its pairing. Reset sync on this PC and pair "
-                         "again.",
-    "not-joined": "Sync is not set up on this PC.",
+    "keyring-restored": "sync.theSyncFolderHadAn",
+    "folder-has-other-group": "sync.thisSyncFolderNowHolds",
+    "rotation-conflict": "sync.twoDevicesChangedTheSync",
+    "removed-or-conflict": "sync.thisDeviceMayHaveBeen",
+    "rejoin-required": "sync.thisPcMustJoinSync",
+    "member-dropped": "sync.disappearedFromTheMemberList",
+    "member-added": "sync.wasAddedToThisSync",
+    "old-key-known": "sync.aWiFiDeviceRemoved",
+    "tampered": "sync.theKeyFileInThe",
+    "keyring-corrupt": "sync.theKeyFileInThe2",
+    "keyring-missing": "sync.theKeyFileInThe3",
+    "keyring-unreadable": "sync.theKeyFileInThe4",
+    "unsafe-member": "sync.aDeviceInTheMember",
+    "bad-name": "sync.theNameOfInThe",
+    "state-corrupt": "sync.thisVaultSSyncSettings",
+    "identity-mismatch": "sync.thisPcSSyncIdentity",
+    "not-joined": "syncStatusPage.off",
     # device files
-    "stale-self": "This PC had not synced for over a year. Items deleted elsewhere more than a year ago may come "
-                  "back; delete them again if they do.",
-    "stale-device": "{subject} has not synced for over a year and is ignored. Remove that device if it is gone.",
-    "ignored-file": "Unknown files in the sync folder were ignored ({subject}). Cloud apps sometimes make copies "
-                    "like these; you can delete them.",
-    "corrupt": "{subject} is damaged or could not be verified and was skipped. Nothing was changed.",
-    "keyring-rollback": "The key file in the sync folder was replaced by an older copy and could not be put "
-                        "back. Sync stopped. Check the folder, or reset sync on this PC and join again.",
-    "rollback": "{subject} was replaced by an older copy (for example from the cloud's file history) and was "
-                "skipped.",
-    "suspicious-rewrite": "{subject} was rewritten without a new version number and was skipped. Someone with "
-                          "access to the folder may have altered it.",
-    "epoch-mismatch": "{subject} was written with another sync key and is ignored until that device syncs again.",
-    "device-mismatch": "{subject} holds data of a different device and was skipped.",
-    "unreadable": "{subject} could not be read and was skipped.",
-    "folder-missing": "The sync folder is not available. Check that the cloud app is running and the folder "
-                      "exists.",
-    "folder-unreadable": "The sync folder could not be read. Check that the cloud app is running.",
-    "write-failed": "This PC could not write its sync file. Check that the folder is available and not "
-                    "read-only.",
-    "too-large": "The sync data is over the sync limit (20,000 items or 64 MB). Some changes were not sent.",
-    "counter-resynced": "This vault was restored from an older copy; sync caught up automatically.",
-    "implausible-counter": "{subject} carried an impossible version number and was skipped. Someone with access "
-                           "to the sync folder may have altered it.",
-    "view-unsigned": "{subject} is not signed by its device and was skipped. If this keeps happening, someone with "
-                     "access to the sync folder may have altered it.",
-    "view-forged": "{subject} is signed with the wrong key and was skipped. Someone with access to the sync folder "
-                   "may have altered it.",
-    "signer-changed": "{subject} has a different signing key in the sync folder's member list than before. If you "
-                      "did not set that device up again, remove devices you do not trust.",
-    "own-file-rewritten":"This PC's sync file was changed by another device or person. This PC wrote it again. If "
-                          "you did not just restore an older backup, remove devices you do not trust.",
-    "counter-exhausted": "This PC's sync file cannot be updated any more. Leave sync on this PC and join again.",
+    "stale-self": "sync.thisPcHadNotSynced",
+    "stale-device": "sync.hasNotSyncedForOver",
+    "ignored-file": "sync.unknownFilesInTheSync",
+    "corrupt": "sync.isDamagedOrCouldNot",
+    "keyring-rollback": "sync.theKeyFileInThe5",
+    "rollback": "sync.wasReplacedByAnOlder",
+    "suspicious-rewrite": "sync.wasRewrittenWithoutANew",
+    "epoch-mismatch": "sync.wasWrittenWithAnotherSync",
+    "device-mismatch": "sync.holdsDataOfADifferent",
+    "unreadable": "sync.couldNotBeReadAnd",
+    "folder-missing": "sync.theSyncFolderIsNot",
+    "folder-unreadable": "sync.theSyncFolderCouldNot",
+    "write-failed": "sync.thisPcCouldNotWrite",
+    "too-large": "sync.theSyncDataIsOver",
+    "counter-resynced": "sync.thisVaultWasRestoredFrom",
+    "implausible-counter": "sync.carriedAnImpossibleVersionNumber",
+    "view-unsigned": "sync.isNotSignedByIts",
+    "view-forged": "sync.isSignedWithTheWrong",
+    "signer-changed": "sync.hasADifferentSigningKey",
+    "own-file-rewritten":"sync.thisPcSSyncFile",
+    "counter-exhausted": "sync.thisPcSSyncFile2",
     # merging
-    "trash-full": "Sync could not move deleted items to the trash because the trash is full. Empty the trash, "
-                  "then sync again.",
-    "history-quota": "Sync could not keep item history because the history limit was reached. Clear old "
-                     "history, then sync again.",
-    "bad-peer-data": "Data from {subject} could not be read and was skipped.",
-    "bad-peer-record": "One item from {subject} could not be read on this PC and was skipped; everything else "
-                       "synced. Updating LocalGateKeys on this PC usually fixes this.",
-    "implausible-vv": "One item from {subject} carried an impossible version number and was skipped; everything "
-                      "else synced. Someone with access to the sync folder may have altered it.",
-    "update-needed": "One item needs a newer LocalGateKeys on this PC. Update LocalGateKeys; that item waits "
-                     "until then.",
-    "busy": "Items changed while syncing; sync tries again shortly.",
-    "apply-failed": "Changes from your other devices could not be saved. Sync tries again later.",
-    "local-data": "Some items on this PC could not be read for sync.",
-    "error": "Sync hit an unexpected problem. Details are in the error log.",
+    "trash-full": "sync.syncCouldNotMoveDeleted",
+    "history-quota": "sync.syncCouldNotKeepItem",
+    "bad-peer-data": "sync.dataFromCouldNotBe",
+    "bad-peer-record": "sync.oneItemFromCouldNot",
+    "implausible-vv": "sync.oneItemFromCarriedAn",
+    "update-needed": "sync.oneItemNeedsANewer",
+    "busy": "sync.itemsChangedWhileSyncingSync",
+    "apply-failed": "sync.changesFromYourOtherDevices",
+    "local-data": "sync.someItemsOnThisPc",
+    "error": "sync.syncHitAnUnexpectedProblem",
     # Wi-Fi
-    "epoch-behind": "This PC has an older sync key than {subject}. Leave sync on this PC, then pair it again.",
-    "peer-epoch-behind": "{subject} has an older sync key. Pair it again with Show QR code.",
-    "offer-used-or-expired": "This pairing code was used up or expired. Show a new code.",
-    "too-many-peers": "The other device already has the most paired devices. Remove one there first.",
-    "peer-update-needed": "{subject} runs an older LocalGateKeys and cannot sync over Wi-Fi with this PC. Update "
-                          "LocalGateKeys on that device.",
-    "lan-update-needed": "Another device runs a newer Wi-Fi sync. Update LocalGateKeys on this PC.",
-    "lan-not-listening": "Wi-Fi sync is not listening yet.",
-    "listen-failed": "Wi-Fi sync could not start listening. Check the address and port, and that no other app "
-                     "uses that port.",
-    "no-endpoint": "{subject} has no network address; it connects to this PC instead.",
-    "unreachable": "A device could not be reached on this network. Check that it is on the same Wi-Fi and that "
-                   "LocalGateKeys is unlocked there.",
-    "unknown-peer": "A device that is not paired tried to sync and was refused.",
-    "peer-revoked": "{subject} was removed from sync and was not contacted.",
-    "peer-mismatch": "{subject} did not match its pairing and was not synced.",
-    "group-mismatch": "{subject} belongs to a different sync group.",
-    "peer-not-joined": "The other device is not set up for sync.",
-    "peer-rejoin-required": "The other device must join sync again on that device.",
-    "peer-refused": "The other device refused to sync.",
-    "bad-reply": "Another device sent a reply this PC could not understand.",
-    "bad-chunk": "Another device sent data this PC could not understand.",
-    "bad-message": "Another device sent data this PC could not understand.",
-    "refused": "The other device refused the pairing.",
-    "bad-offer": "That is not a valid LocalGateKeys pairing code.",
-    "already-joined": "This vault is already in a sync group. Leave sync first.",
+    "epoch-behind": "sync.thisPcHasAnOlder",
+    "peer-epoch-behind": "sync.hasAnOlderSyncKey",
+    "offer-used-or-expired": "sync.thisPairingCodeWasUsed",
+    "too-many-peers": "sync.theOtherDeviceAlreadyHas",
+    "peer-update-needed": "sync.runsAnOlderLocalgatekeysAnd",
+    "lan-update-needed": "sync.anotherDeviceRunsANewer",
+    "lan-not-listening": "sync.wiFiSyncIsNot",
+    "listen-failed": "sync.wiFiSyncCouldNot",
+    "no-endpoint": "sync.hasNoNetworkAddressIt",
+    "unreachable": "sync.aDeviceCouldNotBe",
+    "unknown-peer": "sync.aDeviceThatIsNot",
+    "peer-revoked": "sync.wasRemovedFromSyncAnd",
+    "peer-mismatch": "sync.didNotMatchItsPairing",
+    "group-mismatch": "sync.belongsToADifferentSync",
+    "peer-not-joined": "sync.theOtherDeviceIsNot",
+    "peer-rejoin-required": "sync.theOtherDeviceMustJoin",
+    "peer-refused": "sync.theOtherDeviceRefusedTo",
+    "bad-reply": "sync.anotherDeviceSentAReply",
+    "bad-chunk": "sync.anotherDeviceSentDataThis",
+    "bad-message": "sync.anotherDeviceSentDataThis",
+    "refused": "sync.theOtherDeviceRefusedThe",
+    "bad-offer": "sync.thatIsNotAValid",
+    "already-joined": "sync.thisVaultIsAlreadyIn",
+    # rollback witnesses (plan Part B, Task B4)
+    "vault-rollback": "sync.anotherDeviceInYourSync",
+    "peer-vault-rollback": "sync.isNowUsingAnOlder",
+    "witness-implausible": "sync.reportedAnImpossibleVersionNumber",
+    "rollback-acknowledged": "sync.youRestoredAnOlderBackup",
+    "attachment-missing": "sync.aFileAttachedOnAnother",
+    "attachment-refused": "sync.aFileFromAnotherDevice",
 }
 
 
+#: Title of the ``vault-rollback`` banner and the label of its acknowledge button (Task B4 copy).
+ROLLBACK_TITLE = "sync.thisVaultIsOlderThan"
+ROLLBACK_ACTION = "sync.thisWasMeKeepThis"
+ROLLBACK_CONFIRM_TITLE = "sync.keepThisCopyOfThe"
+ROLLBACK_CONFIRM_TEXT = ("sync.chooseThisOnlyIfYou")
+PEER_ROLLBACK_DISMISS = "toast.dismiss"
+
+#: Shown in their own banner (with buttons), not in the transport cards.
+ROLLBACK_KINDS = frozenset({"vault-rollback", "peer-vault-rollback"})
+
+
 #: ``epoch-behind`` for a vault in a cloud-folder group: the folder brings the new key (no Leave).
-_EPOCH_BEHIND_FOLDER_COPY = ("This PC has an older sync key than {subject}. Let the cloud folder finish syncing, "
-                             "or join the folder again with the newest sync password.")
+_EPOCH_BEHIND_FOLDER_COPY = ("sync.thisPcHasAnOlder2")
 
 
-_INSTALL_MISMATCH_COPY = "This vault was set up for sync on another PC. Join the folder again on this PC, or reset sync."
+_INSTALL_MISMATCH_COPY = "sync.thisVaultWasSetUp"
 
 
-_SELF_DROPPED_COPY = "This PC was dropped from the member list. Join the folder again."
+_SELF_DROPPED_COPY = "sync.thisPcWasDroppedFrom"
 
 
-_GENERIC_COPY = "Sync reported a problem. Details are in the error log."
+_GENERIC_COPY = "sync.syncReportedAProblemDetails"
 
 
 _DEVICE_SUFFIX = ".lgksync"
@@ -331,7 +300,8 @@ _FILE_KINDS = frozenset({"corrupt", "rollback", "suspicious-rewrite", "epoch-mis
 _DEVICE_KINDS = frozenset({"member-dropped", "member-added", "bad-name", "bad-peer-data", "bad-peer-record",
                            "implausible-vv", "epoch-behind",
                            "peer-epoch-behind", "no-endpoint", "peer-revoked", "peer-mismatch",
-                           "group-mismatch", "peer-update-needed", "signer-changed"})
+                           "group-mismatch", "peer-update-needed", "signer-changed", "peer-vault-rollback",
+                           "witness-implausible"})
 
 
 #: Issues that stop sync for good until the user acts; the banner offers "Reset sync on this PC".
@@ -342,17 +312,19 @@ RESET_KINDS = frozenset({"folder-has-other-group", "rotation-conflict", "removed
 _ERROR_KINDS = RESET_KINDS | frozenset({
     "rejoin-required", "keyring-missing", "keyring-unreadable", "folder-missing", "folder-unreadable",
     "write-failed", "epoch-behind", "error", "listen-failed", "local-data", "apply-failed", "too-large",
-    "counter-exhausted",
+    "counter-exhausted", "vault-rollback",
 })
 
 
 _NOTICE_KINDS = frozenset({"counter-resynced", "keyring-restored", "busy", "ignored-file", "stale-self",
-                           "unreachable", "no-endpoint", "lan-not-listening", "not-joined"})
+                           "unreachable", "no-endpoint", "lan-not-listening", "not-joined",
+                           "peer-vault-rollback", "rollback-acknowledged",
+                           "witness-implausible", "attachment-missing"})
 
 
 #: Banner order: lower first.
 _PRIORITY = (
-    "state-corrupt", "folder-has-other-group", "rotation-conflict", "removed-or-conflict", "rejoin-required",
+    "vault-rollback", "state-corrupt", "folder-has-other-group", "rotation-conflict", "removed-or-conflict", "rejoin-required",
     "tampered", "keyring-rollback", "keyring-corrupt", "identity-mismatch", "keyring-missing", "keyring-unreadable", "folder-missing",
     "folder-unreadable", "epoch-behind", "listen-failed", "write-failed", "too-large", "trash-full",
     "history-quota", "member-dropped", "member-added", "old-key-known", "own-file-rewritten", "view-forged",
@@ -383,15 +355,15 @@ def _subject(kind: str, detail: str, names: Mapping[str, str], own_id: str | Non
         kind = "bad-peer-data"  # LAN: the detail names a peer device, not a file
     if kind in _DEVICE_KINDS:
         if not head:
-            return "Another device"
+            return t("sync.anotherDevice")
         if own_id is not None and head == own_id:
-            return "this PC"
+            return t("sync.thisPc")
         name = names.get(head) if kind != "bad-name" else None  # its name is the unreadable part
         return sanitize_name(name) if name else short_id(head)
     if kind in _FILE_KINDS:
-        return f"The file {sanitize_name(head, limit=60)}" if head else "A sync file"
+        return t("sync.theFileName", name=sanitize_name(head, limit=60)) if head else t("sync.aSyncFile")
     if kind == "ignored-file":
-        return sanitize_name(detail, limit=120) if detail else "some files"
+        return sanitize_name(detail, limit=120) if detail else t("sync.someFiles")
     return ""
 
 
@@ -412,15 +384,16 @@ def issue_text(issue: Any, *, names: Mapping[str, str] | None = None, own_id: st
     detail = str(getattr(issue, "detail", "") or "")
     kind = effective_kind(str(getattr(issue, "kind", "")), detail)
     if kind == "rejoin-required" and detail == "install-mismatch":
-        return _INSTALL_MISMATCH_COPY
+        return t(_INSTALL_MISMATCH_COPY)
     if kind == "member-dropped" and own_id is not None and detail == own_id:
-        return _SELF_DROPPED_COPY
-    template = _EPOCH_BEHIND_FOLDER_COPY if kind == "epoch-behind" and folder else ISSUE_COPY.get(kind)
-    if template is None:
-        return _GENERIC_COPY
+        return t(_SELF_DROPPED_COPY)
+    key = _EPOCH_BEHIND_FOLDER_COPY if kind == "epoch-behind" and folder else ISSUE_COPY.get(kind)
+    if key is None:
+        return t(_GENERIC_COPY)
+    template = t(key)
     subject = _subject(kind, detail, names or {}, own_id)
     if kind == "device-mismatch" and not detail.split(": ", 1)[0].strip().endswith(_DEVICE_SUFFIX):
-        template = "{subject} sent data signed for a different device; it was skipped."
+        template = t("sync.sentDataSignedForA")
     text = template.replace("{subject}", subject)
     return text[0].upper() + text[1:] if text else text
 
@@ -442,6 +415,8 @@ def _issue_views(issues: Iterable[Any], names: Mapping[str, str], own_id: str | 
     for issue in issues:
         detail = str(getattr(issue, "detail", "") or "")
         kind = effective_kind(str(getattr(issue, "kind", "")), detail)
+        if kind in ROLLBACK_KINDS:
+            continue  # rollback_view shows these with their buttons
         key = (kind, detail)
         if key in seen:
             continue
@@ -456,43 +431,37 @@ def _issue_views(issues: Iterable[Any], names: Mapping[str, str], own_id: str | 
 
 
 ERROR_COPY: Mapping[str, str] = {
-    "password": "That sync password is not right for this folder.",
-    "password-reused": "Choose a new sync password; it must differ from the current one.",
-    "weak-password": "The sync password needs at least 12 characters and a Strong rating.",
-    "folder-in-use": "This folder already holds a sync group. Use Join a folder instead.",
-    "no-group": "There is no sync group in this folder yet. Create one, or choose the folder your other device "
-                "uses.",
-    "different-group": "This vault already syncs with another group. Leave sync first.",
-    "keyring-changed": "Another device changed the sync folder at the same moment. Try again.",
-    "folder-error": "The folder could not be used. Check that it exists and is writable.",
-    "folder-missing": "That folder does not exist or is not available.",
-    "too-many-members": "This sync group already has the most devices (16). Remove one first.",
-    "cannot-remove-self": "This PC cannot remove itself. Use Leave sync instead.",
-    "already-joined": "This vault is already in a sync group. Leave sync first.",
-    "not-joined": "This vault is not in a sync group.",
-    "rejoin-required": "This vault was set up for sync on another PC. Join the folder again on this PC.",
-    "not-member": "That device is not in this sync group.",
-    "missed-rotation": "This PC missed a password change. Join the folder again with the current sync password.",
-    "offer-used-or-expired": "This pairing code was used up or expired. Show a new code.",
-    "unreachable": "The other device could not be reached. Check that both are on the same Wi-Fi and that the "
-                   "other device shows its code.",
-    "too-many-peers": "The other device already has the most paired devices. Remove one there first.",
-    "declined": "The other device declined, or nobody chose Accept there in time. Show a new code there and "
-                "choose Accept when both screens show the same code.",
-    "update-needed": "Update LocalGateKeys on this PC to pair with that device.",
-    "bad-offer": "That is not a valid LocalGateKeys pairing code.",
-    "refused": "The other device refused the pairing. Show a new code and try again.",
-    "not-our-offer": "This pairing code belongs to another sync group. Show a new code.",
-    "already-has-folder": "This sync group already uses a cloud folder.",
-    "folder-has-other-group": "That folder holds a different sync group. Choose another folder, or the folder "
-                              "your other device added to this group.",
-    "different-group-key": "That folder's sync group does not match this vault's group. Choose the folder your "
-                           "other device added to this group.",
-    "epoch-mismatch": "The sync key in that folder changed after this PC was paired. Leave sync on this PC, then "
-                      "use Join a folder with the current sync password.",
-    "already-member": "This PC is already in that folder's sync group.",
-    "lan-peer-removed": "A Wi-Fi device was removed from this group and still knows its sync key, so the cloud "
-                        "folder needs a new key. Choose Add a cloud folder to this group again and confirm.",
+    "not-this-device": "sync.thisCodeIsFromA",
+    "password": "sync.thatSyncPasswordIsNot",
+    "password-reused": "sync.chooseANewSyncPassword",
+    "weak-password": "sync.theSyncPasswordNeedsAt",
+    "folder-in-use": "sync.thisFolderAlreadyHoldsA",
+    "no-group": "sync.thereIsNoSyncGroup",
+    "different-group": "sync.thisVaultAlreadySyncsWith",
+    "keyring-changed": "sync.anotherDeviceChangedTheSync",
+    "folder-error": "sync.theFolderCouldNotBe",
+    "folder-missing": "sync.thatFolderDoesNotExist",
+    "too-many-members": "sync.thisSyncGroupAlreadyHas",
+    "cannot-remove-self": "sync.thisPcCannotRemoveItself",
+    "already-joined": "sync.thisVaultIsAlreadyIn",
+    "not-joined": "sync.thisVaultIsNotIn",
+    "rejoin-required": "sync.thisVaultWasSetUp2",
+    "not-member": "sync.thatDeviceIsNotIn",
+    "missed-rotation": "sync.thisPcMissedAPassword",
+    "offer-used-or-expired": "sync.thisPairingCodeWasUsed",
+    "unreachable": "sync.theOtherDeviceCouldNot",
+    "too-many-peers": "sync.theOtherDeviceAlreadyHas",
+    "declined": "sync.theOtherDeviceDeclinedOr",
+    "update-needed": "sync.updateLocalgatekeysOnThisPc",
+    "bad-offer": "sync.thatIsNotAValid",
+    "refused": "sync.theOtherDeviceRefusedThe2",
+    "not-our-offer": "sync.thisPairingCodeBelongsTo",
+    "already-has-folder": "sync.thisSyncGroupAlreadyUses",
+    "folder-has-other-group": "sync.thatFolderHoldsADifferent",
+    "different-group-key": "sync.thatFolderSSyncGroup",
+    "epoch-mismatch": "sync.theSyncKeyInThat",
+    "already-member": "sync.thisPcIsAlreadyIn",
+    "lan-peer-removed": "sync.aWiFiDeviceWas2",
 }
 
 
@@ -501,15 +470,15 @@ def error_text(exc: BaseException) -> str:
     reason = getattr(exc, "reason", None)
     if isinstance(reason, str):
         if reason in ERROR_COPY:
-            return ERROR_COPY[reason]
+            return t(ERROR_COPY[reason])
         if reason in ISSUE_COPY:
             return issue_text(type("Issue", (), {"kind": reason, "detail": ""})())
-        return "Sync could not finish that step. Details are in the error log."
+        return t("sync.syncCouldNotFinishThat")
     from ..session_guard import StaleSession
 
     if isinstance(exc, StaleSession) or type(exc).__name__ == "SyncAborted":
-        return "The vault locked or sync stopped before this finished. Unlock and try again."
-    return "Sync could not finish that step. Details are in the error log."
+        return t("sync.theVaultLockedOrSync")
+    return t("sync.syncCouldNotFinishThat")
 
 
 @dataclass(frozen=True)
@@ -524,14 +493,14 @@ def check_sync_password(password: str, confirm_password: str) -> PasswordCheck:
     """The sync-password gate: 12+ characters, score >= 3 ("Strong"), both entries equal."""
     password = password or ""
     score = estimate_strength(password).score if password else 0
-    label = STRENGTH_LABELS[max(0, min(score, len(STRENGTH_LABELS) - 1))]
+    label = strength_label(score)
     if len(password) < MIN_SYNC_PASSWORD_LEN:
-        return PasswordCheck(False, score, label, f"Use at least {MIN_SYNC_PASSWORD_LEN} characters.")
+        return PasswordCheck(False, score, label, t("sync.passwordMinChars", count=MIN_SYNC_PASSWORD_LEN))
     if score < MIN_SYNC_PASSWORD_SCORE:
-        return PasswordCheck(False, score, label, "Too easy to guess. Add more words or characters.")
+        return PasswordCheck(False, score, label, t("sync.tooEasyToGuessAdd"))
     if password != (confirm_password or ""):
-        return PasswordCheck(False, score, label, "The two passwords do not match.")
-    return PasswordCheck(True, score, label, "Good.")
+        return PasswordCheck(False, score, label, t("sync.theTwoPasswordsDoNot"))
+    return PasswordCheck(True, score, label, t("sync.good"))
 
 
 def _usable_lan_address(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
@@ -547,25 +516,25 @@ def validate_lan_endpoint(text: str) -> tuple[str | None, str]:
     """
     raw = (text or "").strip()
     if not raw:
-        return None, "Enter this PC's address and port, for example 192.168.1.20:47821."
+        return None, t("sync.enterThisPcSAddress")
     host, sep, port_text = raw.rpartition(":")
     if not sep or not host:
-        return None, "Use address:port, for example 192.168.1.20:47821."
+        return None, t("sync.useAddressPortForExample")
     bracketed = host.startswith("[") and host.endswith("]")
     if bracketed:
         host = host[1:-1]
     elif ":" in host:
-        return None, "Put an IPv6 address in brackets, for example [fe80::1]:47821."
+        return None, t("sync.putAnIpv6AddressIn")
     try:
         address = ipaddress.ip_address(host)
     except ValueError:
-        return None, "Use this PC's numeric address (like 192.168.1.20), not a name."
+        return None, t("sync.useThisPcSNumeric")
     if bracketed != (address.version == 6):
-        return None, "Use address:port, for example 192.168.1.20:47821."
+        return None, t("sync.useAddressPortForExample")
     if not _usable_lan_address(address):
-        return None, "Use this PC's address on your home network (a private or link-local address)."
+        return None, t("sync.useThisPcSAddress")
     if not port_text.isdigit() or not 1024 <= int(port_text) <= 65535:
-        return None, "Use a port between 1024 and 65535."
+        return None, t("sync.useAPortBetween1024")
     shown = f"[{address}]" if address.version == 6 else str(address)
     return f"{shown}:{int(port_text)}", ""
 
@@ -604,21 +573,21 @@ def local_ipv4_addresses() -> list[str]:
 def countdown_text(seconds_left: float) -> str:
     left = int(-(-max(0.0, seconds_left) // 1))  # ceil
     if left <= 0:
-        return "Expired"
-    return f"Expires in {left // 60}:{left % 60:02d}"
+        return t("sync.expired")
+    return t("sync.expiresIn", minutes=left // 60, seconds=f"{left % 60:02d}")
 
 
 def ago_text(timestamp: int | None, now: float) -> str:
     if timestamp is None:
-        return "Not synced yet"
+        return t("status.sync.never")
     age = max(0, int(now) - int(timestamp))
     if age < 60:
-        return "Last synced just now"
+        return t("sync.lastSyncedJustNow")
     if age < 3600:
-        return f"Last synced {age // 60} min ago"
+        return t("sync.lastSyncedMin", count=age // 60)
     if age < 86400:
-        return f"Last synced {age // 3600} h ago"
-    return f"Last synced {age // 86400} d ago"
+        return t("sync.lastSyncedHours", count=age // 3600)
+    return t("sync.lastSyncedDays", count=age // 86400)
 
 
 @dataclass(frozen=True)
@@ -703,9 +672,9 @@ def orphan_members(group: GroupSnapshot | None, *, now: float) -> tuple[MemberVi
         if member.is_self:
             continue
         if member.file_written_at is None:
-            orphan, detail = "no-file", "Has no sync file in the folder"
+            orphan, detail = "no-file", t("sync.hasNoSyncFileIn")
         elif member.file_written_at < now - STALE_AFTER_SECONDS:
-            orphan, detail = "stale", "Has not synced for over a year"
+            orphan, detail = "stale", t("sync.hasNotSyncedForOver2")
         else:
             continue
         out.append(MemberView(member.device_id, sanitize_name(member.name), detail, False, True, orphan))
@@ -727,88 +696,127 @@ def _global_issues(status: Any) -> list[Any]:
     return [i for i in status.issues if (i.kind, i.detail) not in per_transport]
 
 
+def rollback_issues(status: Any) -> list[Any]:
+    """Every ``vault-rollback`` / ``peer-vault-rollback`` issue of the last runs (any transport), deduplicated."""
+    if status is None:
+        return []
+    seen: set[tuple[str, str]] = set()
+    out: list[Any] = []
+    pools = [getattr(status, "issues", ()) or ()]
+    pools += [getattr(t, "issues", ()) or () for t in getattr(status, "transports", ()) or ()]
+    for pool in pools:
+        for issue in pool:
+            key = (str(getattr(issue, "kind", "")), str(getattr(issue, "detail", "") or ""))
+            if key[0] in ROLLBACK_KINDS and key not in seen:
+                seen.add(key)
+                out.append(issue)
+    return out
+
+
+def rollback_view(status: Any, group: GroupSnapshot | None, *,
+                  hidden: Iterable[tuple[str, str]] = ()) -> dict[str, Any]:
+    """The rollback banner: ``own`` (this vault looks restored) and ``peers`` (a peer looks restored).
+
+    *hidden*: ``(kind, detail)`` pairs the user already acknowledged or dismissed since the last run.
+    """
+    names = group.names() if group is not None else {}
+    own_id = group.device_id if group is not None else None
+    skip = set(hidden)
+    own: dict[str, Any] | None = None
+    peers: list[dict[str, Any]] = []
+    for issue in rollback_issues(status):
+        kind, detail = str(issue.kind), str(getattr(issue, "detail", "") or "")
+        if (kind, detail) in skip:
+            continue
+        if kind == "vault-rollback" and own is None:
+            own = {"kind": kind, "severity": issue_severity(kind), "title": t(ROLLBACK_TITLE),
+                   "text": t(ISSUE_COPY[kind]), "action": t(ROLLBACK_ACTION)}
+        elif kind == "peer-vault-rollback" and detail and detail != own_id:
+            peers.append({"kind": kind, "severity": issue_severity(kind), "id": detail,
+                          "text": issue_text(issue, names=names, own_id=own_id), "action": t(PEER_ROLLBACK_DISMISS)})
+    return {"own": own, "peers": peers}
+
+
 def _conflicts_text(count: int) -> str:
     if count <= 0:
         return ""
-    noun = "copy" if count == 1 else "copies"
-    return f"{count} conflict {noun} made since unlock: look for items marked as conflict copies"
+    return t("sync.conflictCopies", count=count)
 
 
 def _folder_card(status: Any, group: GroupSnapshot | None, *, now: float, available: bool,
                  state_corrupt: bool, names: Mapping[str, str], own: str | None) -> CardView:
-    title = "Cloud folder"
+    title = t("sync.cloudFolder")
     transport = _transport(status, "folder")
     issues = _issue_views(getattr(transport, "issues", ()) or (), names, own)
     banner = issues[0] if issues else None
     running = bool(getattr(status, "running", False))
     last = ago_text(getattr(transport, "last_sync", None), now)
     if not available:
-        return CardView("folder", title, "unavailable", "Sync runs while the vault is unlocked on this PC.")
+        return CardView("folder", title, "unavailable", t("sync.syncRunsWhileTheVault"))
     if state_corrupt:
-        return CardView("folder", title, "broken", "Sync settings on this PC are damaged.",
+        return CardView("folder", title, "broken", t("sync.syncSettingsOnThisPc"),
                         actions=frozenset({"reset"}))
     if group is None:
         return CardView("folder", title, "off",
-                        "Off. Keep your devices in step through a folder your cloud app already syncs "
-                        "(OneDrive, Dropbox, iCloud Drive). Everything in it is encrypted.",
+                        t("sync.offKeepYourDevicesIn"),
                         actions=frozenset({"create-group", "join-folder"}))
     unacked = set(group.unacked)
     members = tuple(
         MemberView(m.device_id, sanitize_name(m.name),
-                   "This PC" if m.is_self else ("Added by another device, not confirmed"
+                   t("syncStatusPage.thisPc") if m.is_self else (t("sync.addedByAnotherDeviceNot")
                                                 if m.device_id in unacked else ""),
                    m.is_self, not m.is_self)
         for m in group.members)
     if not group.folder_path:
         if not group.install_ok:
-            return CardView("folder", title, "lan-only", "Not used: this vault syncs over Wi-Fi only.")
-        return CardView("folder", title, "lan-only", "Not used: this vault syncs over Wi-Fi only.",
-                        actions=frozenset({"add-folder", "use-folder"}), hint=LAN_ONLY_FOLDER_HINT)
-    folder_text = f"Folder: {sanitize_name(group.folder_path, limit=80)}"
+            return CardView("folder", title, "lan-only", t("sync.notUsedThisVaultSyncs"))
+        return CardView("folder", title, "lan-only", t("sync.notUsedThisVaultSyncs"),
+                        actions=frozenset({"add-folder", "use-folder"}), hint=t(LAN_ONLY_FOLDER_HINT))
+    folder_text = t("sync.folderLine", name=sanitize_name(group.folder_path, limit=80))
     common = dict(members=members, last_sync_text=last, banner=banner, issues=issues)
     if not group.install_ok:
-        return CardView("folder", title, "rejoin", f"Needs to join again on this PC. {folder_text}",
+        return CardView("folder", title, "rejoin", t("sync.needsJoinAgain", folder=folder_text),
                         actions=frozenset({"join-folder", "leave", "reset"}), **common)
     kinds = {issue.kind for issue in issues}
     if "folder-has-other-group" in kinds:
         actions = {"leave", "reset", "sync-now"}
-        state, text = "stopped", "Stopped: the folder holds another sync group."
+        state, text = "stopped", t("sync.stoppedTheFolderHoldsAnother")
     elif kinds & {"rotation-conflict", "removed-or-conflict", "rejoin-required"}:
         actions = {"join-folder", "leave", "reset", "sync-now"}
-        state, text = "stopped", "Stopped: join the folder again."
+        state, text = "stopped", t("sync.stoppedJoinTheFolderAgain")
     elif kinds & (RESET_KINDS - {"state-corrupt"}):
         actions = {"join-folder", "leave", "reset", "sync-now"}
-        state, text = "stopped", "Stopped: the sync folder needs attention."
+        state, text = "stopped", t("sync.stoppedTheSyncFolderNeeds")
     else:
         actions = {"sync-now", "change-password", "remove-device", "leave"}
         if orphan_members(group, now=now):
             actions.add("show-orphans")
         if unacked & {m.device_id for m in group.members}:
             actions.add("ack-members")
-        state, text = "on", "On."
+        state, text = "on", t("sync.on")
     if running:
         actions.discard("sync-now")
-        text = f"{text} Syncing now…"
+        text = f"{text} {t('sync.syncingNow')}"
     return CardView("folder", title, state, f"{text} {folder_text}", actions=frozenset(actions), **common)
 
 
 def _wifi_card(status: Any, group: GroupSnapshot | None, *, now: float, available: bool, endpoint: str,
                state_corrupt: bool, names: Mapping[str, str], own: str | None) -> CardView:
-    title = "Wi-Fi (this network)"
+    title = t("sync.wiFiThisNetwork")
     transport = _transport(status, "lan")
     in_folder = group is not None and bool(group.folder_path)
     issues = _issue_views(getattr(transport, "issues", ()) or (), names, own, folder=in_folder)
     banner = issues[0] if issues else None
     running = bool(getattr(status, "running", False))
     if not available:
-        return CardView("wifi", title, "unavailable", "Sync runs while the vault is unlocked on this PC.")
+        return CardView("wifi", title, "unavailable", t("sync.syncRunsWhileTheVault"))
     if state_corrupt:
-        return CardView("wifi", title, "broken", "Sync settings on this PC are damaged.")
+        return CardView("wifi", title, "broken", t("sync.syncSettingsOnThisPc"))
     peers: tuple[MemberView, ...] = ()
     if group is not None:
         peers = tuple(
             MemberView(p.device_id, sanitize_name(names.get(p.device_id) or short_id(p.device_id)),
-                       f"At {sanitize_name(p.endpoint, limit=48)}" if p.endpoint else "Connects to this PC",
+                       t("sync.atEndpoint", endpoint=sanitize_name(p.endpoint, limit=48)) if p.endpoint else t("sync.connectsToThisPc"),
                        False, True)
             for p in group.lan_peers)
     lan_only = group is not None and not group.folder_path
@@ -817,16 +825,16 @@ def _wifi_card(status: Any, group: GroupSnapshot | None, *, now: float, availabl
         if lan_only:
             actions.add("leave")
         return CardView("wifi", title, "off",
-                        "Off. Sync with your phone or another PC on the same network, without any cloud.",
+                        t("sync.offSyncWithYourPhone"),
                         members=peers, actions=frozenset(actions), banner=banner, issues=issues)
-    where = f"This PC listens on {endpoint}."
+    where = t("sync.listensOn", endpoint=endpoint)
     if group is None:
-        return CardView("wifi", title, "ready", f"Ready. {where} Show a QR code to pair your first device.",
+        return CardView("wifi", title, "ready", t("sync.readyShowQr", where=where),
                         actions=frozenset({"show-qr", "join-qr", "wifi-disable"}), banner=banner, issues=issues)
     common = dict(members=peers, last_sync_text=ago_text(getattr(transport, "last_sync", None), now),
                   banner=banner, issues=issues)
     if not group.install_ok:
-        return CardView("wifi", title, "rejoin", "Needs to be set up again on this PC.",
+        return CardView("wifi", title, "rejoin", t("sync.needsToBeSetUp"),
                         actions=frozenset({"leave", "reset", "wifi-disable"}), **common)
     actions = {"show-qr", "sync-now", "wifi-disable"}
     if peers:
@@ -835,12 +843,12 @@ def _wifi_card(status: Any, group: GroupSnapshot | None, *, now: float, availabl
         # Includes epoch-behind in a Wi-Fi-only group: its copy says leave, then pair again.  A folder
         # member is told to let the folder sync or join again instead, so Leave is not offered there.
         actions.add("leave")
-    text = f"On. {where}"
+    text = t("sync.onWhere", where=where)
     if running:
         actions.discard("sync-now")
-        text = f"{text} Syncing now…"
+        text = f"{text} {t('sync.syncingNow')}"
     if not peers:
-        text = f"{text} No devices paired yet."
+        text = f"{text} {t('sync.noDevicesPaired')}"
     return CardView("wifi", title, "on", text, actions=frozenset(actions), **common)
 
 
@@ -853,7 +861,7 @@ def sync_view(status: Any, group: GroupSnapshot | None, *, lan_endpoint: str, no
     global_views = _issue_views(_global_issues(status), names, own,
                                 folder=group is not None and bool(group.folder_path))
     if state_corrupt and not any(v.kind == "state-corrupt" for v in global_views):
-        global_views = (IssueView("state-corrupt", "error", ISSUE_COPY["state-corrupt"], True), *global_views)
+        global_views = (IssueView("state-corrupt", "error", t(ISSUE_COPY["state-corrupt"]), True), *global_views)
     folder = _folder_card(status, group, now=now, available=available, state_corrupt=state_corrupt,
                           names=names, own=own)
     wifi = _wifi_card(status, group, now=now, available=available, endpoint=endpoint or "",
@@ -878,12 +886,11 @@ def _skipped_lines(skipped: Iterable[tuple[str, str]], item_names: Mapping[str, 
         seen.add(item_id)
         name = item_names.get(item_id)
         if name:
-            named.append(f"“{sanitize_name(name)}” could not be synced and stays only on this PC.")
+            named.append(t("sync.itemNotSyncedNamed", name=sanitize_name(name)))
         else:
             unnamed.append(item_id)
     if unnamed:
-        noun, verb = ("item", "stays") if len(unnamed) == 1 else ("items", "stay")
-        named.append(f"{len(unnamed)} other {noun} could not be synced and {verb} only on this PC.")
+        named.append(t("sync.itemsNotSynced", count=len(unnamed)))
     return tuple(named)
 
 
@@ -903,18 +910,16 @@ def folder_setup(action: str) -> FolderSetup | None:
     """``add-folder`` (new sync password, twice) or ``use-folder`` (the folder's password, once); else None."""
     if action == "add-folder":
         return FolderSetup(
-            "Add a cloud folder",
-            "Choose the folder your cloud app syncs (for example OneDrive), then a NEW sync password. Your paired "
-            "devices stay in this group; on each of them choose Use this group's cloud folder with this password.",
-            True, "Adding the cloud folder…",
-            "The cloud folder was added. On your other devices, choose Use this group's cloud folder.",
+            t("sync.addACloudFolder"),
+            t("sync.chooseTheFolderYourCloud"),
+            True, t("sync.addingTheCloudFolder"),
+            t("sync.theCloudFolderWasAdded"),
             add_folder_job)
     if action == "use-folder":
         return FolderSetup(
-            "Use this group's cloud folder",
-            "Choose the folder another device in this group added (the folder that contains “LocalGateKeys "
-            "Sync”), then enter its sync password. This PC keeps its Wi-Fi pairings.",
-            False, "Connecting the cloud folder…", "This PC now also syncs through the cloud folder.",
+            t("sync.useThisGroupSCloud"),
+            t("sync.chooseTheFolderAnotherDevice"),
+            False, t("sync.connectingTheCloudFolder"), t("sync.thisPcNowAlsoSyncs"),
             attach_folder_job)
     return None
 
@@ -1100,6 +1105,28 @@ def acknowledge_job(device_ids: Iterable[str], install_id: str):
     return job
 
 
+def acknowledge_rollback_job():
+    """The user (or a restore made in the app) confirmed this vault's older copy (``vault-rollback``)."""
+
+    def job(session: Any, lease: Any, gate: Any) -> Any:
+        from ..sync.vault_bridge import acknowledge_vault_rollback
+
+        return acknowledge_vault_rollback(session, lease)
+
+    return job
+
+
+def dismiss_peer_rollback_job(peer_id: str):
+    """The user dismissed ``peer-vault-rollback`` for *peer_id*."""
+
+    def job(session: Any, lease: Any, gate: Any) -> Any:
+        from ..sync.vault_bridge import forget_peer_generation
+
+        return forget_peer_generation(session, lease, peer_id)
+
+    return job
+
+
 def leave_job(install_id: str):
     def job(session: Any, lease: Any, gate: Any) -> Any:
         from ..sync.folder_transport import leave_folder_group
@@ -1147,27 +1174,38 @@ def enroll_job(qr_text: str, install_id: str, endpoint: Any, *, on_code: Any = N
     return job
 
 
+def refind_job(qr_text: str, install_id: str):
+    """"Find again": store the new address of an already paired device from its QR text."""
+
+    def job(session: Any, lease: Any, gate: Any) -> Any:
+        from ..sync.lan_sync import refind_from_qr
+
+        return refind_from_qr(qr_text, session, lease, install_id=install_id)
+
+    return job
+
+
 def _noop_job(session: Any, lease: Any, gate: Any) -> None:
     """Lets ``submit`` re-read the state (listener start/stop after a settings change)."""
     return None
 
 
 _ACTION_LABELS = {
-    "sync-now": "Sync now",
-    "create-group": "Create sync group…",
-    "join-folder": "Join a folder…",
-    "add-folder": "Add a cloud folder to this group…",
-    "use-folder": "Use this group's cloud folder…",
-    "change-password": "Change sync password…",
-    "remove-device": "Remove a device…",
-    "show-orphans": "Unused members…",
-    "ack-members": "These are my devices",
-    "leave": "Leave sync…",
-    "reset": "Reset sync on this PC…",
-    "show-qr": "Show QR code…",
-    "join-qr": "Join by QR text…",
-    "wifi-enable": "Turn on Wi-Fi sync…",
-    "wifi-disable": "Turn off Wi-Fi sync",
+    "sync-now": "syncStatusPage.syncNow",
+    "create-group": "sync.createSyncGroup",
+    "join-folder": "sync.joinAFolder",
+    "add-folder": "sync.addACloudFolderTo",
+    "use-folder": "sync.useThisGroupSCloud2",
+    "change-password": "sync.changeSyncPassword",
+    "remove-device": "sync.removeADevice",
+    "show-orphans": "sync.unusedMembers",
+    "ack-members": "sync.theseAreMyDevices",
+    "leave": "sync.leaveSync",
+    "reset": "sync.resetSyncOnThisPc2",
+    "show-qr": "sync.showQrCode",
+    "join-qr": "sync.joinByQrText",
+    "wifi-enable": "sync.turnOnWiFiSync",
+    "wifi-disable": "sync.turnOffWiFiSync",
 }
 
 

@@ -1,5 +1,6 @@
 package app.localgatekeys.android.vault
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.editor.EditorKind
 import app.localgatekeys.android.pro.ItemLimit
 import org.junit.Assert.assertEquals
@@ -14,7 +15,7 @@ class QuickActionsTest {
         val actions = QuickActions.forItem(byId["w1"]!!)
         assertEquals(
             listOf("Copy username", "Copy password", "Copy 2FA code", "Open website"),
-            actions.map { it.label },
+            actions.map { EnglishTxt().s(it.label) },
         )
         assertEquals(
             listOf(
@@ -23,28 +24,28 @@ class QuickActionsTest {
             ),
             actions.map { it.kind },
         )
-        assertEquals(listOf("Username copied", "Password copied", "Code copied", null), actions.map { it.confirmation })
+        assertEquals(listOf("Username copied", "Password copied", "Code copied", null), actions.map { c -> c.confirmation?.let { EnglishTxt().s(it) } })
     }
 
     @Test fun actions_only_appear_when_there_is_something_to_copy_or_open() {
-        assertEquals(listOf("Copy username", "Copy password"), QuickActions.forItem(byId["d1"]!!).map { it.label })
+        assertEquals(listOf("Copy username", "Copy password"), QuickActions.forItem(byId["d1"]!!).map { EnglishTxt().s(it.label) })
         assertTrue(QuickActions.forItem(byId["n1"]!!).isEmpty())
         assertTrue(QuickActions.forItem(byId["c1"]!!).isEmpty())
         val wifi = item("wifi", "title" to s("Home"), "payload" to rec("password" to s("hunter22")))
-        assertEquals(listOf("Copy password"), QuickActions.forItem(wifi).map { it.label })
+        assertEquals(listOf("Copy password"), QuickActions.forItem(wifi).map { EnglishTxt().s(it.label) })
         val bookmark = item("bookmark", "payload" to rec("url" to s("https://example.org")))
-        assertEquals(listOf("Open website"), QuickActions.forItem(bookmark).map { it.label })
+        assertEquals(listOf("Open website"), QuickActions.forItem(bookmark).map { EnglishTxt().s(it.label) })
     }
 
     @Test fun codes_row_shows_only_with_the_setting_on_and_a_two_factor_item() {
         val items = byId.values.toList()
-        assertEquals(listOf("w1"), CodesRow.items(items, showCodesRow = true).map { it.id })
-        assertTrue(CodesRow.items(items, showCodesRow = false).isEmpty())
-        assertTrue(CodesRow.items(items.filter { !it.hasTotp }, showCodesRow = true).isEmpty())
+        assertEquals(listOf("w1"), CodesRow.items(items, showCodesRow = true, EnglishTxt()).map { it.id })
+        assertTrue(CodesRow.items(items, showCodesRow = false, EnglishTxt()).isEmpty())
+        assertTrue(CodesRow.items(items.filter { !it.hasTotp }, showCodesRow = true, EnglishTxt()).isEmpty())
     }
 
     @Test fun the_plus_menu_has_the_three_sections_with_the_iphone_labels() {
-        val labels = EditorKind.menuSections.map { s -> s.map { it.label } }
+        val labels = EditorKind.menuSections.map { s -> s.map { it.label(EnglishTxt()) } }
         assertEquals(
             listOf(
                 listOf("Website login", "Note", "Payment card", "Identity"),

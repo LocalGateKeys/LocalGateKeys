@@ -1,0 +1,74 @@
+{
+  "cases": [
+    {
+      "endpoint": {
+        "host": "192.168.1.20",
+        "port": 47821
+      },
+      "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
+      "inviter": "A",
+      "name": "plain",
+      "now": 1790000000,
+      "offer_bundle": {
+        "certificate_fingerprint": "5c64391564d6f9308ebda9b4ca516292e354684b870c330326fe13a4153b71ee",
+        "code": "26449181",
+        "endpoint": {
+          "host": "192.168.1.20",
+          "port": 47821
+        },
+        "expires_at": 1790000120,
+        "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
+        "inviter_device_id": "a1111111-0000-4000-8000-00000000000a",
+        "inviter_exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+        "inviter_signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+        "offer_id": "634d9d28-3491-4cd3-9622-41debac1931c",
+        "pairing_secret": "GkwXLx7TK4PjfXkFPnz1vVhK1wOJrS7Uyr/rUzZMvtA=",
+        "transcript_nonce": "GMB3MvVACYb6UKlFhPbVYXdv2aT/3RS1o5yx+n1IfOI=",
+        "version": 1
+      },
+      "qr_payload": "lgk-pair:eyJjZXJ0aWZpY2F0ZV9maW5nZXJwcmludCI6IjVjNjQzOTE1NjRkNmY5MzA4ZWJkYTliNGNhNTE2MjkyZTM1NDY4NGI4NzBjMzMwMzI2ZmUxM2E0MTUzYjcxZWUiLCJjb2RlIjoiMjY0NDkxODEiLCJlbmRwb2ludCI6eyJob3N0IjoiMTkyLjE2OC4xLjIwIiwicG9ydCI6NDc4MjF9LCJleHBpcmVzX2F0IjoxNzkwMDAwMTIwLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsImludml0ZXJfZGV2aWNlX2lkIjoiYTExMTExMTEtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDBhIiwiaW52aXRlcl9leGNoYW5nZV9wdWJsaWMiOiJTc05WY0hmZUtEdmhCanFQUmVNLzRveHZvM295cTVhb3VuN1licFN0b0ZNPSIsImludml0ZXJfc2lnbmluZ19wdWJsaWMiOiI5Q0FFcWdSUVhNYWwxTzFuK3RxTWZxeDlpZEltdTM0aXNmWGZKY2UrSVJVPSIsIm9mZmVyX2lkIjoiNjM0ZDlkMjgtMzQ5MS00Y2QzLTk2MjItNDFkZWJhYzE5MzFjIiwicGFpcmluZ19zZWNyZXQiOiJHa3dYTHg3VEs0UGpmWGtGUG56MXZWaEsxd09KclM3VXlyL3JVelpNdnRBPSIsInRyYW5zY3JpcHRfbm9uY2UiOiJHTUIzTXZWQUNZYjZVS2xGaFBiVllYZHYyYVQvM1JTMW81eXgrbjFJZk9JPSIsInZlcnNpb24iOjF9",
+      "random_reads_hex": [
+        "634d9d283491ccd3962241debac1931c",
+        "18c07732f5400986fa50a94584f6d561776fd9a4ffdd14b5a39cb1fa7d487ce2",
+        "1a4c172f1ed32b83e37d79053e7cf5bd584ad70389ad2ed4cabfeb53364cbed0",
+        "d827391d"
+      ]
+    },
+    {
+      "endpoint": {
+        "host": "10.0.0.5",
+        "port": 47821
+      },
+      "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
+      "inviter": "A",
+      "name": "code_resampled",
+      "now": 1790000500,
+      "offer_bundle": {
+        "certificate_fingerprint": "5c64391564d6f9308ebda9b4ca516292e354684b870c330326fe13a4153b71ee",
+        "code": "15921290",
+        "endpoint": {
+          "host": "10.0.0.5",
+          "port": 47821
+        },
+        "expires_at": 1790000620,
+        "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
+        "inviter_device_id": "a1111111-0000-4000-8000-00000000000a",
+        "inviter_exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+        "inviter_signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+        "offer_id": "d8e1f52f-2120-4a13-bbe1-73ca51825f85",
+        "pairing_secret": "2/4LWTl8qXxmpAhkfXMMtUbBvnNYE0iWWAQq+vXWTsY=",
+        "transcript_nonce": "3lxJxRhcGSHlnmgQb814m+exszNGYcyc33eh17mztyU=",
+        "version": 1
+      },
+      "qr_payload": "lgk-pair:eyJjZXJ0aWZpY2F0ZV9maW5nZXJwcmludCI6IjVjNjQzOTE1NjRkNmY5MzA4ZWJkYTliNGNhNTE2MjkyZTM1NDY4NGI4NzBjMzMwMzI2ZmUxM2E0MTUzYjcxZWUiLCJjb2RlIjoiMTU5MjEyOTAiLCJlbmRwb2ludCI6eyJob3N0IjoiMTAuMC4wLjUiLCJwb3J0Ijo0NzgyMX0sImV4cGlyZXNfYXQiOjE3OTAwMDA2MjAsImdyb3VwX2lkIjoiNWIwYzdkM2UtOWE0MS00ZjZiLThjMmQtM2UxYTdmOTA1YjY0IiwiaW52aXRlcl9kZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJpbnZpdGVyX2V4Y2hhbmdlX3B1YmxpYyI6IlNzTlZjSGZlS0R2aEJqcVBSZU0vNG94dm8zb3lxNWFvdW43WWJwU3RvRk09IiwiaW52aXRlcl9zaWduaW5nX3B1YmxpYyI6IjlDQUVxZ1JRWE1hbDFPMW4rdHFNZnF4OWlkSW11MzRpc2ZYZkpjZStJUlU9Iiwib2ZmZXJfaWQiOiJkOGUxZjUyZi0yMTIwLTRhMTMtYmJlMS03M2NhNTE4MjVmODUiLCJwYWlyaW5nX3NlY3JldCI6IjIvNExXVGw4cVh4bXBBaGtmWE1NdFViQnZuTllFMGlXV0FRcSt2WFdUc1k9IiwidHJhbnNjcmlwdF9ub25jZSI6IjNseEp4UmhjR1NIbG5tZ1FiODE0bStleHN6TkdZY3ljMzNlaDE3bXp0eVU9IiwidmVyc2lvbiI6MX0",
+      "random_reads_hex": [
+        "d8e1f52f2120fa13fbe173ca51825f85",
+        "de5c49c5185c1921e59e68106fcd789be7b1b3334661cc9cdf77a1d7b9b3b725",
+        "dbfe0b59397ca97c66a408647d730cb546c1be735813489658042afaf5d64ec6",
+        "ffffffff",
+        "48797c8a"
+      ]
+    }
+  ],
+  "description": "Host-side pairing offers made by pairing.create_pairing_offer with fixed randomness (see scripts/gen_mac_sync_vectors.py for the read order). random_reads_hex lists every read in order."
+}

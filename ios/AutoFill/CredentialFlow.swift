@@ -54,7 +54,7 @@ final class CredentialFlow {
     /// The store opened by the last unlock (for `PasskeyFlow.register`'s commit); dropped with the snapshot.
     private(set) var store: (any ItemStore)?
 
-    static let reason = "Unlock LocalGateKeys to fill your password."
+    static let reason = String(localized: "Unlock LocalGateKeys to fill your password.")
 
     /// Awaited once when Face ID fails with `LAError.notInteractive` (-1004: the extension's UI was not on
     /// screen yet), before the single retry. The driver replaces it with "the next viewDidAppear, or its retry
@@ -223,6 +223,10 @@ protocol CredentialRequestSink: AnyObject {
     func showPasskeys(_ rows: [PasskeyCandidate])
     func completePasskey(_ assertion: PasskeyAssertion)
     func completeRegistration(_ registration: PasskeyRegistration)
+    /// Text insertion (iOS 18+, UX workstream 11): the card and identity fields, after the unlock.
+    func showTextFields(_ fields: [TextInsertionField])
+    /// Exactly one per text-insertion request: the picked field's text.
+    func completeText(_ text: String)
 }
 
 /// One AutoFill request at a time, finished exactly once. Cancel stops the in-flight task; a task that
@@ -456,6 +460,37 @@ final class CredentialRequestDriver {
 
     /// A request that can be answered without unlocking (e.g. a QuickType identity with no record id):
     /// finishes now, starts no task, never prompts.
+    /// The fields' unlock prompt: the card number and security code are behind it, every time.
+    static let textReason = String(localized: "Unlock LocalGateKeys to fill a card or identity.")
+
+    /// `prepareInterfaceForUserChoosingTextToInsert` (iOS 18+): Face ID, then the card and identity fields.
+    /// Nothing is pre-selected; the user picks one row (`selectText`).
+    func beginTextInsertion() {
+        AutoFillTrace.log("driver.beginTextInsertion")
+        start { [weak self] isLive in
+            guard let self else { return }
+            guard isLive() else { return }
+            do {
+                let snapshot = try await self.flow.unlock(reason: Self.textReason)
+                guard isLive() else { return self.dropStale() }
+                self.sink?.showTextFields(TextInsertionCatalog.fields(snapshot))
+            } catch {
+                guard isLive() else { return self.dropStale() }
+                self.cancel(AutoFillErrorMapping.code(for: error))
+            }
+        }
+    }
+
+    /// The user picked a field: its text goes back once and the snapshot is dropped. Nothing is inserted
+    /// without the unlock that built the list.
+    func selectText(_ field: TextInsertionField) {
+        AutoFillTrace.log("driver.selectText isCard=\(field.isCard) finished=\(finished)")
+        guard !finished, flow.snapshot != nil else { return }
+        finished = true
+        flow.reset()
+        sink?.completeText(field.value)
+    }
+
     func finishImmediately(_ code: ASExtensionError.Code) {
         AutoFillTrace.log("driver.finishImmediately code=\(code.rawValue)")
         task?.cancel()

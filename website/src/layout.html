@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="[[lang]]">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,21 +9,21 @@
   <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
   <meta name="referrer" content="[[referrer]]">
-  <link rel="canonical" href="https://{{DOMAIN}}/[[path]]">
+  <link rel="canonical" href="https://{{DOMAIN}}/[[path]]">[[alternates]]
   <link rel="icon" href="[[root]]brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="[[root]]brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="[[root]]brand/icon-256.png">
   <link rel="stylesheet" href="[[root]]styles.css">
 </head>
 <body class="[[body_class]]">
-  <a class="skip" href="#main">Skip to content</a>
+  <a class="skip" href="#main">[[t:layout.top.1]]</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="[[root]]index.html">
+      <a class="brand" href="[[home]]index.html">
         <img src="[[root]]brand/icon.svg" alt="" width="36" height="36">
-        <span>LocalGateKeys</span>
+        <span>[[t:layout.top.2]]</span>
       </a>
-      <nav aria-label="Main">
+      <nav aria-label="[[t:layout.top.3]]">
         <ul class="nav">
           [[nav]]
         </ul>
@@ -38,40 +38,41 @@
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>A password manager for Windows that keeps your vault on your own devices.</p>
-        <p class="quiet">This site sets no cookies, runs no analytics and loads nothing from other companies.</p>
+        <p class="footer-brand">[[t:layout.top.4]]</p>
+        <p>[[t:layout.top.5]]</p>
+        <p class="quiet">[[t:layout.top.6]]</p>
       </div>
-      <nav aria-label="Product">
-        <h2>Product</h2>
+      <nav aria-label="[[t:layout.top.7]]">
+        <h2>[[t:layout.product.1]]</h2>
         <ul>
-          <li><a href="[[root]]features.html">Features</a></li>
-          <li><a href="[[root]]pricing.html">Pricing</a></li>
-          <li><a href="[[root]]download.html">Download</a></li>
-          <li><a href="[[root]]licence.html">Your Pro licence</a></li>
+          <li><a href="[[home]]features.html">[[t:layout.product.2]]</a></li>
+          <li><a href="[[home]]pricing.html">[[t:layout.product.3]]</a></li>
+          <li><a href="[[home]]download.html">[[t:layout.product.4]]</a></li>
+          <li><a href="[[home]]licence.html">[[t:layout.product.5]]</a></li>
         </ul>
       </nav>
-      <nav aria-label="Help">
-        <h2>Help</h2>
+      <nav aria-label="[[t:layout.product.6]]">
+        <h2>[[t:layout.help.1]]</h2>
         <ul>
-          <li><a href="[[root]]support.html">Support and FAQ</a></li>
-          <li><a href="[[root]]security.html">Security</a></li>
-          <li><a href="[[root]]legal/vulnerability-disclosure.html">Report a vulnerability</a></li>
+          <li><a href="[[home]]help.html">[[t:layout.help.user_guide]]</a></li>
+          <li><a href="[[home]]support.html">[[t:layout.help.2]]</a></li>
+          <li><a href="[[home]]security.html">[[t:layout.help.3]]</a></li>
+          <li><a href="[[root]]legal/vulnerability-disclosure.html">[[t:layout.help.4]]</a></li>
         </ul>
       </nav>
-      <nav aria-label="Legal">
-        <h2>Legal</h2>
+      <nav aria-label="[[t:layout.help.5]]">
+        <h2>[[t:layout.legal.1]]</h2>[[legal_note]]
         <ul>
-          <li><a href="[[root]]legal/eula.html">Licence agreement</a></li>
-          <li><a href="[[root]]legal/privacy.html">Privacy policy</a></li>
-          <li><a href="[[root]]legal/terms-of-sale.html">Terms of sale</a></li>
-          <li><a href="[[root]]legal/refunds.html">Refund policy</a></li>
+          <li><a href="[[root]]legal/eula.html">[[t:layout.legal.2]]</a></li>
+          <li><a href="[[root]]legal/privacy.html">[[t:layout.legal.3]]</a></li>
+          <li><a href="[[root]]legal/terms-of-sale.html">[[t:layout.legal.4]]</a></li>
+          <li><a href="[[root]]legal/refunds.html">[[t:layout.legal.5]]</a></li>
         </ul>
       </nav>
     </div>
     <div class="wrap footer-base">
-      <p>&copy; {{COPYRIGHT_YEAR}} {{COMPANY_NAME}}. Contact: <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a></p>
-      <p>Windows is a trademark of the Microsoft group of companies. Chrome is a trademark of Google LLC.</p>
+      <p>[[t:layout.legal.6]]</p>
+      <p>[[t:layout.legal.7]]</p>[[lang_switch]]
     </div>
   </footer>
 </body>

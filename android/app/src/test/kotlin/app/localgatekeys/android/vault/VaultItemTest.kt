@@ -1,5 +1,6 @@
 package app.localgatekeys.android.vault
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.json.JsonValue.Arr
 import app.localgatekeys.core.records.Namespace
@@ -19,19 +20,19 @@ class VaultItemTest {
         assertEquals("https://accounts.example.com", byId["w1"]?.target)
         assertEquals("samplemail.exe", byId["d1"]?.target)
         assertEquals("Visa", byId["c1"]?.target)
-        assertEquals("Note", byId["n1"]?.kindLabel)
-        assertEquals("Payment card", byId["c1"]?.kindLabel)
+        assertEquals("Note", byId["n1"]?.kindLabel(EnglishTxt()))
+        assertEquals("Payment card", byId["c1"]?.kindLabel(EnglishTxt()))
     }
 
     @Test fun card_subtitle_is_masked_last_four_with_expiry() {
         fun card(vararg p: Pair<String, JsonValue>) = item("card", "title" to s("Visa"), "payload" to rec(*p))
         val withExpiry = card("brand" to s("visa"), "number" to s("4000 0000 0002 6411"), "expiry" to s("08/27"))
-        assertEquals("•••• 6411 · 08/27", withExpiry.listSubtitle)
-        assertFalse(withExpiry.listSubtitle.contains("40000000"))
-        assertEquals("•••• 1111", card("brand" to s("visa"), "number" to s("4111111111111111")).listSubtitle)
-        assertEquals("Visa", card("brand" to s("visa"), "number" to s("41")).listSubtitle)
-        assertEquals("Visa", card("brand" to s("visa")).listSubtitle)
-        assertEquals("•••• 1111", byId["c1"]?.listSubtitle)
+        assertEquals("•••• 6411 · 08/27", withExpiry.listSubtitle(EnglishTxt()))
+        assertFalse(withExpiry.listSubtitle(EnglishTxt()).contains("40000000"))
+        assertEquals("•••• 1111", card("brand" to s("visa"), "number" to s("4111111111111111")).listSubtitle(EnglishTxt()))
+        assertEquals("Visa", card("brand" to s("visa"), "number" to s("41")).listSubtitle(EnglishTxt()))
+        assertEquals("Visa", card("brand" to s("visa")).listSubtitle(EnglishTxt()))
+        assertEquals("•••• 1111", byId["c1"]?.listSubtitle(EnglishTxt()))
     }
 
     @Test fun card_summary_keeps_only_ascii_digits_and_bounds_the_expiry() {
@@ -69,25 +70,25 @@ class VaultItemTest {
     }
 
     @Test fun kind_labels_and_fallbacks() {
-        assertEquals("Website login", VaultItem.kindLabel("web"))
-        assertEquals("Wi-Fi network", VaultItem.kindLabel("wifi"))
-        assertEquals("Passkey", VaultItem.kindLabel("passkey"))
-        assertEquals("Custom thing", VaultItem.kindLabel("custom_thing"))
-        assertEquals("Item", VaultItem.kindLabel(""))
-        assertEquals("Item", VaultItem.kindLabel("  "))
+        assertEquals("Website login", VaultItem.kindLabel("web", EnglishTxt()))
+        assertEquals("Wi-Fi network", VaultItem.kindLabel("wifi", EnglishTxt()))
+        assertEquals("Passkey", VaultItem.kindLabel("passkey", EnglishTxt()))
+        assertEquals("Custom thing", VaultItem.kindLabel("custom_thing", EnglishTxt()))
+        assertEquals("Item", VaultItem.kindLabel("", EnglishTxt()))
+        assertEquals("Item", VaultItem.kindLabel("  ", EnglishTxt()))
     }
 
     @Test fun list_subtitle_prefers_username_then_card_then_target_then_kind() {
-        assertEquals("Sample.User@example.com", byId["w1"]?.listSubtitle)
-        assertEquals("Note", byId["n1"]?.listSubtitle)
-        assertEquals("mailer", byId["d1"]?.listSubtitle)
-        assertEquals("sample.com", item("api_key", "payload" to rec("service" to s(" sample.com "))).listSubtitle)
+        assertEquals("Sample.User@example.com", byId["w1"]?.listSubtitle(EnglishTxt()))
+        assertEquals("Note", byId["n1"]?.listSubtitle(EnglishTxt()))
+        assertEquals("mailer", byId["d1"]?.listSubtitle(EnglishTxt()))
+        assertEquals("sample.com", item("api_key", "payload" to rec("service" to s(" sample.com "))).listSubtitle(EnglishTxt()))
         assertEquals(
             "Acme · Gadget",
             item("warranty", "payload" to rec("vendor" to s("Acme"), "product" to s("Gadget"), "other" to s("x"))).target,
         )
         assertEquals("example.org", item("bookmark", "payload" to rec("url" to s("https://example.org/a"))).target)
-        assertEquals("Wi-Fi network", item("wifi", "payload" to rec("ssid" to s("   "))).listSubtitle)
+        assertEquals("Wi-Fi network", item("wifi", "payload" to rec("ssid" to s("   "))).listSubtitle(EnglishTxt()))
     }
 
     @Test fun safe_display_replaces_control_characters_and_truncates() {

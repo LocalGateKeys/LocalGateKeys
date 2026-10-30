@@ -5,13 +5,11 @@ from typing import Any
 
 from ..api.result import ApiError
 from ..profiles import CAMERA_UNLOCK_BLOCKS_DELETE, ProfileError
+from ..i18n import t
 
-REMOVE_TEXT = ("Remove {name!r} from LocalGateKeys?\n\nIts encrypted data will be moved to the local DeletedProfiles "
-               "archive rather than erased immediately.")
-HANDOVER_NOTE = ("Locking LocalGateKeys does not sign out websites or apps. Sign out of them separately before handing "
-                 "over this computer.")
-INTRO = ("Select a LocalGateKeys profile. Each person gets a separate encrypted vault, settings, backups, and trusted "
-         "app bindings.")
+REMOVE_TEXT = ("profiles.removeFromLocalgatekeysItsEncrypted")
+HANDOVER_NOTE = ("profiles.lockingLocalgatekeysDoesNotSign")
+INTRO = ("profiles.selectALocalgatekeysProfileEach")
 
 
 def initials(name: str) -> str:
@@ -30,7 +28,7 @@ class ProfilesService:
     def _unlocked(self) -> None:
         """Changes to existing profiles are made from an unlocked vault (the lock screen only chooses or adds one)."""
         if not self._controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile first.")
+            raise ApiError("locked", t("error.lockedProfile"))
         self._controller.require_lease(self._controller.guard.lease())
 
     def _refresh(self) -> None:
@@ -50,12 +48,12 @@ class ProfilesService:
         active = self._profiles.active_profile()
         active_id = active.id if active else None
         return {"profiles": [self._row(p, active_id) for p in self._profiles.list_profiles()],
-                "intro": INTRO, "note": HANDOVER_NOTE}
+                "intro": t(INTRO), "note": t(HANDOVER_NOTE)}
 
     def _find(self, profile_id: str) -> Any:
         record = next((p for p in self._profiles.list_profiles() if p.id == profile_id), None)
         if record is None:
-            raise ApiError("not_found", "That profile no longer exists.")
+            raise ApiError("not_found", t("controller.thatProfileNoLongerExists"))
         return record
 
     def create(self, name: str) -> dict[str, Any]:
@@ -81,18 +79,18 @@ class ProfilesService:
         self._controller._extras_cache = None
         self._controller._publish()
         return {"profile": self._row(record, getattr(self._profiles.active_profile(), "id", None)),
-                "message": "Profile updated."}
+                "message": t("profiles.profileUpdated")}
 
     def photo(self, profile_id: str) -> dict[str, Any]:
         self._unlocked()
         self._find(profile_id)
-        source = self._dialogs.open_file("Choose a profile photo")
+        source = self._dialogs.open_file(t("profiles.chooseAProfilePhoto"))
         if not source:
-            raise ApiError("cancelled", "No file was chosen.")
+            raise ApiError("cancelled", t("recovery.noFileWasChosen"))
         try:
             record = self._profiles.set_profile_photo(profile_id, source)
         except (ProfileError, ValueError, OSError) as exc:
-            raise ApiError("invalid", str(exc) or "That image could not be used.") from None
+            raise ApiError("invalid", str(exc) or t("profiles.thatImageCouldNotBe")) from None
         return {"profile": self._row(record, getattr(self._profiles.active_profile(), "id", None))}
 
     def remove_photo(self, profile_id: str) -> dict[str, Any]:
@@ -109,24 +107,24 @@ class ProfilesService:
         self._unlocked()
         record = self._find(profile_id)
         if len(self._profiles.list_profiles()) <= 1:
-            raise ApiError("invalid", "Create another profile before deleting the only profile")
+            raise ApiError("invalid", t("profiles.createAnotherProfileBeforeDeleting"))
         # delete_profile refuses a profile with camera unlock; say so before
         # asking, and above all before locking the vault for nothing.
         self._refuse_camera_unlock(profile_id)
         lease = self._controller.guard.lease()
-        if not self._port.confirm("Remove profile", REMOVE_TEXT.format(name=record.name)):
-            raise ApiError("cancelled", "Cancelled.")
+        if not self._port.confirm(t("profiles.removeProfile"), t(REMOVE_TEXT).format(name=record.name)):
+            raise ApiError("cancelled", t("error.cancelled"))
         self._controller.require_lease(lease)  # locked or switched while the confirm was open
         self._refuse_camera_unlock(profile_id)
         active = self._profiles.active_profile()
         was_active = active is not None and active.id == profile_id
         if was_active:
-            self._controller.lock("Profile removed. Vault locked.")
+            self._controller.lock(t("profiles.profileRemovedVaultLocked"))
         try:
             try:
                 self._profiles.delete_profile(profile_id)
             except (ProfileError, ValueError, OSError) as exc:
-                raise ApiError("invalid", str(exc) or "The profile could not be removed.") from None
+                raise ApiError("invalid", str(exc) or t("profiles.theProfileCouldNotBe")) from None
             if was_active:
                 remaining = self._profiles.list_profiles()
                 if remaining:
@@ -134,4 +132,4 @@ class ProfilesService:
         finally:
             # Whatever happened, the page must see the profiles and lock state as they now are.
             self._refresh()
-        return {"message": f"Removed {record.name}."}
+        return {"message": t("profiles.removed", name=record.name)}

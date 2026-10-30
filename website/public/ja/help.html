@@ -1,0 +1,1094 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ユーザーガイド | LocalGateKeys</title>
+  <meta name="description" content="Windows、ブラウザ拡張機能、iPhone、Mac、Apple Watch、Android で LocalGateKeys の各機能がどう動くかを、手順を追って説明します。">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/ja/help">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/help">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/help">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/help">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/help">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/help">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/help">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/help">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/help">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/help">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/help">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/help">
+  <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../brand/icon-256.png">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">コンテンツへスキップ</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../ja/index.html">
+        <img src="../brand/icon.svg" alt="" width="36" height="36">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav aria-label="メイン">
+        <ul class="nav">
+          <li><a href="../ja/features.html">機能</a></li>
+          <li><a href="../ja/pricing.html">料金</a></li>
+          <li><a href="../ja/security.html">セキュリティ</a></li>
+          <li><a href="../ja/get-started.html">はじめに</a></li>
+          <li><a href="../ja/help.html" aria-current="page">ガイド</a></li>
+          <li><a href="../ja/download.html">ダウンロード</a></li>
+          <li><a href="../ja/support.html">サポート</a></li>
+          <li><a href="../buy.html">Proを購入</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>ユーザーガイド</h1>
+  <p class="lead">すべての画面と機能の手順付きヘルプです。デバイスを選んでから、トピックに移動してください。各見出しは共有できるリンクです。</p>
+</div>
+
+<div class="wrap page-body help">
+
+  <nav class="help-tabs" aria-label="プラットフォーム">
+    <a class="help-tab" href="#windows" data-tab="windows">Windows</a>
+    <a class="help-tab" href="#extension" data-tab="extension">ブラウザ拡張機能</a>
+    <a class="help-tab" href="#iphone" data-tab="iphone">iPhone</a>
+    <a class="help-tab" href="#mac" data-tab="mac">Mac</a>
+    <a class="help-tab" href="#watch" data-tab="watch">Apple Watch</a>
+    <a class="help-tab" href="#android" data-tab="android">Android</a>
+  </nav>
+
+  <aside class="help-basics">
+    <h2>どのデバイスでも知っておきたいこと</h2>
+    <ul>
+      <li><strong>保管庫はあなたのデバイスにとどまります。</strong>アカウントはなく、パスワードを保存する LocalGateKeys のサーバーもありません。</li>
+      <li><strong>マスターパスワードやアプリのパスワードは誰にもリセットできません。</strong>リカバリーフレーズを設定し、紙に書いて保管してください。</li>
+      <li><strong>Free</strong> は最大 4 件まで保存できます。<strong>Pro</strong>(US$4.99、買い切り)では項目数が無制限になり、2 要素コード、ファイル、同期が使えます。既存の項目の編集、削除、入力がブロックされることはありません。</li>
+    </ul>
+  </aside>
+
+  <!-- ============================== WINDOWS ============================== -->
+  <section class="help-panel" id="windows" aria-labelledby="windows-title">
+    <h2 class="panel-title" id="windows-title">Windows 版 LocalGateKeys</h2>
+    <p class="panel-lead">Windows 10 と 11(64 ビット)。Microsoft Store または<a href="../ja/download.html">ダウンロードページ</a>からインストールします。</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Windows のトピック">
+        <p class="help-toc-title">このタブの内容</p>
+        <ol>
+          <li><a href="#win-setup">初回起動とプロファイル</a></li>
+          <li><a href="#win-unlock">ロック解除とロック</a></li>
+          <li><a href="#win-screen">メインウィンドウ</a></li>
+          <li><a href="#win-items">項目の追加と編集</a></li>
+          <li><a href="#win-trash">削除、ゴミ箱、元に戻す</a></li>
+          <li><a href="#win-search">検索、パレット、クイックアクセス</a></li>
+          <li><a href="#win-generator">パスワード生成</a></li>
+          <li><a href="#win-security">セキュリティセンター</a></li>
+          <li><a href="#win-2fa">2 要素コードと QR</a></li>
+          <li><a href="#win-import">インポート</a></li>
+          <li><a href="#win-export">エクスポートと転送</a></li>
+          <li><a href="#win-backups">バックアップと復元</a></li>
+          <li><a href="#win-sync">同期</a></li>
+          <li><a href="#win-share">項目の共有</a></li>
+          <li><a href="#win-apps">Windows アプリへの入力</a></li>
+          <li><a href="#win-settings">設定</a></li>
+          <li><a href="#win-pro">Pro ライセンス</a></li>
+          <li><a href="#win-updates">アップデート</a></li>
+          <li><a href="#win-keys">キーボードショートカット</a></li>
+        </ol>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="win-setup">
+          <h3><a href="#win-setup">初回起動とプロファイル</a></h3>
+          <ol>
+            <li>LocalGateKeys を開きます。12 文字以上の<strong>マスターパスワード</strong>を入力し、<strong>パスワードの確認</strong>にもう一度入力して、<strong>保管庫を作成</strong>を選びます。</li>
+            <li>続いて<strong>LocalGateKeys のセットアップ</strong>ガイドが 5 つの手順で表示されます。保管庫の作成、<strong>Windows Hello を設定</strong>、パスワードの<strong>インポート</strong>、<strong>リカバリーフレーズを開く</strong>(保存したことを確認するため、3 つの単語を入力し直します)、ブラウザ拡張機能の<strong>接続をテスト</strong>です。</li>
+            <li>どの手順も<strong>スキップ</strong>できます。スキップした手順は保管庫の<em>セットアップを完了</em>カードに残り、<strong>セットアップを続ける</strong>と<strong>非表示</strong>が表示されます。</li>
+          </ol>
+          <p class="tip"><strong>ヒント:</strong>ガイドをもう一度見るには、設定 › ヘルプと診断 › <strong>セットアップを再表示</strong>を選びます。</p>
+          <h4>プロファイル</h4>
+          <p>プロファイルはそれぞれ独立した保管庫で、専用のマスターパスワードを持ちます。たとえば仕事用と自宅用に分けられます。</p>
+          <ul>
+            <li>ロック解除画面で<strong>別のプロファイルを使う</strong>を選び、<strong>プロファイルを作成</strong>を選んで<strong>プロファイル名</strong>を入力します。</li>
+            <li>プロファイルを編集するには、Ctrl+K を押して<strong>プロファイルを切り替え</strong>を実行します。そこで<strong>プロファイルを追加</strong>、<strong>編集</strong>、<strong>写真…</strong>と<strong>アクセントカラー</strong>の設定、<strong>削除</strong>ができます。</li>
+            <li>トレイメニューの<strong>ロックして利用者を切り替え</strong>は、ロックしてすぐにプロファイル選択に移ります。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-unlock">
+          <h3><a href="#win-unlock">ロック解除とロック</a></h3>
+          <h4>ロック解除の方法</h4>
+          <ul>
+            <li><strong>マスターパスワード</strong>を入力して<strong>ロック解除</strong>。常に使えます。</li>
+            <li><strong>Windows Hello でロック解除</strong>:指紋、顔、PIN。設定 › ロック解除 › Windows Hello › <strong>設定</strong>で設定します。<strong>Windows Hello を自動で開始</strong>をオンにすると、ウィンドウが開いた直後に確認が表示されます。</li>
+            <li><strong>代わりにカメラを使う</strong>:普通の Web カメラを使った顔照合で、PC 上で処理されます。Windows Hello より安全性は低くなります。<strong>カメラ認証を設定</strong>で設定します。</li>
+          </ul>
+          <h4>マスターパスワードを忘れた場合</h4>
+          <ol>
+            <li>ロック解除画面で<strong>忘れた場合はリカバリーフレーズを使用</strong>を選びます。</li>
+            <li>24 個の単語をスペースで区切って入力します。</li>
+            <li>新しいマスターパスワード(12 文字以上)を決めて 2 回入力し、<strong>保管庫を復旧</strong>を選びます。</li>
+          </ol>
+          <p class="note"><strong>その後</strong>、Windows Hello とカメラ認証を設定し直してください。リカバリーフレーズは引き続き使えます。</p>
+          <h4>マスターパスワードの変更</h4>
+          <p>設定 › ロック解除 › マスターパスワード › <strong>変更…</strong>。現在のパスワードと新しいパスワード(2 回)を入力します。作成済みのバックアップは、作成時のパスワードのままです。</p>
+          <h4>ロック</h4>
+          <ul>
+            <li>上部バーの<strong>ロック</strong>ボタン、または <kbd>Ctrl</kbd>+<kbd>L</kbd>。</li>
+            <li><strong>緊急ロック</strong>:Windows のどこでも <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd>。すぐにロックし、進行中の入力を取り消します。</li>
+            <li>設定 › ロック:
+              <ul>
+                <li><strong>一定時間操作がないとロック</strong>:しない、または 1 分から 24 時間。</li>
+                <li><strong>Windows のロック時にロック</strong>(Win+L、ユーザー切り替え、サインアウト)と<strong>スリープ時にロック</strong>(ふたを閉じる、スリープ、休止状態)。</li>
+                <li><strong>ロック解除状態の上限時間</strong>:何をしていても適用される上限です。</li>
+                <li><strong>操作の判定基準</strong>:コンピューターの操作、または保管庫の操作。</li>
+                <li>ブラウザ拡張機能に<strong>2FA コードを渡す前に確認</strong>。</li>
+              </ul>
+            </li>
+          </ul>
+          <p>トレイアイコンのメニューには<strong>保管庫のロックを解除</strong>、<strong>保管庫をロック</strong>、<strong>クイックアクセス</strong>、<strong>終了</strong>があります。</p>
+        </article>
+
+        <article class="topic" id="win-screen">
+          <h3><a href="#win-screen">メインウィンドウ</a></h3>
+          <dl class="defs">
+            <dt>サイドバー · 保管庫</dt><dd><strong>すべての項目</strong>、<strong>お気に入り</strong>、<strong>最近使用した項目</strong>。</dd>
+            <dt>サイドバー · 種類</dt><dd>持っている種類ごとに 1 行。ログイン、カード、ID、セキュアノート、書類、Wi-Fi、パスキーなど。</dd>
+            <dt>サイドバー · コレクションとビュー</dt><dd>コレクションとピン留めしたビュー。</dd>
+            <dt>サイドバー · ツール</dt><dd>セキュリティセンター、リマインダー、同期、デバイスと接続、ライセンス、インポートとエクスポート、QR コードをスキャン、アクティビティ、ゴミ箱。<strong>設定</strong>は一番下にあります。</dd>
+            <dt>上部バー</dt><dd>検索ボックス、<strong>新規項目</strong>、<strong>ロック</strong>、コマンドパレット用の <strong>Ctrl K</strong>。</dd>
+            <dt>ホーム</dt><dd>パスワードの健全性、バックアップと復旧、今後の予定、生成のカードと、<strong>ワンタイムコード</strong>(コードをクリックするとコピー)。</dd>
+          </dl>
+          <h4>項目リスト</h4>
+          <ul>
+            <li>フィルター:<strong>すべて</strong>、<strong>要対応</strong>、<strong>2FA なし</strong>、<strong>期限間近</strong>。</li>
+            <li><strong>並べ替え</strong>:タイトル A–Z、タイトル Z–A、更新日、作成日。</li>
+            <li>行のマークは、漏洩した、弱い、または使い回されたパスワードを示します。</li>
+            <li>行を右クリック(または <kbd>Shift</kbd>+<kbd>F10</kbd>)すると、パスワードをコピー、ユーザー名をコピー、2FA コードをコピー、Web サイトを開く、お気に入り、共有…、ゴミ箱に移動… が使えます。</li>
+          </ul>
+          <h4>詳細ペイン</h4>
+          <p>選んだ項目のフィールドを表示します。パスワードはクリックするまで隠れています。ボタンでユーザー名、パスワード、2FA コードのコピー、Web サイトを開く、<strong>編集</strong>、<strong>共有</strong>、<strong>ゴミ箱に移動</strong>ができます。書類には<strong>ファイルを開く</strong>、<strong>安全なプレビュー</strong>、<strong>コピーを保存…</strong>、<strong>ファイルを置き換え…</strong>もあります。</p>
+        </article>
+
+        <article class="topic" id="win-items">
+          <h3><a href="#win-items">項目の追加と編集</a></h3>
+          <ol>
+            <li><strong>新規項目</strong>を選ぶか、<kbd>Ctrl</kbd>+<kbd>N</kbd> を押します。</li>
+            <li>種類を選びます(クリック、番号キー、または名前を入力):
+              <ul>
+                <li><em>サインイン</em>:Web サイトのログイン、デスクトップアプリのログイン、パスキー</li>
+                <li><em>個人</em>:支払いカード、銀行口座、ID、セキュアノート、書類、Wi-Fi ネットワーク</li>
+                <li><em>持ち物</em>:ライセンス、購入品、保証、サブスクリプション、ブックマーク</li>
+              </ul>
+            </li>
+            <li>フィールドに入力して<strong>保存</strong>を選びます。保存していない変更があるまま離れると、<em>変更を破棄しますか?</em>と確認されます。</li>
+          </ol>
+          <h4>ログインの詳細</h4>
+          <ul>
+            <li><strong>タイトル</strong>、<strong>Web サイト</strong>、<strong>ユーザー名</strong>、<strong>パスワード</strong>、<strong>メモ</strong>。</li>
+            <li>パスワードの横の<strong>変更</strong>で、生成機能を使って新しいパスワードを作ります。Web サイト側でも変更してから保存してください。</li>
+            <li><strong>2 要素</strong>:サイトのセットアップキーをここに貼り付けます(Pro)。<a href="#win-2fa">2 要素コード</a>を参照してください。</li>
+            <li><strong>カスタムフィールド</strong>:その他の情報は<strong>フィールドを追加</strong>で。フィールドを非表示にすると、パスワードと同じように扱われます。</li>
+            <li><strong>パスワード履歴</strong>:古いパスワードは暗号化して 1 年間保存されます。<strong>以前のパスワードをコピー</strong>または<strong>このパスワードを復元</strong>。</li>
+            <li><strong>リカバリーコード</strong>:1 行に 1 つ。<strong>次のコードをコピーして使用</strong>で 1 つコピーし、リストから削除します。</li>
+            <li><strong>自動入力ルール</strong>:入力(標準、クリック時、しない)、入力後にサインイン、常にマスターパスワードを要求、ブラウザからの変更の保存を提案。</li>
+          </ul>
+          <h4>その他の種類</h4>
+          <p>種類ごとに独自のフィールドがあります。日付は YYYY-MM-DD 形式で入力します。どの項目も<strong>お気に入り</strong>にでき、<strong>タグ</strong>(カンマ区切り)を付けられます。書類は<strong>ファイルを選んで保存</strong>を使います(Pro)。</p>
+          <h4>コレクションとリマインダー</h4>
+          <ul>
+            <li>コレクションで項目を自由にまとめられます:<strong>コレクションを追加</strong>、<strong>名前を変更</strong>、<strong>アーカイブ</strong>。この PC にだけ保存され、同期はされません。</li>
+            <li><strong>リマインダー</strong>には、期限が近い項目や期限切れの項目が<strong>完了</strong>と<strong>1 日後に再通知</strong>付きで表示されます。</li>
+            <li><strong>アクティビティ</strong>には保管庫で起きたことの履歴が表示されます。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-trash">
+          <h3><a href="#win-trash">削除、ゴミ箱、元に戻す</a></h3>
+          <ol>
+            <li>項目を選んで<strong>ゴミ箱に移動</strong>を選ぶか、<kbd>Delete</kbd> を押します。</li>
+            <li><strong>元に戻す</strong>付きのメッセージが表示されます。クリックするとすぐに項目が戻ります。</li>
+            <li>後から、ツール › <strong>ゴミ箱</strong>を開いて<strong>選択項目を復元</strong>、<strong>選択項目を削除</strong>、<strong>ゴミ箱を空にする</strong>を使えます。ゴミ箱からの削除は元に戻せません。</li>
+          </ol>
+          <p>設定 › プライバシー › <strong>削除した項目の保持期間</strong>で 7、14、30、90 日を選べます。<strong>ゴミ箱を自動で空にする</strong>で自動的に空にできます。</p>
+        </article>
+
+        <article class="topic" id="win-search">
+          <h3><a href="#win-search">検索、コマンドパレット、クイックアクセス</a></h3>
+          <ul>
+            <li><strong>検索</strong>:<kbd>Ctrl</kbd>+<kbd>F</kbd> を押して入力し、<kbd>Enter</kbd> で先頭の結果を開くか、<kbd>↓</kbd> でリストに移動します。</li>
+            <li><strong>コマンドパレット</strong>:<kbd>Ctrl</kbd>+<kbd>K</kbd> で項目と操作を検索します。<code>&gt;</code> で始めると操作だけ(今すぐバックアップ、パスワードを生成、今すぐロック、同期の状態…)、<code>#</code> でタグ、<code>@</code> でコレクションを検索します。</li>
+            <li><strong>クイックアクセス</strong>:Windows のどこでも <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd> を押すと、ログイン、メモ、ブックマークを探す小さな検索ウィンドウが開きます。ショートカットは設定 › 自動入力 › クイックアクセスで変更できます。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-generator">
+          <h3><a href="#win-generator">パスワード生成</a></h3>
+          <p>ホームの<strong>生成</strong>カード、ログインの<strong>変更</strong>、または Ctrl+K › パスワードを生成から開きます。</p>
+          <ul>
+            <li><strong>ランダム</strong>:長さと、大文字や記号を使うかどうかを選びます。</li>
+            <li><strong>パスフレーズ</strong>:単語の数を選びます。入力しやすく、十分な長さがあれば同じくらい強力です。</li>
+            <li><strong>再生成</strong>で新しいものを作り、<strong>コピー</strong>でコピーします。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-security">
+          <h3><a href="#win-security">セキュリティセンターとパスワードの健全性</a></h3>
+          <p>ツール › <strong>セキュリティセンター</strong>には、優先して直すべきもの(弱い、使い回し、古い、漏洩したパスワードと、2FA を設定できるログイン)が表示されます。</p>
+          <ul>
+            <li><strong>すべての漏洩を確認</strong>は、パスワードを Have I Been Pwned のリストと照合します。PC から送られるのはハッシュの先頭 5 文字だけで、パスワードそのものは送られません。</li>
+            <li>漏洩チェックは、設定 › プライバシー › <strong>漏洩チェック</strong>をオンにするまでオフです。<strong>厳格なオフラインモード</strong>では、漏洩チェック、Web サイトのアイコン、その他すべてのネットワーク通信がブロックされます。</li>
+            <li><strong>パスワードの健全性</strong>で<strong>項目を開く</strong>または<strong>パスワードを変更</strong>を使って修正します。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-2fa">
+          <h3><a href="#win-2fa">2 要素コードと QR スキャン</a> <span class="badge-pro">Pro</span></h3>
+          <p>LocalGateKeys は、サイトがパスワードの後に求める 6 桁のコードを表示できるので、別の認証アプリは不要です。</p>
+          <ol>
+            <li>Web サイトで 2 要素認証(認証アプリによるサインイン)をオンにして、QR コードを表示させます。</li>
+            <li>LocalGateKeys で ツール › <strong>QR コードをスキャン</strong>を選びます。画像は次の 3 つの方法で取り込めます。
+              <ul>
+                <li><strong>スクリーンショットを貼り付け</strong>:<kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> を押して QR コードを選択し、<kbd>Ctrl</kbd>+<kbd>V</kbd> を押します。</li>
+                <li><strong>画像を選択…</strong>(PNG、JPEG、BMP)するか、画像をドラッグします。</li>
+                <li><strong>Web カメラを使用</strong>して、コードを表示したスマートフォンの画面をかざします。</li>
+              </ul>
+            </li>
+            <li>対応するログイン、または<strong>新しいログイン</strong>を選び、<strong>エディターで開く</strong>、<strong>保存</strong>の順に選びます。</li>
+            <li>Web サイトで現在のコードを入力して、2FA の有効化を完了します。</li>
+          </ol>
+          <p>セットアップキーや <code>otpauth://</code> リンクを、ログインの<strong>2 要素</strong>セクションに直接貼り付けることもできます。</p>
+          <h4>Google Authenticator からの移行</h4>
+          <ol>
+            <li>Google Authenticator で<strong>アカウントを移行 › エクスポート</strong>を選びます。</li>
+            <li>表示された QR コードをスキャンします(複数ある場合はそれぞれスキャン:「コード 1/3 をスキャンしました」)。</li>
+            <li>アカウントにチェックを入れ、<strong>既存のログインに追加</strong>または新しいログインを選んで<strong>追加</strong>します。重複はスキップされます。</li>
+          </ol>
+          <p class="note">この方法で作成した新しいログインには <code>needs-password</code> タグが付きます。後で実際のパスワードを入力してください。画像はメモリ上で読み取られ、保存されることはありません。Free では既存のコードは引き続き使えますが、追加や変更には Pro が必要です。</p>
+        </article>
+
+        <article class="topic" id="win-import">
+          <h3><a href="#win-import">他のパスワードマネージャーからのインポート</a></h3>
+          <ol>
+            <li>以前のアプリからパスワードをエクスポートします(下の一覧を参照)。</li>
+            <li>LocalGateKeys で ツール › インポートとエクスポート › <strong>パスワードと項目をインポート…</strong>を開き、ファイルを選びます。形式は自動的に認識されます。暗号化されたファイルは<strong>インポート用パスワード</strong>を求めます。</li>
+            <li>不明なアプリの単純な CSV では<strong>列を選択</strong>が表示されます。どの列がタイトル、ユーザー名、パスワードなどかを指定します。</li>
+            <li>各行を確認します:追加、スキップ、置き換え、結合、両方を保持。<strong>新しい項目をすべて追加</strong>、<strong>競合をすべて置き換え</strong>、<strong>すべてスキップ</strong>で一括指定できます。</li>
+            <li><strong>インポート</strong>を選びます。すべてが一度に取り込まれ、何かが失敗した場合は何も書き込まれません。</li>
+            <li><strong>エクスポートファイルを削除してください</strong>。パスワードが暗号化されずに入っています。</li>
+          </ol>
+          <table>
+            <thead><tr><th scope="col">取り込み元</th><th scope="col">ファイル</th></tr></thead>
+            <tbody>
+              <tr><td>1Password 8</td><td>.1pux または CSV</td></tr>
+              <tr><td>Bitwarden</td><td>JSON(パスワード保護付きも可)</td></tr>
+              <tr><td>LastPass</td><td>CSV</td></tr>
+              <tr><td>Dashlane</td><td>zip または CSV</td></tr>
+              <tr><td>KeePass 2 / KeePassXC</td><td>.kdbx(直接開く)、XML、CSV</td></tr>
+              <tr><td>Proton Pass</td><td>JSON zip または CSV(PGP なしでエクスポート)</td></tr>
+              <tr><td>Chrome, Edge, Brave, Firefox</td><td>CSV</td></tr>
+              <tr><td>Safari / Apple パスワード</td><td>CSV</td></tr>
+              <tr><td>その他</td><td>CSV(列の選択あり)</td></tr>
+            </tbody>
+          </table>
+          <p class="note">インポートされないもの:ゴミ箱、パスワード履歴、パスキー、添付ファイル。<code>http://</code> のサイトは https として保存されます。Web サイトもパスワードもない項目はセキュアノートになります。Free では 4 件の上限が適用されます。</p>
+        </article>
+
+        <article class="topic" id="win-export">
+          <h3><a href="#win-export">エクスポートと暗号化転送</a></h3>
+          <p>ツール › インポートとエクスポート › <strong>エクスポート…</strong>で選べる形式:</p>
+          <ul>
+            <li><strong>KeePass KDBX 4</strong>:自分で決めたパスワード(12 文字以上)で暗号化されます。安全な選択肢です。</li>
+            <li>Bitwarden 互換 CSV、Bitwarden JSON、KeePass 2 XML:<em>暗号化されません</em>。使用後に削除してください。</li>
+            <li>2FA コードも移すには<strong>ワンタイムパスワード(2FA)のシークレットを含める</strong>にチェックを入れます。</li>
+          </ul>
+          <p><strong>暗号化転送…</strong>は、選んだ項目(お気に入り、種類、タグで指定)をパスワード保護されたパッケージで別のプロファイルや PC に移します。移行先では<strong>パッケージをインポート</strong>、<strong>検査</strong>、<strong>プレビュー</strong>の順に選んでからインポートします。</p>
+        </article>
+
+        <article class="topic" id="win-backups">
+          <h3><a href="#win-backups">バックアップと復元</a></h3>
+          <h4>スケジュールバックアップ(推奨)</h4>
+          <ol>
+            <li>設定 › バックアップ › <strong>バックアップのパスワード</strong> › <strong>設定…</strong>。12 文字以上にして、<strong>書き留めておいてください</strong>。</li>
+            <li><strong>スケジュールバックアップ</strong>:毎日または毎週。<strong>時刻</strong>と<strong>曜日</strong>を指定します。</li>
+            <li><strong>クラウドコピー</strong> › <strong>選択…</strong>で、USB ドライブや 2 台目のディスクなど、2 つ目のコピーを置くフォルダーを選びます。</li>
+            <li><strong>古いスケジュールバックアップ</strong>:最新のみ、または最新と 1 つ前を保持します。</li>
+          </ol>
+          <p class="note">バックアップは保管庫のロックが解除されている間だけ実行されます。アプリを閉じていて実行されなかった分は、次のロック解除時に実行されます。</p>
+          <h4>バックアップと復元のページ</h4>
+          <p>バックアップと復旧カード、Ctrl+K、またはロック解除画面の<strong>バックアップと復元</strong>から開きます。</p>
+          <ul>
+            <li><strong>バックアップを作成</strong>:専用のパスワードで暗号化された <code>.lgk</code> ファイル。</li>
+            <li><strong>バックアップを検証</strong>:保管庫に触れずに、ファイルが開けるか確認します。</li>
+            <li><strong>バックアップを復元</strong>:バックアップのパスワードと、作成時のマスターパスワードが必要です。新しいプロファイルとして復元することもできます。</li>
+            <li><strong>復元をテスト</strong>:一時的なコピーを開いてバックアップが使えることを確認し、その後<strong>テスト用コピーを破棄</strong>します。</li>
+            <li><strong>リカバリーフレーズ</strong>(設定 / 置き換え…)と、印刷用のシート<strong>リカバリーキットを作成</strong>。</li>
+          </ul>
+          <h4>スマートフォンのバックアップを復元する</h4>
+          <p>インポートとエクスポート › <strong>スマートフォンのバックアップを復元…</strong>で、iPhone または Android アプリの <code>.lgkm</code> ファイルを選び、パスワードを入力して<strong>プレビュー</strong>、<strong>復元</strong>の順に選びます。項目は保管庫に追加され、何も消去されません。</p>
+        </article>
+
+        <article class="topic" id="win-sync">
+          <h3><a href="#win-sync">デバイス間の同期</a> <span class="badge-pro">Pro</span></h3>
+          <p>同期はロック解除中だけ行われます。ロック解除時、5 分ごと、変更の数秒後です。方法は 2 つあり、両方使うこともできます。</p>
+          <h4>Wi-Fi(同じネットワーク上のスマートフォンや別の PC)</h4>
+          <ol>
+            <li>ツール › 同期 › <strong>Wi-Fi 同期をオンにする…</strong>。提案されたアドレスとポート(47821)はそのままにし、確認されたら<strong>Windows ファイアウォールで許可</strong>を選びます。</li>
+            <li><strong>QR コードを表示…</strong>を選びます。コードは 1 回だけ、120 秒間有効です。</li>
+            <li>スマートフォンアプリの同期タブでスキャンします。別の PC の場合は<strong>コードのテキストをコピー</strong>を選び、そちらで<strong>QR テキストで参加…</strong>を使います。</li>
+            <li>両方のデバイスに 6 桁のコードが表示されます。一致する場合だけ<strong>承認</strong>を、一致しない場合は<strong>拒否</strong>を選びます。</li>
+            <li>ペアリング直後なら、誤りだった場合に<strong>元に戻す</strong>で新しいデバイスを削除できます。</li>
+          </ol>
+          <p>PC のアドレスが変わった場合は、スマートフォンで<strong>再検索</strong>を選びます。</p>
+          <h4>クラウドフォルダー(Dropbox、iCloud Drive…)</h4>
+          <ol>
+            <li>最初のデバイスで:<strong>同期グループを作成…</strong>を選び、クラウドアプリが同期するフォルダーを選んで、強力な同期パスワード(12 文字以上)を設定します。</li>
+            <li>他の各デバイスで:<strong>フォルダーに参加…</strong>を選び、<em>LocalGateKeys Sync</em> を含むフォルダーを選んで同期パスワードを入力します。</li>
+          </ol>
+          <p>クラウドから見えるのは暗号化されたファイルだけです。</p>
+          <p class="note">OneDrive と Google Drive は、Apple 側の問題が解決するまで、現在同期に使えません。Dropbox、iCloud Drive、または Wi-Fi 同期を使ってください。</p>
+          <h4>同期の管理</h4>
+          <ul>
+            <li>同期の状態ページ(サイドバーの同期表示をクリック)で<strong>今すぐ同期</strong>。</li>
+            <li><strong>デバイスを削除…</strong>(新しい同期パスワードを設定します)、<strong>同期パスワードを変更…</strong>。</li>
+            <li><strong>同期から退出…</strong>は項目を残したままグループを解除します。<strong>この PC の同期をリセット…</strong>は鍵も削除します(2 回確認されます)。</li>
+            <li>同じ項目が 2 台で同時に変更された場合、追加のコピーのタイトルに<em>(同期の競合)</em>が付きます。</li>
+          </ul>
+          <p class="note">PC ごとに Pro ライセンスが必要です。スマートフォンでの Pro 購入で PC のロックを解除できます(<a href="#win-pro">Pro ライセンス</a>を参照)。コレクションは同期されません。1 グループあたり最大 16 台です。</p>
+        </article>
+
+        <article class="topic" id="win-share">
+          <h3><a href="#win-share">項目を誰かと共有する</a></h3>
+          <ol>
+            <li>項目を選び、<strong>共有</strong>、<strong>共有を作成</strong>の順に選びます。</li>
+            <li>LocalGateKeys に 6 語の<strong>共有コード</strong>が表示されます。<strong>ファイルとして保存…</strong>(<code>.lgkshare</code>)または<strong>QR コードを表示</strong>を選びます。</li>
+            <li>ファイルを送り、6 つの単語は電話や対面など<em>別の方法で</em>相手に伝えます。</li>
+          </ol>
+          <p><strong>受け取る場合:</strong><code>.lgkshare</code> ファイルをダブルクリックするか、Ctrl+K › 受信した共有項目 › <strong>共有項目を開く…</strong>を選びます。6 つの単語を入力して<strong>プレビュー</strong>を確認し、<strong>保管庫に保存</strong>、<strong>両方を保持</strong>、<strong>拒否</strong>のいずれかを選びます。パスキー、書類、ファイルが添付された項目は共有できません。</p>
+        </article>
+
+        <article class="topic" id="win-apps">
+          <h3><a href="#win-apps">Windows アプリへの入力</a></h3>
+          <p>LocalGateKeys は Web サイトだけでなく、一般的な Windows プログラムのサインイン画面にも入力できます。</p>
+          <ol>
+            <li>プログラムのサインイン画面を開きます。</li>
+            <li><strong>デスクトップアプリのログイン</strong>を作成し、<strong>アプリとの関連付け…</strong> › <strong>アプリを調べる…</strong>を選びます。</li>
+            <li><strong>ログインフィールドを割り当て</strong>:ユーザー名とパスワードの入力欄を指定します。必要に応じて<strong>サインインボタンを割り当て…</strong>。</li>
+            <li><strong>関連付けを保存</strong>。</li>
+            <li>次回からは、そのプログラムで <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd> を押すか、パスワード欄の横の入力ボタンをクリックします。</li>
+          </ol>
+          <p>アップデートでプログラムが変わった場合は<strong>関連付けを更新</strong>を選びます。LocalGateKeys が読み取るのはウィンドウの構成だけで、入力内容は読み取りません。</p>
+        </article>
+
+        <article class="topic" id="win-settings">
+          <h3><a href="#win-settings">設定</a></h3>
+          <p>上部の<strong>設定を検索</strong>ボックス(<kbd>Ctrl</kbd>+<kbd>F</kbd>)で、どのオプションでも見つけられます。変更はすぐに保存されます。</p>
+          <dl class="defs">
+            <dt>ロック解除</dt><dd>Windows Hello、カメラ認証、マスターパスワード、リカバリーフレーズ。</dd>
+            <dt>ロック</dt><dd>自動ロックの時間ときっかけ(<a href="#win-unlock">ロック解除とロック</a>を参照)。</dd>
+            <dt>自動入力</dt><dd>ブラウザの自動入力、<strong>パスキーに LocalGateKeys を提案</strong>、デスクトップアプリの自動入力、入力後にサインイン、クイックアクセスのショートカット。</dd>
+            <dt>プライバシー</dt><dd><strong>クリップボードを消去するまでの時間</strong>(5 秒から 5 分)、漏洩チェック、厳格なオフラインモード、ゴミ箱の期間、他のアプリで書類を開く。</dd>
+            <dt>バックアップ</dt><dd><a href="#win-backups">バックアップと復元</a>を参照してください。</dd>
+            <dt>外観とアプリ</dt><dd><strong>テーマ</strong>(システム、ライト、ダーク)、<strong>Windows と同時に起動</strong>(ロックされた状態で起動)、<strong>トレイで実行を続ける</strong>、アップデート。</dd>
+            <dt>ヘルプと診断</dt><dd>キーボードショートカット、セットアップを再表示、デバイスと接続、エラーログ、法的情報のページ。</dd>
+          </dl>
+        </article>
+
+        <article class="topic" id="win-pro">
+          <h3><a href="#win-pro">Pro ライセンス</a></h3>
+          <ol>
+            <li>Pro は<a href="../ja/pricing.html">料金ページ</a>で購入できます。キー(<code>LGK1-</code> で始まります)はメールで届きます。</li>
+            <li>ツール › <strong>ライセンス</strong>を開き、キーを貼り付けて<strong>インストール</strong>を選ぶか、<code>.lgklicense</code> ファイルの場合は<strong>ファイルを開く…</strong>を選びます。</li>
+          </ol>
+          <p>iPhone または Android アプリで Pro を購入した場合は、スマートフォンの設定で<strong>キーをコピー</strong>を選び、同じ方法で PC にインストールします。ライセンスページには無料の 4 件のうち何件使っているかが表示されます。詳しくは<a href="../ja/licence.html">Pro ライセンス</a>をご覧ください。</p>
+        </article>
+
+        <article class="topic" id="win-updates">
+          <h3><a href="#win-updates">アップデート</a></h3>
+          <p>Microsoft Store 版は自動で更新されます。インストーラー版では<strong>アップデートを確認</strong>(設定、トレイメニュー、または Ctrl+K)を選びます。新しいバージョンがあれば、<strong>リリースページを開く</strong>でダウンロードページに移動します。アプリが自分で何かをダウンロードしたり実行したりすることはありません。</p>
+        </article>
+
+        <article class="topic" id="win-keys">
+          <h3><a href="#win-keys">キーボードショートカット</a></h3>
+          <p>アプリで <kbd>F1</kbd> または <kbd>?</kbd> を押すと、この一覧が表示されます。</p>
+          <table class="keys">
+            <tbody>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>K</kbd></th><td>コマンドパレット</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>F</kbd></th><td>検索</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>N</kbd></th><td>新規項目</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>L</kbd></th><td>ロック</td></tr>
+              <tr><th scope="row"><kbd>Esc</kbd></th><td>戻る</td></tr>
+              <tr><th scope="row"><kbd>Enter</kbd> / <kbd>F2</kbd></th><td>選択した項目を開く</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>C</kbd></th><td>パスワードをコピー(事前に確認)</td></tr>
+              <tr><th scope="row"><kbd>Delete</kbd></th><td>ゴミ箱に移動</td></tr>
+              <tr><th scope="row"><kbd>Shift</kbd>+<kbd>F10</kbd></th><td>項目メニュー</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd></th><td>緊急ロック(Windows のどこでも)</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd></th><td>クイックアクセス(Windows のどこでも)</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd></th><td>関連付けた Windows アプリに入力</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== EXTENSION ============================== -->
+  <section class="help-panel" id="extension" aria-labelledby="extension-title">
+    <h2 class="panel-title" id="extension-title">Edge と Chrome 用のブラウザ拡張機能</h2>
+    <p class="panel-lead">Web サイトでサインイン情報を入力・保存します。同じ PC 上の LocalGateKeys アプリとだけ通信するので、先に Windows アプリをインストールしてください。</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="拡張機能のトピック">
+        <p class="help-toc-title">このタブの内容</p>
+        <ol>
+          <li><a href="#ext-install">インストールと接続</a></li>
+          <li><a href="#ext-popup">拡張機能のウィンドウ</a></li>
+          <li><a href="#ext-fill">ログインを入力する</a></li>
+          <li><a href="#ext-save">ログインを保存する</a></li>
+          <li><a href="#ext-2fa">2FA コードを入力する</a></li>
+          <li><a href="#ext-cards">カードと ID</a></li>
+          <li><a href="#ext-generate">新しいパスワード</a></li>
+          <li><a href="#ext-passkeys">パスキー</a></li>
+          <li><a href="#ext-trouble">トラブルシューティング</a></li>
+        </ol>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="ext-install">
+          <h3><a href="#ext-install">インストールと接続</a></h3>
+          <ol>
+            <li><a href="#windows">Windows アプリ</a>をインストールして設定します。</li>
+            <li>拡張機能を追加します:<strong>Edge</strong> は <a href="https://microsoftedge.microsoft.com/addons/detail/localgatekeys/oclkjglnfefdmhddgicmbadaoehakbjj">Edge アドオン</a>から(<strong>インストール</strong>を選択)。Chrome ウェブストアへの掲載は近日予定です。</li>
+            <li>ツールバーのパズルピースのアイコンをクリックし、<strong>LocalGateKeys</strong> をピン留めします。</li>
+            <li>LocalGateKeys のアイコンをクリックします。接続カードに<strong>接続済み</strong>または<strong>ロック中</strong>と表示されれば OK です。</li>
+          </ol>
+          <p>ペアリングは不要です。拡張機能がアプリを自動で見つけます。アプリのセットアップガイドには、確認用の<strong>接続をテスト</strong>の手順があります。</p>
+        </article>
+
+        <article class="topic" id="ext-popup">
+          <h3><a href="#ext-popup">拡張機能のウィンドウ</a></h3>
+          <dl class="defs">
+            <dt>接続</dt><dd><strong>接続済み</strong>(準備完了)、<strong>ロック中</strong>(操作を選ぶとアプリがロック解除を求めます)、<strong>セットアップが必要</strong>、<strong>オフライン</strong>。<strong>↻</strong> で何もロック解除せずに状態を更新します。</dd>
+            <dt>現在のサイト</dt><dd>開いているサイトです。このサイト用に保存されたログインだけが提案されます。</dd>
+            <dt>クイック操作</dt><dd><strong>ログインを入力</strong>、<strong>ID を入力</strong>、<strong>カードを入力…</strong>、<strong>ログインを保存</strong>、<strong>パスワードを生成</strong>。</dd>
+            <dt>保存の確認</dt><dd>このサイトで保存の確認を表示するかどうかを切り替えるスイッチです。</dd>
+          </dl>
+          <p class="tip"><strong>設計上、勝手に入力されることはありません。</strong>入力は必ずクリックから始まり、拡張機能がマスターパスワードを求めることもありません。ロック解除は常に LocalGateKeys のウィンドウで行います。</p>
+        </article>
+
+        <article class="topic" id="ext-fill">
+          <h3><a href="#ext-fill">ログインを入力する</a></h3>
+          <ol>
+            <li>サイトのサインインページを開きます。</li>
+            <li>ユーザー名またはパスワード欄の中の LocalGateKeys アイコン(<em>LocalGateKeys で入力</em>)をクリックするか、拡張機能を開いて<strong>ログインを入力</strong>を選びます。</li>
+            <li>そのサイトに複数のアカウントがある場合は、<strong>アカウントを選択</strong>で 1 つ選びます。</li>
+            <li>保管庫がロックされている場合は、表示される LocalGateKeys のウィンドウでロックを解除します。</li>
+          </ol>
+          <p>ログインで<strong>入力後にサインイン</strong>がオンなら、フォームが自動で送信されます。特殊なフォームでは<em>自動サインインをスキップしました</em>と表示されるので、サイトのサインインボタンをクリックしてください。</p>
+        </article>
+
+        <article class="topic" id="ext-save">
+          <h3><a href="#ext-save">新しいログインや変更したログインを保存する</a></h3>
+          <ol>
+            <li>いつもどおり Web サイトにサインインします。</li>
+            <li>拡張機能が<em>このログインを保存しますか?</em>と確認します(変更されたパスワードの更新を提案することもあります)。</li>
+            <li><strong>保管庫に保存</strong>を選び、LocalGateKeys のウィンドウで確定します。<strong>今はしない</strong>や<strong>このサイトでは保存しない</strong>も選べます。</li>
+          </ol>
+          <p>手動で保存するには、フォームに入力してから拡張機能のウィンドウで<strong>ログインを保存</strong>を選びます。サイトの確認を再びオンにするには、拡張機能のウィンドウのスイッチを使います。</p>
+        </article>
+
+        <article class="topic" id="ext-2fa">
+          <h3><a href="#ext-2fa">2FA コードを入力する</a></h3>
+          <p>サイトが 6 桁のコードを求めたら、コード欄の LocalGateKeys アイコン(<em>LocalGateKeys で 2FA コードを入力</em>)をクリックします。ページに渡るのは現在のコードだけで、セットアップキーは渡りません。コードの期限が迫っている場合、拡張機能は新しいコードを少し待ちます。</p>
+          <p>ログインには、アプリで 2FA セットアップキーが保存されている必要があります(<a href="#win-2fa">2 要素コード</a>を参照)。設定 › ロック › <strong>2FA コードを渡す前に確認</strong>がオンの場合は、毎回アプリで確定します。</p>
+        </article>
+
+        <article class="topic" id="ext-cards">
+          <h3><a href="#ext-cards">カードと ID</a></h3>
+          <ol>
+            <li>購入手続きや住所のフォームで、フィールド内のアイコンをクリックするか、<strong>カードを入力…</strong> / <strong>ID を入力</strong>を選びます。</li>
+            <li>カードまたは ID を選びます。</li>
+            <li>入力するフィールドにチェックを入れます。セキュリティコード(CVV)は既定でオフです。必要なときだけチェックしてください。</li>
+            <li><strong>確認して承認</strong>を選び、LocalGateKeys のウィンドウで承認します。</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="ext-generate">
+          <h3><a href="#ext-generate">登録ページでパスワードを作成する</a></h3>
+          <p>登録フォームやパスワード変更フォームで<strong>パスワードを生成</strong>を選びます。新しいパスワードが新しいパスワード欄に入ります。ページを離れる前に、保存の確認または<strong>ログインを保存</strong>で<strong>保存してください</strong>。</p>
+        </article>
+
+        <article class="topic" id="ext-passkeys">
+          <h3><a href="#ext-passkeys">パスキー</a></h3>
+          <p>サイトがパスキーの作成や使用を提案したとき、LocalGateKeys が処理してパスキーを保管庫に保存できます。アプリの 設定 › 自動入力 › <strong>パスキーに LocalGateKeys を提案</strong>でオン/オフを切り替えます。対応できない場合は、ブラウザのパスキー画面に切り替わります。</p>
+        </article>
+
+        <article class="topic" id="ext-trouble">
+          <h3><a href="#ext-trouble">トラブルシューティング</a></h3>
+          <table>
+            <thead><tr><th scope="col">表示</th><th scope="col">対処</th></tr></thead>
+            <tbody>
+              <tr><td><strong>オフライン</strong> / アプリに接続できない</td><td>LocalGateKeys を開きます。<strong>デバイスと接続</strong>で<strong>ブリッジを修復</strong>を選び、ブラウザを再起動します。</td></tr>
+              <tr><td><strong>セットアップが必要</strong></td><td>アプリでプロファイルの選択を完了してから ↻ を押します。</td></tr>
+              <tr><td>ブラウザ連携が一時停止中</td><td>アプリの 設定 › 自動入力 で、ブラウザの自動入力を再びオンにします。</td></tr>
+              <tr><td>バージョンが一致しない</td><td>拡張機能とアプリの両方を更新し、両方を再起動します。</td></tr>
+              <tr><td>ブリッジの応答に時間がかかりすぎた</td><td>開いている LocalGateKeys の確認画面を閉じて、もう一度試します。</td></tr>
+              <tr><td>このサイトに保存されたログインがない</td><td>ログインの Web サイトがこのサイトと一致している必要があります。アプリで編集してください。</td></tr>
+              <tr><td>このログインでは入力が無効</td><td>アプリでログインを編集 › 自動入力ルール › 入力。</td></tr>
+              <tr><td>このページでは使用できない</td><td>拡張機能はブラウザのページ(設定、新しいタブ)では動作しません。通常の http/https ページを開いてください。</td></tr>
+            </tbody>
+          </table>
+          <p>それでも解決しない場合は、デバイスと接続 › <strong>レポートをエクスポート</strong>して <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a> にメールで送ってください。パスワードは含まれません。</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== IPHONE ============================== -->
+  <section class="help-panel" id="iphone" aria-labelledby="iphone-title">
+    <h2 class="panel-title" id="iphone-title">iPhone 版 LocalGateKeys</h2>
+    <p class="panel-lead"><a href="https://apps.apple.com/app/id6825488435">App Store</a> で入手できます。アプリには<strong>保管庫</strong>、<strong>同期</strong>、<strong>セキュリティ</strong>、<strong>設定</strong>の 4 つのタブがあります。</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="iPhone のトピック">
+        <p class="help-toc-title">このタブの内容</p>
+        <ol>
+          <li><a href="#ios-setup">初回起動とロック解除</a></li>
+          <li><a href="#ios-apppw">アプリのパスワードと復旧</a></li>
+          <li><a href="#ios-items">項目:追加、編集、削除</a></li>
+          <li><a href="#ios-search">検索と操作</a></li>
+          <li><a href="#ios-generator">パスワード生成</a></li>
+          <li><a href="#ios-2fa">2 要素コード</a></li>
+          <li><a href="#ios-autofill">アプリと Safari での自動入力</a></li>
+          <li><a href="#ios-passkeys">パスキー</a></li>
+          <li><a href="#ios-safari">Safari からの保存</a></li>
+          <li><a href="#ios-security">セキュリティタブ</a></li>
+          <li><a href="#ios-import">インポートとエクスポート</a></li>
+          <li><a href="#ios-sync">同期</a></li>
+          <li><a href="#ios-share">項目の共有</a></li>
+          <li><a href="#ios-settings">設定</a></li>
+          <li><a href="#ios-pro">Pro</a></li>
+        </ol>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="ios-setup">
+          <h3><a href="#ios-setup">初回起動とロック解除</a></h3>
+          <p>作成するパスワードはありません。保管庫は iPhone と同じく <strong>Face ID</strong>、<strong>Touch ID</strong>、または iPhone のパスコードで開きます。(iPhone にパスコードが設定されている必要があります。)</p>
+          <ol>
+            <li>アプリを開いて<strong>ロック解除</strong>をタップします。</li>
+            <li>続いて簡単なセットアップがあります:Face ID でロック解除、<strong>パスワードをインポート</strong>、<strong>アプリのパスワードを追加</strong>(任意)、<strong>自動入力をオンにする</strong>。</li>
+            <li>どれでもスキップできます。保管庫の上部にある<em>セットアップを完了</em>カード、または 設定 › <strong>セットアップを再表示</strong>から戻れます。</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="ios-apppw">
+          <h3><a href="#ios-apppw">アプリのパスワードとリカバリーフレーズ</a></h3>
+          <p>iPhone のパスコードの代わりに LocalGateKeys を開く、任意の追加パスワードです。他の人があなたのパスコードを知っている場合に便利です。</p>
+          <ol>
+            <li>設定 › アプリのパスワード › <strong>アプリのパスワードを使う</strong>をオンにします。</li>
+            <li>強力なパスワードを決めます。</li>
+            <li>24 語の<strong>リカバリーフレーズ</strong>を書き留め、<strong>書き留めました</strong>をタップして、求められた 3 つの単語を入力します。</li>
+            <li>必要に応じて、<strong>Face ID でロック解除</strong>をショートカットとして残せます。</li>
+          </ol>
+          <p><strong>忘れた場合は?</strong>ロック解除画面で<strong>アプリのパスワードを忘れた場合</strong>をタップし、24 語を入力して新しいアプリのパスワードを決めます。</p>
+          <p class="note">iPhone に新しい顔や指紋を登録すると、安全のため Face ID のショートカットがオフになります。アプリのパスワードを一度入力して、再びオンにしてください。</p>
+        </article>
+
+        <article class="topic" id="ios-items">
+          <h3><a href="#ios-items">項目:追加、編集、削除</a></h3>
+          <ol>
+            <li>保管庫タブで <strong>+</strong> をタップし、種類を選びます:Web ログイン、セキュアノート、カード、ID、銀行口座、購入品、サブスクリプション、保証、Wi-Fi、ソフトウェアライセンス、API キー、SSH キー、ブックマーク。</li>
+            <li>フィールドに入力して<strong>保存</strong>をタップします。途中で離れると、保存していない項目を後で<strong>続ける</strong>ことを提案されます。</li>
+          </ol>
+          <ul>
+            <li>項目を開くと、<strong>ユーザー名をコピー</strong>、<strong>パスワードをコピー</strong>、<strong>2FA コードをコピー</strong>、<strong>Web サイトを開く</strong>、<strong>お気に入り</strong>に登録、<strong>共有</strong>ができます。コピーしたテキストはしばらくするとクリップボードから消去され、他の Apple デバイスには送られません。</li>
+            <li>ログインの<strong>パスワード履歴</strong>には古いパスワードが残ります。コピーまたは復元できます(Face ID を求められます)。</li>
+            <li>カード、パスポート、ライセンス、サブスクリプションには、期限前の<strong>リマインダー</strong>を設定できます。</li>
+            <li><strong>+</strong> から<strong>ファイルを添付</strong>(Pro、最大 25 MB、暗号化して保存)。</li>
+            <li><strong>削除</strong>:項目は<em>最近削除した項目</em>に移り、数秒間は<strong>取り消す</strong>が使えます。設定 › データ › <strong>最近削除した項目</strong>で<strong>復元</strong>または<strong>完全に削除</strong>できます。</li>
+            <li>名前順や日付順、お気に入りを先頭、または種類別に<strong>並べ替え</strong>できます。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="ios-search">
+          <h3><a href="#ios-search">検索とクイック操作</a></h3>
+          <p>保管庫を下に引くか<strong>検索</strong>をタップして入力します。先に <code>&gt;</code> を入力すると<strong>操作</strong>が表示されます:新規項目、パスワードを生成、QR コードをスキャン、今すぐロック、今すぐ同期、セキュリティチェック、最近削除した項目、インポートとエクスポートなど。</p>
+        </article>
+
+        <article class="topic" id="ios-generator">
+          <h3><a href="#ios-generator">パスワード生成</a></h3>
+          <p><code>&gt;</code> のパスワードを生成から、またはログインのパスワードの編集中に使えます。<strong>長さ</strong>を指定したパスワード、または<strong>単語数</strong>と<strong>区切り文字</strong>を指定したパスフレーズを選びます。<strong>再生成</strong>してから<strong>使用</strong>します。前回のオプションは記憶され、<strong>デフォルトに戻す</strong>で元に戻せます。</p>
+        </article>
+
+        <article class="topic" id="ios-2fa">
+          <h3><a href="#ios-2fa">2 要素コード</a> <span class="badge-pro">Pro</span></h3>
+          <ol>
+            <li>Web サイトで認証アプリによる 2FA をオンにして、QR コードを表示させます。</li>
+            <li>LocalGateKeys で<strong>QR コードをスキャン</strong>を選びます(<code>&gt;</code> またはログインの 2FA フィールドから)。<strong>カメラを使用</strong>または<strong>写真から選択</strong>(スクリーンショットの場合)をタップします。</li>
+            <li>コードは一致するログインに追加されるか、保存できる状態の新しいログインが開きます。</li>
+          </ol>
+          <p>コードは項目内と、保管庫の<strong>コード</strong>行に表示されます。ログインの<strong>2FA シークレット</strong>フィールドにセットアップキーを貼り付けることもできます。Google Authenticator のエクスポート(アカウントを移行)も、複数に分かれたものを含めて使えます。</p>
+          <p>コードを手首で見たい場合は<a href="#watch">Apple Watch</a>を参照してください。</p>
+        </article>
+
+        <article class="topic" id="ios-autofill">
+          <h3><a href="#ios-autofill">アプリと Safari での自動入力</a></h3>
+          <ol>
+            <li>LocalGateKeys で 設定 › 自動入力 › <strong>自動入力の設定を開く</strong>に進みます。</li>
+            <li>iPhone の設定の<strong>一般 › 自動入力とパスワード</strong>で、<strong>LocalGateKeys</strong> をオンにします。</li>
+            <li>これで、どのアプリや Web サイトでもユーザー名やパスワードの欄をタップすると、キーボードの上にログインが表示されます。鍵のアイコンをタップして選ぶこともできます。</li>
+          </ol>
+          <p>設定 › 自動入力 のオプション:</p>
+          <ul>
+            <li><strong>QuickType バーにログインを表示</strong>:キーボードの上に候補を表示します。</li>
+            <li><strong>入力時に 2FA コードをコピー</strong>:次の画面でコードを貼り付けられます。60 秒後に消去されます。</li>
+            <li><strong>パスキーに LocalGateKeys を提案</strong>。</li>
+          </ul>
+          <p>カードや連絡先も同じように入力されます。<code>https</code> のサイト用に保存したログインは、通常の <code>http</code> ページでは提案されません。</p>
+        </article>
+
+        <article class="topic" id="ios-passkeys">
+          <h3><a href="#ios-passkeys">パスキー</a></h3>
+          <p>自動入力がオンの状態で Web サイトがパスキーの作成を提案したら、LocalGateKeys を選びます。パスキーは保管庫に保存され、PC や Mac と同期されます。iPhone でコンピューターの QR コードをスキャンしてサインインすることもできます。パスキーの詳細ページにはサイトとアカウントが表示されますが、鍵そのものは表示されません。名前の変更や削除ができます。</p>
+        </article>
+
+        <article class="topic" id="ios-safari">
+          <h3><a href="#ios-safari">Safari からログインを保存する</a></h3>
+          <ol>
+            <li>iPhone の設定 › アプリ › Safari › 機能拡張 › <strong>LocalGateKeys</strong>:オンにして、すべての Web サイトで許可します。</li>
+            <li>Safari でサイトにサインインし、確認画面で<strong>保存</strong>をタップします。</li>
+            <li>次に LocalGateKeys のロックを解除すると、<strong>Safari から保存しますか?</strong>に取得した内容が<em>新しいログイン</em>または<em>保存済みのパスワードを更新</em>の表示付きで一覧されます。残すものを選ぶか、<strong>後で決める</strong>を選びます。</li>
+          </ol>
+          <p>サイトで確認を表示しないようにするには、<strong>このサイトでは保存しない</strong>を選びます。</p>
+        </article>
+
+        <article class="topic" id="ios-security">
+          <h3><a href="#ios-security">セキュリティタブ</a></h3>
+          <p>スコアと、<strong>漏洩</strong>、<strong>使い回し</strong>、<strong>弱い</strong>、<strong>古い</strong>、または 2FA を設定できるログインの一覧です。ログインを左にスワイプすると<strong>パスワードを変更</strong>または<strong>無視</strong>を選べます。漏洩チェックは、設定 › <strong>漏洩チェックを許可</strong>をオンにするまでオフです。</p>
+        </article>
+
+        <article class="topic" id="ios-import">
+          <h3><a href="#ios-import">インポートとエクスポート</a></h3>
+          <h4>Apple パスワードから(iOS 26)</h4>
+          <ol>
+            <li><strong>パスワード</strong>アプリを開き、メニューをタップして<strong>データを別のアプリに書き出す</strong>を選びます。</li>
+            <li><strong>LocalGateKeys</strong> を選びます。ログイン、2FA コード、パスキーが移行されます。もう一度行っても重複して追加されることはありません。</li>
+          </ol>
+          <h4>ファイルから</h4>
+          <p>設定 › インポートとエクスポート › <strong>ファイルからインポート</strong>:Apple パスワードの CSV、Bitwarden の <code>.json</code>(パスワード保護付きも可)、1Password の <code>.1pux</code>、その他の CSV。<strong>インポート</strong>をタップする前に、すべての項目を確認できます。その後、エクスポートファイルを削除してください。</p>
+          <h4>バックアップとエクスポート</h4>
+          <ul>
+            <li><strong>暗号化バックアップをエクスポート</strong>:12 文字以上のパスワード付きの <code>.lgkm</code> ファイル。Windows、Mac、別のスマートフォンで復元できます。</li>
+            <li><strong>CSV としてエクスポート</strong>:暗号化されず、別のアプリへの移行用です。確認が求められます。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="ios-sync">
+          <h3><a href="#ios-sync">PC や Mac と同期する</a> <span class="badge-pro">Pro</span></h3>
+          <h4>Wi-Fi で</h4>
+          <ol>
+            <li>PC または Mac で同期を開き、<strong>QR コードを表示</strong>を選びます。</li>
+            <li>iPhone で<strong>同期</strong>タブを開き、120 秒以内に<strong>QR コードをスキャン</strong>をタップします。(初回はローカルネットワークへのアクセスを許可してください。)カメラがない場合は、<strong>コードのテキストを貼り付け</strong>をタップし、コンピューターの<strong>コードのテキストをコピー</strong>で得たテキストを貼り付けます。</li>
+            <li>両方の画面に同じコードが表示されていることを確認し、コンピューターで<strong>承認</strong>を選びます。</li>
+          </ol>
+          <p>両方が同じ Wi-Fi に接続され、ロック解除されているときに同期されます。<strong>今すぐ同期</strong>で強制的に同期し、コンピューターのアドレスが変わった場合は<strong>再検索</strong>が役立ちます。</p>
+          <h4>クラウドフォルダーで</h4>
+          <p><strong>フォルダーに参加…</strong>をタップし、iCloud Drive または Dropbox の <em>LocalGateKeys Sync</em> フォルダーを選んで、グループの同期パスワードを入力します。</p>
+          <p class="note">OneDrive と Google Drive は、Apple 側の問題が解決するまで、現在同期に使えません。Dropbox、iCloud Drive、または Wi-Fi 同期を使ってください。</p>
+          <h4>停止する</h4>
+          <p><strong>同期から退出…</strong>または<strong>この iPhone の同期をリセット…</strong>(どちらも 2 回確認されます)。項目はスマートフォンに残ります。</p>
+        </article>
+
+        <article class="topic" id="ios-share">
+          <h3><a href="#ios-share">項目の共有</a></h3>
+          <ol>
+            <li>項目を開いて<strong>共有</strong>をタップします。</li>
+            <li>アプリに 6 つの単語が表示されます。<strong>AirDrop またはファイルを共有…</strong>でファイルを送るか、<strong>コードを QR で表示</strong>します。</li>
+            <li>6 つの単語は、ファイルとは別に相手に伝えてください。ファイルと一緒に送ってはいけません。</li>
+          </ol>
+          <p><strong>受け取る場合:</strong>AirDrop または「ファイル」から <code>.lgkshare</code> ファイルを開き(または<strong>共有項目を受け取る</strong>)、6 つの単語を入力します。パスキーやファイルが添付された項目は共有できません。</p>
+        </article>
+
+        <article class="topic" id="ios-settings">
+          <h3><a href="#ios-settings">設定</a></h3>
+          <dl class="defs">
+            <dt>セキュリティ</dt><dd><strong>アプリを離れたら自動ロック</strong>、<strong>操作がないときにロック</strong>、<strong>タップするまでパスワードを隠す</strong>、<strong>クリップボードを消去するまでの時間</strong>、<strong>今すぐロック</strong>。</dd>
+            <dt>プライバシー</dt><dd><strong>厳格なオフラインモード</strong>、Web サイトのアイコン、通知内の項目名、<strong>ロック時に Apple Watch のコードを消去</strong>、漏洩チェック。</dd>
+            <dt>外観</dt><dd>システム、ライト、ダーク。</dd>
+            <dt>データ</dt><dd>最近削除した項目、削除した項目の保持期間、インポートとエクスポート。</dd>
+            <dt>消去</dt><dd><strong>この iPhone の保管庫を消去</strong>は、この iPhone 上の保管庫だけを削除します(2 回確認されます)。PC や同期フォルダーは変更されません。</dd>
+          </dl>
+        </article>
+
+        <article class="topic" id="ios-pro">
+          <h3><a href="#ios-pro">Pro</a></h3>
+          <p>設定 › Pro › <strong>Pro を購入</strong>:1 回の支払いで、サブスクリプションもアカウントも不要です。Mac アプリのロックも解除されます。新しい iPhone では、同じ Apple アカウントで<strong>購入を復元</strong>を使います。</p>
+          <p>Windows のロックも解除するには、<em>Windows のロックも解除</em>の下の<strong>キーをコピー</strong>を選び、そのキーを PC にインストールします(ツール › ライセンス)。</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== MAC ============================== -->
+  <section class="help-panel" id="mac" aria-labelledby="mac-title">
+    <h2 class="panel-title" id="mac-title">Mac 版 LocalGateKeys</h2>
+    <p class="panel-lead">サイドバーには<strong>保管庫</strong>、<strong>セキュリティセンター</strong>、<strong>リカバリーセンター</strong>、<strong>インポートとエクスポート</strong>、<strong>同期</strong>、<strong>デバイスと接続</strong>、<strong>設定</strong>があります。</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Mac のトピック">
+        <p class="help-toc-title">このタブの内容</p>
+        <ol>
+          <li><a href="#mac-setup">保管庫を作成する</a></li>
+          <li><a href="#mac-unlock">ロック解除とロック</a></li>
+          <li><a href="#mac-items">項目</a></li>
+          <li><a href="#mac-2fa">2 要素コード</a></li>
+          <li><a href="#mac-security">セキュリティセンター</a></li>
+          <li><a href="#mac-autofill">自動入力と Safari</a></li>
+          <li><a href="#mac-import">インポートとエクスポート</a></li>
+          <li><a href="#mac-backups">バックアップ</a></li>
+          <li><a href="#mac-sync">同期</a></li>
+          <li><a href="#mac-share">共有</a></li>
+          <li><a href="#mac-pro">Pro</a></li>
+          <li><a href="#mac-keys">キーボードショートカット</a></li>
+        </ol>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="mac-setup">
+          <h3><a href="#mac-setup">保管庫を作成する</a></h3>
+          <ol>
+            <li>LocalGateKeys を開き、マスターパスワードを 2 回入力して<strong>保管庫を作成</strong>を選びます。</li>
+            <li>続いてセットアップです:<strong>Touch ID を設定</strong>、パスワードを<strong>インポート…</strong>、<strong>リカバリーフレーズを開く</strong>、Safari と自動入力のための<strong>デバイスと接続を開く</strong>。</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="mac-unlock">
+          <h3><a href="#mac-unlock">ロック解除とロック</a></h3>
+          <ul>
+            <li><strong>Touch ID</strong>:設定 › ロック解除 › <strong>Touch ID でロック解除</strong>。指紋を変更した場合は、一度マスターパスワードを使ってください。</li>
+            <li><strong>マスターパスワードを変更</strong>:設定 › ロック解除。項目はそのまま残ります。</li>
+            <li><strong>リカバリーフレーズ</strong>:<strong>リカバリーセンター</strong>で設定し、3 つの単語を確認します。マスターパスワードを忘れた場合は、ロック画面で<strong>マスターパスワードを忘れた場合</strong> › <strong>リカバリーフレーズで復旧</strong>を選びます。</li>
+            <li><strong>ロック</strong>:<kbd>⌘</kbd><kbd>L</kbd>。設定 › ロック で、操作がないときのロック、画面ロックと連動、スリープ時、セッションの最大時間を設定します。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-items">
+          <h3><a href="#mac-items">項目</a></h3>
+          <ul>
+            <li><strong>新規項目</strong>(<kbd>⌘</kbd><kbd>N</kbd>)では iPhone と同じ種類に加えて<strong>ファイルを添付…</strong>(Pro)が使えます。</li>
+            <li>コピー:<kbd>⌘</kbd><kbd>C</kbd>(パスワード)、<kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>(ユーザー名)、<kbd>⌘</kbd><kbd>T</kbd>(2FA コード)。</li>
+            <li>カスタムフィールド用の<strong>フィールドを追加</strong>、<strong>タグ</strong>、<strong>コレクション</strong>(この Mac にだけ保存)。</li>
+            <li><kbd>⌫</kbd> で項目を最近削除した項目に移します。そこで<strong>選択項目を復元</strong>または<strong>ゴミ箱を空にする</strong>を使います。</li>
+            <li>添付ファイルは、Touch ID またはマスターパスワードの後にクイックルックで開きます。</li>
+            <li><strong>生成</strong>:ランダムなパスワード(文字の種類を選択、紛らわしい文字を避ける)またはパスフレーズ(大文字化、数字を追加、区切り文字)。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-2fa">
+          <h3><a href="#mac-2fa">2 要素コード</a> <span class="badge-pro">Pro</span></h3>
+          <p><strong>QR コードをスキャン…</strong>を選び、<strong>画像を選択…</strong>、<kbd>⌘</kbd><kbd>V</kbd> でスクリーンショットを貼り付け(<kbd>⇧</kbd><kbd>⌘</kbd><kbd>4</kbd> で撮影)、または画像をドラッグします。コードは自動入力で Safari に入力されます。</p>
+        </article>
+
+        <article class="topic" id="mac-security">
+          <h3><a href="#mac-security">セキュリティセンター</a></h3>
+          <p>弱い、使い回し、古いパスワードを表示します。設定 › プライバシー › <strong>漏洩チェック</strong>をオンにすると(厳格なオフラインモードがオフの場合)、<strong>すべてのパスワードを確認</strong>で漏洩を調べます。</p>
+        </article>
+
+        <article class="topic" id="mac-autofill">
+          <h3><a href="#mac-autofill">自動入力、パスキー、Safari</a></h3>
+          <ol>
+            <li><strong>デバイスと接続</strong>を開きます。</li>
+            <li><strong>自動入力の設定を開く</strong>を選び、システム設定 › 自動入力とパスワード で LocalGateKeys をオンにします。</li>
+            <li><strong>Safari の設定を開く</strong>を選び、Safari › 設定 › 機能拡張 で LocalGateKeys 機能拡張をオンにします。</li>
+          </ol>
+          <p>これでパスワード、パスキー、2FA コードが Safari とアプリで入力されます。Safari での新しいサインインは保存を提案され、次のロック解除時に確認します。他のブラウザは Mac ではまだサポートされていません。</p>
+        </article>
+
+        <article class="topic" id="mac-import">
+          <h3><a href="#mac-import">インポートとエクスポート</a></h3>
+          <ul>
+            <li><strong>Apple パスワード</strong>(macOS 26):ログイン、2FA、パスキー。インポート前に確認します。</li>
+            <li>ファイル:Bitwarden の <code>.json</code>(パスワード保護付きも可)、1Password の <code>.1pux</code>、KeePass の <code>.kdbx</code>、<strong>列を選択</strong>付きの CSV。</li>
+            <li>iPhone と Android の <code>.lgkm</code> バックアップ:<strong>新しい項目をすべて追加</strong>、<strong>重複は両方を保持</strong>、<strong>すべてスキップ</strong>から選びます。何も消去されません。</li>
+            <li>暗号化バックアップ、または CSV(暗号化なし、事前に確認)をエクスポートします。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-backups">
+          <h3><a href="#mac-backups">バックアップ</a></h3>
+          <p><strong>リカバリーセンター</strong>で:</p>
+          <ul>
+            <li><strong>完全バックアップ</strong>:<code>.lgk</code> ファイルを<strong>作成…</strong>、または<strong>復元…</strong>(保管庫を置き換えます)。Mac と Windows の間で使えます。安全のためのコピーが残るので、<strong>元に戻す…</strong>で復元を取り消せます。</li>
+            <li><strong>スケジュールバックアップ</strong>:頻度、曜日、時刻、保持する数、フォルダーとミラーフォルダー、バックアップのパスワード(12 文字以上)。</li>
+            <li><strong>リカバリーキット…</strong>:復旧情報をまとめた印刷用のシート。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-sync">
+          <h3><a href="#mac-sync">同期</a> <span class="badge-pro">Pro</span></h3>
+          <ul>
+            <li><strong>Wi-Fi 同期をホスト</strong>:ペアリング用の QR コードを表示します。デバイスが参加したらコードを確認し、<strong>承認</strong>または<strong>拒否</strong>を選びます。後で心当たりがなければ<strong>元に戻す</strong>を選びます。</li>
+            <li><strong>Windows PC に参加</strong>:PC の<strong>コードのテキストをコピー</strong>で得たテキストを使います。</li>
+            <li><strong>クラウドフォルダー</strong>:Dropbox や iCloud Drive などのフォルダーで、同期パスワードを使ってグループに参加するか作成します。OneDrive と Google Drive は、Apple 側の問題が解決するまで現在使えません。</li>
+            <li><strong>同期から退出…</strong> / <strong>この Mac の同期をリセット…</strong>。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-share">
+          <h3><a href="#mac-share">共有</a></h3>
+          <p>項目を選んで<strong>共有…</strong>を選びます。受け取るには ファイル › <strong>共有項目を受け取る…</strong>を選び、ファイルを開くかドロップして(または QR テキストを貼り付けて)、6 つの単語を入力します。パスキーやファイルが添付された項目は共有できません。</p>
+        </article>
+
+        <article class="topic" id="mac-pro">
+          <h3><a href="#mac-pro">Pro</a></h3>
+          <p>Pro は 設定 › プラン で購入します。1 回の購入で iPhone と Mac の両方のアプリに有効です。もう一方のデバイスでは<strong>購入を復元</strong>を使います。Pro の iPhone と同期している無料の Mac には<em>同期したデバイスからの Pro</em>と表示されます。</p>
+        </article>
+
+        <article class="topic" id="mac-keys">
+          <h3><a href="#mac-keys">キーボードショートカット</a></h3>
+          <table class="keys">
+            <tbody>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>K</kbd></th><td>すべてを検索</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>N</kbd></th><td>新規項目</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>L</kbd></th><td>ロック</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>C</kbd></th><td>パスワードをコピー</td></tr>
+              <tr><th scope="row"><kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd></th><td>ユーザー名をコピー</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>T</kbd></th><td>2FA コードをコピー</td></tr>
+              <tr><th scope="row"><kbd>⌫</kbd></th><td>最近削除した項目に移動</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>/</kbd></th><td>すべてのキーボードショートカット</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== WATCH ============================== -->
+  <section class="help-panel" id="watch" aria-labelledby="watch-title">
+    <h2 class="panel-title" id="watch-title">Apple Watch 版 LocalGateKeys</h2>
+    <p class="panel-lead">2 要素コードを手首に表示します。iPhone アプリに含まれています。保存するのはコードだけで、パスワードや編集機能はありません。<span class="badge-pro">Pro</span></p>
+    <p class="callout-soon"><strong>iPhone アプリ 1.1 で提供予定。</strong>Watch アプリと<em>Apple Watch に表示</em>ボタンは、現在 App Review 中のバージョン 1.1 で追加されます。バージョンは iPhone の設定 › 情報で確認できます。</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Apple Watch のトピック">
+        <p class="help-toc-title">このタブの内容</p>
+        <ol>
+          <li><a href="#watch-add">コードを Watch に送る</a></li>
+          <li><a href="#watch-use">コードを使う</a></li>
+          <li><a href="#watch-remove">コードを削除する</a></li>
+        </ol>
+      </nav>
+
+      <div class="help-content prose">
+        <article class="topic" id="watch-add">
+          <h3><a href="#watch-add">コードを Watch に送る</a></h3>
+          <ol>
+            <li>iPhone アプリをバージョン 1.1 以降にアップデートします。</li>
+            <li>Watch に LocalGateKeys をインストールします。iPhone で <strong>Watch</strong> アプリを開き、<strong>利用可能な App</strong> までスクロールして、LocalGateKeys の横の<strong>インストール</strong>をタップします。</li>
+            <li>iPhone の LocalGateKeys で、2FA コードのあるログインを開きます。</li>
+            <li><strong>ワンタイムコード</strong>セクションのコードの下にある<strong>Apple Watch に表示</strong>をタップします。iPhone に<em>Apple Watch に送信しました</em>と表示されます。</li>
+          </ol>
+          <p class="note"><strong>ボタンが表示されない場合</strong>:iPhone が Apple Watch とペアリングされていて、<em>かつ</em>その Watch に LocalGateKeys がインストールされている場合にだけ、2FA コードのあるログインで表示されます。Watch アプリをインストールした後は、項目を閉じて開き直してください。</p>
+          <p>Watch には最大 10 個のコードを置けます。Pro がない場合、ボタンをタップすると Watch のコードは Pro の機能であることが説明されます。</p>
+        </article>
+        <article class="topic" id="watch-use">
+          <h3><a href="#watch-use">コードを使う</a></h3>
+          <p>Watch で LocalGateKeys を開きます。<strong>コード</strong>画面に、各サイトの現在のコードとカウントダウンが表示されます。iPhone が近くになくてもコードは使えます。</p>
+        </article>
+        <article class="topic" id="watch-remove">
+          <h3><a href="#watch-remove">コードを削除する</a></h3>
+          <p>iPhone でログインを開き、<strong>Apple Watch から削除</strong>をタップします。iPhone アプリがロックされるたびに Watch のコードをすべて消去するには、iPhone の設定 › <strong>ロック時に Apple Watch のコードを消去</strong>をオンにします。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== ANDROID ============================== -->
+  <section class="help-panel" id="android" aria-labelledby="android-title">
+    <h2 class="panel-title" id="android-title">Android 版 LocalGateKeys</h2>
+    <p class="callout-soon"><strong>近日公開。</strong>Android アプリはまだ Google Play にありません。このガイドでは、どのように動作する予定かを説明します。</p>
+    <p class="panel-lead">アプリには<strong>保管庫</strong>、<strong>検索</strong>、<strong>同期</strong>の 3 つのタブがあります。設定は隅のイニシャルから開きます。</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Android のトピック">
+        <p class="help-toc-title">このタブの内容</p>
+        <ol>
+          <li><a href="#and-setup">初回起動とロック解除</a></li>
+          <li><a href="#and-apppw">アプリのパスワードと復旧</a></li>
+          <li><a href="#and-items">項目</a></li>
+          <li><a href="#and-search">検索と操作</a></li>
+          <li><a href="#and-generator">パスワード生成</a></li>
+          <li><a href="#and-2fa">2 要素コード</a></li>
+          <li><a href="#and-autofill">自動入力</a></li>
+          <li><a href="#and-passkeys">パスキー</a></li>
+          <li><a href="#and-import">インポート</a></li>
+          <li><a href="#and-backups">バックアップ</a></li>
+          <li><a href="#and-sync">同期</a></li>
+          <li><a href="#and-share">共有</a></li>
+          <li><a href="#and-settings">設定と Pro</a></li>
+        </ol>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="and-setup">
+          <h3><a href="#and-setup">初回起動とロック解除</a></h3>
+          <p>保管庫は、スマートフォンの指紋、顔、または画面ロックで開きます。(スマートフォンに画面ロックが必要です。)続いて簡単なセットアップがあります:指紋でロック解除、<strong>自動入力の設定を開く</strong>、<strong>インポート…</strong>、任意のアプリのパスワード。どの手順もスキップでき、<em>セットアップを完了</em>カードから戻れます。</p>
+          <p>設定 › セキュリティ で<strong>アプリを離れたら自動ロック</strong>(すぐに〜1 時間、またはしない)を設定でき、<strong>今すぐロック</strong>もあります。アプリは最近使ったアプリの画面では非表示になります。</p>
+        </article>
+
+        <article class="topic" id="and-apppw">
+          <h3><a href="#and-apppw">アプリのパスワードとリカバリーフレーズ</a></h3>
+          <ol>
+            <li>設定 › <strong>アプリのパスワードをオンにする</strong>でパスワードを決めます。以後は画面ロックではなく、このパスワードで LocalGateKeys を開きます。</li>
+            <li>24 語のリカバリーフレーズを書き留め、<strong>書き留めました</strong>をタップして、求められた単語を入力します。</li>
+          </ol>
+          <p>忘れた場合は、<strong>アプリのパスワードを忘れた場合</strong>をタップし、24 語を入力して新しいパスワードを決めます。<strong>変更</strong>と<strong>オフにする</strong>は設定にあります。</p>
+          <p class="note">Google のバックアップからスマートフォンを復元した後は、保管庫を開けません(鍵はバックアップされないためです)。<strong>最初から始める</strong>を選び、PC と同期してすべてを取り戻してください。</p>
+        </article>
+
+        <article class="topic" id="and-items">
+          <h3><a href="#and-items">項目</a></h3>
+          <ul>
+            <li><strong>+</strong> をタップして種類を選びます:Web サイトのログイン、メモ、支払いカード、ID、銀行口座、購入品、サブスクリプション、保証、Wi-Fi ネットワーク、ライセンス、API キー、SSH キー、ブックマーク。</li>
+            <li>項目を開くと、フィールドのコピー、<strong>Web サイトを開く</strong>、<strong>編集</strong>、<strong>削除</strong>、<strong>お気に入りに追加</strong>ができます。</li>
+            <li><strong>パスワード履歴</strong>:以前のパスワードをコピーまたは復元します。</li>
+            <li><strong>ファイルを追加</strong>(Pro):写真を撮る、写真やファイルを選ぶ。それぞれ最大 25 MB です。</li>
+            <li>タイトル順や日付順、お気に入りを先頭に<strong>並べ替え</strong>できます。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="and-search">
+          <h3><a href="#and-search">検索と操作</a></h3>
+          <p>検索タブで名前を入力するか、<code>&gt;</code> で始めて操作を使います。バックアップをエクスポート、パスワードを生成、パスワードをインポート、ロック、共有項目を受け取る、QR コードをスキャンしてペアリング、今すぐ同期など。</p>
+        </article>
+
+        <article class="topic" id="and-generator">
+          <h3><a href="#and-generator">パスワード生成</a></h3>
+          <p><strong>パスワード</strong>(長さ、大文字と小文字、数字、記号、紛らわしい文字を避ける)または<strong>パスフレーズ</strong>(単語数、大文字化、数字を追加、区切り文字)。<strong>再生成</strong>してから<strong>コピー</strong>します。</p>
+        </article>
+
+        <article class="topic" id="and-2fa">
+          <h3><a href="#and-2fa">2 要素コード</a> <span class="badge-pro">Pro</span></h3>
+          <p>ログインを編集し、2FA フィールドの横の<strong>QR コードをスキャン</strong>をタップするか、セットアップキーを入力します。コードは項目内と<strong>コード</strong>行に表示され、タップするとコピーされます。</p>
+        </article>
+
+        <article class="topic" id="and-autofill">
+          <h3><a href="#and-autofill">自動入力</a></h3>
+          <ol>
+            <li>設定 › 自動入力 › <strong>自動入力の設定を開く</strong>で LocalGateKeys を選びます。(開かない場合は、スマートフォンの設定で<em>自動入力サービス</em>を検索してください。)</li>
+            <li>どのアプリや Web サイトでもサインイン欄をタップし、候補からログインを選びます。求められたらロックを解除します。</li>
+            <li>新しい場所でサインインした後、<em>ログインを保存しますか?</em>で<strong>保存</strong>を選ぶか、パスワードが変わった場合は<strong>パスワードを更新</strong>を選びます。</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="and-passkeys">
+          <h3><a href="#and-passkeys">パスキー</a></h3>
+          <p>設定 › <strong>パスキーに LocalGateKeys を提案</strong>をオンにします。サイトやアプリがパスキーを提案したら LocalGateKeys を選び、以後は<strong>パスキーを使用</strong>でサインインします。</p>
+        </article>
+
+        <article class="topic" id="and-import">
+          <h3><a href="#and-import">インポート</a></h3>
+          <p><strong>他のアプリからインポート</strong> ›<strong>エクスポートファイルを選択</strong>:Chrome、Edge、Brave、Firefox、Apple パスワード、Bitwarden の <code>.json</code>(パスワード保護付きも可)、1Password の <code>.1pux</code>、または任意の CSV。すべて確認してからインポートします。その後、エクスポートファイルを削除してください。</p>
+        </article>
+
+        <article class="topic" id="and-backups">
+          <h3><a href="#and-backups">バックアップ</a></h3>
+          <p><strong>バックアップをエクスポート…</strong>は、自分で決めたパスワード(復旧はできません)で暗号化した <code>.lgkm</code> ファイルを保存します。<strong>バックアップから復元…</strong>はファイルを開いてプレビューを表示し、より新しい項目を上書きすることはありません。PC や iPhone とも使えます。</p>
+        </article>
+
+        <article class="topic" id="and-sync">
+          <h3><a href="#and-sync">PC と同期する</a> <span class="badge-pro">Pro</span></h3>
+          <ol>
+            <li>PC の Wi-Fi カードで<strong>QR コードを表示</strong>を選びます。</li>
+            <li>スマートフォンで 同期タブ › <strong>QR コードをスキャン</strong>(または<strong>コードのテキストを貼り付け</strong>)。</li>
+            <li>両方に同じコードが表示されていることを確認し、PC で承認します。</li>
+          </ol>
+          <p>または、同期パスワードを使って Dropbox や Nextcloud で<strong>フォルダーに参加…</strong>します。PC にも Pro が必要です。</p>
+          <p class="note">OneDrive と Google Drive は、Apple 側の問題が解決するまで、現在同期に使えません。Dropbox、Nextcloud、または Wi-Fi 同期を使ってください。</p>
+        </article>
+
+        <article class="topic" id="and-share">
+          <h3><a href="#and-share">共有</a></h3>
+          <p>項目を開いて › <strong>この項目を共有</strong> › <strong>ファイルとして送信…</strong>または<strong>QR コードとして表示</strong>を選び、6 つの単語は別に伝えます。受け取るには:<strong>共有項目を受け取る</strong>で 6 つの単語を入力し、<strong>保管庫に追加</strong>を選びます。共有は 24 時間以内に 1 回だけ開けます。コードを 3 回間違えると削除されます。パスキーとファイルは共有できません。</p>
+        </article>
+
+        <article class="topic" id="and-settings">
+          <h3><a href="#and-settings">設定と Pro</a></h3>
+          <ul>
+            <li><strong>外観</strong>:システム、ライト、ダーク、およびイニシャル。</li>
+            <li><strong>セキュリティ</strong>:タップするまでパスワードを隠す、クリップボードを消去するまでの時間、<strong>このスマートフォンの保管庫を消去</strong>(このスマートフォンのみ)。</li>
+            <li><strong>Pro</strong>:Google Play で 1 回<strong>購入</strong>し、同じ Google アカウントの別のスマートフォンでは<strong>購入を復元</strong>、<strong>キーをコピー</strong>で Windows のロックも解除できます。</li>
+          </ul>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="help-more">お探しの情報が見つからない場合は、<a href="../ja/support.html">サポートとよくある質問</a>をご覧いただくか、<a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a> までメールでお問い合わせください。</p>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand">LocalGateKeys</p>
+        <p>保管庫をご自身のデバイスに置いたままにする、Windows向けのパスワードマネージャーです。</p>
+        <p class="quiet">このサイトはCookieを設定せず、アクセス解析も行わず、他社からは何も読み込みません。</p>
+      </div>
+      <nav aria-label="製品">
+        <h2>製品</h2>
+        <ul>
+          <li><a href="../ja/features.html">機能</a></li>
+          <li><a href="../ja/pricing.html">料金</a></li>
+          <li><a href="../ja/download.html">ダウンロード</a></li>
+          <li><a href="../ja/licence.html">Proライセンス</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="ヘルプ">
+        <h2>ヘルプ</h2>
+        <ul>
+          <li><a href="../ja/help.html">ユーザーガイド</a></li>
+          <li><a href="../ja/support.html">サポートとFAQ</a></li>
+          <li><a href="../ja/security.html">セキュリティ</a></li>
+          <li><a href="../legal/vulnerability-disclosure.html">脆弱性の報告</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="法的情報">
+        <h2>法的情報</h2>
+        <p class="quiet">これらの文書は英語で提供されており、適用され拘束力を持つのは英語版です。</p>
+        <ul>
+          <li><a href="../legal/eula.html">ライセンス契約</a></li>
+          <li><a href="../legal/privacy.html">プライバシーポリシー</a></li>
+          <li><a href="../legal/terms-of-sale.html">販売条件</a></li>
+          <li><a href="../legal/refunds.html">返金ポリシー</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base">
+      <p>&copy; 2026 Ilias Pelekas。お問い合わせ: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windowsは Microsoft グループ企業の商標です。Chromeは Google LLC の商標です。</p>
+      <p class="lang-switch" role="navigation" aria-label="言語"><a href="../help.html" hreflang="en" lang="en">English</a> · <a href="../es/help.html" hreflang="es" lang="es">Español</a> · <a href="../it/help.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/help.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/help.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../ja/help.html" hreflang="ja" lang="ja" aria-current="true">日本語</a> · <a href="../de/help.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/help.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/help.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/help.html" hreflang="nl" lang="nl">Nederlands</a></p>
+    </div>
+  </footer>
+</body>
+</html>

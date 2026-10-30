@@ -19,6 +19,8 @@ import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
 
+from .i18n import t
+
 PROVIDER = "Microsoft Passport Key Storage Provider"
 RSA_BITS = 2048
 RSA_BYTES = RSA_BITS // 8
@@ -27,6 +29,11 @@ NCRYPT_PAD_OAEP_FLAG = 0x04
 NTE_SILENT_CONTEXT = 0x80090022
 MISSING_KEY_CODES = {0x8009000D, 0x80090016}
 CANCEL_CODES = {0x80090036, 0x800704C7}
+NTE_INVALID_PARAMETER = 0x80090027
+# Some Passport providers (for example TPM 1.2 backed keys) refuse OAEP with
+# SHA-256 as an invalid parameter; OAEP with SHA-1 is still sound for wrapping
+# a random 32-byte secret.
+OAEP_HASHES = ("SHA256", "SHA1")
 CACHE_PROPERTIES = ("NgcCacheType", "NgcCacheTypeProperty")
 _NATIVE_OPERATION = threading.Lock()
 
@@ -51,8 +58,7 @@ class HelloUnavailable(HelloError):
 class NativeError(HelloError):
     def __init__(self, operation: str, code: int):
         self.code = code & 0xFFFFFFFF
-        super().__init__(f"Windows Hello could not complete {operation} (0x{self.code:08X}). "
-                         "Use your master password. Check Windows Sign-in options before retrying.")
+        super().__init__(t("hello.error.native", operation=operation, code=f"{self.code:08X}"))
 
 
 def wipe(value: bytearray) -> None:
@@ -61,7 +67,7 @@ def wipe(value: bytearray) -> None:
 
 def validate_record_id(value: str) -> str:
     if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{32}", value):
-        raise HelloError("The local Windows Hello setup is invalid. Use your master password.")
+        raise HelloError(t("hello.error.invalidSetup"))
     return value
 
 
@@ -69,8 +75,7 @@ def validate_record_id(value: str) -> str:
 def native_operation() -> Iterator[None]:
     # Never queue a second OS prompt behind an abandoned/slow one.
     if not _NATIVE_OPERATION.acquire(blocking=False):
-        raise HelloError("A Windows Hello operation is still closing. Use your master password "
-                         "or cancel the Windows Security prompt before trying again.")
+        raise HelloError(t("hello.error.stillClosing"))
     try:
         yield
     finally:
@@ -86,12 +91,12 @@ class WindowsHello:
 
     def __init__(self) -> None:
         if sys.platform != "win32":
-            raise HelloUnavailable("Windows Hello is available only on Windows. Use your master password.")
+            raise HelloUnavailable(t("hello.error.onlyWindows"))
         try:
             # Load the OS DLL only from System32, not an application/current directory.
             self.dll = ct.WinDLL("ncrypt.dll", winmode=0x00000800)
         except (OSError, AttributeError) as exc:
-            raise HelloUnavailable("Windows Hello's Windows component is unavailable.") from exc
+            raise HelloUnavailable(t("hello.error.componentUnavailable")) from exc
         signatures = {
             "NCryptOpenStorageProvider": [ct.POINTER(HANDLE), ct.c_wchar_p, DWORD],
             "NCryptCreatePersistedKey": [HANDLE, ct.POINTER(HANDLE), ct.c_wchar_p,
@@ -118,7 +123,7 @@ class WindowsHello:
     def _check(code: int, operation: str) -> None:
         code = int(code) & 0xFFFFFFFF
         if code in CANCEL_CODES:
-            raise HelloCancelled("Windows Hello was cancelled. Your vault is still locked.")
+            raise HelloCancelled(t("hello.error.cancelledLocked"))
         if code:
             raise NativeError(operation, code)
 
@@ -136,7 +141,7 @@ class WindowsHello:
             finally:
                 token.Close()
         except Exception as exc:
-            raise HelloUnavailable("Cannot resolve the current Windows account for Windows Hello.") from exc
+            raise HelloUnavailable(t("hello.error.noAccount")) from exc
         return f"{user}//LocalGateKeys//{record_id}"
 
     @contextmanager
@@ -168,7 +173,7 @@ class WindowsHello:
         self._check(self.dll.NCryptGetProperty(key, name, ct.byref(value), ct.sizeof(value),
                                                 ct.byref(length), 0), f"checking {name}")
         if length.value != ct.sizeof(value):
-            raise HelloError("Windows Hello returned an invalid key policy. Use your master password.")
+            raise HelloError(t("hello.error.invalidPolicy"))
         return int(value.value)
 
     def _set_cache(self, key: HANDLE) -> None:
@@ -179,16 +184,16 @@ class WindowsHello:
             except NativeError as exc:
                 if exc.code not in (0x80090029, 0x80090027, 0x80090011):
                     raise
-        raise HelloUnavailable("This Windows Hello provider cannot enforce fresh verification per unlock.")
+        raise HelloUnavailable(t("hello.error.noFreshVerification"))
 
     def _policy(self, key: HANDLE) -> None:
         usage = self._get_int(key, "Key Usage")
         if not usage & 1 or usage & 8:  # Imported keys must not substitute for the generated key.
-            raise HelloError("Windows Hello's key usage policy is unsafe. Use your master password.")
+            raise HelloError(t("hello.error.unsafeUsage"))
         if self._get_int(key, "Export Policy") != 0:
-            raise HelloError("Windows Hello's key is exportable. This unlock route is disabled.")
+            raise HelloError(t("hello.error.exportable"))
         if self._get_int(key, "Length") != RSA_BITS:
-            raise HelloError("Windows Hello's key size has changed. Use your master password.")
+            raise HelloError(t("hello.error.keySize"))
         for name in CACHE_PROPERTIES:
             try:
                 value = self._get_int(key, name)
@@ -197,24 +202,26 @@ class WindowsHello:
                 if exc.code not in (0x80090029, 0x80090027, 0x80090011):
                     raise
         else:
-            raise HelloUnavailable("Windows Hello's per-use verification policy cannot be checked.")
+            raise HelloUnavailable(t("hello.error.policyUnchecked"))
         if value != 1:
-            raise HelloError("Windows Hello is not requiring verification for each use. "
-                             "This unlock route is disabled.")
+            raise HelloError(t("hello.error.notRequiring"))
 
     def _context(self, key: HANDLE, hwnd: int, message: str) -> None:
         if not isinstance(hwnd, int) or hwnd <= 0:
-            raise HelloError("A visible LocalGateKeys window is required for Windows Hello.")
+            raise HelloError(t("hello.error.windowRequired"))
         self._set(key, "HWND Handle", HANDLE(hwnd))
         self._set(key, "Use Context", ct.create_unicode_buffer(message[:160]))
 
-    def _crypt(self, key: HANDLE, data: bytes | bytearray, *, decrypt: bool, silent: bool = False) -> bytearray:
+    def _crypt(self, key: HANDLE, data: bytes | bytearray, *, decrypt: bool, silent: bool = False,
+               oaep_hash: str = "SHA256") -> bytearray:
+        if oaep_hash not in OAEP_HASHES:
+            raise HelloError(t("hello.error.damaged"))
         if (decrypt and len(data) != RSA_BYTES) or (not decrypt and len(data) != 32):
-            raise HelloError("Windows Hello key material has an invalid length.")
+            raise HelloError(t("hello.error.keyLength"))
         source = (ct.c_ubyte * len(data)).from_buffer_copy(data)
         target = (ct.c_ubyte * RSA_BYTES)()
         size = DWORD()
-        padding = OAEPInfo("SHA256", None, 0)
+        padding = OAEPInfo(oaep_hash, None, 0)
         flags = NCRYPT_PAD_OAEP_FLAG | (NCRYPT_SILENT_FLAG if silent else 0)
         function = self.dll.NCryptDecrypt if decrypt else self.dll.NCryptEncrypt
         try:
@@ -222,7 +229,7 @@ class WindowsHello:
                                  len(target), ct.byref(size), flags), "decrypting" if decrypt else "encrypting")
             expected = 32 if decrypt else RSA_BYTES
             if size.value != expected:
-                raise HelloError("Windows Hello returned invalid key material.")
+                raise HelloError(t("hello.error.invalidKeyMaterial"))
             return bytearray(target[:size.value])
         finally:
             ct.memset(ct.addressof(source), 0, ct.sizeof(source))
@@ -232,7 +239,7 @@ class WindowsHello:
         """Create only an application-owned, non-exportable, per-use Hello key."""
         with self._provider() as provider:
             key = HANDLE()
-            self._context(provider, hwnd, "Set up local unlocking for LocalGateKeys")
+            self._context(provider, hwnd, t("hello.prompt.setup"))
             self._check(self.dll.NCryptCreatePersistedKey(provider, ct.byref(key), "RSA",
                                                          self._name(record_id), 0, 0), "creating the local key")
             delete_on_exit = True
@@ -241,7 +248,7 @@ class WindowsHello:
                 self._set(key, "Key Usage", DWORD(3))
                 self._set(key, "Export Policy", DWORD(0))
                 self._set_cache(key)
-                self._context(key, hwnd, "Set up local unlocking for LocalGateKeys")
+                self._context(key, hwnd, t("hello.prompt.setup"))
                 self._check(self.dll.NCryptFinalizeKey(key, 0), "finalizing the local key")
                 self._policy(key)
                 delete_on_exit = False
@@ -254,29 +261,28 @@ class WindowsHello:
                 else:
                     self.dll.NCryptFreeObject(key)
 
-    def wrap(self, record_id: str, secret: bytearray) -> bytes:
+    def wrap(self, record_id: str, secret: bytearray, oaep_hash: str = "SHA256") -> bytes:
         with self._key(record_id) as key:
             self._policy(key)
-            return bytes(self._crypt(key, secret, decrypt=False, silent=True))
+            return bytes(self._crypt(key, secret, decrypt=False, silent=True, oaep_hash=oaep_hash))
 
-    def unwrap(self, record_id: str, wrapped: bytes, hwnd: int) -> bytearray:
+    def unwrap(self, record_id: str, wrapped: bytes, hwnd: int, oaep_hash: str = "SHA256") -> bytearray:
         with self._key(record_id) as key:
             self._policy(key)
-            self._context(key, hwnd, "Unlock the selected LocalGateKeys profile on this PC")
+            self._context(key, hwnd, t("hello.prompt.unlock"))
             self._set(key, "PinCacheIsGestureRequired", DWORD(1))
             # Verify that the *actual private-key operation*, not a UI boolean,
             # refuses a silent request. An unexpected result never grants access.
             try:
-                unguarded = self._crypt(key, wrapped, decrypt=True, silent=True)
+                unguarded = self._crypt(key, wrapped, decrypt=True, silent=True, oaep_hash=oaep_hash)
             except NativeError as exc:
                 if exc.code != NTE_SILENT_CONTEXT:
                     raise
             else:
                 wipe(unguarded)
-                raise HelloError("Windows Hello allowed decryption without fresh verification. "
-                                 "Use your master password; re-enroll only after checking Windows.")
+                raise HelloError(t("hello.error.noFreshDecrypt"))
             self._set(key, "PinCacheIsGestureRequired", DWORD(1))
-            return self._crypt(key, wrapped, decrypt=True)
+            return self._crypt(key, wrapped, decrypt=True, oaep_hash=oaep_hash)
 
     def delete(self, record_id: str) -> None:
         """Delete this app's random key only, never the Windows Hello container."""

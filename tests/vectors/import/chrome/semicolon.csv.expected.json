@@ -1,0 +1,93 @@
+{
+  "format": "chrome",
+  "input": "tests/vectors/import/_inputs/semicolon.csv",
+  "python_format": "chrome-csv",
+  "result": {
+    "diagnostics": [
+      "Row 8: empty row; skipped."
+    ],
+    "records": [
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "line1\r\nline2",
+        "password": "p;w",
+        "source_row": 3,
+        "tags": [],
+        "title": "Quoted",
+        "totp_uri": "",
+        "urls": [
+          "https://q.example.com"
+        ],
+        "username": "al\"ex"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "xy",
+        "source_row": 4,
+        "tags": [],
+        "title": "Stray",
+        "totp_uri": "",
+        "urls": [
+          "https://s.example.com"
+        ],
+        "username": "ab\"c"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "n",
+        "password": "pw",
+        "source_row": 5,
+        "tags": [],
+        "title": "Extra",
+        "totp_uri": "",
+        "urls": [
+          "https://e.example.com"
+        ],
+        "username": "e"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 6,
+        "tags": [],
+        "title": "Short",
+        "totp_uri": "",
+        "urls": [
+          "https://short.example.com"
+        ],
+        "username": ""
+      }
+    ],
+    "source_format": "chrome-csv"
+  }
+}

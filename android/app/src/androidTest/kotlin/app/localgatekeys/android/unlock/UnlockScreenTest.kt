@@ -1,5 +1,6 @@
 package app.localgatekeys.android.unlock
 
+import app.localgatekeys.android.i18n.appTxt
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -46,25 +47,25 @@ class UnlockScreenTest {
     @Test fun unlock_is_disabled_while_unlocking_and_the_error_shows() {
         show()
         unlocking = true
-        message = AppLockModel.VAULT_WITHOUT_KEY_MESSAGE
+        message = appTxt().s(AppLockModel.VAULT_WITHOUT_KEY_MESSAGE)
         offers = true
         rule.onNodeWithText("Unlock").assertIsNotEnabled()
         rule.onNodeWithText("Start fresh anyway").assertIsNotEnabled()
-        rule.onNodeWithText(AppLockModel.VAULT_WITHOUT_KEY_MESSAGE).assertIsDisplayed()
+        rule.onNodeWithText(appTxt().s(AppLockModel.VAULT_WITHOUT_KEY_MESSAGE)).assertIsDisplayed()
     }
 
     @Test fun start_fresh_asks_twice_then_runs() {
         offers = true
         show()
         rule.onNodeWithText("Start fresh anyway").assertIsEnabled().performClick()
-        rule.onNodeWithText(AppLockModel.START_FRESH_CONFIRM_1).assertIsDisplayed()
+        rule.onNodeWithText(appTxt().s(AppLockModel.START_FRESH_CONFIRM_1)).assertIsDisplayed()
         rule.onNodeWithText("Cancel").assertIsDisplayed()
         rule.onNodeWithText("Start fresh").performClick()
-        rule.onNodeWithText(AppLockModel.START_FRESH_CONFIRM_1).assertDoesNotExist()
-        rule.onNodeWithText(AppLockModel.START_FRESH_CONFIRM_2).assertIsDisplayed()
+        rule.onNodeWithText(appTxt().s(AppLockModel.START_FRESH_CONFIRM_1)).assertDoesNotExist()
+        rule.onNodeWithText(appTxt().s(AppLockModel.START_FRESH_CONFIRM_2)).assertIsDisplayed()
         assertEquals("nothing runs before the second confirmation", 0, freshStarts)
         rule.onNodeWithText("Start fresh now").performClick()
-        rule.onNodeWithText(AppLockModel.START_FRESH_CONFIRM_2).assertDoesNotExist()
+        rule.onNodeWithText(appTxt().s(AppLockModel.START_FRESH_CONFIRM_2)).assertDoesNotExist()
         rule.waitForIdle()
         assertEquals(1, freshStarts)
     }
@@ -74,11 +75,11 @@ class UnlockScreenTest {
         show()
         rule.onNodeWithText("Start fresh anyway").performClick()
         rule.onNodeWithText("Cancel").performClick()
-        rule.onNodeWithText(AppLockModel.START_FRESH_CONFIRM_1).assertDoesNotExist()
+        rule.onNodeWithText(appTxt().s(AppLockModel.START_FRESH_CONFIRM_1)).assertDoesNotExist()
         rule.onNodeWithText("Start fresh anyway").performClick()
         rule.onNodeWithText("Start fresh").performClick()
         rule.onNodeWithText("Cancel").performClick()
-        rule.onNodeWithText(AppLockModel.START_FRESH_CONFIRM_2).assertDoesNotExist()
+        rule.onNodeWithText(appTxt().s(AppLockModel.START_FRESH_CONFIRM_2)).assertDoesNotExist()
         rule.waitForIdle()
         assertEquals(0, freshStarts)
     }

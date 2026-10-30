@@ -1,0 +1,6 @@
+type,name,url,email,username,password,note,totp,createTime,modifyTime,vault
+login,L,https://l.example.com,e@example.com,,pw,,,2024-01-01T00:00:00Z,bad,V
+alias,A,,a@alias.test,,,,,,,V
+creditCard,C,,,,,,,,,V
+wifi,W,,,u,secret,,,,,V
+,Typeless,https://t.example.com,,u,p,,,1700000000,,V

@@ -6,33 +6,36 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..i18n import t
 from ..item_schema import PROTECTED_FIELDS_BY_KIND
 
 
-ENCRYPTED_TEXT = "Local · Encrypted"
+def encrypted_text() -> str:
+    return t("status.encrypted")
 
 
-SHORTCUT_HINT = "Ctrl K search · Ctrl N new · Ctrl L lock · F1 all shortcuts"
+def shortcut_hint() -> str:
+    return t("status.hint")
 
 
 def auto_lock_text(remaining: int | None, *, unlocked: bool) -> str:
     """``Auto-lock in M:SS`` while unlocked, ``Locked`` otherwise."""
 
     if not unlocked:
-        return "Locked"
+        return t("status.locked")
     if remaining is None:
-        return "Auto-lock off"
+        return t("status.autolockOff")
     remaining = max(0, int(remaining))
-    return f"Auto-lock in {remaining // 60}:{remaining % 60:02d}"
+    return t("status.autolockIn", time=f"{remaining // 60}:{remaining % 60:02d}")
 
 
 def licence_warning_text(st: Any) -> str:
     """Short status-bar warning, only for licence states that need attention."""
 
     return {
-        "expired_for_this_build": "Licence does not cover this version",
-        "revoked": "Licence revoked",
-        "invalid": "Licence problem",
+        "expired_for_this_build": t("status.licence.expiredBuild"),
+        "revoked": t("status.licence.revoked"),
+        "invalid": t("status.licence.invalid"),
     }.get(getattr(st, "state", ""), "")
 
 
@@ -45,18 +48,18 @@ def sync_status_text(view: Any, *, now: float) -> str:
     if view is None or not getattr(view, "configured", False):
         return ""
     if getattr(view, "needs_attention", False):
-        return "Sync needs attention"
+        return t("status.sync.attention")
     last = getattr(view, "last_sync", None)
     if last is None:
-        return "Not synced yet"
+        return t("status.sync.never")
     age = max(0, int(now) - int(last))
     if age < 60:
-        return "Synced just now"
+        return t("status.sync.justNow")
     if age < 3600:
-        return f"Synced {age // 60} min ago"
+        return t("status.sync.minutes", count=age // 60)
     if age < 86400:
-        return f"Synced {age // 3600} h ago"
-    return f"Synced {age // 86400} d ago"
+        return t("status.sync.hours", count=age // 3600)
+    return t("status.sync.days", count=age // 86400)
 
 
 # Payload keys that are bookkeeping rather than user-facing values.
@@ -82,9 +85,9 @@ def safe_typed_fields(kind: str, payload: Any) -> list[tuple[str, str]]:
         brand = str(payload.get("brand", "") or "").strip()
         last4 = str(payload.get("last4", "") or "").strip()
         if last4.isdigit() and len(last4) == 4:
-            rows.append(("Card", f"{(brand or 'Card').capitalize()} ending {last4}"))
+            rows.append((t("presentation.card"), t("presentation.cardEnding", brand=(brand or t("presentation.card")).capitalize(), last4=last4)))
         elif brand:
-            rows.append(("Card", brand.capitalize()))
+            rows.append((t("presentation.card"), brand.capitalize()))
     for key in sorted(payload):
         if key in protected or key in _SKIPPED_TYPED_KEYS:
             continue

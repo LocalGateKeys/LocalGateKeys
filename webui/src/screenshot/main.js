@@ -1,6 +1,6 @@
 // Screenshot harness entry (dev-only, served by `npm run screens`): installs the demo bridge, then
 // mounts the real root component exactly as src/main.js / src/popup.js do. The URL picks the screen:
-//   ?screen=home|item|edit|generator|palette|new|quick|trash|unlock|security|health|settings|sync|licence
+//   ?screen=home|item|edit|generator|palette|new|scan|quick|trash|unlock|security|health|settings|sync|licence
 //   &id=<item id> (item, edit)   &filter=<health filter> (health)   &section=<key> (settings)
 //   ?popup=unlock|fill|passkey   the small fill popup instead of the main window
 //   &rate=on   a Store build: the Settings "Rate" row, and the one-time rating prompt on home
@@ -75,6 +75,7 @@ const ROUTES = {
   sync: { route: 'sync' },
   licence: { route: 'licence' },
   new: { route: 'new-item' },
+  scan: { route: 'scan-qr' },
   quick: { route: 'quick-access' },
   reminders: { route: 'reminders' },
 };

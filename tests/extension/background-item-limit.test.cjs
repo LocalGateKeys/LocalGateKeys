@@ -16,6 +16,7 @@ function harness(response) {
   let listener; const calls = []; const id = "testextension";
   const frames = { 0: { documentId: "doc-top", url: TOP, documentLifecycle: "active", errorOccurred: false, parentFrameId: -1 } };
   const chrome = {
+    i18n: { getMessage: require("./i18n-stub.cjs").getMessage },
     runtime: {
       id, getManifest: () => ({ version: "0.3.3", permissions: ["favicon"] }), getURL: p => `chrome-extension://${id}/${p}`,
       onMessage: { addListener: f => listener = f },

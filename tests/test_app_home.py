@@ -59,6 +59,33 @@ def test_items_sort_favorites_then_title(env):
     assert titles == ["Beta", "Alpha", "Gamma", "Router"]
 
 
+def test_items_sort_choice_is_applied_and_remembered(env, monkeypatch):
+    home, controller, _alpha = env
+    saved = []
+    monkeypatch.setattr(controller.settings, "save", lambda *a, **k: saved.append(True), raising=False)
+    state = home.set_sort("title_desc", False)
+    assert state["option"] == "title_desc" and state["favorites_first"] is False
+    assert [o["value"] for o in state["options"]] == ["title_asc", "title_desc", "modified_desc", "created_desc"]
+    assert saved and controller.settings.list_sort == "title_desc"
+    listed = home.items(None, None, "")
+    assert [row["title"] for row in listed["items"]] == ["Router", "Gamma", "Beta", "Alpha"]
+    assert listed["sort"]["option"] == "title_desc"
+    home.set_sort("title_desc", True)
+    assert [row["title"] for row in home.items(None, None, "")["items"]] == ["Beta", "Router", "Gamma", "Alpha"]
+    # A typed search keeps relevance order whatever the sort.
+    assert [row["title"] for row in home.items(None, None, "alpha")["items"]][0] == "Alpha"
+
+
+def test_items_sort_rejects_unknown_choice(env):
+    from localvault.api.result import ApiError
+
+    home, _controller, _alpha = env
+    with pytest.raises(ApiError):
+        home.set_sort("size", True)
+    with pytest.raises(ApiError):
+        home.set_sort("title_asc", "yes")
+
+
 def test_search_ranks_like_catalog(env):
     home, _controller, _alpha = env
     assert [r["title"] for r in home.items(None, None, "gam")["items"]] == ["Gamma"]
@@ -85,12 +112,12 @@ def test_empty_states_query_vs_locked(env):
     empty = home.items(None, None, "zzzz-nothing")["empty"]
     assert empty == {"title": "No matching items",
                      "text": "Try another name, username or tag, or clear your filters.",
-                     "action": "Clear filters"}
+                     "action": "Clear filters", "action_id": "clear_filters"}
     controller.lock()
     locked = home.items(None, None, "")
     assert locked["items"] == []
     assert locked["empty"] == {"title": "Vault locked", "text": "Unlock this profile to browse its items.",
-                               "action": "Unlock vault"}
+                               "action": "Unlock vault", "action_id": "unlock"}
 
 
 def test_rows_shape_and_no_secret(env):
@@ -229,3 +256,44 @@ def test_codes_empty_when_locked(env):
     home, controller, _alpha = env
     controller.lock()
     assert home.codes() == {"codes": []}
+
+
+def _empty_home(tmp_path, monkeypatch, **settings_kwargs):
+    monkeypatch.setattr("localvault.app.controller.clear_master_unlock_requirement", lambda _pid: None)
+    profiles = ProfileManager(tmp_path / "data")
+    profiles.ensure_profile()
+    settings = AppSettings(auto_lock_seconds=300, idle_source="vault", **settings_kwargs)
+    controller = WebController(profiles=profiles, settings=settings, bus=Bus(), scheduler=Sched(),
+                               create_kwargs={"kdf_overrides": KDF})
+    controller.create(MASTER, MASTER)
+    return HomeService(controller), controller, settings
+
+
+def test_import_card_on_empty_vault_until_first_item(tmp_path, monkeypatch):
+    home, controller, _settings = _empty_home(tmp_path, monkeypatch)
+    assert home.items(None, None, "")["import_card"] is True
+    controller.session.item_service.create_note("First", "x")
+    assert home.items(None, None, "")["import_card"] is False
+
+
+def test_import_card_not_now_is_saved(tmp_path, monkeypatch):
+    home, _controller, settings = _empty_home(tmp_path, monkeypatch)
+    saved = []
+    monkeypatch.setattr(settings, "save", lambda *a, **k: saved.append(True), raising=False)
+    assert home.dismiss_import_card() == {"import_card": False}
+    assert saved and settings.import_card_dismissed is True
+    assert home.items(None, None, "")["import_card"] is False
+
+
+def test_import_card_setting_round_trips(tmp_path):
+    path = tmp_path / "settings.json"
+    AppSettings(import_card_dismissed=True).save(path)
+    assert AppSettings.load(path).import_card_dismissed is True
+    assert AppSettings().import_card_dismissed is False
+
+
+def test_import_card_not_shown_when_items_exist_or_locked(env):
+    home, controller, _alpha = env
+    assert home.items(None, None, "")["import_card"] is False
+    controller.lock()
+    assert home.items(None, None, "")["import_card"] is False

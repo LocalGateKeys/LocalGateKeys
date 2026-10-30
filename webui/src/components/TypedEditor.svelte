@@ -2,6 +2,7 @@
   /** Schema-driven editor for every typed item kind. Protected fields are write-only. */
   import ErrorLogLink from './ErrorLogLink.svelte';
   import { call } from '../lib/api.js';
+  import { t } from '../lib/i18n.svelte.js';
   import { okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
 
@@ -22,12 +23,12 @@
   $effect(() => {
     (async () => {
       const result = await call('typed_schema');
-      if (!okOrToast(result, 'Could not open the editor')) { onclose(null); return; }
+      if (!okOrToast(result, t('typedEditor.couldNotOpenEditor'))) { onclose(null); return; }
       schema = result.kinds.find((k) => k.kind === kind) ?? null;
       if (!schema) { onclose(null); return; }
       if (ref) {
         const item = await call('typed_open', ref);
-        if (!okOrToast(item, 'Could not open the item')) { onclose(null); return; }
+        if (!okOrToast(item, t('typedEditor.couldNotOpenItem'))) { onclose(null); return; }
         title = item.title;
         tags = (item.tags ?? []).join(', ');
         favorite = item.favorite;
@@ -55,7 +56,7 @@
     }
     busy = false;
     // Typed secrets stay in the form after a failed save so they need not be retyped.
-    if (result.ok) { secrets = {}; toast(`Saved ${schema.label} item.`); onclose(result.ref); return; }
+    if (result.ok) { secrets = {}; toast(t('typedEditor.saved', { kind: schema.label })); onclose(result.ref); return; }
     if (result.error.code !== 'cancelled') error = result.error.message;
   }
 
@@ -65,25 +66,25 @@
   }
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label={ref ? 'Edit item' : 'New item'} tabindex="-1" onkeydown={keys}>
+<div class="sheet glass" role="dialog" aria-modal="true" aria-label={ref ? t('typedEditor.editItem') : t('typedEditor.newItem')} tabindex="-1" onkeydown={keys}>
   {#if schema}
-    <header><h2>{ref ? 'Edit' : 'New'} {schema.label.toLowerCase()}</h2></header>
+    <header><h2>{(ref ? schema.edit_title : schema.new_title) ?? t(ref ? 'typedEditor.editTitle' : 'typedEditor.newTitle', { kind: schema.label })}</h2></header>
     {#if schema.note}<p class="note">{schema.note}</p>{/if}
     <div class="group">
-      <label class="field"><span class="k">Title</span><input bind:value={title} /></label>
-      <label class="field"><span class="k">Tags</span><input bind:value={tags} placeholder="Separate with commas" /></label>
-      <label class="field"><span class="k">Favorite</span><input type="checkbox" bind:checked={favorite} /></label>
+      <label class="field"><span class="k">{t('typedEditor.title')}</span><input bind:value={title} /></label>
+      <label class="field"><span class="k">{t('typedEditor.tags')}</span><input bind:value={tags} placeholder={t('typedEditor.tagsPlaceholder')} /></label>
+      <label class="field"><span class="k">{t('typedEditor.favorite')}</span><input type="checkbox" bind:checked={favorite} /></label>
     </div>
-    <div class="section-label">Details</div>
+    <div class="section-label">{t('typedEditor.details')}</div>
     <div class="group">
       {#each schema.fields as field (field.name)}
         <label class="field" class:tall={field.type === 'multiline'}>
           <span class="k">{field.label}</span>
           {#if field.protected}
             <input type="password" autocomplete="off" bind:value={secrets[field.name]}
-              placeholder={present[field.name] && !cleared.includes(field.name) ? 'Saved · enter a new value to replace' : ''} />
+              placeholder={present[field.name] && !cleared.includes(field.name) ? t('typedEditor.savedReplace') : ''} />
             {#if present[field.name] && !cleared.includes(field.name)}
-              <button type="button" class="text-btn" onclick={() => (cleared = [...cleared, field.name])}>Clear</button>
+              <button type="button" class="text-btn" onclick={() => (cleared = [...cleared, field.name])}>{t('typedEditor.clear')}</button>
             {/if}
           {:else if field.type === 'multiline'}
             <textarea bind:value={values[field.name]}></textarea>
@@ -94,15 +95,15 @@
               {#each field.options as option (option)}<option value={option}>{option || '—'}</option>{/each}
             </select>
           {:else}
-            <input bind:value={values[field.name]} placeholder={field.type === 'date' ? 'YYYY-MM-DD' : ''} />
+            <input bind:value={values[field.name]} placeholder={field.type === 'date' ? t('typedEditor.dateFormat') : ''} />
           {/if}
         </label>
       {/each}
     </div>
     {#if error}<p class="error" role="alert">{error}<ErrorLogLink text={error} /></p>{/if}
     <footer>
-      <Button label="Cancel" onclick={() => { secrets = {}; onclose(null); }} />
-      <Button label={kind === 'document' && !ref ? 'Choose file and save' : 'Save'} variant="primary" busy={busy} busyLabel="Saving…" onclick={save} />
+      <Button label={t('common.cancel')} onclick={() => { secrets = {}; onclose(null); }} />
+      <Button label={kind === 'document' && !ref ? t('typedEditor.chooseSave') : t('typedEditor.save')} variant="primary" busy={busy} busyLabel={t('typedEditor.saving')} onclick={save} />
     </footer>
   {/if}
 </div>

@@ -90,7 +90,7 @@ def _all_keys() -> list[str]:
 
 
 def test_built_in_sections_follow_the_mockup_order():
-    assert [s.title for s in sections()] == ["Locking", "Unlocking", "Privacy", "Autofill", "Appearance & app",
+    assert [s.title_text for s in sections()] == ["Locking", "Unlocking", "Privacy", "Autofill", "Appearance & app",
                                              "Backups", "Plan & sync", "Help & diagnostics"]
     assert [s.column for s in sections()] == [0, 0, 0, 1, 1, 1, 1, 1]
 
@@ -98,7 +98,7 @@ def test_built_in_sections_follow_the_mockup_order():
 def test_every_editable_preference_appears_exactly_once():
     from localvault.settings_ui import BOOLEAN_KEYS, INTEGER_KEYS
 
-    editable = {*BOOLEAN_KEYS, *INTEGER_KEYS, "idle_source", "quick_access_hotkey", "appearance",
+    editable = {*BOOLEAN_KEYS, *INTEGER_KEYS, "idle_source", "quick_access_hotkey", "appearance", "language",
                 "scheduled_backup_frequency", "scheduled_backup_time", "backup_mirror_dir"}
     keys = _all_keys()
     assert sorted(keys) == sorted(set(keys)), "a preference is shown twice"

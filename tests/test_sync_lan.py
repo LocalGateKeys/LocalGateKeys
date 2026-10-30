@@ -293,6 +293,23 @@ def test_qr_enrollment_delivers_key_then_views_merge_both_ways(devs) -> None:
     assert a.state.own_counter == 0 and b.state.own_counter == 0  # LAN reserves no view counters
 
 
+def test_peer_synced_at_is_set_only_when_a_lan_merge_changed_records(devs) -> None:
+    a = devs("a", group=True)
+    on_a = _web(a, "mail")
+    b = devs("b")
+    _pair(a, b)
+    a_id = a.state.device_id
+    assert a.state.peer_synced_at == {} and "peer_synced_at" not in a.state.to_dict()
+    assert kinds(a.sync_with(b)) == []
+    assert b.state.peer_synced_at.get(a_id) is not None, "B took A's new item"
+    before = dict(b.state.peer_synced_at)
+    assert kinds(b.sync_with(a)) == []  # nothing new on either side
+    assert b.state.peer_synced_at == before
+    a.session.update_entry_fields(on_a, password="edited-on-a")
+    assert kinds(b.sync_with(a)) == []
+    assert set(b.state.peer_synced_at) == {a_id}
+
+
 def test_phone_without_endpoint_always_initiates(devs) -> None:
     a = devs("a", group=True)
     phone = devs("phone")
@@ -1212,3 +1229,210 @@ def test_enrollment_names_are_checked() -> None:
     assert pairing.check_device_name("é" * 32) == "é" * 32
     assert pairing.verification_code(b"x") == pairing.verification_code(b"x")
     assert len(pairing.verification_code(b"y")) == 6
+
+
+# --- rollback witnesses (Part B, 2026-10-29) ------------------------------------------------------
+
+_ROLLBACK = {"vault-rollback", "peer-vault-rollback"}
+
+
+def _restore(dev: Dev, snap: bytes) -> None:
+    """Put an old copy of the vault back, delete its anchor and start the app again."""
+    from localvault.vault import unlock_vault
+    path = Path(dev.session.path)
+    dev.session.lock()
+    path.write_bytes(snap)
+    path.with_name(path.stem + ".generation.json").unlink(missing_ok=True)
+    dev.session = unlock_vault(path, MASTER)
+    dev.relisten()
+
+
+class _Recorder:
+    """Wraps a listener: records the view formats it received; *older* answers like a build from before."""
+
+    def __init__(self, dev: Dev, *, older: bool = False) -> None:
+        self.inner, self.older, self.formats, self.types = dev.responder, older, [], []
+        dev.transport.set_peer_request_handler(self)
+
+    def __call__(self, peer, request: bytes) -> bytes:
+        msg = json.loads(request)
+        self.types.append(msg.get("type"))
+        if msg.get("type") == "view" and msg.get("seq") == 0:
+            chunk = base64.b64decode(msg["view"])
+            fmt = 2 if b'"format":2' in chunk[:chunk.index(b"\n", 9)] else 1
+            self.formats.append(fmt)
+            if self.older and fmt == 2:
+                return lan.encode_message({"type": "error", "reason": "bad-view"})
+        if self.older and msg.get("type") == "witness":
+            return lan.encode_message({"type": "error", "reason": "bad-message"})
+        return self.inner(peer, request)
+
+
+def test_lan_sync_learns_support_then_uses_format2(devs) -> None:
+    a, b = _group_ab(devs)
+    rec = _Recorder(a)
+    assert kinds(b.sync_with(a)) == []
+    # The first exchange also probes attachment support once (blob-get of the probe id).
+    assert rec.types == ["view", "blob-get", "witness"] and rec.formats == [1]
+    assert b.device_id in a.state.attachment_peers and a.device_id in b.state.attachment_peers
+    assert b.device_id in a.state.witness_peers and a.device_id in b.state.witness_peers
+    assert kinds(b.sync_with(a)) == []
+    assert rec.formats == [1, 2] and rec.types[-1] == "view"  # no witness message once inline
+    assert b.state.peer_generations[a.device_id] > 0 and a.state.peer_generations[b.device_id] > 0
+
+
+def test_lan_sync_carries_and_checks_witness(devs) -> None:
+    a, b = _group_ab(devs)
+    b.sync_with(a)
+    old = Path(a.session.path).read_bytes()
+    for i in range(LAN_EDITS):
+        _web(a, f"after{i}")
+    a.sync_with(b)
+    b.sync_with(a)
+    _restore(a, old)
+    report_b = b.sync_with(a)
+    assert ("peer-vault-rollback", a.device_id) in [(i.kind, i.detail) for i in report_b.issues]
+    assert "vault-rollback" in kinds(a.responder.last_report)
+    report_a = a.sync_with(b)
+    assert "vault-rollback" in kinds(report_a)
+    assert {f"after{i}" for i in range(LAN_EDITS)} <= set(a.labels())  # b brought the newer items back
+    assert a.state.rollback_suspected > 0
+    assert "vault-rollback" in kinds(a.sync_with(b))  # sticky until acknowledged
+
+
+LAN_EDITS = 40  # more than LAN_GENERATION_SLACK saves, so the peer stored the newer generation
+
+
+def test_lan_no_false_positive_on_normal_edits(devs) -> None:
+    a, b = _group_ab(devs)
+    for i in range(8):
+        dev, other = (a, b) if i % 2 else (b, a)
+        _web(dev, f"site{i}")
+        for report in (dev.sync_with(other), other.sync_with(dev)):
+            assert not _ROLLBACK & set(kinds(report)), report.issues
+        assert not _ROLLBACK & set(kinds(other.responder.last_report or lan.RunReport()))
+
+
+def test_lan_older_responder_interoperates(devs) -> None:
+    a, b = _group_ab(devs)
+    rec = _Recorder(a, older=True)
+    on_b = _web(b, "bank")
+    for _ in range(3):
+        assert kinds(b.sync_with(a)) == []
+    assert set(rec.formats) == {1}  # b never sent format 2 to a peer without support
+    assert a.device_id not in b.state.witness_peers
+    assert a.entry(on_b)["label"] == "bank"
+
+
+def test_lan_peer_that_went_back_to_an_older_app_gets_format1_again(devs) -> None:
+    a, b = _group_ab(devs)
+    b.sync_with(a)
+    assert a.device_id in b.state.witness_peers
+    rec = _Recorder(a, older=True)
+    assert kinds(b.sync_with(a)) == ["peer-refused"]
+    assert a.device_id in b.state.witness_peers  # one refusal may be a damaged transfer
+    assert kinds(b.sync_with(a)) == ["peer-refused"]
+    assert a.device_id not in b.state.witness_peers  # two in a row: the peer went back
+    assert kinds(b.sync_with(a)) == []
+    assert rec.formats == [2, 2, 1]
+
+
+def test_lan_one_refusal_between_good_exchanges_keeps_format2(devs) -> None:
+    a, b = _group_ab(devs)
+    b.sync_with(a)
+    rec = _Recorder(a, older=True)
+    assert kinds(b.sync_with(a)) == ["peer-refused"]
+    rec.older = False
+    assert kinds(b.sync_with(a)) == []  # a good format-2 exchange resets the count
+    rec.older = True
+    assert kinds(b.sync_with(a)) == ["peer-refused"]
+    assert a.device_id in b.state.witness_peers
+    assert rec.formats == [2, 2, 2]
+
+
+def test_lan_witness_message_is_checked(devs) -> None:
+    a, b = _group_ab(devs)
+    peer = _peer_record(b, a)
+    st = b.state
+    gk = GroupKey(st.group_id, st.epoch, st.key)
+
+    def witness(raw: bytes, **over) -> dict:
+        body = {"type": "witness", "group_id": st.group_id, "epoch": st.epoch,
+                "view": base64.b64encode(raw).decode(), **over}
+        return _serve(a, peer, _msg(body))
+
+    good = encode_view(gk, b.device_id, 0, (), NOW, vault_generation=5, witness={})
+    reply = witness(good)
+    assert reply["type"] == "witness" and a.state.peer_generations[b.device_id] == 5
+    side = lan.parse_message(lan.encode_message(reply))
+    assert side["type"] == "witness"
+    assert witness(encode_view(gk, a.device_id, 0, (), NOW, vault_generation=5)) == {
+        "type": "error", "reason": "device-mismatch"}
+    assert witness(encode_view(gk, b.device_id, 0, (), NOW)) == {"type": "error", "reason": "bad-view"}
+    assert witness(encode_view(gk, b.device_id, 0, [], NOW, vault_generation=5)[:-1]) == {
+        "type": "error", "reason": "bad-view"}
+    assert witness(good, group_id="other") == {"type": "error", "reason": "group-mismatch"}
+    assert witness(good, epoch=st.epoch + 1) == {"type": "error", "reason": "peer-epoch-behind"}
+    assert _serve(a, peer, _msg({"type": "witness", "group_id": st.group_id, "epoch": st.epoch})) == {
+        "type": "error", "reason": "bad-message"}
+    big = "A" * (4 * ((lan.MAX_WITNESS_BYTES + 2) // 3) + 4)
+    assert witness(good, view=big) == {"type": "error", "reason": "too-large"}
+    # A lower generation from b is a rollback; it is reported and the remembered value stays.
+    low = encode_view(gk, b.device_id, 0, (), NOW, vault_generation=2)
+    body = {"type": "witness", "group_id": st.group_id, "epoch": st.epoch, "view": base64.b64encode(low).decode()}
+    reply, report = lan._serve(a.session, a.lease, peer, _msg(body), install_id=a.install, now=NOW,
+                               inbox=lan.LanInbox())
+    assert reply["type"] == "witness"
+    assert [(i.kind, i.detail) for i in report.issues] == [("peer-vault-rollback", b.device_id)]
+    assert a.state.peer_generations[b.device_id] == 5
+
+
+# --- in-memory witness state and save throttle (review fix 2026-10-29) ---------------------------
+
+
+def test_lan_rollback_of_a_few_saves_is_detected(devs) -> None:
+    a, b = _group_ab(devs)
+    b.sync_with(a)
+    b.sync_with(a)  # b knows a's generation and has just saved it
+    old = Path(a.session.path).read_bytes()
+    for i in range(5):
+        _web(a, f"after{i}")
+    b.sync_with(a)
+    remembered = lan.witness_memory.merged(b.state.peer_generations,
+                                           lan.witness_memory.memory(b.session, b.state.group_id, b.device_id))
+    assert remembered[a.device_id] > b.state.peer_generations[a.device_id]  # held back by the throttle
+    _restore(a, old)
+    report_b = b.sync_with(a)
+    assert ("peer-vault-rollback", a.device_id) in [(i.kind, i.detail) for i in report_b.issues]
+    assert "vault-rollback" in kinds(a.responder.last_report)  # b published the in-memory value
+
+
+def test_lan_witness_saves_are_throttled(devs, monkeypatch) -> None:
+    a, b = _group_ab(devs)
+    b.sync_with(a)
+    saves = []
+    real = lan.save_sync_state
+    monkeypatch.setattr(lan, "save_sync_state", lambda s, st: (saves.append(st), real(s, st))[1])
+    for i in range(100):
+        if i % 10 == 0:
+            _web(a, f"edit{i}")
+        b.sync_with(a)
+    assert len(saves) <= 4, len(saves)
+    clock = [lan.witness_memory.monotonic() + lan.witness_memory.SAVE_INTERVAL_SECONDS + 1]
+    monkeypatch.setattr(lan.witness_memory, "monotonic", lambda: clock[0])
+    _web(a, "late")
+    before = len(saves)
+    b.sync_with(a)
+    assert len(saves) > before  # a rise is saved once the interval passed
+
+
+def test_lan_flush_witness_saves_the_held_back_rise(devs) -> None:
+    a, b = _group_ab(devs)
+    b.sync_with(a)
+    b.sync_with(a)
+    _web(a, "x")
+    b.sync_with(a)
+    stored = b.state.peer_generations[a.device_id]
+    assert lan.flush_witness(b.session, b.lease) is True
+    assert b.state.peer_generations[a.device_id] > stored
+    assert lan.flush_witness(b.session, b.lease) is False  # nothing left to save

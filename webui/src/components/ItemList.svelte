@@ -1,5 +1,6 @@
 <script>
   /** The item list: icon tiles, title, username, type and target; arrow keys move the selection. */
+  import { t } from '../lib/i18n.svelte.js';
   import ItemTile from './ItemTile.svelte';
 
   let { items = [], selected = null, empty = null, onselect, onopen, onmenu, onemptyaction, ontrash, oncopy } = $props();
@@ -37,17 +38,17 @@
     return true;
   }
 
-  const FLAG = { breached: 'Breached', weak: 'Weak', reused: 'Reused' };
+  const FLAG = { breached: 'itemList.flagBreached', weak: 'itemList.flagWeak', reused: 'itemList.flagReused' };
 </script>
 
 {#if !items.length && empty}
   <div class="empty">
     <h2>{empty.title}</h2>
     <p>{empty.text}</p>
-    {#if empty.action}<button class="link" onclick={() => onemptyaction(empty.action)}>{empty.action}</button>{/if}
+    {#if empty.action}<button class="link" onclick={() => onemptyaction(empty.action_id)}>{empty.action}</button>{/if}
   </div>
 {:else}
-  <div class="list group" role="listbox" tabindex="0" aria-label="Items" bind:this={list} onkeydown={key}>
+  <div class="list group" role="listbox" tabindex="0" aria-label={t('itemList.items')} bind:this={list} onkeydown={key}>
     {#each items as item (item.ref.source + item.ref.id)}
       <div
         class="row"
@@ -65,7 +66,7 @@
           <span class="sub">{item.username || item.kind_label}</span>
         </span>
         <span class="meta">
-          {#if item.flag}<span class="flag {item.flag}">{FLAG[item.flag]}</span>{/if}
+          {#if item.flag}<span class="flag {item.flag}">{t(FLAG[item.flag])}</span>{/if}
           <span class="target">{item.target}</span>
         </span>
       </div>

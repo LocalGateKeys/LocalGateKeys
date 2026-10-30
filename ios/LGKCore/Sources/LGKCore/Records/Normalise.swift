@@ -15,6 +15,10 @@ public enum NormaliseError: Error, Equatable, Sendable {
 /// logins, documents) is stored and republished exactly as received. Where Python's behaviour is hard to
 /// match exactly (non-ASCII bookmark hosts, odd base64), the phone refuses rather than guesses.
 public enum Normalise {
+    /// Most `password_history` rows a login may hold when read (UX plan workstream 8: 10, owner decision
+    /// 2026-10-27). Writers keep their own cap (`EditorModel.historyWriteLimit`) until every platform reads 10.
+    public static let passwordHistoryLimit = 10
+
     typealias Obj = [String: JSONValue]
     static let maxInt63 = Int64.max
 
@@ -126,7 +130,7 @@ public enum Normalise {
             try scalarDict(totp, "TOTP")
             try checkTOTP(totp)
         }
-        let history = try list(rec["password_history"] ?? .array([]), max: 5, "Password history is malformed")
+        let history = try list(rec["password_history"] ?? .array([]), max: passwordHistoryLimit, "Password history is malformed")
         var canonicalHistory: [JSONValue] = []
         for row in history {
             guard case .object(let r) = row, Set(r.keys).isSubset(of: ["password", "changed_at", "replaced_at"]) else {
@@ -262,6 +266,10 @@ public enum Normalise {
     }
 
     static func casefold(_ s: String) -> String { Casefold.fold(s) }
+
+    /// `normalizeTags` for editors: stripped, 1–40 characters, case-insensitive duplicates dropped keeping the
+    /// first spelling, at most 20.
+    public static func tags(_ list: [String]) throws -> [String] { try normalizeTags(.array(list.map(JSONValue.string))) }
 
     static func normalizeTags(_ v: JSONValue) throws -> [String] {
         if v == .null { return [] }

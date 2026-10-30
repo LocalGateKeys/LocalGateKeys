@@ -1,0 +1,451 @@
+{
+  "checks": [
+    {
+      "expected": {
+        "capable": [
+          "b2222222-0000-4000-8000-00000000000b"
+        ],
+        "issues": [],
+        "peer_generations": {
+          "b2222222-0000-4000-8000-00000000000b": 51
+        },
+        "rollback_suspected": 0
+      },
+      "name": "peer moves forward",
+      "observations": [
+        {
+          "peer_id": "b2222222-0000-4000-8000-00000000000b",
+          "vault_generation": 51,
+          "witness": {
+            "a1111111-0000-4000-8000-00000000000a": 9
+          }
+        }
+      ],
+      "own_generation": 10,
+      "own_id": "a1111111-0000-4000-8000-00000000000a",
+      "peer_generations": {
+        "b2222222-0000-4000-8000-00000000000b": 50
+      },
+      "rollback_suspected": 0
+    },
+    {
+      "expected": {
+        "capable": [
+          "b2222222-0000-4000-8000-00000000000b"
+        ],
+        "issues": [],
+        "peer_generations": {
+          "b2222222-0000-4000-8000-00000000000b": 50
+        },
+        "rollback_suspected": 0
+      },
+      "name": "peer equal",
+      "observations": [
+        {
+          "peer_id": "b2222222-0000-4000-8000-00000000000b",
+          "vault_generation": 50,
+          "witness": {
+            "a1111111-0000-4000-8000-00000000000a": 10
+          }
+        }
+      ],
+      "own_generation": 10,
+      "own_id": "a1111111-0000-4000-8000-00000000000a",
+      "peer_generations": {
+        "b2222222-0000-4000-8000-00000000000b": 50
+      },
+      "rollback_suspected": 0
+    },
+    {
+      "expected": {
+        "capable": [
+          "b2222222-0000-4000-8000-00000000000b"
+        ],
+        "issues": [
+          [
+            "peer-vault-rollback",
+            "b2222222-0000-4000-8000-00000000000b"
+          ]
+        ],
+        "peer_generations": {
+          "b2222222-0000-4000-8000-00000000000b": 50
+        },
+        "rollback_suspected": 0
+      },
+      "name": "peer goes backwards",
+      "observations": [
+        {
+          "peer_id": "b2222222-0000-4000-8000-00000000000b",
+          "vault_generation": 30,
+          "witness": {}
+        }
+      ],
+      "own_generation": 10,
+      "own_id": "a1111111-0000-4000-8000-00000000000a",
+      "peer_generations": {
+        "b2222222-0000-4000-8000-00000000000b": 50
+      },
+      "rollback_suspected": 0
+    },
+    {
+      "expected": {
+        "capable": [
+          "b2222222-0000-4000-8000-00000000000b"
+        ],
+        "issues": [],
+        "peer_generations": {
+          "b2222222-0000-4000-8000-00000000000b": 3
+        },
+        "rollback_suspected": 0
+      },
+      "name": "first sight of a peer",
+      "observations": [
+        {
+          "peer_id": "b2222222-0000-4000-8000-00000000000b",
+          "vault_generation": 3,
+          "witness": {}
+        }
+      ],
+      "own_generation": 10,
+      "own_id": "a1111111-0000-4000-8000-00000000000a",
+      "peer_generations": {},
+      "rollback_suspected": 0
+    },
+    {
+      "expected": {
+        "capable": [
+          "b2222222-0000-4000-8000-00000000000b"
+        ],
+        "issues": [
+          [
+            "vault-rollback",
+            ""
+          ]
+        ],
+        "peer_generations": {
+          "b2222222-0000-4000-8000-00000000000b": 5
+        },
+        "rollback_suspected": 50
+      },
+      "name": "peer saw a newer copy of us",
+      "observations": [
+        {
+          "peer_id": "b2222222-0000-4000-8000-00000000000b",
+          "vault_generation": 5,
+          "witness": {
+            "a1111111-0000-4000-8000-00000000000a": 50
+          }
+        }
+      ],
+      "own_generation": 30,
+      "own_id": "a1111111-0000-4000-8000-00000000000a",
+      "peer_generations": {},
+      "rollback_suspected": 0
+    },
+    {
+      "expected": {
+        "capable": [],
+        "issues": [
+          [
+            "vault-rollback",
+            ""
+          ]
+        ],
+        "peer_generations": {
+          "b2222222-0000-4000-8000-00000000000b": 5
+        },
+        "rollback_suspected": 50
+      },
+      "name": "suspicion persists without views",
+      "observations": [],
+      "own_generation": 31,
+      "own_id": "a1111111-0000-4000-8000-00000000000a",
+      "peer_generations": {
+        "b2222222-0000-4000-8000-00000000000b": 5
+      },
+      "rollback_suspected": 50
+    },
+    {
+      "expected": {
+        "capable": [
+          "b2222222-0000-4000-8000-00000000000b"
+        ],
+        "issues": [
+          [
+            "vault-rollback",
+            ""
+          ]
+        ],
+        "peer_generations": {
+          "b2222222-0000-4000-8000-00000000000b": 6
+        },
+        "rollback_suspected": 50
+      },
+      "name": "suspicion is sticky after saves pass it",
+      "observations": [
+        {
+          "peer_id": "b2222222-0000-4000-8000-00000000000b",
+          "vault_generation": 6,
+          "witness": {
+            "a1111111-0000-4000-8000-00000000000a": 50
+          }
+        }
+      ],
+      "own_generation": 51,
+      "own_id": "a1111111-0000-4000-8000-00000000000a",
+      "peer_generations": {
+        "b2222222-0000-4000-8000-00000000000b": 5
+      },
+      "rollback_suspected": 50
+    },
+    {
+      "expected": {
+        "capable": [
+          "b2222222-0000-4000-8000-00000000000b",
+          "c3333333-0000-4000-8000-00000000000c"
+        ],
+        "issues": [
+          [
+            "vault-rollback",
+            ""
+          ]
+        ],
+        "peer_generations": {
+          "b2222222-0000-4000-8000-00000000000b": 5,
+          "c3333333-0000-4000-8000-00000000000c": 5
+        },
+        "rollback_suspected": 70
+      },
+      "name": "highest suspicion is kept",
+      "observations": [
+        {
+          "peer_id": "b2222222-0000-4000-8000-00000000000b",
+          "vault_generation": 5,
+          "witness": {
+            "a1111111-0000-4000-8000-00000000000a": 40
+          }
+        },
+        {
+          "peer_id": "c3333333-0000-4000-8000-00000000000c",
+          "vault_generation": 5,
+          "witness": {
+            "a1111111-0000-4000-8000-00000000000a": 70
+          }
+        }
+      ],
+      "own_generation": 1,
+      "own_id": "a1111111-0000-4000-8000-00000000000a",
+      "peer_generations": {},
+      "rollback_suspected": 60
+    },
+    {
+      "expected": {
+        "capable": [
+          "b2222222-0000-4000-8000-00000000000b"
+        ],
+        "issues": [
+          [
+            "peer-vault-rollback",
+            "b2222222-0000-4000-8000-00000000000b"
+          ],
+          [
+            "vault-rollback",
+            ""
+          ]
+        ],
+        "peer_generations": {
+          "b2222222-0000-4000-8000-00000000000b": 9
+        },
+        "rollback_suspected": 25
+      },
+      "name": "both at once",
+      "observations": [
+        {
+          "peer_id": "b2222222-0000-4000-8000-00000000000b",
+          "vault_generation": 4,
+          "witness": {
+            "a1111111-0000-4000-8000-00000000000a": 25
+          }
+        }
+      ],
+      "own_generation": 20,
+      "own_id": "a1111111-0000-4000-8000-00000000000a",
+      "peer_generations": {
+        "b2222222-0000-4000-8000-00000000000b": 9
+      },
+      "rollback_suspected": 0
+    },
+    {
+      "expected": {
+        "capable": [],
+        "issues": [],
+        "peer_generations": {},
+        "rollback_suspected": 0
+      },
+      "name": "own observation ignored",
+      "observations": [
+        {
+          "peer_id": "a1111111-0000-4000-8000-00000000000a",
+          "vault_generation": 0,
+          "witness": {
+            "a1111111-0000-4000-8000-00000000000a": 99
+          }
+        }
+      ],
+      "own_generation": 1,
+      "own_id": "a1111111-0000-4000-8000-00000000000a",
+      "peer_generations": {},
+      "rollback_suspected": 0
+    }
+  ],
+  "constants": {
+    "FORMAT_WITNESS": 2,
+    "LAN_GENERATION_SLACK": 32,
+    "MAX_WITNESS": 64,
+    "MAX_WITNESS_BYTES": 16384
+  },
+  "headers": [
+    {
+      "expected": "valid",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7ImIyMjIyMjIyLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwYiI6MTJ9LCJ3cml0dGVuX2F0IjoxNzkwMDAwOTAwfQqUu/FbMSLTazfe5OA9ehrWZ8yzvXx+6s/TLJGlwCw=",
+      "name": "valid"
+    },
+    {
+      "expected": "valid",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7fSwid3JpdHRlbl9hdCI6MTc5MDAwMDkwMH0KxILmnbzA7avqKnwh5J/wPqvEEcE8FEgtHnsd31TP",
+      "name": "valid, empty witness"
+    },
+    {
+      "expected": "valid",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7InBlZXItMDAiOjAsInBlZXItMDEiOjEsInBlZXItMDIiOjIsInBlZXItMDMiOjMsInBlZXItMDQiOjQsInBlZXItMDUiOjUsInBlZXItMDYiOjYsInBlZXItMDciOjcsInBlZXItMDgiOjgsInBlZXItMDkiOjksInBlZXItMTAiOjEwLCJwZWVyLTExIjoxMSwicGVlci0xMiI6MTIsInBlZXItMTMiOjEzLCJwZWVyLTE0IjoxNCwicGVlci0xNSI6MTUsInBlZXItMTYiOjE2LCJwZWVyLTE3IjoxNywicGVlci0xOCI6MTgsInBlZXItMTkiOjE5LCJwZWVyLTIwIjoyMCwicGVlci0yMSI6MjEsInBlZXItMjIiOjIyLCJwZWVyLTIzIjoyMywicGVlci0yNCI6MjQsInBlZXItMjUiOjI1LCJwZWVyLTI2IjoyNiwicGVlci0yNyI6MjcsInBlZXItMjgiOjI4LCJwZWVyLTI5IjoyOSwicGVlci0zMCI6MzAsInBlZXItMzEiOjMxLCJwZWVyLTMyIjozMiwicGVlci0zMyI6MzMsInBlZXItMzQiOjM0LCJwZWVyLTM1IjozNSwicGVlci0zNiI6MzYsInBlZXItMzciOjM3LCJwZWVyLTM4IjozOCwicGVlci0zOSI6MzksInBlZXItNDAiOjQwLCJwZWVyLTQxIjo0MSwicGVlci00MiI6NDIsInBlZXItNDMiOjQzLCJwZWVyLTQ0Ijo0NCwicGVlci00NSI6NDUsInBlZXItNDYiOjQ2LCJwZWVyLTQ3Ijo0NywicGVlci00OCI6NDgsInBlZXItNDkiOjQ5LCJwZWVyLTUwIjo1MCwicGVlci01MSI6NTEsInBlZXItNTIiOjUyLCJwZWVyLTUzIjo1MywicGVlci01NCI6NTQsInBlZXItNTUiOjU1LCJwZWVyLTU2Ijo1NiwicGVlci01NyI6NTcsInBlZXItNTgiOjU4LCJwZWVyLTU5Ijo1OSwicGVlci02MCI6NjAsInBlZXItNjEiOjYxLCJwZWVyLTYyIjo2MiwicGVlci02MyI6NjN9LCJ3cml0dGVuX2F0IjoxNzkwMDAwOTAwfQruuFyhb8QzYpD7OE7QW5XMEQdkcbDJx1I+0DDyS2A=",
+      "name": "valid, 64 witness entries"
+    },
+    {
+      "expected": "valid",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjkwMDcxOTkyNTQ3NDA5OTEsIndpdG5lc3MiOnsiYjIyMjIyMjItMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDBiIjo5MDA3MTk5MjU0NzQwOTkxfSwid3JpdHRlbl9hdCI6MTc5MDAwMDkwMH0KamPIxD7JKjEKQOtbQd4xGD4wqd6ipx9nwRAl2cu4",
+      "name": "valid, largest values"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7InBlZXItMDAiOjAsInBlZXItMDEiOjEsInBlZXItMDIiOjIsInBlZXItMDMiOjMsInBlZXItMDQiOjQsInBlZXItMDUiOjUsInBlZXItMDYiOjYsInBlZXItMDciOjcsInBlZXItMDgiOjgsInBlZXItMDkiOjksInBlZXItMTAiOjEwLCJwZWVyLTExIjoxMSwicGVlci0xMiI6MTIsInBlZXItMTMiOjEzLCJwZWVyLTE0IjoxNCwicGVlci0xNSI6MTUsInBlZXItMTYiOjE2LCJwZWVyLTE3IjoxNywicGVlci0xOCI6MTgsInBlZXItMTkiOjE5LCJwZWVyLTIwIjoyMCwicGVlci0yMSI6MjEsInBlZXItMjIiOjIyLCJwZWVyLTIzIjoyMywicGVlci0yNCI6MjQsInBlZXItMjUiOjI1LCJwZWVyLTI2IjoyNiwicGVlci0yNyI6MjcsInBlZXItMjgiOjI4LCJwZWVyLTI5IjoyOSwicGVlci0zMCI6MzAsInBlZXItMzEiOjMxLCJwZWVyLTMyIjozMiwicGVlci0zMyI6MzMsInBlZXItMzQiOjM0LCJwZWVyLTM1IjozNSwicGVlci0zNiI6MzYsInBlZXItMzciOjM3LCJwZWVyLTM4IjozOCwicGVlci0zOSI6MzksInBlZXItNDAiOjQwLCJwZWVyLTQxIjo0MSwicGVlci00MiI6NDIsInBlZXItNDMiOjQzLCJwZWVyLTQ0Ijo0NCwicGVlci00NSI6NDUsInBlZXItNDYiOjQ2LCJwZWVyLTQ3Ijo0NywicGVlci00OCI6NDgsInBlZXItNDkiOjQ5LCJwZWVyLTUwIjo1MCwicGVlci01MSI6NTEsInBlZXItNTIiOjUyLCJwZWVyLTUzIjo1MywicGVlci01NCI6NTQsInBlZXItNTUiOjU1LCJwZWVyLTU2Ijo1NiwicGVlci01NyI6NTcsInBlZXItNTgiOjU4LCJwZWVyLTU5Ijo1OSwicGVlci02MCI6NjAsInBlZXItNjEiOjYxLCJwZWVyLTYyIjo2MiwicGVlci02MyI6NjMsInBlZXItNjQiOjY0fSwid3JpdHRlbl9hdCI6MTc5MDAwMDkwMH0Kdvh5l4CHrAEcSf8nPvVslXNt03q5Q6e1q2v31syr",
+      "name": "65 witness entries"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7ImExMTExMTExLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwYSI6MX0sIndyaXR0ZW5fYXQiOjE3OTAwMDA5MDB9CgmP/wUPMRd2kT7vapmUaCum/dy1T0XPNs/dQzdndw==",
+      "name": "witness names the writer"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7ImJhZCBpZCI6MX0sIndyaXR0ZW5fYXQiOjE3OTAwMDA5MDB9ChzzTmNySWBCx3a1GnkCRRFcs1wuBrGrl/hQQXEejg==",
+      "name": "witness id not an identifier"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7ImIyMjIyMjIyLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwYiI6LTF9LCJ3cml0dGVuX2F0IjoxNzkwMDAwOTAwfQqWbKRfYldrsjrbbGXRXPeXwkCmXFxjRVD0FP3zP40=",
+      "name": "witness value negative"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7ImIyMjIyMjIyLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwYiI6OTAwNzE5OTI1NDc0MDk5Mn0sIndyaXR0ZW5fYXQiOjE3OTAwMDA5MDB9Cq59KasT9NvTNvSJCKJtowQu1rsHOV/dQtKiOtxqoA==",
+      "name": "witness value 2**53"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7ImIyMjIyMjIyLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwYiI6dHJ1ZX0sIndyaXR0ZW5fYXQiOjE3OTAwMDA5MDB9CuTRhGimCWSFuC1j8S6a5ctoRefqO0LLyWWhKbUbiw==",
+      "name": "witness value true"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7ImIyMjIyMjIyLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwYiI6MS41fSwid3JpdHRlbl9hdCI6MTc5MDAwMDkwMH0KCwjyS02rZyU+2x2XqwC6e1o/E9hC8Lj7modF1yb1",
+      "name": "witness value 1.5"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjpbXSwid3JpdHRlbl9hdCI6MTc5MDAwMDkwMH0KuK4lnOn7E1MXLgverGbFrrU7TVHFySbbY5f8WafT",
+      "name": "witness is a list"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOi0xLCJ3aXRuZXNzIjp7ImIyMjIyMjIyLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwYiI6MTJ9LCJ3cml0dGVuX2F0IjoxNzkwMDAwOTAwfQpmUdxd+nUMuVJJ1eTnR+HcnUZC7MdwRbbSCJCmnyc=",
+      "name": "generation negative"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjkwMDcxOTkyNTQ3NDA5OTIsIndpdG5lc3MiOnsiYjIyMjIyMjItMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDBiIjoxMn0sIndyaXR0ZW5fYXQiOjE3OTAwMDA5MDB9CvzsbCvpodH5xuM4ePrO5N4/insVY/qSvHbsGhV2mg==",
+      "name": "generation 2**53"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOnRydWUsIndpdG5lc3MiOnsiYjIyMjIyMjItMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDBiIjoxMn0sIndyaXR0ZW5fYXQiOjE3OTAwMDA5MDB9CpPHj7EFu8xenwkeIte+1w2v0TaMB/8uAYaqEhbirg==",
+      "name": "generation true"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOm51bGwsIndpdG5lc3MiOnsiYjIyMjIyMjItMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDBiIjoxMn0sIndyaXR0ZW5fYXQiOjE3OTAwMDA5MDB9CuhZSVtGjOc7d0rqbADHKy44fc6AFrjEG1Ajr8A7bA==",
+      "name": "generation null"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3cml0dGVuX2F0IjoxNzkwMDAwOTAwfQrVC/R5DuoS9xzlg9/bt3LmCnk9ifsEDJq413AEw60=",
+      "name": "no witness"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsIndpdG5lc3MiOnsiYjIyMjIyMjItMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDBiIjoxMn0sIndyaXR0ZW5fYXQiOjE3OTAwMDA5MDB9Cll6jxruYlH0wiW58IXhJ+ynSgifiauNShWoHgqgxg==",
+      "name": "no generation"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoxLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7ImIyMjIyMjIyLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwYiI6MTJ9LCJ3cml0dGVuX2F0IjoxNzkwMDAwOTAwfQr12fVYZvUXp1m8TfrdYDVwH/HW5U09sSfMok1h+Gs=",
+      "name": "format 1 with the new fields"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjozLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7ImIyMjIyMjIyLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwYiI6MTJ9LCJ3cml0dGVuX2F0IjoxNzkwMDAwOTAwfQobbN7+aip0OqN9P7gA3fYl9DDDA7G/dJm7m82p8Qk=",
+      "name": "format 3"
+    },
+    {
+      "expected": "bad-header",
+      "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7ImIyMjIyMjIyLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwYiI6MTJ9LCJ3cml0dGVuX2F0IjoxNzkwMDAwOTAwLCJ4IjoxfQpDb4HH5ipawoa3+s4BIv3y+9sxxe/uJNAymPASO5o=",
+      "name": "extra field"
+    }
+  ],
+  "note": "headers: decode each file with the epoch-1 group key; expected is valid or the reason. witness_file_matches: the observation of devices/A.lgksync with each witness file (null = none). checks: the pure witness rule (witness.check) on each input.",
+  "witness_file_matches": [
+    {
+      "expected": {
+        "peer_id": "a1111111-0000-4000-8000-00000000000a",
+        "vault_generation": 40,
+        "witness": {}
+      },
+      "name": "matches",
+      "witness_file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7fSwid3JpdHRlbl9hdCI6MTc5MDAwMDkwMH0KZks/6nYMmNtv1wb0AJS3PbaG6i80YIEXOqdUjinq"
+    },
+    {
+      "expected": null,
+      "name": "older counter",
+      "witness_file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo2LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7fSwid3JpdHRlbl9hdCI6MTc5MDAwMDkwMH0KbgpEdvk59sXro9h0hjL0S2Ku2eukPwv1Wd8QdsCD"
+    },
+    {
+      "expected": null,
+      "name": "newer counter",
+      "witness_file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo4LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7fSwid3JpdHRlbl9hdCI6MTc5MDAwMDkwMH0K+7sElNh9QiAOBl+88XRGYv1p1VEEvMN3Uq9yVshN"
+    },
+    {
+      "expected": null,
+      "name": "another device",
+      "witness_file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJiMjIyMjIyMi0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGIiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7fSwid3JpdHRlbl9hdCI6MTc5MDAwMDkwMH0K8H8YceDhI58R3FMzm2h/U9O4uGb9NDxL1DXmjWhm"
+    },
+    {
+      "expected": null,
+      "name": "holds a record",
+      "witness_file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoyLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsInZhdWx0X2dlbmVyYXRpb24iOjQwLCJ3aXRuZXNzIjp7fSwid3JpdHRlbl9hdCI6MTc5MDAwMDkwMH0KPAqv/ov+KhTl02Btb5WsVyWoxK9VruI+bz3EjCYOTjZtr9ptK+un/oJ9mQOryzDWR0qDoDshNKEBJi5f26keDPZg2qgd0oGs2KkwtyfoGCHQzoa2Mrwg26I7vn7CZSPDHOy19Etnz8rpAW8/MR001Wb0FQvAG+2KcNOEqJ5gEjE/AiMPveo3X79v5vopeJmr38L0xxD8/T5FXwaqLd8w7QgnG/c1o7waJZaI31cG4FeBdQlNKGblFWBBlvltu5zZbmdd2VGg7xr3Blg8q8pnI9tT/epxuYswX8FOEglepQD18cXpB4M5kQMlJcYvZoR5MFK6+rE5ocH6H3TA/cKDT/xzzmqygETInUlAp/P36N7PrjK/kmwiICRHGufNp5ra0hMKUjQGZE520+SuNUuy0fkaH7Nir4SP0QtbapS3dbuNmWNqZZL9wlD7bS786vm6mqPDMEFMCR18fkyEJyPpzPfNPmRVbZnZeaal4jFkfmVzJ+VV/yaHbKTXCQFVjCSpYZkroR3wozSr4LoPfgfuQMC/UJhO5gWvZv2THxneA7BSQ8D/HFCPUCdK/JqA8zgFp2NDWeOxStHJUuOrrYP8yTqxv8TKZ5NKG9IV0ZM/fpYNca4Z8bAalxB+u6yNSPpl+JHyxfYRIFcEqfy6NCNbT6/oxhdDp3r6BsPR9X71PjfdcP8CMI4fGgwbQxvBa/a8lscZVJvH2SQq0YgMUy8VJSyPHMMBZRIZg2oiCg01Lmc3w92RVVcqFO9WN/k8IOgtzJkQw8IF4JiHj+SCcyB7cZ2qpV35Rw0zFlIqVCbLzY6Eitfz0Qo1MgauBC+b0LzluEwerFTOJBn0uczrTHsD/w0FPB51jCQ3AyuvHw25GRqaU6ZgkiAhQbfuHpgg/HwBKLtVetgn2V6uELsrnpD00JUaf4TlWDwXiW4HqGTTuNUSarq7TWeFSTl2sFPXtdRChMxdls70Y1MDccZ/T1WkXcUNp/vfZfrUDcnoeOg7bJRYlKzuKQ9nEYvd3g6lFEf8+cwVi0l4swNzf98WFusllFqbENui1EcDe15pujkB8uKxuGMOPhC1PE6lSx2vUYvDNaqOyWg9Mp8gEcOXVNvL4sBWhxkPCZHw+IvjVl2xO93FwxFzV4gR4Yru8rNTNmQc/yh/5mQ7r6KIQeoBZefqtx4lVMYiqzoGnx9E27m5sun0QsnWP9fxTiIe9SiJfDmpSsLUaVR2vv2Gh0uPua3hnXsDcPDdGQQ9trgFCQsiSErkrun2fiGGBmXtSGw16r5K8zehPvl9UESncBmaUiwMC8n3ZEaA4lq3qZz3+9zw1GXOflHL8EJnvziov0gRatjhZYYy9WPzH/b48+bwroQkTHEBXS1gsusaRJ5u/6y4OiXM"
+    },
+    {
+      "expected": null,
+      "name": "format 1",
+      "witness_file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjo3LCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MSwiZm9ybWF0IjoxLCJncm91cF9pZCI6IjViMGM3ZDNlLTlhNDEtNGY2Yi04YzJkLTNlMWE3ZjkwNWI2NCIsIndyaXR0ZW5fYXQiOjE3OTAwMDA5MDB9CtpYcymKYSH6GbcISWpVRDX3wbrHCsxIDfPMvkfP6A=="
+    }
+  ]
+}

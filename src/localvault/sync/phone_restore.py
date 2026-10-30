@@ -26,6 +26,13 @@ into the vault's current view; items the phone deleted move to the trash and are
 counted as deleted.  Licence states restore like sync's: the merge keeps a
 licence only when it verifies on this build, and the caller offers the received
 ones to ``licensing.adopt_synced_license`` (``RestoreReport.licenses``).
+
+Document files (backup format 2): a live document state is restored only with its file. Its file
+comes from the backup (``PhoneBackup.files``) or is already in this vault under the same catalog
+row; otherwise the state is left out of the view and counted in ``files_missing`` (a format-1
+backup, or a file the phone left out over the size limit). The preview writes nothing; ``restore``
+verifies and stores the needed files (``attachment_flow.import_missing``) just before the merge, and
+a refused file (``attachment-refused``) keeps its document out (``attachment-missing``).
 """
 from __future__ import annotations
 
@@ -46,9 +53,11 @@ from .engine import (
     implausible_vv,
     merge,
 )
+from .attachment_sync import AttachmentRef, AttachmentSyncError
 from .group import View
 from .runner import _known_devices, run_merge
-from .vault_bridge import check_remote_state, load_sync_state, local_view
+from .vault_bridge import _catalog_row, _documents, check_remote_state, is_document_state, load_sync_state, local_view
+from ..i18n import t
 
 
 @dataclass(frozen=True)
@@ -61,6 +70,9 @@ class RestorePlan:
     view: View
     skipped: int = 0
     deleted: int = 0
+    #: blob id -> sealed blob, the backup files the view's documents need.
+    files: Any = None
+    files_missing: int = 0
 
 
 @dataclass(frozen=True)
@@ -73,6 +85,8 @@ class RestoreReport:
     skipped: int = 0
     deleted: int = 0
     licenses: tuple[dict[str, Any], ...] = ()
+    files: int = 0
+    files_missing: int = 0
 
 
 # Run issue kinds that skip one record while the rest is applied.
@@ -151,6 +165,41 @@ def _tally(local: dict[str, ItemState],
     return new, set(upserts) - new, _copy_causes(out), deleted
 
 
+def _file_present(session: Any, attachment_id: str) -> bool:
+    """The stored file exists (a catalog row whose file was deleted still needs the backup's copy)."""
+    from ..attachments import AttachmentError, AttachmentStore
+
+    try:
+        path = AttachmentStore(session)._path(attachment_id)
+    except AttachmentError:
+        return False
+    return path.is_file() and not path.is_symlink()
+
+
+def _document_files(session: Any, states: dict[str, ItemState],
+                    files: Any) -> tuple[dict[str, bytes], set[str]]:
+    """(files the live documents need from the backup, ids of documents whose file is nowhere)."""
+    payload = session._require_typed_catalog()
+    needed: dict[str, bytes] = {}
+    missing: set[str] = set()
+    for item_id, state in states.items():
+        if state.deleted or not is_document_state(state):
+            continue
+        try:
+            ref = AttachmentRef.from_value(state.item.get("attachment"))
+        except AttachmentSyncError:
+            continue  # the bridge refuses it and the merge reports it
+        row = _catalog_row(payload, ref.attachment_id)
+        if row is not None and {**row, "mime_type": row.get("mime_type") or "application/octet-stream"} == ref.catalog_record()                 and _file_present(session, ref.attachment_id):
+            continue  # already on this device, the file included
+        blob = (files or {}).get(ref.blob)
+        if blob is None:
+            missing.add(item_id)
+        else:
+            needed[ref.blob] = blob
+    return needed, missing
+
+
 def plan_restore(session: Any, lease: Any, backup: PhoneBackup, *, now: int) -> RestorePlan:
     """What restoring *backup* would do; reads the vault only (apart from sync metadata).
 
@@ -159,7 +208,7 @@ def plan_restore(session: Any, lease: Any, backup: PhoneBackup, *, now: int) -> 
     """
     device_id = desktop_device_id(session)
     if backup.device_id == device_id:
-        raise PhoneRestoreError("This backup was made on this computer, so there is nothing to restore.")
+        raise PhoneRestoreError(t("phoneRestore.thisBackupWasMadeOn"))
     local = dict(local_view(session, lease, device_id=device_id, now=now))
     by_id, rewritten = ({s.item_id: s for s in backup.states}, set())
     if not _feature_allowed(session, "totp"):
@@ -167,10 +216,13 @@ def plan_restore(session: Any, lease: Any, backup: PhoneBackup, *, now: int) -> 
     # Records the bridge would refuse never reach the merge, so they take no free slot; nor do
     # states with an implausible version vector (run_merge would quarantine them anyway).
     known = _known_devices(session, device_id, [View({"device_id": backup.device_id}, ())])
-    unreadable = {i for i, s in by_id.items()
-                  if check_remote_state(s) is not None
-                  or implausible_vv(s.vv, local[i].vv if i in local else None, known) is not None}
+    with _documents(session):  # documents are checked as apply checks them (with their reference)
+        unreadable = {i for i, s in by_id.items()
+                      if check_remote_state(s) is not None
+                      or implausible_vv(s.vv, local[i].vv if i in local else None, known) is not None}
     by_id = {i: s for i, s in by_id.items() if i not in unreadable}
+    needed, no_file = _document_files(session, by_id, getattr(backup, "files", None))
+    by_id = {i: s for i, s in by_id.items() if i not in no_file}
 
     held: set[str] = set()
     slots = free_item_slots(session)
@@ -198,6 +250,10 @@ def plan_restore(session: Any, lease: Any, backup: PhoneBackup, *, now: int) -> 
         view=View({"device_id": backup.device_id}, final),
         skipped=len(unreadable),
         deleted=len(deleted),
+        files={b: d for b, d in needed.items() if any(
+            not s.deleted and is_document_state(s) and (s.item.get("attachment") or {}).get("blob") == b
+            for s in final)},
+        files_missing=len(no_file),
     )
 
 
@@ -211,7 +267,11 @@ def restore(session: Any, lease: Any, plan: RestorePlan, *, now: int) -> Restore
 
     ``skipped`` is the plan's unreadable records plus any the merge quarantined.
     """
+    from .attachment_flow import import_missing
+
     before = _live_ids(session)
+    files = plan.files or {}
+    file_issues = import_missing(session, lease, plan.view.states, lambda ref: files.get(ref.blob)) if files else []
     report = run_merge(session, lease, device_id=desktop_device_id(session), views=[plan.view], now=now)
     new = len(_live_ids(session) - before)
     updated = max(0, report.applied - new)
@@ -221,10 +281,12 @@ def restore(session: Any, lease: Any, plan: RestorePlan, *, now: int) -> Restore
         held_back=plan.held_back,
         # An upper bound: a stale plan that was only partly applied cannot say which items were rewritten.
         totp_as_field=min(plan.totp_as_field, new + updated),
-        issues=tuple(issue.kind for issue in report.issues),
+        issues=tuple(issue.kind for issue in (*file_issues, *report.issues)),
         skipped=plan.skipped + sum(1 for issue in report.issues if issue.kind in QUARANTINE_KINDS),
         deleted=report.deleted,
         licenses=report.licenses,
+        files=len(files) - sum(1 for issue in file_issues if issue.kind == "attachment-refused"),
+        files_missing=plan.files_missing,
     )
 
 

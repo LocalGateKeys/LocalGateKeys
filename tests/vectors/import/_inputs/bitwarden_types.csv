@@ -1,0 +1,6 @@
+folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp
+F,true,note,A note,body,"k: v
+no colon
+: empty name",0,,,,
+,0,card,A card,,,0,,,,
+,,,No type,,,0,"https://a.example.com, ,https://b.example.com",u,p,otpauth://totp/x?secret=AB

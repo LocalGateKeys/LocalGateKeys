@@ -5,18 +5,6 @@ import LocalAuthentication
 import StoreKit
 import AppShared
 
-/// The `pro_unlimited` entitlement as StoreKit holds it on the device. `Transaction.currentEntitlements` is
-/// local (works offline, in an extension) and never shows an Apple Account sign-in: no products are loaded
-/// and `AppStore.sync()` is never called here.
-struct StoreKitEntitlement: ProEntitlementChecking {
-    func isEntitled() async -> Bool {
-        for await result in Transaction.currentEntitlements {
-            if case .verified(let t) = result, t.productID == "pro_unlimited", t.revocationDate == nil { return true }
-        }
-        return false
-    }
-}
-
 /// Face ID / Touch ID with the device passcode as fallback; the authenticated context opens the
 /// Keychain local key without a second prompt.
 /// The `LAContext` is created, evaluated and handed to the vault on the main actor and never shared
@@ -25,6 +13,21 @@ struct StoreKitEntitlement: ProEntitlementChecking {
 @MainActor
 struct SystemAutoFillAuth: AutoFillAuthenticating {
     func authenticate(reason: String) async throws -> any KeychainVault {
+        // Task 7: with the app password on there is no passcode route. AutoFill uses the Face ID shortcut only (no
+        // password field here); without it the person unlocks the app with the password first.
+        if let appPassword = AppPasswordStore.shared(), appPassword.isOn {
+            guard appPassword.biometricOn else { throw AppPasswordError.openAppFirst }
+            let bio = LAContext()
+            bio.touchIDAuthenticationAllowableReuseDuration = 0
+            bio.localizedFallbackTitle = ""   // no "Enter Passcode"
+            try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+                bio.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { ok, error in
+                    if ok { cont.resume() } else { cont.resume(throwing: error ?? LAError(.authenticationFailed)) }
+                }
+            }
+            let key = try appPassword.biometric.load(context: bio)
+            return AppPasswordKeyVault(localKey: key, base: SystemKeychainVault(context: bio))
+        }
         let ctx = LAContext()
         ctx.touchIDAuthenticationAllowableReuseDuration = 0
         #if DEBUG
@@ -69,6 +72,8 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
     private var logins: [AutoFillLogin] = []
     /// Rows of a passkey list (a passkey request shows only passkeys).
     private var passkeyRows: [PasskeyCandidate] = []
+    /// Card and identity fields of a text-insertion request (iOS 18+); nothing selected until a tap.
+    private var textRows: [TextInsertionField] = []
     /// The registration confirmation, while shown.
     private var createSheet: UIViewController?
     private let table = UITableView(frame: .zero, style: .insetGrouped)
@@ -105,7 +110,7 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
         message.numberOfLines = 0; message.textAlignment = .center; message.textColor = Palette.uiColor(.secondaryText)
         message.translatesAutoresizingMaskIntoConstraints = false
         let cancel = UIButton(type: .system)
-        cancel.setTitle("Cancel", for: .normal)
+        cancel.setTitle(String(localized: "Cancel"), for: .normal)
         cancel.addAction(UIAction { [weak self] _ in
             AutoFillTrace.log("vc.cancelButton tapped")
             self?.cancel(.userCanceled)
@@ -215,6 +220,17 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
         }
     }
 
+    /// "AutoFill > Passwords" on a text field (iOS 18+, `ProvidesTextToInsert`): Face ID, then the card and
+    /// identity fields to pick from. iOS 17 never calls it (the app's copy buttons remain).
+    @available(iOS 18.0, *)
+    override nonisolated func prepareInterfaceForUserChoosingTextToInsert() {
+        AutoFillTrace.log("entry prepareInterfaceForUserChoosingTextToInsert instance=\(instance: self)")
+        MainThreadEntry.run { [weak self] in
+            guard let driver = self?.driver else { return }
+            driver.whenAppeared("textToInsert") { driver.beginTextInsertion() }
+        }
+    }
+
     /// The request's class, type, record id (last 6) and service host: never the user name.
     nonisolated static func describe(_ r: any ASCredentialRequest) -> TraceMessage {
         let identity = r.credentialIdentity
@@ -303,7 +319,7 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
         AutoFillTrace.log("vc.showList count=\(list.count)")
         passkeyRows = []
         logins = list
-        message.text = list.isEmpty ? "No saved login matches this site." : nil
+        message.text = list.isEmpty ? String(localized: "No saved login matches this site.") : nil
         table.reloadData()
     }
 
@@ -316,7 +332,7 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
     func showPasskeys(_ rows: [PasskeyCandidate]) {
         logins = []
         passkeyRows = rows
-        message.text = rows.isEmpty ? "No saved passkey for this site." : nil
+        message.text = rows.isEmpty ? String(localized: "No saved passkey for this site.") : nil
         table.reloadData()
     }
 
@@ -337,21 +353,47 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
         extensionContext.completeRegistrationRequest(using: credential)
     }
 
+    func showTextFields(_ fields: [TextInsertionField]) {
+        AutoFillTrace.log("vc.showTextFields count=\(fields.count)")
+        logins = []; passkeyRows = []
+        textRows = fields
+        message.text = fields.isEmpty ? String(localized: "No card or identity saved yet.") : nil
+        table.reloadData()   // no row is selected: the user picks one
+    }
+
+    func completeText(_ text: String) {
+        AutoFillTrace.log("vc.completeRequest(withTextToInsert:) context=\(instance: extensionContext)")
+        textRows = []; table.reloadData()
+        if #available(iOS 18.0, *) {
+            extensionContext.completeRequest(withTextToInsert: text, completionHandler: nil)
+        } else {
+            extensionContext.cancelRequest(withError: NSError(domain: ASExtensionErrorDomain, code: ASExtensionError.failed.rawValue))
+        }
+    }
+
     func cancelRequest(_ code: ASExtensionError.Code) {
         AutoFillTrace.log("vc.cancelRequest code=\(code.rawValue) context=\(instance: extensionContext) inWindow=\(viewIfLoaded?.window != nil)")
         dismissCreateSheet()
-        logins = []; passkeyRows = []; table.reloadData()
+        logins = []; passkeyRows = []; textRows = []; table.reloadData()
         extensionContext.cancelRequest(withError: NSError(domain: ASExtensionErrorDomain, code: code.rawValue))
     }
 
     // MARK: list
 
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { logins.count + passkeyRows.count }
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        logins.count + passkeyRows.count + textRows.count
+    }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
         var c = cell.defaultContentConfiguration()
-        if logins.indices.contains(indexPath.row) {
+        if !textRows.isEmpty, textRows.indices.contains(indexPath.row) {
+            // Masked card number and security code; the item's title says which card or identity.
+            let f = textRows[indexPath.row]
+            c.text = f.label + " · " + f.display; c.secondaryText = f.itemTitle
+            c.image = UIImage(systemName: f.isCard ? "creditcard" : "person.text.rectangle")
+            cell.accessibilityLabel = "\(f.label), \(f.itemTitle)"
+        } else if logins.indices.contains(indexPath.row) {
             let l = logins[indexPath.row]
             c.text = l.title; c.secondaryText = l.username
         } else {
@@ -369,6 +411,10 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         AutoFillTrace.log("vc.didSelectRow row=\(indexPath.row)")
+        if !textRows.isEmpty {
+            guard textRows.indices.contains(indexPath.row) else { return }
+            return driver.selectText(textRows[indexPath.row])
+        }
         if logins.indices.contains(indexPath.row) { return driver.select(logins[indexPath.row]) }
         let i = indexPath.row - logins.count
         guard passkeyRows.indices.contains(i) else { return }

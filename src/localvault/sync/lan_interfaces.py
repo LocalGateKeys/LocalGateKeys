@@ -31,6 +31,7 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 
 from .lan_address import is_lan_address
+from ..i18n import t
 
 #: Adapter names that are virtual, VPN or otherwise never the home network.
 _VIRTUAL = re.compile(
@@ -65,7 +66,7 @@ class Candidate:
 
     @property
     def label(self) -> str:
-        kind = {"wifi": "Wi-Fi", "ethernet": "Ethernet"}.get(self.kind, "Network")
+        kind = {"wifi": t("nav.type.wifi"), "ethernet": t("network.ethernet")}.get(self.kind, t("network.network"))
         name = self.interface if self.interface.lower() not in ("wi-fi", "ethernet") else ""
         return f"{self.address} ({kind}{' · ' + name if name else ''})"
 
@@ -172,6 +173,24 @@ def current_addresses(snapshot: NetworkSnapshot) -> set[str]:
         owned.add(snapshot.primary)
     return owned
 
+
+
+def followed_endpoint(stored: str, snapshot: NetworkSnapshot) -> str | None:
+    """The ``host:port`` to listen on after this PC's address changed, or None to keep *stored*.
+
+    Only when *stored*'s host is on no adapter any more and exactly one obvious candidate exists
+    (the user is asked otherwise); the port is kept, so the firewall rule still applies.
+    """
+    host, sep, port = str(stored or "").rpartition(":")
+    host = host.strip("[]")
+    if not sep or not host or not port.isdigit():
+        return None
+    if not snapshot.interfaces and not snapshot.primary:
+        return None  # nothing could be read: never move on a failed probe
+    if any(same_address(a, host) for a in current_addresses(snapshot)):
+        return None
+    pick = obvious_candidate(lan_candidates(snapshot))
+    return None if pick is None else f"{pick.address}:{int(port)}"
 
 # --------------------------------------------------------------------------------------------- system probes
 def parse_route_print(text: str) -> frozenset[str]:

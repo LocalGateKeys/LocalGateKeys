@@ -15,6 +15,7 @@ from localvault.session_guard import StaleSession
 from localvault.sync import folder_transport as ft
 from localvault.sync import keyring as kr
 from localvault.sync import runner
+from localvault.sync import vault_bridge as vb
 from localvault.sync.engine import ItemState
 from localvault.sync.group import GroupKey, View, decode_view, encode_view
 from localvault.sync.pairing import DeviceIdentity
@@ -99,8 +100,12 @@ def root(tmp_path: Path) -> Path:
     return path
 
 
-def _group(tmp_path: Path, root: Path, n: int = 3) -> list[Dev]:
+def _group(tmp_path: Path, root: Path, n: int = 3, older: str = "") -> list[Dev]:
+    """*older*: names of devices that run an app from before 2026-10-29 (no rollback witnesses)."""
     devs = [_device(tmp_path, name, root) for name in "abc"[:n]]
+    for d in devs:
+        if d.name in older:
+            d.session = _OlderApp(d.session)
     a = devs[0]
     ft.create_folder_group(root, a.session, a.lease, PW, "PC A", install_id=a.install, now=NOW,
                            _kdf_override=CHEAP)
@@ -124,6 +129,21 @@ def _web(dev: Dev, label: str) -> str:
 
 
 # --- happy paths ---------------------------------------------------------------------------
+
+
+def test_peer_synced_at_is_set_when_a_newer_peer_view_is_accepted(tmp_path: Path, root: Path) -> None:
+    a, b, _c = _group(tmp_path, root)
+    _round([a, b], NOW + 10)
+    stamp_a = a.state.peer_synced_at.get(b.state.device_id)
+    assert stamp_a is not None
+    _round([a], NOW + 20)  # no newer view of B: the time stays
+    assert a.state.peer_synced_at[b.state.device_id] == stamp_a
+    _web(b, "fresh")
+    _round([b], NOW + 30)
+    _round([a], NOW + 40)
+    assert a.state.peer_synced_at[b.state.device_id] == NOW + 40
+    assert a.state.peer_synced_at.keys() <= set(a.state.members) - {a.state.device_id}
+    assert vb.SyncGroupState.from_dict(a.state.to_dict()) == a.state
 
 
 def test_layout_and_create_join(tmp_path: Path, root: Path) -> None:
@@ -1361,3 +1381,286 @@ def test_add_retry_after_a_failed_cleanup_attaches_itself(tmp_path: Path, root: 
     stuck = _ring_path(root).read_bytes()
     _add(a, root)  # the folder holds this group with this device: attach succeeds unchanged
     assert _ring_path(root).read_bytes() == stuck and a.state.folder_path == str(root)
+
+
+# --- rollback witnesses (Part B, 2026-10-29) ------------------------------------------------------
+
+
+def _header(raw: bytes) -> dict:
+    import json
+    return json.loads(raw[len(b"LGKSYNC1\n"):raw.index(b"\n", len(b"LGKSYNC1\n"))])
+
+
+def _witness_path(dev: Dev, suffix: str = ft.DEVICE_SUFFIX) -> Path:
+    return dev.root / ft.SYNC_DIR_NAME / ft.WITNESS_DIR_NAME / f"{dev.device_id}{suffix}"
+
+
+def _snapshot(dev: Dev) -> bytes:
+    return Path(dev.session.path).read_bytes()
+
+
+def _restore(dev: Dev, snap: bytes) -> None:
+    """Put an old copy of the vault back and delete its anchor (the attack Part B detects)."""
+    from localvault.vault import unlock_vault
+    path = Path(dev.session.path)
+    dev.session.lock()
+    path.write_bytes(snap)
+    path.with_name(path.stem + ".generation.json").unlink(missing_ok=True)
+    dev.session = unlock_vault(path, MASTER)
+
+
+class _OlderApp:
+    """A session as an app from before 2026-10-29 sees it: no vault generation to publish."""
+
+    def __init__(self, session: object) -> None:
+        object.__setattr__(self, "_inner", session)
+
+    def __getattr__(self, name: str):
+        if name == "generation":
+            raise AttributeError(name)
+        return getattr(self._inner, name)
+
+    def __setattr__(self, name: str, value) -> None:
+        setattr(self._inner, name, value)
+
+
+_V1_FIELDS = {"format", "group_id", "device_id", "epoch", "counter", "written_at"}
+_ROLLBACK = {"vault-rollback", "peer-vault-rollback"}
+
+
+def _old_reader_accepts(raw: bytes) -> bool:
+    """The header rule of every build before 2026-10-29: exactly the format-1 key set."""
+    header = _header(raw)
+    return set(header) == _V1_FIELDS and header["format"] == 1
+
+
+def test_views_carry_witness_files_then_switch_to_format2(tmp_path: Path, root: Path) -> None:
+    a, b, c = _group(tmp_path, root, 3, older="c")
+    for d in (a, b):  # c lacks support: format 1 views plus a signed witness file
+        raw = d.own_file.read_bytes()
+        assert _old_reader_accepts(raw)
+        side = decode_view(d.gk(), _witness_path(d).read_bytes(), expected_device_id=d.device_id)
+        assert side.format == 2 and side.states == () and side.header["counter"] == _header(raw)["counter"]
+    assert set(a.state.witness_peers) == {b.device_id} and set(b.state.witness_peers) == {a.device_id}
+    a2, b2 = _group(tmp_path / "two", _mkdir(tmp_path / "two" / "OneDrive"), 2)
+    _round([a2, b2])
+    for d, other in ((a2, b2), (b2, a2)):  # every member supports it: format 2, the generation inline
+        view = decode_view(d.gk(), d.own_file.read_bytes(), expected_device_id=d.device_id)
+        assert view.format == 2 and 0 < view.vault_generation <= d.session.generation
+        assert set(view.witness) == {other.device_id}
+    assert a2.state.peer_generations[b2.device_id] > 0 and a2.state.rollback_suspected == 0
+
+
+def _mkdir(path: Path) -> Path:
+    path.mkdir(parents=True)
+    return path
+
+
+def test_no_false_positive_on_normal_edits_and_no_rewrite_churn(tmp_path: Path, root: Path) -> None:
+    devs = _group(tmp_path, root, 3)
+    for i in range(6):
+        entry = _web(devs[i % 3], f"site{i}")
+        if i % 2:
+            devs[i % 3].session.update_entry_fields(entry, password=f"pw-{i}-xxxxxxxx")
+        for report in _round(devs) + _round(devs):
+            assert not _ROLLBACK & set(kinds(report)), report.issues
+    _round(devs)
+    for d in devs:  # settled: a run without changes writes nothing even though generations moved
+        before = d.own_file.read_bytes()
+        report = d.sync()
+        assert not report.wrote and d.own_file.read_bytes() == before
+        assert not _ROLLBACK & set(kinds(report))
+
+
+def test_restored_vault_is_flagged_by_its_peer_witness(tmp_path: Path, root: Path) -> None:
+    a, b = _group(tmp_path, root, 2)
+    _round([a, b])
+    old = _snapshot(a)
+    for i in range(5):
+        _web(a, f"after{i}")
+    _round([a, b])
+    _round([a, b])
+    assert b.state.peer_generations[a.device_id] > 0
+    _restore(a, old)
+    assert "vault-rollback" in kinds(a.sync())
+    report_b = b.sync()
+    assert ("peer-vault-rollback", a.device_id) in [(i.kind, i.detail) for i in report_b.issues]
+    a.sync()  # sync brings the newer items back to the restored device
+    assert {f"after{i}" for i in range(5)} <= set(a.labels())
+    for _ in range(3):  # the warning stays on later runs, not only the first after the restore
+        assert "vault-rollback" in kinds(a.sync())
+    assert a.state.rollback_suspected > a.session.generation - 10
+
+
+def test_restored_vault_is_flagged_through_witness_files(tmp_path: Path, root: Path) -> None:
+    """While an older member keeps the group on format 1, detection still works between new devices."""
+    a, b, c = _group(tmp_path, root, 3, older="c")
+    _round([a, b, c])
+    old = _snapshot(a)
+    for i in range(3):
+        _web(a, f"after{i}")
+    _round([a, b, c])
+    _round([a, b, c])
+    _restore(a, old)
+    assert "vault-rollback" in kinds(a.sync())
+    assert "peer-vault-rollback" in kinds(b.sync())
+    assert "corrupt" not in kinds(c.sync())
+    assert _old_reader_accepts(a.own_file.read_bytes())
+
+
+def test_older_member_keeps_the_group_on_format1(tmp_path: Path, root: Path) -> None:
+    a, b, c = _group(tmp_path, root, 3, older="c")
+    entry = _web(c, "from-old")
+    for _ in range(4):
+        reports = _round([a, b, c])
+        assert all("corrupt" not in kinds(r) for r in reports)
+        for d in (a, b, c):  # every view stays readable by the older app
+            assert _old_reader_accepts(d.own_file.read_bytes())
+    assert not _witness_path(c).exists()  # the older app writes no witness file
+    assert c.device_id not in a.state.witness_peers and b.device_id in a.state.witness_peers
+    assert a.entry(entry)["label"] == "from-old"
+    _web(a, "to-old")
+    _round([a, b, c])
+    assert "to-old" in c.labels()
+
+
+def test_member_without_support_moves_the_group_back_to_format1(tmp_path: Path, root: Path) -> None:
+    a, b = _group(tmp_path, root, 2)
+    _round([a, b])
+    _round([a, b])
+    assert decode_view(a.gk(), a.own_file.read_bytes()).format == 2
+    c = _device(tmp_path, "c", root)
+    c.session = _OlderApp(c.session)
+    ft.join_folder_group(root, c.session, c.lease, PW, "PC C", install_id=c.install, now=NOW, _kdf_override=CHEAP)
+    for d in (a, b):
+        d.sync()
+        ft.acknowledge_members(d.session, d.lease, [c.device_id], install_id=d.install)
+    _round([a, b])
+    for d in (a, b):
+        assert _old_reader_accepts(d.own_file.read_bytes())
+        assert _witness_path(d).exists()
+
+
+def test_missing_or_stale_witness_file_is_silent(tmp_path: Path, root: Path) -> None:
+    a, b, c = _group(tmp_path, root, 3, older="c")  # c keeps a and b on witness files
+    _round([a, b, c])
+    remembered = a.state.peer_generations[b.device_id]
+    _web(b, "x")
+    side = _witness_path(b).read_bytes()
+    sig = _witness_path(b, ft.SIGNATURE_SUFFIX).read_bytes()
+    b.sync()
+    _witness_path(b).write_bytes(side)  # the cloud client has not uploaded the new one yet
+    _witness_path(b, ft.SIGNATURE_SUFFIX).write_bytes(sig)
+    report = a.sync()
+    assert not _ROLLBACK & set(kinds(report))
+    assert a.state.peer_generations[b.device_id] == remembered  # a witness of an older write is not used
+    _witness_path(b).unlink()
+    assert not _ROLLBACK & set(kinds(a.sync()))
+
+
+def test_witness_file_signed_by_another_key_is_ignored(tmp_path: Path, root: Path) -> None:
+    from localvault.sync.group import sign_view
+    a, b, c = _group(tmp_path, root, 3, older="c")
+    _round([a, b, c])
+    remembered = a.state.peer_generations[b.device_id]
+    counter = _header(b.own_file.read_bytes())["counter"]
+    # c holds the group key and forges a low generation for b, signed with c's own key.
+    forged = encode_view(b.gk(), b.device_id, counter, (), NOW, vault_generation=1,
+                         witness={a.device_id: 10**9})
+    _witness_path(b).write_bytes(forged)
+    _witness_path(b, ft.SIGNATURE_SUFFIX).write_bytes(sign_view(forged, c.state.identity().signing_key))
+    report = a.sync()
+    assert not _ROLLBACK & set(kinds(report))
+    assert a.state.peer_generations[b.device_id] == remembered and a.state.rollback_suspected == 0
+
+
+def test_witness_state_round_trips_and_old_states_load(tmp_path: Path, root: Path) -> None:
+    a, b = _group(tmp_path, root, 2)
+    st = dataclasses.replace(a.state, peer_generations={b.device_id: 7}, rollback_suspected=9,
+                             witness_peers=(b.device_id,))
+    raw = st.to_dict()
+    assert raw["peer_generations"] == {b.device_id: 7} and raw["rollback_suspected"] == 9
+    assert SyncGroupState.from_dict(raw) == st
+    plain = dataclasses.replace(st, peer_generations={}, rollback_suspected=0, witness_peers=()).to_dict()
+    assert not {"peer_generations", "rollback_suspected", "witness_peers"} & set(plain)
+    for bad in ({"peer_generations": {b.device_id: -1}}, {"peer_generations": {"bad id": 1}},
+                {"rollback_suspected": True}, {"rollback_suspected": 2**53}, {"witness_peers": ["x", "x"]},
+                {"peer_generations": {b.device_id: 1.0}}, {"witness_peers": "x"}):
+        with pytest.raises(BridgeError):
+            SyncGroupState.from_dict({**raw, **bad})
+
+
+def test_rotation_removes_the_witness_file_of_a_removed_member(tmp_path: Path, root: Path) -> None:
+    a, b, c = _group(tmp_path, root, 3, older="a")
+    assert _witness_path(c).exists()
+    ft.rotate_folder_group(root, b.session, b.lease, PW2, remove=[c.device_id], install_id=b.install,
+                           now=NOW, _kdf_override=CHEAP)
+    assert not _witness_path(c).exists() and not _witness_path(c, ft.SIGNATURE_SUFFIX).exists()
+
+
+# --- witness files that go missing (review fix 2026-10-29) ----------------------------------------
+
+
+def _missing(report) -> list[str]:
+    return [i.detail for i in report.issues if i.kind == "witness-missing"]
+
+
+def test_deleted_witness_file_is_reported_after_one_grace_run(tmp_path: Path, root: Path) -> None:
+    a, b, c = _group(tmp_path, root, 3, older="c")  # c keeps a and b on witness files
+    _round([a, b, c])
+    assert b.device_id in a.state.witness_counters
+    _web(b, "x")
+    b.sync()
+    _witness_path(b).unlink()
+    _witness_path(b, ft.SIGNATURE_SUFFIX).unlink()
+    assert _missing(a.sync()) == []  # grace: the cloud client may still be uploading it
+    assert _missing(a.sync()) == [b.device_id]
+    _witness_path(b).write_bytes(b"garbage")  # a damaged file is no better than none
+    assert _missing(a.sync()) == [b.device_id]
+    b.sync()  # b writes its witness file again
+    assert _missing(a.sync()) == []
+
+
+def test_witness_upload_lag_of_one_run_is_silent(tmp_path: Path, root: Path) -> None:
+    a, b, c = _group(tmp_path, root, 3, older="c")
+    _round([a, b, c])
+    side = _witness_path(b).read_bytes()
+    sig = _witness_path(b, ft.SIGNATURE_SUFFIX).read_bytes()
+    _web(b, "x")
+    b.sync()
+    new_side = _witness_path(b).read_bytes()
+    new_sig = _witness_path(b, ft.SIGNATURE_SUFFIX).read_bytes()
+    _witness_path(b).write_bytes(side)  # the old witness file is still in the folder
+    _witness_path(b, ft.SIGNATURE_SUFFIX).write_bytes(sig)
+    assert _missing(a.sync()) == []
+    _witness_path(b).write_bytes(new_side)  # the upload arrives
+    _witness_path(b, ft.SIGNATURE_SUFFIX).write_bytes(new_sig)
+    assert _missing(a.sync()) == [] and _missing(a.sync()) == []
+
+
+def test_missing_own_witness_file_rewrites_only_the_witness(tmp_path: Path, root: Path) -> None:
+    a, b, c = _group(tmp_path, root, 3, older="c")
+    _round([a, b, c])
+    view = b.own_file.read_bytes()
+    counter = b.state.own_counter
+    for _ in range(5):
+        _witness_path(b).unlink()
+        b.sync()
+        assert _witness_path(b).exists() and _witness_path(b, ft.SIGNATURE_SUFFIX).exists()
+    before = _witness_path(b).read_bytes()
+    for _ in range(3):
+        b.sync()  # nothing missing: nothing written
+    assert _witness_path(b).read_bytes() == before
+    assert b.own_file.read_bytes() == view and b.state.own_counter == counter
+    assert _missing(a.sync()) == [] and _missing(a.sync()) == []
+
+
+def test_witness_counters_round_trip_and_are_validated(tmp_path: Path, root: Path) -> None:
+    a, b = _group(tmp_path, root, 2)
+    st = dataclasses.replace(a.state, witness_counters={b.device_id: 4})
+    raw = st.to_dict()
+    assert raw["witness_counters"] == {b.device_id: 4} and SyncGroupState.from_dict(raw) == st
+    assert "witness_counters" not in dataclasses.replace(st, witness_counters={}).to_dict()
+    for bad in ({b.device_id: -1}, {"bad id": 1}, {b.device_id: True}, [b.device_id]):
+        with pytest.raises(BridgeError):
+            SyncGroupState.from_dict({**raw, "witness_counters": bad})

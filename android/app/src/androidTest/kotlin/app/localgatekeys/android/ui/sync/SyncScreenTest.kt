@@ -1,5 +1,6 @@
 package app.localgatekeys.android.ui.sync
 
+import app.localgatekeys.android.i18n.appTxt
 import android.content.Intent
 import android.provider.Settings
 import androidx.compose.runtime.CompositionLocalProvider
@@ -97,7 +98,7 @@ class SyncScreenTest {
             slots = slots, folders = FolderOpening.UNAVAILABLE, lan = noLan,
             random = SystemRandomSource(), clock = SystemClock(), licenseKeys = emptyMap(),
         )
-        return SyncCoordinator(store, deps, scope)
+        return SyncCoordinator(store, deps, scope, appTxt())
     }
 
     private fun show(c: SyncCoordinator, permission: CameraPermission) {
@@ -109,11 +110,11 @@ class SyncScreenTest {
     @Test fun not_joined_offers_scan_and_paste() {
         val c = coordinator(FakeStore(StoreSnapshot()))
         show(c, FakePermission(granted = false))
-        rule.onNodeWithText(SyncScreenText.WIFI_NOT_JOINED).assertIsDisplayed()
+        rule.onNodeWithText(appTxt().s(SyncScreenText.WIFI_NOT_JOINED)).assertIsDisplayed()
         rule.onNodeWithText("Scan QR code").assertIsDisplayed()
         rule.onNodeWithText("Paste code text").assertIsDisplayed()
-        rule.onNodeWithTag("sync-list").performScrollToNode(hasText(SyncScreenText.FOLDER_NOT_JOINED))
-        rule.onNodeWithText(SyncScreenText.FOLDER_NOT_JOINED).assertIsDisplayed()
+        rule.onNodeWithTag("sync-list").performScrollToNode(hasText(appTxt().s(SyncScreenText.FOLDER_NOT_JOINED)))
+        rule.onNodeWithText(appTxt().s(SyncScreenText.FOLDER_NOT_JOINED)).assertIsDisplayed()
         rule.onNodeWithText("Leave sync…").assertDoesNotExist()
     }
 
@@ -127,7 +128,7 @@ class SyncScreenTest {
         rule.waitForIdle()
         assertEquals(1, permission.requests.get())
         rule.onNodeWithTag("camera-denied").assertIsDisplayed()
-        rule.onNodeWithText(QrScanner.SYNC_DENIED_TEXT).assertIsDisplayed()
+        rule.onNodeWithText(appTxt().s(QrScanner.SYNC_DENIED_TEXT)).assertIsDisplayed()
         rule.onNodeWithText("Open Settings").performClick()
         assertEquals(1, permission.settingsOpened.get())
         // Cancel closes the scanner; nothing was joined.
@@ -150,7 +151,7 @@ class SyncScreenTest {
         rule.onNodeWithText("Scan QR code").performClick()
         rule.waitForIdle()
         rule.onNodeWithTag("qr-scanner").assertDoesNotExist()
-        rule.onNodeWithText(SyncScreenText.CAMERA_UNAVAILABLE).assertIsDisplayed()
+        rule.onNodeWithText(appTxt().s(SyncScreenText.CAMERA_UNAVAILABLE)).assertIsDisplayed()
     }
 
     @Test fun granted_camera_shows_the_preview_until_cancel() {
@@ -169,12 +170,12 @@ class SyncScreenTest {
         val c = coordinator(FakeStore(StoreSnapshot()))
         show(c, FakePermission(granted = false))
         rule.onNodeWithText("Paste code text").performClick()
-        rule.onNodeWithText(SyncScreenText.PASTE_FOOTER).assertIsDisplayed()
+        rule.onNodeWithText(appTxt().s(SyncScreenText.PASTE_FOOTER)).assertIsDisplayed()
         rule.onNodeWithTag("paste-field").performTextInput("not a code")
         rule.onNodeWithText("Join").performClick()
         rule.onNodeWithTag("paste-code").assertDoesNotExist()
         rule.waitUntil(5_000) { c.actionError.value != null }
-        rule.onNodeWithText(SyncWording.errorText("bad-offer")).assertIsDisplayed()
+        rule.onNodeWithText(SyncWording(appTxt()).errorText("bad-offer")).assertIsDisplayed()
     }
 
     @Test fun leave_takes_two_confirmations_and_keeps_the_items() {
@@ -184,15 +185,15 @@ class SyncScreenTest {
         val c = coordinator(store)
         show(c, FakePermission(granted = false))
         rule.waitUntil(5_000) { c.membership.value.joined }
-        rule.onNodeWithText(SyncScreenText.WIFI_FOLDER_ONLY).assertIsDisplayed()
+        rule.onNodeWithText(appTxt().s(SyncScreenText.WIFI_FOLDER_ONLY)).assertIsDisplayed()
         rule.onNodeWithTag("sync-list").performScrollToNode(hasText("Leave sync…"))
         rule.onNodeWithText("Leave sync…").performClick()
-        rule.onNodeWithText(SyncWording.onPhone(SyncWording.LEAVE_WIFI_TEXT)).assertIsDisplayed()
+        rule.onNodeWithText(appTxt().s(SyncWording.LEAVE_WIFI_TEXT)).assertIsDisplayed()
         rule.onNodeWithText("Continue").performClick()
-        rule.onNodeWithText(SyncWording.onPhone(SyncWording.LEAVE_TEXT_2)).assertIsDisplayed()
+        rule.onNodeWithText(appTxt().s(SyncWording.LEAVE_TEXT_2)).assertIsDisplayed()
         rule.onNode(hasText("Leave sync") and hasClickAction()).performClick()
         rule.waitUntil(5_000) { !c.membership.value.joined }
-        rule.onNodeWithText(SyncWording.onPhone(SyncWording.LEFT_TEXT)).assertIsDisplayed()
+        rule.onNodeWithText(SyncWording(appTxt()).leftText).assertIsDisplayed()
         assertEquals(null, store.snapshot.sync)
     }
 
@@ -203,11 +204,11 @@ class SyncScreenTest {
         val c = coordinator(store)
         show(c, FakePermission(granted = false))
         rule.waitUntil(5_000) { c.membership.value.joined }
-        rule.onNodeWithTag("sync-list").performScrollToNode(hasText(SyncScreenText.RESET_BUTTON))
-        rule.onNodeWithText(SyncScreenText.RESET_BUTTON).performClick()
-        rule.onNodeWithText(SyncWording.onPhone(SyncWording.RESET_TEXT_1)).assertIsDisplayed()
+        rule.onNodeWithTag("sync-list").performScrollToNode(hasText(appTxt().s(SyncScreenText.RESET_BUTTON)))
+        rule.onNodeWithText(appTxt().s(SyncScreenText.RESET_BUTTON)).performClick()
+        rule.onNodeWithText(appTxt().s(SyncWording.RESET_TEXT_1)).assertIsDisplayed()
         rule.onNodeWithText("Continue").performClick()
-        rule.onNodeWithText(SyncWording.onPhone(SyncWording.RESET_TEXT_2)).assertIsDisplayed()
+        rule.onNodeWithText(appTxt().s(SyncWording.RESET_TEXT_2)).assertIsDisplayed()
         rule.onNodeWithText("Cancel").performClick()
         rule.waitForIdle()
         assertNotNull(store.snapshot.sync)

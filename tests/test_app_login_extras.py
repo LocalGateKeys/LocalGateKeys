@@ -106,6 +106,46 @@ def test_history_copy_checks_the_row(env):
     assert controller.clipboard.value == "pw-first-1234567"
 
 
+def test_history_restore_round_trip(env):
+    extras, controller, port, _editor, ref = env
+    port.passwords = [MASTER, MASTER, MASTER]
+    row = extras.history(ref)["rows"][0]
+    assert "restored" in extras.history_restore(ref, row["index"], row["changed_at"])["message"]
+    session = controller.session
+    entry = next(e for e in session._require_payload()["entries"] if e.get("id") == ref["id"])
+    assert entry["password"] == "pw-first-1234567"
+    assert session.password_history(ref["id"])[0]["password"] == "pw-second-1234567"  # the replaced one is kept
+    with pytest.raises(ApiError):
+        extras.history_restore(ref, 9, 0)
+
+
+def test_history_writes_five_reads_ten_and_drops_rows_older_than_a_year():
+    import time
+
+    from localvault import vault
+
+    now = int(time.time())
+    rows = [{"password": f"old-{i}", "changed_at": now - i} for i in range(9)]
+    pushed = vault.push_password_history(rows, "current", now)
+    assert len(pushed) == vault.PASSWORD_HISTORY_WRITE_LIMIT == 5 and pushed[0]["password"] == "current"
+    stale = [{"password": "ancient", "changed_at": now - vault.PASSWORD_HISTORY_MAX_AGE - 10}]
+    assert [r["password"] for r in vault.push_password_history(stale, "current", now)] == ["current"]
+    assert vault.PASSWORD_HISTORY_READ_LIMIT == 10
+
+
+def test_history_reader_accepts_ten_rows(env):
+    import time
+
+    _extras, controller, _port, _editor, ref = env
+    session = controller.session
+    now = int(time.time())
+    entry = next(e for e in session._require_payload()["entries"] if e.get("id") == ref["id"])
+    entry["password_history"] = ([{"password": f"p{i}", "changed_at": now - i} for i in range(11)]
+)
+    history = session.password_history(ref["id"])
+    assert [h["password"] for h in history] == [f"p{i}" for i in range(10)]
+
+
 def test_recovery_codes_reveal_and_save(env):
     extras, controller, port, _editor, ref = env
     port.passwords = [MASTER]

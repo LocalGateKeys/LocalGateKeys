@@ -4,9 +4,10 @@ from __future__ import annotations
 from typing import Any
 
 from ..unlock_policy import require_master_unlock
+from ..i18n import t
 
-EMERGENCY = "Emergency lock. Master password required; signed-in websites/apps remain signed in."
-HANDOVER = "Handover: sign out of websites and desktop apps separately before changing person."
+EMERGENCY = "lockmodes.emergencyLockMasterPasswordRequired"
+HANDOVER = "lockmodes.handoverSignOutOfWebsites"
 
 
 class LockModes:
@@ -18,7 +19,7 @@ class LockModes:
         if profile is not None:
             # Persisted so exit + relaunch cannot bring Windows Hello / camera back.
             require_master_unlock(profile.id)
-        return self._controller.lock(EMERGENCY)
+        return self._controller.lock(t(EMERGENCY))
 
     def lock_and_switch(self) -> dict[str, Any]:
         profile = self._controller.profiles.active_profile()
@@ -26,7 +27,7 @@ class LockModes:
             require_master_unlock(profile.id)
         self._controller.handover = True
         try:
-            return self._controller.lock(HANDOVER)
+            return self._controller.lock(t(HANDOVER))
         except BaseException:
             self._controller.handover = False
             raise

@@ -3,7 +3,9 @@ from __future__ import annotations
 import os
 import threading
 from collections.abc import Callable
+from typing import Any
 
+from .i18n import t
 from .ui_assets import asset_root
 
 
@@ -65,13 +67,55 @@ class TrayController:
     def refresh(self) -> None:
         if self.icon is not None:
             try:
+                import pystray
+
+                self.icon.menu = self._build_menu(pystray)  # texts follow the current language
                 self.icon.update_menu()
                 self.icon.title = self._title()
             except Exception:
                 pass
 
     def _title(self) -> str:
-        return "LocalGateKeys — unlocked" if self.state().get("unlocked") else "LocalGateKeys — locked"
+        return t("tray.titleUnlocked") if self.state().get("unlocked") else t("tray.titleLocked")
+
+    @staticmethod
+    def _menu_labels() -> dict[str, str]:
+        """Menu item texts in the active language, by item id (rebuilt by refresh())."""
+        return {name: t(f"tray.{name}") for name in (
+            "open", "unlock", "lock", "switch", "quickAccess", "checkUpdates", "browser", "desktop", "exit")}
+
+    def _build_menu(self, pystray: Any) -> Any:
+        def ui(callback: Callable[[], None]) -> Callable[..., None]:
+            def wrapped(*_args: object) -> None:
+                callback()
+            return wrapped
+
+        labels = self._menu_labels()
+
+        def label(name: str) -> str:
+            return labels[name]
+
+        return pystray.Menu(
+            pystray.MenuItem(label("open"), ui(self.on_open), default=True),
+            pystray.MenuItem(label("unlock"), ui(self.on_unlock), enabled=lambda _item: not self.state().get("unlocked", False)),
+            pystray.MenuItem(label("lock"), ui(self.on_lock), enabled=lambda _item: self.state().get("unlocked", False)),
+            pystray.MenuItem(label("switch"), ui(self.on_switch)),
+            pystray.MenuItem(label("quickAccess"), ui(self.on_quick_access)),
+            pystray.MenuItem(label("checkUpdates"), ui(self.on_check_updates)),
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem(
+                label("browser"),
+                ui(self.on_toggle_browser),
+                checked=lambda _item: self.state().get("browser_enabled", True),
+            ),
+            pystray.MenuItem(
+                label("desktop"),
+                ui(self.on_toggle_desktop),
+                checked=lambda _item: self.state().get("desktop_enabled", True),
+            ),
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem(label("exit"), ui(self.on_exit)),
+        )
 
     def _run(self) -> None:
         import pystray
@@ -84,31 +128,5 @@ class TrayController:
             except Exception:
                 return Image.new("RGBA", (64, 64), (7, 17, 31, 255))
 
-        def ui(callback: Callable[[], None]) -> Callable[..., None]:
-            def wrapped(*_args: object) -> None:
-                callback()
-            return wrapped
-
-        menu = pystray.Menu(
-            pystray.MenuItem("Open LocalGateKeys", ui(self.on_open), default=True),
-            pystray.MenuItem("Unlock vault", ui(self.on_unlock), enabled=lambda _item: not self.state().get("unlocked", False)),
-            pystray.MenuItem("Lock vault", ui(self.on_lock), enabled=lambda _item: self.state().get("unlocked", False)),
-            pystray.MenuItem("Lock & switch person", ui(self.on_switch)),
-            pystray.MenuItem("Quick access", ui(self.on_quick_access)),
-            pystray.MenuItem("Check for updates", ui(self.on_check_updates)),
-            pystray.Menu.SEPARATOR,
-            pystray.MenuItem(
-                "Browser integration",
-                ui(self.on_toggle_browser),
-                checked=lambda _item: self.state().get("browser_enabled", True),
-            ),
-            pystray.MenuItem(
-                "Desktop fill icons",
-                ui(self.on_toggle_desktop),
-                checked=lambda _item: self.state().get("desktop_enabled", True),
-            ),
-            pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Exit", ui(self.on_exit)),
-        )
-        self.icon = pystray.Icon("LocalGateKeys", image(), self._title(), menu)
+        self.icon = pystray.Icon("LocalGateKeys", image(), self._title(), self._build_menu(pystray))
         self.icon.run()

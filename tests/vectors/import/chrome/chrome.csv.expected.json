@@ -1,0 +1,111 @@
+{
+  "format": "chrome",
+  "input": "tests/fixtures/imports/chrome.csv",
+  "python_format": "chrome-csv",
+  "result": {
+    "diagnostics": [],
+    "records": [
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "Main account",
+        "password": "chrome-pass-1",
+        "source_row": 2,
+        "tags": [],
+        "title": "accounts.example.com",
+        "totp_uri": "",
+        "urls": [
+          "https://accounts.example.com/signin"
+        ],
+        "username": "alex@example.com"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "chrome-pass-2",
+        "source_row": 3,
+        "tags": [],
+        "title": "shop.example.com",
+        "totp_uri": "",
+        "urls": [
+          "https://shop.example.com/"
+        ],
+        "username": "alex@example.com"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "chrome-pass-2-new",
+        "source_row": 4,
+        "tags": [],
+        "title": "shop.example.com",
+        "totp_uri": "",
+        "urls": [
+          "https://shop.example.com/account"
+        ],
+        "username": "alex@example.com"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "chrome-pass-app",
+        "source_row": 5,
+        "tags": [],
+        "title": "android://hash@com.example.app/",
+        "totp_uri": "",
+        "urls": [
+          "android://hash@com.example.app/"
+        ],
+        "username": "alex"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "chrome-router-pass",
+        "source_row": 6,
+        "tags": [],
+        "title": "router.local",
+        "totp_uri": "",
+        "urls": [
+          "http://192.168.1.1/"
+        ],
+        "username": "admin"
+      }
+    ],
+    "source_format": "chrome-csv"
+  }
+}

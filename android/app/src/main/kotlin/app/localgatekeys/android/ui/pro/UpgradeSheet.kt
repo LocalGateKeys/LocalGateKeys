@@ -1,4 +1,9 @@
 package app.localgatekeys.android.ui.pro
+import app.localgatekeys.android.i18n.rememberTxt
+import app.localgatekeys.android.i18n.Txt
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.annotation.StringRes
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -63,24 +68,29 @@ import kotlinx.coroutines.launch
 
 /** The upgrade sheet's copy (ios/App/Pro/UpgradeView.swift, platform words adapted). */
 object UpgradeCopy {
-    const val TITLE = "LocalGateKeys Pro"
-    const val SYNC_FOOTER = "Sync with your PC needs Pro on the PC as well."
-    const val ACTIVE = "Pro is active"
-    const val ONE_TIME = "One-time purchase, no subscription."
-    const val RESTORE = "Restore purchases"
-    const val CLOSE = "Close"
+    @StringRes val TITLE = R.string.pro_title
+    @StringRes val SYNC_FOOTER = R.string.pro_sync_footer
+    @StringRes val ACTIVE = R.string.settings_pro_active
+    @StringRes val ONE_TIME = R.string.pro_one_time
+    @StringRes val RESTORE = R.string.pro_restore
+    @StringRes val CLOSE = R.string.common_close
 
     /** The free subtitle has a U+2011 non-breaking hyphen, as on the iPhone. */
-    fun subtitle(isPro: Boolean): String =
-        if (isPro) "Everything is unlocked on this phone." else "Pay once for unlimited items and two‑factor codes."
+    @StringRes fun subtitle(isPro: Boolean): Int = if (isPro) R.string.pro_subtitle_active else R.string.pro_subtitle_free
 
-    val benefits: List<Pair<String, String>> = listOf(
-        "Unlimited items" to "Logins, cards, notes and everything else, past the free ${ItemLimit.FREE_ITEMS}.",
-        "Two-factor codes" to "Add and change 2FA codes. Codes you already saved keep working without Pro.",
-        "One payment" to "No subscription and no account. Restore it on another phone with the same Google account.",
+    /** Title and detail resource ids; every detail takes the free item limit as its first argument. The first is a plural. */
+    val benefits: List<Pair<Int, Int>> = listOf(
+        R.string.pro_benefit_items_title to R.plurals.pro_benefit_items_detail,
+        R.string.pro_benefit_codes_title to R.string.pro_benefit_codes_detail,
+        R.string.pro_benefit_payment_title to R.string.pro_benefit_payment_detail,
     )
 
-    fun buyLabel(price: String?): String = price?.let { "Buy for $it" } ?: "Buy Pro"
+    fun benefit(index: Int, txt: Txt): Pair<String, String> =
+        txt.s(benefits[index].first) to
+            if (index == 0) txt.plural(benefits[index].second, ItemLimit.FREE_ITEMS, ItemLimit.FREE_ITEMS)
+            else txt.s(benefits[index].second, ItemLimit.FREE_ITEMS)
+
+    fun buyLabel(price: String?, txt: Txt): String = price?.let { txt.s(R.string.pro_buy_for, it) } ?: txt.s(R.string.pro_buy)
 }
 
 /**
@@ -104,7 +114,7 @@ fun UpgradeSheet(pro: ProModel, itemsUsed: Int?, onClose: () -> Unit) {
         GlassBackdropHost(Modifier.fillMaxSize()) { AuroraBackground() }
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClose) { Text(UpgradeCopy.CLOSE, color = c.accentText) }
+                TextButton(onClose) { Text(stringResource(UpgradeCopy.CLOSE), color = c.accentText) }
             }
             Column(
                 Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
@@ -123,10 +133,16 @@ fun UpgradeSheet(pro: ProModel, itemsUsed: Int?, onClose: () -> Unit) {
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         val icons = listOf(Icons.Filled.Layers, Icons.Filled.Pin, Icons.Filled.Verified)
-                        UpgradeCopy.benefits.forEachIndexed { i, (title, detail) -> Benefit(icons[i], title, detail) }
+                        UpgradeCopy.benefits.forEachIndexed { i, (title, detail) ->
+                            Benefit(
+                                icons[i], stringResource(title),
+                                if (i == 0) pluralStringResource(detail, ItemLimit.FREE_ITEMS, ItemLimit.FREE_ITEMS)
+                                else stringResource(detail, ItemLimit.FREE_ITEMS),
+                            )
+                        }
                     }
                     Text(
-                        UpgradeCopy.SYNC_FOOTER, color = c.secondaryText, style = MaterialTheme.typography.bodySmall,
+                        stringResource(UpgradeCopy.SYNC_FOOTER), color = c.secondaryText, style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center,
                     )
                 }
@@ -155,11 +171,11 @@ private fun Header(isPro: Boolean) {
             modifier = Modifier.size(72.dp).shadow(24.dp, RoundedCornerShape(16.dp), ambientColor = c.glowBlue, spotColor = c.glowBlue),
         )
         Text(
-            UpgradeCopy.TITLE, color = c.text, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
+            stringResource(UpgradeCopy.TITLE), color = c.text, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
             modifier = Modifier.semantics { heading() },
         )
         Text(
-            UpgradeCopy.subtitle(isPro),
+            stringResource(UpgradeCopy.subtitle(isPro)),
             color = c.secondaryText, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center,
         )
     }
@@ -169,8 +185,9 @@ private fun Header(isPro: Boolean) {
 @Composable
 private fun Benefit(icon: ImageVector, title: String, detail: String) {
     val c = LgkTheme.colors
+    val benefitDescription = stringResource(R.string.upgrade_benefit_description, title, detail)
     Row(
-        Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = "$title. $detail" },
+        Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = benefitDescription },
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Box(
@@ -201,10 +218,10 @@ private fun PurchaseBar(state: ProModel.State, onBuy: () -> Unit, onRestore: () 
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(Icons.Filled.Verified, null, tint = c.success, modifier = Modifier.padding(end = 8.dp))
-                    Text(UpgradeCopy.ACTIVE, color = c.success, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(UpgradeCopy.ACTIVE), color = c.success, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 }
             } else {
-                val label = UpgradeCopy.buyLabel(state.price)
+                val label = UpgradeCopy.buyLabel(state.price, rememberTxt())
                 Button(
                     onBuy,
                     enabled = !state.busy && state.canBuy,
@@ -218,14 +235,14 @@ private fun PurchaseBar(state: ProModel.State, onBuy: () -> Unit, onRestore: () 
                         Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     }
                 }
-                Text(UpgradeCopy.ONE_TIME, color = c.secondaryText, style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(UpgradeCopy.ONE_TIME), color = c.secondaryText, style = MaterialTheme.typography.bodySmall)
                 TextButton(onRestore, enabled = !state.busy, modifier = Modifier.testTag("upgrade-restore")) {
-                    Text(UpgradeCopy.RESTORE, color = if (state.busy) c.secondaryText else c.accentText)
+                    Text(stringResource(UpgradeCopy.RESTORE), color = if (state.busy) c.secondaryText else c.accentText)
                 }
             }
-            state.message?.let {
+            state.note?.let {
                 Text(
-                    it, color = c.secondaryText, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center,
+                    stringResource(it.res), color = c.secondaryText, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center,
                     modifier = Modifier.testTag("upgrade-message"),
                 )
             }

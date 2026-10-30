@@ -1,5 +1,6 @@
 package app.localgatekeys.android.pro
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.editor.CountingStore
 import app.localgatekeys.android.editor.EditorKind
 import app.localgatekeys.android.editor.EditorModel
@@ -26,6 +27,9 @@ import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.SwitchableTxt
+import app.localgatekeys.android.i18n.Txt
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -37,13 +41,13 @@ import org.junit.Test
  */
 class ProModelTest {
     private fun pro(purchases: ProPurchasing = FakePurchases(), keys: Map<String, ByteArray> = emptyMap()) =
-        ProModel(purchases, keys)
+        ProModel(purchases, keys, txt = EnglishTxt())
 
     /** One random source for every editor, so each new note gets its own id. */
     private val random = CountingRandom()
 
     private fun newNote(store: CountingStore, p: ProModel): EditorModel =
-        EditorModel(store, null, EditorKind.NOTE, { p.isPro }, clock(), random).also { it.set(it.titleKey, "More"); it.set("body", "x") }
+        EditorModel(store, null, EditorKind.NOTE, { p.isPro }, clock(), random, EnglishTxt()).also { it.set(it.titleKey, "More"); it.set("body", "x") }
 
     // MARK: ProAvailabilityTests
 
@@ -54,18 +58,47 @@ class ProModelTest {
         p.loadPrice()
         assertFalse(p.canBuy)
         assertNull(p.price)
-        assertEquals(ProModel.UNAVAILABLE_MESSAGE, p.message)
-        assertEquals("Pro isn't available yet", ProModel.UNAVAILABLE_MESSAGE)
+        assertEquals(p.unavailableMessage, p.message)
+        assertEquals("Pro isn't available yet", p.unavailableMessage)
         p.buy()
         assertEquals("Buy never starts a purchase of a missing product", 0, purchases.purchaseCalls)
         assertEquals("Pro isn't available yet", p.message)
+    }
+
+    @Test fun the_unavailable_note_clears_when_the_price_loads_even_after_a_language_switch() = runBlocking {
+        val purchases = FakePurchases().apply { offerResult = ProOffer.Unavailable }
+        val switchable = SwitchableTxt(EnglishTxt())
+        val p = ProModel(purchases, emptyMap(), txt = switchable)
+        p.loadPrice()
+        assertEquals(ProNote.UNAVAILABLE, p.note)
+        switchable.use(GermanStub)
+        purchases.offerResult = ProOffer.Available("$4.99")
+        p.loadPrice()
+        assertNull(p.note)
+        assertNull(p.message)
+    }
+
+    @Test fun the_note_is_resolved_when_read_so_a_language_switch_changes_it() = runBlocking {
+        val purchases = FakePurchases().apply { offerResult = ProOffer.Unavailable }
+        val switchable = SwitchableTxt(GermanStub)
+        val p = ProModel(purchases, emptyMap(), txt = switchable)
+        p.loadPrice()
+        assertEquals("Pro ist noch nicht verfuegbar", p.message)
+        switchable.use(EnglishTxt())
+        assertEquals("Pro isn't available yet", p.message)
+    }
+
+    private object GermanStub : Txt {
+        override fun s(id: Int, vararg args: Any): String =
+            if (id == R.string.pro_unavailable) "Pro ist noch nicht verfuegbar" else "de:$id"
+        override fun plural(id: Int, count: Int, vararg args: Any): String = "de:$id"
     }
 
     @Test fun a_later_lookup_that_finds_the_product_clears_the_message() = runBlocking {
         val purchases = FakePurchases().apply { offerResult = ProOffer.Unavailable }
         val p = pro(purchases)
         p.loadPrice()
-        assertEquals(ProModel.UNAVAILABLE_MESSAGE, p.message)
+        assertEquals(p.unavailableMessage, p.message)
         purchases.offerResult = ProOffer.Available("$4.99")
         p.loadPrice() // the sheet opened again once the product went live
         assertNull(p.message)
@@ -270,10 +303,10 @@ class ProModelTest {
         assertEquals("lic-vector-0001", p.license?.licenseId)
         p.loadPrice()
         assertFalse(p.canBuy)
-        assertEquals(ProModel.UNAVAILABLE_MESSAGE, p.message)
+        assertEquals(p.unavailableMessage, p.message)
         p.restore()
         assertTrue("billing failing never takes the synced licence away", p.isPro)
-        assertEquals("Ruling 24: restore with no billing still says Pro is not available", ProModel.UNAVAILABLE_MESSAGE, p.message)
+        assertEquals("Ruling 24: restore with no billing still says Pro is not available", p.unavailableMessage, p.message)
         assertEquals(SaveResult.SAVED, newNote(store, p).save())
 
         // The licence goes away with the next snapshot that lacks it.
@@ -292,7 +325,7 @@ class ProModelTest {
 
     @Test fun a_cancelled_refresh_keeps_the_last_known_entitlement() = runBlocking {
         val play = FakePurchases().apply { entitled = true }
-        val p = ProModel(play, emptyMap(), purchased = true)
+        val p = ProModel(play, emptyMap(), purchased = true, txt = EnglishTxt())
         assertTrue(p.isPro)
         lateinit var job: Job
         play.entitled = false
@@ -346,7 +379,7 @@ class ProModelTest {
         val p = pro(play)
         p.loadPrice()
         p.restore()
-        assertEquals(ProModel.UNAVAILABLE_MESSAGE, p.message)
+        assertEquals(p.unavailableMessage, p.message)
     }
 
     @Test fun state_never_prints_the_licence_holder() {
@@ -361,13 +394,14 @@ class ProModelTest {
     }
 
     @Test fun messages_use_google_play_words() {
+        val p = pro()
         val messages = listOf(
-            ProModel.UNAVAILABLE_MESSAGE, ProModel.PENDING_MESSAGE, ProModel.UNVERIFIED_MESSAGE, ProModel.PURCHASE_FAILED_MESSAGE,
-            ProModel.NOTHING_TO_RESTORE_MESSAGE, ProModel.RESTORE_FAILED_MESSAGE,
+            p.unavailableMessage, p.pendingMessage, p.unverifiedMessage, p.purchaseFailedMessage,
+            p.nothingToRestoreMessage, p.restoreFailedMessage,
         )
         for (m in messages) assertFalse(m, m.contains("Apple") || m.contains("App Store") || m.contains("iPhone"))
-        assertEquals("Google Play could not verify this purchase. Try Restore purchases or try again later.", ProModel.UNVERIFIED_MESSAGE)
-        assertEquals("No purchase was found for this Google account.", ProModel.NOTHING_TO_RESTORE_MESSAGE)
+        assertEquals("Google Play could not verify this purchase. Try Restore purchases or try again later.", p.unverifiedMessage)
+        assertEquals("No purchase was found for this Google account.", p.nothingToRestoreMessage)
     }
 
     /** EditorModel reads isPro on an IO thread at save time: the state is readable from any thread. */

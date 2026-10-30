@@ -18,10 +18,10 @@ from ..access_policy import normalized_policy
 from ..api.result import ApiError
 from ..totp import TotpError, match_migration_account, parse_migration_uri
 from ..vault import VaultError
+from ..i18n import t
 
-ENABLE_SIGN_IN_TEXT = ("LocalGateKeys may submit a supported login immediately after your click/account selection. "
-                       "It never bypasses MFA or CAPTCHA.")
-USE_NEXT_TEXT = "Copy and remove the first saved code? It will remain in previous encrypted backups."
+ENABLE_SIGN_IN_TEXT = ("loginExtras.localgatekeysMaySubmitASupported")
+USE_NEXT_TEXT = "loginExtras.copyAndRemoveTheFirst"
 
 
 class LoginExtrasService:
@@ -41,7 +41,7 @@ class LoginExtrasService:
     # -------------------------------------------------------------- helpers
     def _session_lease(self) -> tuple[Any, Any]:
         if not self._controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile first.")
+            raise ApiError("locked", t("error.lockedProfile"))
         lease = self._controller.guard.lease()
         self._controller.require_lease(lease)
         return self._controller.session, lease
@@ -49,10 +49,10 @@ class LoginExtrasService:
     @staticmethod
     def _detail(session: Any, ref: dict[str, Any]) -> dict[str, Any]:
         if ref.get("source") != "credential":
-            raise ApiError("invalid", "Choose a login.")
+            raise ApiError("invalid", t("loginExtras.chooseALogin"))
         detail = session.credential_detail(ref["id"])
         if detail is None:
-            raise ApiError("not_found", "Credential is no longer available")
+            raise ApiError("not_found", t("loginExtras.credentialIsNoLongerAvailable"))
         return detail
 
     def _save_details(self, session: Any, lease: Any, entry_id: str, **changes: Any) -> None:
@@ -62,7 +62,7 @@ class LoginExtrasService:
     def _save_details_locked(self, session: Any, lease: Any, entry_id: str, **changes: Any) -> None:
         detail = session.credential_detail(entry_id)
         if detail is None:
-            raise ApiError("not_found", "Credential is no longer available")
+            raise ApiError("not_found", t("loginExtras.credentialIsNoLongerAvailable"))
         try:
             current = {
                 "favorite": bool(detail.get("favorite")), "tags": list(detail.get("tags") or []),
@@ -106,7 +106,7 @@ class LoginExtrasService:
         detail = self._detail(session, ref)
         if self._strict(detail) and not strict:
             detail.clear()
-            raise ApiError("changed", "This login's access rules changed. Select it again.")
+            raise ApiError("changed", t("loginExtras.thisLoginSAccessRules"))
         return detail, strict
 
     # -------------------------------------------------------------- history
@@ -114,7 +114,7 @@ class LoginExtrasService:
         values = session.password_history(entry_id)
         again = session.credential_detail(entry_id) or {}
         if again.get("revision") != revision:
-            raise ApiError("changed", "This credential changed. Close and reopen it before viewing password history.")
+            raise ApiError("changed", t("loginExtras.thisCredentialChangedCloseAnd"))
         return values
 
     def _revision_after_auth(self, ref: dict[str, Any], title: str) -> tuple[Any, Any, Any]:
@@ -126,7 +126,7 @@ class LoginExtrasService:
 
     def history(self, ref: dict[str, Any]) -> dict[str, Any]:
         session, _lease, revision = self._revision_after_auth(
-            ref, "Enter your master password to view password history")
+            ref, t("loginExtras.enterYourMasterPasswordTo"))
         values = self._history(session, ref["id"], revision)
         try:
             return {"rows": [{"index": i, "changed_at": int(v.get("changed_at") or 0)} for i, v in enumerate(values)],
@@ -137,23 +137,42 @@ class LoginExtrasService:
 
     def history_copy(self, ref: dict[str, Any], index: int, changed_at: int) -> dict[str, Any]:
         session, lease, revision = self._revision_after_auth(
-            ref, "Enter your master password to copy this previous password")
+            ref, t("loginExtras.enterYourMasterPasswordTo2"))
         values = self._history(session, ref["id"], revision)
         try:
             if not (0 <= index < len(values)) or int(values[index].get("changed_at") or 0) != int(changed_at):
-                raise ApiError("changed", "Password history changed. Close and reopen it before copying.")
+                raise ApiError("changed", t("loginExtras.passwordHistoryChangedCloseAnd"))
             self._controller.require_lease(lease)
             self._controller.clipboard.copy(values[index]["password"])
             self._controller.touch()
         finally:
             for value in values:
                 value.clear()
-        return {"message": "Previous password copied."}
+        return {"message": t("loginExtras.previousPasswordCopied")}
+
+    def history_restore(self, ref: dict[str, Any], index: int, changed_at: int) -> dict[str, Any]:
+        """Make a previous password current again; the password it replaces goes into history."""
+        session, lease, revision = self._revision_after_auth(
+            ref, t("loginExtras.enterYourMasterPasswordTo3"))
+        values = self._history(session, ref["id"], revision)
+        try:
+            if not (0 <= index < len(values)) or int(values[index].get("changed_at") or 0) != int(changed_at):
+                raise ApiError("changed", t("loginExtras.passwordHistoryChangedCloseAnd2"))
+            self._controller.require_lease(lease)
+            try:
+                session.update_entry_fields(ref["id"], password=values[index]["password"], expected_revision=revision)
+            except Exception as exc:  # noqa: BLE001 - a VaultError text is safe to show
+                raise ApiError("changed", str(exc) or t("loginExtras.thePasswordWasNotRestored")) from None
+            self._controller.touch()
+        finally:
+            for value in values:
+                value.clear()
+        return {"message": t("loginExtras.previousPasswordRestoredTheOne")}
 
     # -------------------------------------------------------- recovery codes
     def recovery_codes(self, ref: dict[str, Any]) -> dict[str, Any]:
         session, lease = self._session_lease()
-        detail, _strict = self._authorized_detail(session, ref, lease, "Confirm to reveal recovery codes")
+        detail, _strict = self._authorized_detail(session, ref, lease, t("loginExtras.confirmToRevealRecoveryCodes"))
         try:
             return {"codes": list(detail.get("recovery_codes") or [])}
         finally:
@@ -170,38 +189,38 @@ class LoginExtrasService:
             detail.clear()
         if strict:
             return {"count": None, "locked": True,
-                    "text": "Locked · this login always asks for the master password. Reveal to view or edit."}
-        text = (f"{count} saved code(s) hidden. Reveal to view or edit." if count
-                else "No saved codes. Reveal to add some.")
+                    "text": t("loginExtras.lockedThisLoginAlwaysAsks")}
+        text = (t("loginExtras.codesHidden", count=count) if count
+                else t("loginExtras.noSavedCodesRevealTo"))
         return {"count": count, "text": text}
 
     def recovery_codes_save(self, ref: dict[str, Any], codes: list[str]) -> dict[str, Any]:
         session, lease = self._session_lease()
         detail, _strict = self._authorized_detail(session, ref, lease,
-                                                  "Enter your master password to save recovery codes", routine=False)
+                                                  t("loginExtras.enterYourMasterPasswordTo4"), routine=False)
         detail.clear()
         cleaned = [str(c).strip() for c in codes if str(c).strip()]
         self._save_details(session, lease, ref["id"], recovery_codes=cleaned)
-        return {"message": "Recovery codes saved."}
+        return {"message": t("loginExtras.recoveryCodesSaved")}
 
     def recovery_use_next(self, ref: dict[str, Any]) -> dict[str, Any]:
         session, lease = self._session_lease()
         detail, _strict = self._authorized_detail(session, ref, lease,
-                                                  "Enter your master password to use a recovery code", routine=False)
+                                                  t("loginExtras.enterYourMasterPasswordTo5"), routine=False)
         codes = list(detail.get("recovery_codes") or [])
         detail.clear()
         if not codes:
-            raise ApiError("empty", "Save recovery codes first.")
+            raise ApiError("empty", t("loginExtras.saveRecoveryCodesFirst"))
         first = codes[0]
-        if not self._port.confirm("Use next recovery code?", USE_NEXT_TEXT):
-            raise ApiError("cancelled", "Cancelled.")
+        if not self._port.confirm(t("loginExtras.useNextRecoveryCode"), t(USE_NEXT_TEXT)):
+            raise ApiError("cancelled", t("error.cancelled"))
         self._controller.require_lease(lease)
         with self._write_lock:
             again = self._detail(session, ref)
             current = list(again.get("recovery_codes") or [])
             again.clear()
             if not current or current[0] != first:
-                raise ApiError("changed", "The saved codes changed. Open them again before using one.")
+                raise ApiError("changed", t("loginExtras.theSavedCodesChangedOpen"))
             self._controller.clipboard.copy(first)
             try:
                 session.consume_recovery_code(ref["id"], 0)
@@ -209,13 +228,13 @@ class LoginExtrasService:
                 self._controller.clipboard.clear()
                 raise ApiError("changed", str(exc)) from None
         self._controller.touch()
-        return {"message": "Recovery code copied and removed from the list."}
+        return {"message": t("loginExtras.recoveryCodeCopiedAndRemoved")}
 
     # --------------------------------------------------------- custom fields
     def custom_fields(self, ref: dict[str, Any], *, reveal: bool) -> dict[str, Any]:
         """Visible fields (with ``reveal`` also hidden values); a strict login asks for the master password either way."""
         session, lease = self._session_lease()
-        title = "Confirm to reveal hidden fields" if reveal else "Open sensitive credential"
+        title = t("loginExtras.confirmToRevealHiddenFields") if reveal else t("loginExtras.openSensitiveCredential")
         detail, _strict = self._authorized_detail(session, ref, lease, title, routine=reveal)
         try:
             return {"fields": [{"index": i, "name": str(f.get("name", "")),
@@ -236,7 +255,7 @@ class LoginExtrasService:
         stored rows cannot wipe them by saving only a new one."""
         session, lease = self._session_lease()
         detail, strict = self._authorized_detail(session, ref, lease,
-                                                 "Enter your master password to save custom fields", routine=False)
+                                                 t("loginExtras.enterYourMasterPasswordTo6"), routine=False)
         revision = detail.get("revision")
         stored = [(str(f.get("value", "")), f.get("hidden", True) is True) for f in detail.get("custom_fields") or []]
         detail.clear()
@@ -244,7 +263,7 @@ class LoginExtrasService:
                 if isinstance(field.get("index"), int) and not isinstance(field.get("index"), bool)}
         if set(range(len(stored))) - kept - set(removed):
             stored.clear()
-            raise ApiError("changed", "The custom fields changed. Open them again before saving.")
+            raise ApiError("changed", t("loginExtras.theCustomFieldsChangedOpen"))
         merged, unhides = [], False
         for field in fields:
             name = str(field.get("name", "")).strip()
@@ -255,21 +274,21 @@ class LoginExtrasService:
             if value is None:
                 index = field.get("index")
                 if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index < len(stored):
-                    raise ApiError("changed", "The custom fields changed. Open them again before saving.")
+                    raise ApiError("changed", t("loginExtras.theCustomFieldsChangedOpen"))
                 value, was_hidden = stored[index]
                 unhides = unhides or (was_hidden and not hidden)
             merged.append({"name": name, "value": str(value), "hidden": hidden})
         stored.clear()
         if unhides and not strict:  # a strict login has just asked for the master password
-            self._auth.reauthenticate("Confirm to reveal hidden fields", lease, allow_hello=True)
+            self._auth.reauthenticate(t("loginExtras.confirmToRevealHiddenFields"), lease, allow_hello=True)
         with self._write_lock:
             again = self._detail(session, ref)
             current = again.get("revision")
             again.clear()
             if current != revision:
-                raise ApiError("changed", "The custom fields changed. Open them again before saving.")
+                raise ApiError("changed", t("loginExtras.theCustomFieldsChangedOpen"))
             self._save_details(session, lease, ref["id"], custom_fields=merged)
-        return {"message": "Custom fields saved."}
+        return {"message": t("loginExtras.customFieldsSaved")}
 
     # ----------------------------------------------------------------- policy
     def policy(self, ref: dict[str, Any]) -> dict[str, Any]:
@@ -284,28 +303,28 @@ class LoginExtrasService:
         """Any rule change on a strict login, turning strict off included, needs the master password (no Hello)."""
         session, lease = self._session_lease()
         detail, _strict = self._authorized_detail(session, ref, lease,
-                                                  "Enter your master password to change this login's rules",
+                                                  t("loginExtras.enterYourMasterPasswordTo7"),
                                                   routine=False)
         before = normalized_policy(detail.get("policy"))
         detail.clear()
         after = normalized_policy({**before, **{k: v for k, v in changes.items() if k in before}})
         if after.get("sign_in") == "enabled" and before.get("sign_in") != "enabled":
-            if not self._port.confirm("Enable sign-in for this entry?", ENABLE_SIGN_IN_TEXT):
-                raise ApiError("cancelled", "Cancelled.")
+            if not self._port.confirm(t("loginExtras.enableSignInForThis"), t(ENABLE_SIGN_IN_TEXT)):
+                raise ApiError("cancelled", t("error.cancelled"))
         with self._write_lock:
             again = self._detail(session, ref)
             current = normalized_policy(again.get("policy"))
             again.clear()
             if current != before:
-                raise ApiError("changed", "This login's rules changed. Select it again before saving.")
+                raise ApiError("changed", t("loginExtras.thisLoginSRulesChanged"))
             self._save_details(session, lease, ref["id"], policy=after)
         revoked = 0
         if after != before:
             revoke = getattr(self._controller.guard, "revoke_entry_grants", None)
             revoked = int(revoke(ref["id"])) if callable(revoke) else 0
         if revoked:
-            return {"message": f"Access policy saved. {revoked} pending fill permission(s) for this login were cancelled."}
-        return {"message": "Access policy saved. It applies from the next fill."}
+            return {"message": t("loginExtras.policySavedRevoked", count=revoked)}
+        return {"message": t("loginExtras.accessPolicySavedItApplies")}
 
     # -------------------------------------------------- Google Authenticator
     def ga_parse(self, text: str, *, label: str = "", origin: str = "") -> dict[str, Any]:
@@ -333,7 +352,7 @@ class LoginExtrasService:
         if accounts is None or not (0 <= index < len(accounts)):
             for item in accounts or []:
                 item.clear()
-            raise ApiError("invalid", "Choose an account first.")
+            raise ApiError("invalid", t("loginExtras.chooseAnAccountFirst"))
         account = accounts[index]
         query = urlencode({"secret": account["secret"], "issuer": account["issuer"], "digits": account["digits"],
                            "period": account["period"], "algorithm": account["algorithm"]})

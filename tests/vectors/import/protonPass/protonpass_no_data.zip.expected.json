@@ -1,0 +1,9 @@
+{
+  "error": {
+    "message": "The zip archive does not contain a Proton Pass data.json",
+    "type": "format"
+  },
+  "format": "protonPass",
+  "input": "tests/vectors/import/_inputs/protonpass_no_data.zip",
+  "python_format": "protonpass-json"
+}

@@ -31,6 +31,8 @@ export function fakeApi(overrides = {}) {
       ok: true, items: [ALPHA, NOTE], count: 2, chips: { attention: 1, no2fa: 1, expiring: 0 },
       context: { title: 'All items', text: 'Everything safe to browse in this profile.' }, empty: null,
     }),
+    import_card_dismiss: vi.fn().mockResolvedValue({ ok: true, import_card: false }),
+    items_sort_set: vi.fn().mockResolvedValue({ ok: true, option: 'title_desc', favorites_first: true, options: [] }),
     overview_get: vi.fn().mockResolvedValue({
       ok: true, health: { score: 50, label: 'Fair', weak: 1, reused: 0, no_2fa: 1 }, reminders: [],
       backup: { last_at: null, count: 0, warning: '', stale: true },

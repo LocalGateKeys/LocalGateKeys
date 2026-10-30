@@ -1,5 +1,9 @@
 import SwiftUI
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 /// The confirmation shown for a passkey registration: which site and account, Create or Cancel, on the
 /// app's aurora. Nothing is generated or written until Create (and then Face ID) runs.
@@ -10,6 +14,12 @@ struct PasskeyCreateSheet: View {
     let cancel: () -> Void
     /// Create runs once: disabled after the first tap (the driver ignores repeats too).
     @State private var creating = false
+
+    #if os(macOS)
+    static let footnote = String(localized: "It is saved in LocalGateKeys on this Mac and syncs to your PC with your other items.")
+    #else
+    static let footnote = String(localized: "It is saved in LocalGateKeys on this iPhone and syncs to your PC with your other items.")
+    #endif
 
     var body: some View {
         VStack(spacing: 20) {
@@ -29,7 +39,7 @@ struct PasskeyCreateSheet: View {
             .frame(maxWidth: .infinity)
             .padding()
             .background(Palette.groupSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            Text("It is saved in LocalGateKeys on this iPhone and syncs to your PC with your other items.")
+            Text(Self.footnote)
                 .font(.footnote)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Palette.secondaryText)

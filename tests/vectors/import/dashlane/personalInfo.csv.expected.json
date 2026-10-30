@@ -1,0 +1,86 @@
+{
+  "format": "dashlane",
+  "input": "tests/fixtures/imports/dashlane/personalInfo.csv",
+  "python_format": "dashlane-csv",
+  "result": {
+    "diagnostics": [],
+    "records": [
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Date of birth",
+            "value": "1990-01-01"
+          },
+          {
+            "hidden": false,
+            "name": "Place of birth",
+            "value": "Exampleton"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {
+          "family_name": "Example",
+          "given_name": "Alex",
+          "job_title": "Tester",
+          "middle_name": "Q",
+          "name": "Alex Q Example"
+        },
+        "kind": "identity",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 2,
+        "tags": [],
+        "title": "Me",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Recipient",
+            "value": "Alex Example"
+          },
+          {
+            "hidden": false,
+            "name": "Apartment",
+            "value": "2"
+          },
+          {
+            "hidden": true,
+            "name": "Door code",
+            "value": "4242"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {
+          "address_line1": "1 Example Road",
+          "city": "Exampleton",
+          "country": "GB",
+          "postal_code": "EX1 2PL",
+          "state": "Exampleshire"
+        },
+        "kind": "identity",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 3,
+        "tags": [],
+        "title": "Home",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      }
+    ],
+    "source_format": "dashlane-csv"
+  }
+}

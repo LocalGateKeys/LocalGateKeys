@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Twofish-encrypted databases are not supported; change the cipher to AES or ChaCha20 in KeePass",
+    "type": "format"
+  },
+  "format": "keePassKDBX",
+  "input": "tests/vectors/import/_inputs/kdbx4_twofish.kdbx",
+  "password": "kdbx fixture password",
+  "python_format": "kdbx"
+}

@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import atomic_write_json, data_dir, read_json
+from .i18n import t
 
 PROFILES_VERSION = 1
 DEFAULT_COLORS = ("#28C7FA", "#7C5CFC", "#34D399", "#F59E0B", "#F472B6", "#60A5FA")
@@ -440,14 +441,14 @@ def _is_reparse_point(path: Path) -> bool:
 
 def _validate_profile_name(value: str) -> str:
     if not isinstance(value, str):
-        raise ProfileError("Profile name must be text")
+        raise ProfileError(t("profiles.err.nameText"))
     cleaned = value.strip()
     if not cleaned:
-        raise ProfileError("Profile name cannot be empty")
+        raise ProfileError(t("profiles.err.nameEmpty"))
     if len(cleaned) > 80:
-        raise ProfileError("Profile name is too long")
+        raise ProfileError(t("profiles.err.nameTooLong"))
     if any(ord(ch) < 32 for ch in cleaned):
-        raise ProfileError("Profile name contains an unsupported control character")
+        raise ProfileError(t("profiles.err.nameControl"))
     return cleaned
 
 

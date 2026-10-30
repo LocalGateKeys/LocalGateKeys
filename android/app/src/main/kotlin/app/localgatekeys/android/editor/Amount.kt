@@ -1,5 +1,7 @@
 package app.localgatekeys.android.editor
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.Txt
 import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.NumberFormat
@@ -37,17 +39,17 @@ object Amount {
         val body = if (negative) t.substring(1) else t
         val parts = body.split(".")
         if (parts.size > 2 || !parts.all { p -> p.all { it in '0'..'9' } } || parts.joinToString("").isEmpty()) {
-            throw AmountException("Enter the amount as a number, for example 12.99.")
+            throw AmountException(AmountException.Reason.NOT_A_NUMBER)
         }
         val digits = fractionDigits(currency)
         val fraction = if (parts.size == 2) parts[1] else ""
         if (fraction.length > digits) {
-            throw AmountException(if (digits == 0) "This currency has no decimals." else "Use at most $digits decimals.")
+            throw AmountException(if (digits == 0) AmountException.Reason.NO_DECIMALS else AmountException.Reason.TOO_MANY_DECIMALS, digits)
         }
         val whole = parts[0].ifEmpty { "0" }
         val combined = whole + fraction.padEnd(digits, '0')
         val n = if (combined.length <= 17) combined.toLongOrNull() else null
-        if (n == null || n > 1_000_000_000_000_000L) throw AmountException("This amount is too large.")
+        if (n == null || n > 1_000_000_000_000_000L) throw AmountException(AmountException.Reason.TOO_LARGE)
         return if (negative) -n else n
     }
 
@@ -105,5 +107,14 @@ object Amount {
     }
 }
 
-/** An amount the editor cannot store; [message] is shown under the field. */
-class AmountException(message: String) : Exception(message)
+/** An amount the editor cannot store; [text] is shown under the field. */
+class AmountException(val reason: Reason, val digits: Int = 0) : Exception(reason.name) {
+    enum class Reason { NOT_A_NUMBER, NO_DECIMALS, TOO_MANY_DECIMALS, TOO_LARGE }
+
+    fun text(t: Txt): String = when (reason) {
+        Reason.NOT_A_NUMBER -> t.s(R.string.amount_not_a_number)
+        Reason.NO_DECIMALS -> t.s(R.string.amount_no_decimals)
+        Reason.TOO_MANY_DECIMALS -> t.plural(R.plurals.amount_max_decimals, digits, digits)
+        Reason.TOO_LARGE -> t.s(R.string.amount_too_large)
+    }
+}

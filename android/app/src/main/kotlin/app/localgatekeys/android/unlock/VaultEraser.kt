@@ -1,7 +1,11 @@
 package app.localgatekeys.android.unlock
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.Txt
+import androidx.annotation.StringRes
 import app.localgatekeys.android.settings.AppSettings
 import app.localgatekeys.android.sync.FolderOpening
+import app.localgatekeys.android.vault.AppPasswordLock
 import app.localgatekeys.android.vault.LocalStore
 import app.localgatekeys.android.vault.VaultKey
 import java.io.File
@@ -15,9 +19,8 @@ interface VaultErasing {
 
 /** The steps that failed, by name only (never a value). */
 class VaultEraseFailure(val steps: List<String>) : Exception() {
-    override val message: String
-        get() = "The vault was not fully erased (could not delete: ${steps.joinToString(", ")}). " +
-            "Tap Unlock to try erasing again, or Start fresh anyway."
+    /** What the unlock screen says; the step names are technical ids and stay as they are. */
+    fun text(t: Txt): String = t.s(R.string.erase_failed_steps, steps.joinToString(", "))
 
     override fun equals(other: Any?): Boolean = other is VaultEraseFailure && other.steps == steps
     override fun hashCode(): Int = steps.hashCode()
@@ -41,6 +44,12 @@ class VaultEraser(
     private val slotsFile: File = dirs.secrets,
     /** The cloud folder's permissions (the app: SafFolderOpener). */
     private val folders: FolderOpening? = null,
+    /** The unsaved editor draft (Task 6), in noBackupFilesDir; failure name "draft". */
+    private val draftFile: File? = null,
+    /** Task 7: the app password file and the biometric shortcut; failure name "app-password". */
+    private val appPassword: AppPasswordLock? = null,
+    /** Part C: the sealed fill index (titles, usernames, app pairings) and its key; false = not gone. Failure name "fill-index". */
+    private val fillIndex: (() -> Boolean)? = null,
 ) : VaultErasing {
     /** Deletes the store directory; true when it is gone (a seam: tests make it fail). */
     internal var removeDirectory: (File) -> Boolean = { it.deleteRecursively() }
@@ -65,6 +74,12 @@ class VaultEraser(
         }
         if (!removeFile(dirs.wrappedKey)) failed += "local-key"
         if (!removeFile(slotsFile)) failed += "secrets"
+        if (draftFile != null) {
+            File(draftFile.parentFile, draftFile.name + ".tmp").let { if (!removeFile(it)) failed += "draft" }
+            if (!removeFile(draftFile) && "draft" !in failed) failed += "draft"
+        }
+        if (appPassword != null && !appPassword.deleteAll()) failed += "app-password"
+        if (fillIndex != null && !(try { fillIndex.invoke() } catch (e: Exception) { false })) failed += "fill-index"
         try {
             vaultKey.delete()
         } catch (e: Exception) {
@@ -91,9 +106,7 @@ class VaultEraser(
 
     companion object {
         /** Two confirmations, in the style of Leave and Reset sync. */
-        const val CONFIRM_TEXT_1 =
-            "Erase this phone's vault?\n\nThis deletes every item, the vault's keys and its sync settings from this phone. " +
-                "Your PC and the sync folder are not changed. If this phone was your only copy, the items are gone."
-        const val CONFIRM_TEXT_2 = "Are you sure? This cannot be undone. Erase this phone's vault now?"
+        @StringRes val CONFIRM_TEXT_1 = R.string.erase_confirm_1
+        @StringRes val CONFIRM_TEXT_2 = R.string.erase_confirm_2
     }
 }

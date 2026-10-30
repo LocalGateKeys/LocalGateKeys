@@ -1,6 +1,7 @@
 <script>
   /** Recently deleted: restore, permanently delete, empty. */
   import { call } from '../lib/api.js';
+  import { formatDate, formatNumber, t } from '../lib/i18n.svelte.js';
   import { okOrToast, openRoute, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
 
@@ -10,7 +11,7 @@
 
   async function load() {
     const result = await call('trash_list');
-    if (okOrToast(result, 'Could not open Recently deleted')) { data = result; selected = new Set(); }
+    if (okOrToast(result, t('trashPage.couldNotOpen'))) { data = result; selected = new Set(); }
   }
   $effect(() => { load(); });
 
@@ -28,13 +29,13 @@
     load();
   }
 
-  const day = (seconds) => new Date(seconds * 1000).toISOString().slice(0, 16).replace('T', ' ');
+  const day = (seconds) => formatDate(new Date(seconds * 1000), { dateStyle: 'medium', timeStyle: 'short' });
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label="Recently deleted">
+<div class="sheet glass" role="dialog" aria-label={t('trashPage.title')}>
   <header>
-    <h2>Recently deleted</h2>
-    <button class="close" aria-label="Close" onclick={onclose}>✕</button>
+    <h2>{t('trashPage.title')}</h2>
+    <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
   {#if data}
     <p class="note">{data.retention_text}
@@ -46,7 +47,7 @@
       <div class="group rows">
         {#each data.rows as row (row.id)}
           <label class="row">
-            <input type="checkbox" aria-label={`Select ${row.title}`} checked={selected.has(row.id)} onchange={() => toggle(row.id)} />
+            <input type="checkbox" aria-label={t('trashPage.select', { title: row.title })} checked={selected.has(row.id)} onchange={() => toggle(row.id)} />
             <span class="title">{row.title}</span>
             <span class="muted">{row.kind_label}{row.username ? ` · ${row.username}` : ''}</span>
             <span class="when">{day(row.deleted_at)}</span>
@@ -54,13 +55,13 @@
         {/each}
       </div>
     {:else}
-      <p class="empty">Recently deleted is empty.</p>
+      <p class="empty">{t('trashPage.empty')}</p>
     {/if}
     <footer>
-      <span class="count">{selected.size ? `${selected.size} of ${data.rows.length} selected` : `${data.rows.length} item(s)`}</span>
-      <Button label="Empty trash" variant="danger" onclick={() => act('trash_empty')} disabled={!data.rows.length} />
-      <Button label="Delete selected" variant="danger" onclick={() => act('trash_purge', [...selected])} disabled={!selected.size} />
-      <Button label="Restore selected" variant="primary" onclick={() => act('trash_restore', [...selected])} disabled={!selected.size} />
+      <span class="count">{selected.size ? t('trashPage.selectedCount', { selected: formatNumber(selected.size), total: formatNumber(data.rows.length) }) : t('trashPage.itemCount', { count: data.rows.length, number: formatNumber(data.rows.length) })}</span>
+      <Button label={t('trashPage.emptyTrash')} variant="danger" onclick={() => act('trash_empty')} disabled={!data.rows.length} />
+      <Button label={t('trashPage.deleteSelected')} variant="danger" onclick={() => act('trash_purge', [...selected])} disabled={!selected.size} />
+      <Button label={t('trashPage.restoreSelected')} variant="primary" onclick={() => act('trash_restore', [...selected])} disabled={!selected.size} />
     </footer>
   {/if}
 </div>

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Segurança | LocalGateKeys</title>
+  <meta name="description" content="Como o LocalGateKeys protege seu cofre e contra o que ele não protege.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/pt-br/security">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/security">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/security">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/security">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/security">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/security">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/security">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/security">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/security">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/security">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/security">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/security">
+  <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../brand/icon-256.png">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">Pular para o conteúdo</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../pt-br/index.html">
+        <img src="../brand/icon.svg" alt="" width="36" height="36">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav aria-label="Principal">
+        <ul class="nav">
+          <li><a href="../pt-br/features.html">Recursos</a></li>
+          <li><a href="../pt-br/pricing.html">Preços</a></li>
+          <li><a href="../pt-br/security.html" aria-current="page">Segurança</a></li>
+          <li><a href="../pt-br/get-started.html">Primeiros passos</a></li>
+          <li><a href="../pt-br/help.html">Guia</a></li>
+          <li><a href="../pt-br/download.html">Baixar</a></li>
+          <li><a href="../pt-br/support.html">Suporte</a></li>
+          <li><a href="../buy.html">Comprar o Pro</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>O modelo de segurança, em termos simples</h1>
+  <p class="lead">O que o LocalGateKeys foi projetado para proteger e o que ele não consegue proteger.</p>
+</div>
+
+<div class="wrap page-body">
+  <div class="prose">
+    <h2>Como seu cofre é criptografado</h2>
+    <p>Uma chave aleatória de 256 bits criptografa o cofre. Essa chave nunca é guardada como está; ela é envolvida (criptografada) separadamente por cada forma de desbloqueio, então trocar a senha não exige recriptografar tudo, e um invólucro copiado de outro cofre é rejeitado.</p>
+  </div>
+  <dl class="spec">
+    <dt>Criptografia do cofre</dt><dd>AES-256-GCM com um nonce aleatório novo a cada gravação</dd>
+    <dt>Senha mestra</dt><dd>Argon2id, 64 MiB de memória, 3 passagens, paralelismo 4, salt aleatório por invólucro</dd>
+    <dt>Frase de recuperação</dt><dd>Frase BIP39 opcional de 24 palavras (256 bits), expandida com HKDF-SHA256</dd>
+    <dt>Windows Hello</dt><dd>Envolve a chave do cofre, nunca a senha mestra</dd>
+    <dt>Backups e transferências</dt><dd>Argon2id e AES-256-GCM com os parâmetros guardados no cabeçalho autenticado</dd>
+    <dt>Sincronização entre dispositivos</dt><dd>Uma chave de grupo aleatória, entregue a cada dispositivo com X25519 e HKDF-SHA256 e, no caso de uma pasta na nuvem, também envolvida pela sua senha de sincronização com Argon2id; cada registro selado com AES-256-GCM e vinculado ao seu item, versão e época da chave; cada arquivo de dispositivo vinculado ao dispositivo que o gravou</dd>
+    <dt>Chaves de acesso</dt><dd>Chaves ES256 (P-256) guardadas dentro do cofre criptografado; o app monta os dados assinados a partir da origem informada pelo navegador, nunca a partir da página</dd>
+    <dt>Gravações em disco</dt><dd>Arquivo temporário, descarga e substituição atômica, para que uma falha não deixe meio cofre</dd>
+  </dl>
+
+  <div class="ledger">
+    <section aria-labelledby="protects">
+      <h2 id="protects">Projetado para proteger contra</h2>
+      <ul>
+        <li>Alguém que copie o arquivo do seu cofre ou um backup e não saiba a sua senha mestra</li>
+        <li>Um site obter logins ou chaves de acesso salvos para outro site</li>
+        <li>Outro programa no seu PC falar com o LocalGateKeys sem o segredo de sessão que ele entrega ao seu próprio auxiliar do navegador</li>
+        <li>Preencher um app de desktop que foi trocado, atualizado ou alterado desde que você o vinculou</li>
+        <li>Senhas sem criptografia no disco</li>
+        <li>Formulários enviados sem você</li>
+        <li>Seu provedor de nuvem ler os dados sincronizados: ele só guarda texto cifrado</li>
+      </ul>
+    </section>
+    <section class="not" aria-labelledby="not-protects">
+      <h2 id="not-protects">Não consegue proteger contra</h2>
+      <ul>
+        <li>Malware, ou qualquer pessoa com controle de administrador, já em execução no seu PC</li>
+        <li>Um navegador, uma instalação do Windows ou uma dependência comprometidos</li>
+        <li>Um site em que você preenche uma senha de propósito</li>
+        <li>Alguém usando seu PC enquanto o cofre está desbloqueado</li>
+        <li>Phishing dentro de um app legítimo que mostra conteúdo controlado por um atacante</li>
+        <li>Perder o cofre, os backups e a senha mestra sem uma frase de recuperação: ninguém, nem nós, consegue abri-lo</li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="prose">
+    <h2>O que o LocalGateKeys nunca faz</h2>
+    <p>Algumas formas de preencher senhas são indistinguíveis de spyware, por isso são descartadas desde o projeto. O LocalGateKeys não contém:</p>
+    <ul>
+      <li>ganchos de teclado nem registro de teclas</li>
+      <li>monitoramento da área de transferência</li>
+      <li>leitura de tela nem OCR para achar credenciais</li>
+      <li>varredura da memória de outros programas</li>
+      <li>descriptografia do banco de senhas salvas do seu navegador</li>
+      <li>injeção de código em outros programas ou jogos</li>
+      <li>envio de um login que você não iniciou</li>
+    </ul>
+
+    <h2>A rede, com franqueza</h2>
+    <p>Não existe conta do LocalGateKeys nem servidor que guarde cofres. O app se conecta à internet somente nestes casos:</p>
+    <ul>
+      <li><strong>Verificações de atualização.</strong> Quando você escolhe Verificar atualizações, o app baixa um único arquivo pequeno e confere sua assinatura com uma chave embutida no app. Ele nunca baixa nem executa um instalador por conta própria.</li>
+      <li><strong>Lista de revogação de licenças.</strong> Junto com cada verificação de atualização, o app baixa uma lista assinada de licenças reembolsadas e confere a sua licença com ela no seu PC. Ele não envia nada sobre a sua licença.</li>
+      <li><strong>Ícones de sites.</strong> Para mostrar o ícone de um site, o app o baixa do endereço do próprio site. Nenhum nome de usuário, senha ou dado do cofre é enviado, mas cada download informa àquele site, e a quem observa a rede, que o seu cofre tem uma conta ali. Isso vem desativado e só acontece se você ativar "Mostrar ícones de sites" em Configurações; o modo offline estrito o bloqueia.</li>
+      <li><strong>Verificações de vazamento, se você as ativar.</strong> Quando você inicia uma verificação, o app envia ao Have I Been Pwned os cinco primeiros caracteres do hash SHA-1 de cada senha. O serviço vê seu endereço IP, nunca a senha, o hash completo, o nome de usuário nem o site.</li>
+      <li><strong>Sincronização, se você a configurar.</strong> Pela rede de casa, os dispositivos conversam diretamente. Por uma pasta na nuvem, quem faz o envio é o seu app de nuvem.</li>
+    </ul>
+    <p>O modo offline estrito vem ativado por padrão. Ele bloqueia solicitações de internet em segundo plano, ícones de sites e verificações de vazamento, e uma verificação de atualização pergunta antes. A <a href="../legal/privacy.html">política de privacidade</a> lista exatamente o que nossos servidores veem quando você verifica atualizações.</p>
+
+    <h2>Limitações conhecidas</h2>
+    <ul>
+      <li>A senha mestra é movida para um buffer apagável assim que chega ao app e é apagada quando a operação que a exigiu termina. A página em que você a digita roda no Microsoft Edge WebView2, e a passagem dessa página para o app faz uma cópia de curta duração; o app não consegue apagar nenhuma das duas cópias.</li>
+      <li>O desbloqueio por câmera é uma verificação de comodidade, não uma proteção certificada contra fotos ou máscaras. O Windows Hello é a escolha mais forte.</li>
+      <li>O preenchimento de apps do Windows não funciona com programas executados como administrador, interfaces de jogos desenhadas sob medida nem visualizações web incorporadas que ele não consegue verificar.</li>
+      <li>O cofre detecta quando é revertido a uma cópia mais antiga. Se você usa a sincronização, seus outros dispositivos também lembram o quão recente era o seu cofre, de modo que apagar o cofre e o arquivo de âncora juntos é detectado na próxima sincronização (por ora em PCs Windows; os apps para iPhone, Mac e Android virão depois). Sem sincronização, quem puder substituir os dois arquivos ainda consegue burlar a verificação.</li>
+      <li>As chaves de acesso funcionam somente no Chrome e no Edge, e somente para a própria página: um login dentro de um frame de outro site usa a janela de chaves de acesso do próprio navegador. Se um site cancelar depois que você aprovar uma nova chave de acesso, ela pode continuar no seu cofre; exclua-a no app.</li>
+    </ul>
+
+    <h2>Relatar uma vulnerabilidade</h2>
+    <p>Escreva para <a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>. A <a href="../legal/vulnerability-disclosure.html">política de divulgação de vulnerabilidades</a> explica o que está no escopo, com que rapidez respondemos e como damos crédito aos pesquisadores.</p>
+  </div>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand">LocalGateKeys</p>
+        <p>Um gerenciador de senhas para Windows que mantém seu cofre nos seus próprios dispositivos.</p>
+        <p class="quiet">Este site não usa cookies, não faz análises de uso e não carrega nada de outras empresas.</p>
+      </div>
+      <nav aria-label="Produto">
+        <h2>Produto</h2>
+        <ul>
+          <li><a href="../pt-br/features.html">Recursos</a></li>
+          <li><a href="../pt-br/pricing.html">Preços</a></li>
+          <li><a href="../pt-br/download.html">Baixar</a></li>
+          <li><a href="../pt-br/licence.html">Sua licença Pro</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Ajuda">
+        <h2>Ajuda</h2>
+        <ul>
+          <li><a href="../pt-br/help.html">Guia do usuário</a></li>
+          <li><a href="../pt-br/support.html">Suporte e perguntas frequentes</a></li>
+          <li><a href="../pt-br/security.html">Segurança</a></li>
+          <li><a href="../legal/vulnerability-disclosure.html">Relatar uma vulnerabilidade</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Jurídico">
+        <h2>Jurídico</h2>
+        <p class="quiet">Estes documentos estão em inglês, e a versão em inglês é a que se aplica e a vinculante.</p>
+        <ul>
+          <li><a href="../legal/eula.html">Contrato de licença</a></li>
+          <li><a href="../legal/privacy.html">Política de privacidade</a></li>
+          <li><a href="../legal/terms-of-sale.html">Termos de venda</a></li>
+          <li><a href="../legal/refunds.html">Política de reembolso</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base">
+      <p>&copy; 2026 Ilias Pelekas. Contato: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows é uma marca registrada do grupo de empresas Microsoft. Chrome é uma marca registrada da Google LLC.</p>
+      <p class="lang-switch" role="navigation" aria-label="Idioma"><a href="../security.html" hreflang="en" lang="en">English</a> · <a href="../es/security.html" hreflang="es" lang="es">Español</a> · <a href="../it/security.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/security.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/security.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../ja/security.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/security.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/security.html" hreflang="pt-BR" lang="pt-BR" aria-current="true">Português (Brasil)</a> · <a href="../ko/security.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/security.html" hreflang="nl" lang="nl">Nederlands</a></p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -16,11 +16,11 @@ from typing import Any, Callable
 from .. import distribution
 from ..api.result import ApiError
 from ..settings import UNLOCK_COUNT_CAP
+from ..i18n import t
 
 PROMPT_AFTER_UNLOCKS = 3
-PROMPT_TITLE = "Enjoying LocalGateKeys?"
-PROMPT_TEXT = ("A rating on the Microsoft Store helps other people find LocalGateKeys.\n\nRate it now? This opens "
-               "the Microsoft Store app. LocalGateKeys sends nothing, and won't ask again.")
+PROMPT_TITLE = "rating.enjoyingLocalgatekeys"
+PROMPT_TEXT = ("rating.aRatingOnTheMicrosoft")
 _FAMILY_NAME = re.compile(r"^[A-Za-z0-9.\-]{3,50}_[a-z0-9]{13}$")
 
 
@@ -62,7 +62,7 @@ class RatingService:
         if (settings.rate_prompt_answered or settings.unlock_count < PROMPT_AFTER_UNLOCKS
                 or bool(getattr(settings, "strict_offline_mode", True)) or not self._available()):
             return {"due": False}
-        return {"due": True, "title": PROMPT_TITLE, "text": PROMPT_TEXT}
+        return {"due": True, "title": t(PROMPT_TITLE), "text": t(PROMPT_TEXT)}
 
     def answer(self, rate: bool) -> dict[str, Any]:
         with self._lock:
@@ -73,9 +73,9 @@ class RatingService:
     def open(self) -> dict[str, Any]:
         uri = review_uri(distribution.package_family_name()) if self._available() else None
         if uri is None or self._opener is None:
-            raise ApiError("invalid", "Rating is available in the Microsoft Store version of LocalGateKeys.")
+            raise ApiError("invalid", t("rating.ratingIsAvailableInThe"))
         try:
             self._opener(uri)
         except OSError:
-            raise ApiError("invalid", "The Microsoft Store could not be opened.") from None
+            raise ApiError("invalid", t("rating.theMicrosoftStoreCouldNot")) from None
         return {}

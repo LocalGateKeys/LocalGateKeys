@@ -12,15 +12,50 @@ struct ItemDetailView: View {
     @State private var editingPasskey = false
     @State private var confirmDelete = false
     @State private var deleteResult: SaveResult?
+    /// The star's state: the item's `favorite`, then what the last toggle wrote.
+    @State private var favorite: Bool
+    @State private var favoriteFailed = false
+    /// Share (UX workstream 9): the sheet with the six-word code, the file and the QR.
+    @State private var sharing = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.phoneTrash) private var trash
+    @Environment(\.phoneReminders) private var reminders
 
     init(item: VaultItem, store: any ItemStore, pro: ProModel, onChange: @escaping () -> Void) {
-        _model = State(initialValue: ItemDetailModel(item: item, clipboard: .shared, clock: SystemClock(),
+        _model = State(initialValue: ItemDetailModel(item: item, clipboard: SecretClipboard.shared, clock: SystemClock(),
                                                          concealSecrets: AppSettings.shared.concealSecretsInDetail))
+        _favorite = State(initialValue: item.favorite)
         self.store = store; self.pro = pro; self.onChange = onChange
     }
 
     @Environment(\.openURL) private var openURL
+    /// "Show on Apple Watch" (UX workstream 12): the limit or Pro message after a tap.
+    @State private var watchMessage: String?
+
+    /// Pins or unpins this item's 2FA code on the Apple Watch app. Shown only with a paired watch that has
+    /// the app installed (or when already pinned, so it can be unpinned).
+    @ViewBuilder private var watchPinRow: some View {
+        let watch = WatchCodes.shared
+        let pinned = watch.isPinned(model.item.id)
+        if watch.watchAvailable || pinned {
+            Button {
+                guard let snapshot = try? store.load() else { return }
+                switch watch.toggle(model.item.id, snapshot: snapshot, isPro: pro.isPro) {
+                case .pinned: watchMessage = nil; CopyToast.shared.show(String(localized: "Sent to Apple Watch"))
+                case .unpinned: watchMessage = nil; CopyToast.shared.show(String(localized: "Removed from Apple Watch"))
+                case .limitReached: watchMessage = String(localized: "Up to \(WatchMessage.maxPins) codes can be on Apple Watch. Remove one first.")
+                case .needsPro: watchMessage = String(localized: "Apple Watch codes are part of Pro, like all 2FA.")
+                }
+            } label: {
+                Label(pinned ? String(localized: "Remove from Apple Watch") : String(localized: "Show on Apple Watch"),
+                      systemImage: pinned ? "applewatch.slash" : "applewatch")
+            }
+            .foregroundStyle(Palette.accentText)
+            if let watchMessage {
+                Text(watchMessage).font(.footnote).foregroundStyle(Palette.secondaryText)
+            }
+        }
+    }
 
     var body: some View {
         List {
@@ -31,9 +66,10 @@ struct ItemDetailView: View {
                         TOTPRing(fraction: totp.fractionRemaining, seconds: totp.secondsRemaining)
                         Text(totp.code).font(.system(.title, design: .monospaced)).foregroundStyle(Palette.text)
                         Spacer()
-                        Button { if model.copyTOTP() { CopyToast.shared.show("Code copied") } } label: { Image(systemName: "doc.on.doc") }
+                        Button { if model.copyTOTP() { CopyToast.shared.show(String(localized: "Code copied")) } } label: { Image(systemName: "doc.on.doc") }
                             .buttonStyle(.borderless).accessibilityLabel("Copy code")
                     }
+                    watchPinRow
                 }
                 .listRowBackground(Palette.groupSurface)
             }
@@ -52,9 +88,9 @@ struct ItemDetailView: View {
                                 }
                                 .buttonStyle(.borderless)
                                 .disabled(model.screenCaptured)
-                                .accessibilityLabel(model.isRevealed(field) ? "Hide" : "Reveal")
+                                .accessibilityLabel(model.isRevealed(field) ? String(localized: "Hide") : String(localized: "Reveal"))
                             }
-                            Button { model.copy(field); CopyToast.shared.show("\(field.label) copied") } label: { Image(systemName: "doc.on.doc") }
+                            Button { model.copy(field); CopyToast.shared.show(String(localized: "\(field.label) copied")) } label: { Image(systemName: "doc.on.doc") }
                                 .buttonStyle(.borderless).accessibilityLabel("Copy \(field.label)")
                         }
                         if field.id == "password" {
@@ -64,6 +100,22 @@ struct ItemDetailView: View {
                 }
             }
             .listRowBackground(Palette.groupSurface)
+            if model.item.kind == AttachmentDocuments.kind {
+                DocumentSection(item: model.item, store: store, onChange: onChange)
+            }
+            if model.item.kind == "web" {
+                let count = PasswordHistory.entries(model.item.record).count
+                Section {
+                    NavigationLink {
+                        PasswordHistoryView(item: model.item, store: store, onChange: onChange)
+                    } label: {
+                        LabeledContent("Password history", value: count == 0 ? String(localized: "None") : "\(count)")
+                    }
+                    .disabled(count == 0)
+                }
+                .listRowBackground(Palette.groupSurface)
+            }
+            if let reminders { ItemReminderSection(reminders: reminders, item: model.item) }
             if let copied = model.lastCopied {
                 Text("\(copied) copied. It clears from the clipboard in \(AppSettings.shared.clipboardExpiry.label).")
                     .font(.footnote).foregroundStyle(Palette.secondaryText).listRowBackground(Color.clear)
@@ -75,6 +127,18 @@ struct ItemDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
+                Button(action: toggleFavorite) {
+                    Image(systemName: favorite ? "star.fill" : "star").foregroundStyle(favorite ? Palette.warning : Palette.accentText)
+                }
+                .accessibilityLabel(favorite ? String(localized: "Remove from favorites") : String(localized: "Add to favorites"))
+            }
+            if Share.canShare(model.item.record) {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { sharing = true } label: { Image(systemName: "square.and.arrow.up") }
+                        .accessibilityLabel("Share")
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
                 // Other kinds are read-only on the phone and kept intact.
                 if EditorKind(kind: model.item.kind) != nil { Button("Edit") { editing = true } }
                 else if model.item.kind == "passkey" { Button("Edit") { editingPasskey = true } }
@@ -83,10 +147,14 @@ struct ItemDetailView: View {
                 }
             }
         }
-        .confirmationDialog("Delete this item?", isPresented: $confirmDelete, titleVisibility: .visible) {
+        // An alert with a visible Cancel, as in the editor (tester feedback 1).
+        .alert("Delete this item?", isPresented: $confirmDelete) {
             Button("Delete", role: .destructive) { deleteNow() }
+            Button("Cancel", role: .cancel) {}
         } message: {
-            Text("It is removed from this iPhone and from your other devices at the next sync. It can only be edited on your PC.")
+            Text(model.item.kind == AttachmentDocuments.kind
+                 ? String(localized: "The item and its file are removed from this iPhone and from your other devices at the next sync.")
+                 : String(localized: "It is removed from this iPhone and from your other devices at the next sync. It can only be edited on your PC."))
         }
         .alert(deleteAlertTitle, isPresented: Binding(get: { deleteResult == .unchanged || deleteResult == .failed },
                                                       set: { if !$0 { deleteResult = nil } })) {
@@ -95,8 +163,10 @@ struct ItemDetailView: View {
                 deleteResult = nil
             }
         }
+        .alert("The favorite could not be saved on this device.", isPresented: $favoriteFailed) { Button("OK") {} }
+        .sheet(isPresented: $sharing) { ShareItemSheet(item: storedItem) }
         .sheet(isPresented: $editingPasskey) {
-            PasskeyEditView(model: PasskeyRenameModel(store: store, item: model.item, clock: SystemClock())) { result in
+            PasskeyEditView(model: PasskeyRenameModel(store: store, item: storedItem, clock: SystemClock())) { result in
                 if result == .saved { onChange(); dismiss() }
             }
         }
@@ -104,9 +174,12 @@ struct ItemDetailView: View {
         .onChange(of: ScreenCaptureMonitor.shared.isCaptured, initial: true) { _, captured in model.screenCaptured = captured }
         .sheet(isPresented: $editing) {
             // Editing and deleting are never limited, even over the free plan's item count.
-            EditorView(model: EditorModel(store: store, pro: pro, editing: model.item,
-                                          kind: EditorKind(kind: model.item.kind) ?? .note,
-                                          clock: SystemClock(), random: SystemRandomSource()),
+            // The stored record, so a favorite toggled on this screen is not undone by the edit.
+            let current = storedItem
+            EditorView(model: EditorModel(store: store, pro: pro, editing: current,
+                                          kind: EditorKind(kind: current.kind) ?? .note,
+                                          clock: SystemClock(), random: SystemRandomSource(),
+                                          keepsPasswordHistory: true),
                        pro: pro) { result in
                 if result == .saved { onChange(); dismiss() }
             }
@@ -133,13 +206,31 @@ extension ItemDetailView {
     }
 
     private var deleteAlertTitle: String {
-        deleteResult == .unchanged ? EditorModel.alreadyRemovedMessage : "The item could not be deleted on this device."
+        deleteResult == .unchanged ? EditorModel.alreadyRemovedMessage : String(localized: "The item could not be deleted on this device.")
+    }
+
+    /// The item as stored now (after a favorite toggle), else the one this screen opened with.
+    private var storedItem: VaultItem {
+        guard let snap = try? store.load() else { return model.item }
+        return VaultItem.items(from: snap).first { $0.id == model.item.id } ?? model.item
+    }
+
+    /// The star: writes `favorite` and `updated_at` (synced) and reloads the list; the screen stays open.
+    private func toggleFavorite() {
+        let next = !favorite
+        switch VaultListModel.setFavorite(next, id: model.item.id, store: store, clock: SystemClock()) {
+        case .saved: favorite = next; onChange()
+        case .unchanged: favorite = next
+        default: favoriteFailed = true
+        }
     }
 
     /// Deletes a desktop-only item (tombstone, like every delete): `EditorModel.delete`.
     private func deleteNow() {
-        let r = EditorModel.delete(id: model.item.id, store: store, clock: SystemClock(), background: UIKitBackgroundTasks())
-        if r == .saved { onChange(); dismiss() } else { deleteResult = r }
+        let id = model.item.id
+        let r = trash?.moveToTrash(id: id)
+            ?? EditorModel.delete(id: id, store: store, clock: SystemClock(), background: UIKitBackgroundTasks())
+        if r == .saved { trash?.offerUndo(); onChange(); dismiss() } else { deleteResult = r }
     }
 }
 

@@ -66,6 +66,11 @@ class EventBus:
         self._sinks = {**self._sinks, key: sink}
 
     def emit(self, name: str, detail: dict[str, Any]) -> None:
+        if name in ("toast", "notice") and not detail.get("error_log"):
+            from ..api.result import points_to_error_log
+
+            if points_to_error_log(f"{detail.get('title', '')} {detail.get('message', '')}"):
+                detail = {**detail, "error_log": True}  # the page offers "Open error log"
         payload = _js_literal({"name": name, "detail": detail})
         js = f'window.dispatchEvent(new CustomEvent("lgk",{{detail:{payload}}}))'
         for sink in list(self._sinks.values()):

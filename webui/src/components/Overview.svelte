@@ -1,45 +1,51 @@
 <script>
   /** Overview cards above the list: password health, coming up, backup. */
+  import { formatNumber, t } from '../lib/i18n.svelte.js';
+
   let { overview = null, ongenerator } = $props();
 
   function ago(seconds) {
-    if (seconds < 3600) return 'within the hour';
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)} h ago`;
-    return `${Math.floor(seconds / 86400)} d ago`;
+    if (seconds < 3600) return t('overview.withinHour');
+    if (seconds < 86400) {
+      const h = Math.floor(seconds / 3600);
+      return t('overview.hoursAgo', { count: h, number: formatNumber(h) });
+    }
+    const d = Math.floor(seconds / 86400);
+    return t('overview.daysAgo', { count: d, number: formatNumber(d) });
   }
 </script>
 
 {#if overview}
   <div class="cards">
     <div class="card group">
-      <div class="title">Password health</div>
+      <div class="title">{t('overview.health')}</div>
       {#if overview.health?.score !== null && overview.health}
-        <div class="big">{overview.health.score}<span class="of"> / 100 · {overview.health.label}</span></div>
-        <div class="pills"><span>{overview.health.weak} weak</span><span>{overview.health.reused} reused</span><span>{overview.health.no_2fa} no 2FA</span></div>
+        <div class="big">{overview.health.score}<span class="of">{t('overview.scoreOf', { label: overview.health.label })}</span></div>
+        <div class="pills"><span>{t('overview.weak', { number: formatNumber(overview.health.weak) })}</span><span>{t('overview.reused', { number: formatNumber(overview.health.reused) })}</span><span>{t('overview.no2fa', { number: formatNumber(overview.health.no_2fa) })}</span></div>
       {:else}
-        <div class="muted">{overview.health?.label ?? 'No logins yet'}</div>
+        <div class="muted">{overview.health?.label ?? t('overview.noLogins')}</div>
       {/if}
     </div>
     <div class="card group">
-      <div class="title">Coming up</div>
+      <div class="title">{t('overview.comingUp')}</div>
       {#each overview.reminders as line (line.date + line.label)}
         <div class="line"><span class="date">{line.date}</span>{line.label}<span class="meta" class:overdue={line.overdue}>{line.meta}</span></div>
       {:else}
-        <div class="muted">Nothing coming up</div>
+        <div class="muted">{t('overview.nothingComingUp')}</div>
       {/each}
     </div>
     <div class="card group">
-      <div class="title">Backup & recovery</div>
+      <div class="title">{t('overview.backup')}</div>
       {#if overview.backup?.last_at}
-        <div class="pill" class:stale={overview.backup.stale}>Last backup {ago(Date.now() / 1000 - overview.backup.last_at)}</div>
+        <div class="pill" class:stale={overview.backup.stale}>{t('overview.lastBackup', { when: ago(Date.now() / 1000 - overview.backup.last_at) })}</div>
       {:else}
-        <div class="pill stale">No backup yet</div>
+        <div class="pill stale">{t('overview.noBackup')}</div>
       {/if}
       {#if overview.backup?.warning}<div class="warn">{overview.backup.warning}</div>{/if}
     </div>
     <div class="card group">
-      <div class="title">Generator</div>
-      <button class="link" onclick={ongenerator}>Open the password generator</button>
+      <div class="title">{t('overview.generator')}</div>
+      <button class="link" onclick={ongenerator}>{t('overview.openGenerator')}</button>
     </div>
   </div>
 {/if}

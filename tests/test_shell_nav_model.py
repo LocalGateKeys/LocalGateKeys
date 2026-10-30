@@ -39,8 +39,8 @@ def test_tools_route_to_webview_pages():
 
     home = (Path(__file__).resolve().parents[1] / "webui/src/screens/Home.svelte").read_text(encoding="utf-8")
     assert [e.label for e in TOOLS_ENTRIES] == [
-        "Security center", "Reminders", "Sync", "Devices & connections", "Licence", "Import & export", "Activity",
-        "Trash"]
+        "Security center", "Reminders", "Sync", "Devices & connections", "Licence", "Import & export",
+        "Scan QR code", "Activity", "Trash"]
     assert all(e.action and e.token is None and (f"{e.action}:" in home or f"'{e.action}'" in home)
                for e in TOOLS_ENTRIES)
 

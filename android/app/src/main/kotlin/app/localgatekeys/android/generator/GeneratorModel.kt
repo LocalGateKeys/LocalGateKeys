@@ -1,5 +1,8 @@
 package app.localgatekeys.android.generator
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.Txt
+import androidx.annotation.StringRes
 import app.localgatekeys.android.detail.SecretClipboard
 import app.localgatekeys.core.primitives.RandomSource
 import app.localgatekeys.core.primitives.SystemRandomSource
@@ -26,6 +29,7 @@ class GeneratorModel(
      */
     private val wordlist: List<String>,
     private val post: (() -> Unit) -> Unit,
+    private val t: Txt,
 ) {
     data class State(
         val options: GeneratorOptions,
@@ -72,9 +76,9 @@ class GeneratorModel(
         val next = try {
             generator.generate(options) to null
         } catch (e: GeneratorError) {
-            "" to e.message
+            "" to e.text(t)
         } catch (e: Exception) {
-            "" to "Could not generate a password"
+            "" to t.s(R.string.generator_failed)
         }
         _state.update { it.copy(value = next.first, error = next.second, copied = false) }
     }

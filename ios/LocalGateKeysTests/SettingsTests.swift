@@ -15,8 +15,15 @@ final class SettingsTests: XCTestCase {
         XCTAssertTrue(list[1].text.contains("CC0 1.0"))
     }
 
+    func test_import_card_text() {
+        XCTAssertEqual(ImportCard.title, "Import your passwords")
+        XCTAssertTrue(ImportCard.text.hasPrefix("Bring your logins over from another password manager or browser."))
+        XCTAssertTrue(ImportCard.text.contains("Export Data to Another App"))
+        XCTAssertTrue(ImportCard.text.contains("Bitwarden, 1Password, KeePass and others"))
+    }
+
     func test_about_text() {
-        XCTAssertEqual(SettingsView.dataNotCollected, "Data not collected — LocalGateKeys has no analytics and no servers.")
+        XCTAssertEqual(SettingsView.dataNotCollected, "Your vault stays on your devices. When you buy Pro, the app sends the App Store receipt to our licence server so your other devices can be unlocked. The receipt has no name or email.")
         XCTAssertEqual(SettingsView.safariHelp, "To be offered saving in Safari, turn on LocalGateKeys in Settings › Apps › Safari › Extensions and allow it on all websites.")
     }
 

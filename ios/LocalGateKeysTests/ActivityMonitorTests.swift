@@ -48,7 +48,8 @@ final class ActivityMonitorTests: XCTestCase {
                                 settings: AppSettings(defaults: UserDefaults(suiteName: "root-\(UUID().uuidString)")!),
                                 clipboard: nil, eraser: FakeEraser())
         let root = UnlockedRoot(store: MemoryStore(), keychain: InMemoryKeychainVault(), pro: ProModel(purchases: FakePurchases()), lock: lock,
-                                safariImport: SafariImportModel(background: FakeBackgroundTasks()))
+                                safariImport: SafariImportModel(background: FakeBackgroundTasks()),
+                                credentialExchange: CredentialExchangeModel())
         let bodyType = String(reflecting: type(of: root.body))
         XCTAssertFalse(bodyType.contains("Gesture"), bodyType)
     }

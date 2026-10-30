@@ -12,7 +12,8 @@ protocol VaultErasing: Sendable {
 struct VaultEraseFailure: Error, Equatable {
     let steps: [String]
     var message: String {
-        "The vault was not fully erased (could not delete: \(steps.joined(separator: ", "))). Tap Unlock to try erasing again, or Start fresh anyway."
+        let list = steps.joined(separator: ", ")
+        return String(localized: "The vault was not fully erased (could not delete: \(list)). Tap Unlock to try erasing again, or Start fresh anyway.")
     }
 }
 
@@ -36,10 +37,12 @@ struct VaultEraser: VaultErasing {
     var now: @Sendable () -> Int64 = { Int64(Date().timeIntervalSince1970) }
     /// `<app group>/SafariSave` (index and inbox), found without creating it; nil: nothing to delete.
     var safariDirectory: @Sendable () throws -> URL? = { nil }
+    /// The unsaved editor draft (Task 6, `EditorDraftStore`); nil: none. Failure name "draft".
+    var draftFile: @Sendable () -> URL? = { nil }
 
     /// Two confirmations, in the style of Leave and Reset sync (`SyncWording`).
-    static let confirmText1 = "Erase this iPhone's vault?\n\nThis deletes every item, the vault's keys and its sync settings from this iPhone. Your PC and the sync folder are not changed. If this iPhone was your only copy, the items are gone."
-    static let confirmText2 = "Are you sure? This cannot be undone. Erase this iPhone's vault now?"
+    static var confirmText1: String { String(localized: "Erase this iPhone's vault?\n\nThis deletes every item, the vault's keys and its sync settings from this iPhone. Your PC and the sync folder are not changed. If this iPhone was your only copy, the items are gone.") }
+    static var confirmText2: String { String(localized: "Are you sure? This cannot be undone. Erase this iPhone's vault now?") }
 
     /// Context-free vaults for the shared, app-only and Safari groups (deleting needs no Face ID; the
     /// session's authenticated context is gone once the app locks).
@@ -52,7 +55,8 @@ struct VaultEraser: VaultErasing {
                            keychains: groups.map { SystemKeychainVault(accessGroup: $0) },
                            identities: SystemCredentialIdentityStore(),
                            scheduleIdentityRetry: { settings.identityRemovalPending = true },
-                           safariDirectory: { try SafariSaveFiles.location() })
+                           safariDirectory: { try SafariSaveFiles.location() },
+                           draftFile: { EditorDraftStore.location() })
     }
 
     func erase() async throws {
@@ -75,6 +79,10 @@ struct VaultEraser: VaultErasing {
         if let safari = try? safariDirectory(), FileManager.default.fileExists(atPath: safari.path) {
             try? FileManager.default.removeItem(at: safari)
         }
+        if let draft = draftFile(), !EditorDraftStore.deleteFile(draft) { failed.append("draft") }
+        // Task 7: the app password file and the Face ID shortcut (before the slots, so a failed slot delete
+        // never leaves password mode pointing at a deleted vault).
+        if let appPassword = AppPasswordStore.shared(), !appPassword.removeAll() { failed.append("app-password") }
         for slot in VaultSlot.allCases {
             for keychain in keychains {
                 do { try keychain.delete(slot) }

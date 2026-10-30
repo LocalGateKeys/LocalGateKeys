@@ -1,13 +1,13 @@
 /* LocalGateKeys design tokens. Dark navy glass is the default; light is frosted white.
    Values follow the approved 2026-10-17 glass mockups. */
 :root {
-  --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Yu Gothic UI", "Malgun Gothic", system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", "Microsoft YaHei UI", "Yu Gothic UI", "Malgun Gothic", system-ui, sans-serif;
   --font-mono: "Cascadia Mono", "Consolas", ui-monospace, monospace;
 
   --text: #f4f6fb;
   --text-muted: rgba(244, 246, 251, 0.6);
-  --text-faint: rgba(244, 246, 251, 0.42);
+  --text-faint: rgba(244, 246, 251, 0.5);
   --link: #8fbaff;
   --accent: #2b6fe0;
   --brand-text: #22c3f0;
@@ -44,8 +44,8 @@
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
     --text: #13203a;
-    --text-muted: rgba(19, 32, 58, 0.62);
-    --text-faint: rgba(19, 32, 58, 0.45);
+    --text-muted: rgba(19, 32, 58, 0.7);
+    --text-faint: rgba(19, 32, 58, 0.64);
     --link: #0b5bd3;
     --accent: #0b5bd3;
     --brand-text: #0a86c2;
@@ -71,8 +71,8 @@
 /* An explicit in-app choice wins over the Windows setting. */
 :root[data-theme="light"] {
   --text: #13203a;
-  --text-muted: rgba(19, 32, 58, 0.62);
-  --text-faint: rgba(19, 32, 58, 0.45);
+  --text-muted: rgba(19, 32, 58, 0.7);
+  --text-faint: rgba(19, 32, 58, 0.64);
   --link: #0b5bd3;
   --accent: #0b5bd3;
   --brand-text: #0a86c2;

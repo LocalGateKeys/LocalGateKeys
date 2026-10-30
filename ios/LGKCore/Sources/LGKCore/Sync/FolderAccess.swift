@@ -13,6 +13,16 @@ public protocol FolderAccess: Sendable {
     func remove(_ path: String) throws
     /// True for an existing file or directory.
     func exists(_ path: String) -> Bool
+    /// Size in bytes and modification time (Unix seconds) of a regular file; nil when unknown. Attachment
+    /// sync uses it to keep blobs alive and to sweep old ones (an unknown time is never swept).
+    func fileAttributes(_ path: String) -> (size: Int, modified: Int64)?
+    /// Sets the modification time of an existing file (attachment `keep`).
+    func touch(_ path: String, modified: Int64) throws
+}
+
+extension FolderAccess {
+    public func fileAttributes(_ path: String) -> (size: Int, modified: Int64)? { nil }
+    public func touch(_ path: String, modified: Int64) throws {}
 }
 
 public enum FolderAccessError: Error, Equatable, Sendable {
@@ -40,5 +50,20 @@ public enum FolderLayout {
     /// Path of `deviceID`'s view signature (desktop `signature_file`); nil unless the id is a safe file name.
     public static func signatureFile(_ deviceID: String) -> String? {
         Identifier.isSafeDeviceFile(deviceID) ? "\(signaturesDir)/\(deviceID)\(signatureSuffix)" : nil
+    }
+
+    /// Witness files (2026-10-29): `witness/<id>.lgksync` (a format-2 view with zero records) next to a
+    /// format-1 view, and `witness/<id>.lgksig`, its signature by the same key.
+    public static let witnessDirName = "witness"
+    public static var witnessDir: String { "\(syncDir)/\(witnessDirName)" }
+
+    /// Path of `deviceID`'s witness file; nil unless the id is a safe file name.
+    public static func witnessFile(_ deviceID: String) -> String? {
+        Identifier.isSafeDeviceFile(deviceID) ? "\(witnessDir)/\(deviceID)\(deviceSuffix)" : nil
+    }
+
+    /// Path of the signature of `deviceID`'s witness file; nil unless the id is a safe file name.
+    public static func witnessSignatureFile(_ deviceID: String) -> String? {
+        Identifier.isSafeDeviceFile(deviceID) ? "\(witnessDir)/\(deviceID)\(signatureSuffix)" : nil
     }
 }

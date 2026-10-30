@@ -3,6 +3,7 @@
    *  Every file is chosen in a Windows dialog opened by LocalGateKeys; passwords are cleared after each call. */
   import ErrorLogLink from './ErrorLogLink.svelte';
   import { call } from '../lib/api.js';
+  import { t } from '../lib/i18n.svelte.js';
   import { okOrToast } from '../lib/toast.js';
   import Button from './Button.svelte';
   import Field from './Field.svelte';
@@ -20,18 +21,18 @@
   // open with it, Hello/camera to set up again); kept after the card closes.
   let phraseNotes = $state([]);
 
-  const FORMS = {
-    create: { title: 'Create backup', text: 'Choose a separate backup password. The vault password is used to check that the saved copy can be opened.' },
-    verify: { title: 'Verify backup', text: 'Verification does not change your profile.' },
-    restore: { title: 'Restore backup', text: 'Both passwords are needed to open this encrypted backup.' },
-    test: { title: 'Test a restore', text: 'Both passwords are needed to open this encrypted backup.' },
-    trial: { title: 'Verify test profile', text: 'This checks that the restored profile can be opened.' },
-    phrase: { title: 'Recovery phrase', text: '' },
-  };
+  const FORMS = $derived({
+    create: { title: t('recoveryPage.createTitle'), text: t('recoveryPage.createText') },
+    verify: { title: t('recoveryPage.verifyTitle'), text: t('recoveryPage.verifyText') },
+    restore: { title: t('recoveryPage.restoreTitle'), text: t('recoveryPage.bothPasswords') },
+    test: { title: t('recoveryPage.testTitle'), text: t('recoveryPage.bothPasswords') },
+    trial: { title: t('recoveryPage.trialTitle'), text: t('recoveryPage.trialText') },
+    phrase: { title: t('recoveryPage.phraseTitle'), text: '' },
+  });
 
   async function load() {
     const result = await call('backup_status');
-    if (okOrToast(result, 'Could not open Backup & restore')) status = result;
+    if (okOrToast(result, t('recoveryPage.openFailed'))) status = result;
   }
   $effect(() => {
     load();
@@ -89,16 +90,16 @@
   }
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label="Backup & restore">
+<div class="sheet glass" role="dialog" aria-label={t('recoveryPage.title')}>
   <header>
-    <h2>Backup &amp; restore</h2>
-    <button class="close" aria-label="Close" onclick={onclose}>✕</button>
+    <h2>{t('recoveryPage.title')}</h2>
+    <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
   {#if status}
     <p class="note">{status.intro}</p>
     {#if summary}<p class="summary" role="status">{summary}</p>{/if}
     {#if phraseNotes.length}
-      <ul class="phrase-notes" aria-label="What changed with the new recovery phrase">
+      <ul class="phrase-notes" aria-label={t('recoveryPage.phraseChanged')}>
         {#each phraseNotes as note, i (i)}<li>{note}</li>{/each}
       </ul>
     {/if}
@@ -108,45 +109,45 @@
       <form class="group form" onsubmit={submit} aria-label={FORMS[form].title}>
         <h3>{FORMS[form].title}</h3>
         <p class="note">{form === 'phrase' ? status.phrase_intro : FORMS[form].text}</p>
-        {#if form === 'restore'}<Field label="Name for the restored profile" bind:value={v.name} />{/if}
+        {#if form === 'restore'}<Field label={t('recoveryPage.restoredName')} bind:value={v.name} />{/if}
         {#if form !== 'trial' && form !== 'phrase'}
-          <Field label="Backup password" type="password" bind:value={v.backup} autofocus />
+          <Field label={t('recoveryPage.backupPassword')} type="password" bind:value={v.backup} autofocus />
         {/if}
-        {#if form === 'create'}<Field label="Confirm backup password" type="password" bind:value={v.confirm} />{/if}
-        <Field label={form === 'create' || form === 'phrase' ? 'Vault password' : 'Vault password from when the backup was made'}
+        {#if form === 'create'}<Field label={t('recoveryPage.confirmPassword')} type="password" bind:value={v.confirm} />{/if}
+        <Field label={form === 'create' || form === 'phrase' ? t('recoveryPage.vaultPassword') : t('recoveryPage.vaultPasswordThen')}
                type="password" bind:value={v.vault} />
         {#if error}<p class="error" role="alert">{error}<ErrorLogLink text={error} /></p>{/if}
         <footer>
-          <Button label="Cancel" onclick={() => { form = null; wipe(); }} />
-          <Button type="submit" variant="primary" label={form === 'create' || form === 'phrase' ? 'Continue' : 'Choose backup…'} busy={busy} busyLabel="Working…" />
+          <Button label={t('common.cancel')} onclick={() => { form = null; wipe(); }} />
+          <Button type="submit" variant="primary" label={form === 'create' || form === 'phrase' ? t('common.continue') : t('recoveryPage.chooseBackup')} busy={busy} busyLabel={t('recoveryPage.working')} />
         </footer>
       </form>
     {:else}
-      <div class="section-label">Backups</div>
+      <div class="section-label">{t('recoveryPage.backups')}</div>
       <div class="group">
-        <div class="row"><div class="text">Create a backup<div class="meta">An encrypted file with your items and settings</div></div>
-          <Button label="Create…" disabled={!status.can_create} onclick={() => open('create')} /></div>
-        <div class="row"><div class="text">Verify a backup<div class="meta">Check that a backup opens</div></div>
-          <Button label="Verify…" onclick={() => open('verify')} /></div>
-        <div class="row"><div class="text">Restore as a new profile<div class="meta">Your existing profiles stay unchanged</div></div>
-          <Button label="Restore…" onclick={() => open('restore')} /></div>
+        <div class="row"><div class="text">{t('recoveryPage.createBackup')}<div class="meta">{t('recoveryPage.createBackupMeta')}</div></div>
+          <Button label={t('recoveryPage.createBtn')} disabled={!status.can_create} onclick={() => open('create')} /></div>
+        <div class="row"><div class="text">{t('recoveryPage.verifyBackup')}<div class="meta">{t('recoveryPage.verifyBackupMeta')}</div></div>
+          <Button label={t('recoveryPage.verifyBtn')} onclick={() => open('verify')} /></div>
+        <div class="row"><div class="text">{t('recoveryPage.restoreNew')}<div class="meta">{t('recoveryPage.restoreNewMeta')}</div></div>
+          <Button label={t('recoveryPage.restoreBtn')} onclick={() => open('restore')} /></div>
       </div>
       {#if status.can_create}
-        <div class="section-label">Recovery drill</div>
+        <div class="section-label">{t('recoveryPage.drill')}</div>
         <div class="group">
-          <div class="row"><div class="text">Test a restore<div class="meta">Opens a temporary copy in an isolated place</div></div>
-            <Button label="Test…" onclick={() => open('test')} /></div>
-          <div class="row"><div class="text">Verify the test profile</div>
-            <Button label="Verify…" disabled={!status.trial} onclick={() => open('trial')} /></div>
-          <div class="row"><div class="text">Write recovery kit<div class="meta">Keep it with your encrypted backup</div></div>
-            <Button label="Write kit…" disabled={!status.kit_ready} onclick={kit} /></div>
-          {#if status.trial}<div class="row"><div class="text">Discard the test copy</div><Button label="Cancel test" onclick={cancelTrial} /></div>{/if}
+          <div class="row"><div class="text">{t('recoveryPage.testTitle')}<div class="meta">{t('recoveryPage.testRestoreMeta')}</div></div>
+            <Button label={t('recoveryPage.testBtn')} onclick={() => open('test')} /></div>
+          <div class="row"><div class="text">{t('recoveryPage.verifyTrial')}</div>
+            <Button label={t('recoveryPage.verifyBtn')} disabled={!status.trial} onclick={() => open('trial')} /></div>
+          <div class="row"><div class="text">{t('recoveryPage.writeKit')}<div class="meta">{t('recoveryPage.writeKitMeta')}</div></div>
+            <Button label={t('recoveryPage.writeKitBtn')} disabled={!status.kit_ready} onclick={kit} /></div>
+          {#if status.trial}<div class="row"><div class="text">{t('recoveryPage.discardTest')}</div><Button label={t('recoveryPage.cancelTest')} onclick={cancelTrial} /></div>{/if}
         </div>
-        <div class="section-label">Recovery phrase</div>
+        <div class="section-label">{t('recoveryPage.phraseTitle')}</div>
         <div class="group">
-          <div class="row"><div class="text">{status.phrase_enrolled ? 'A recovery phrase is set up' : 'No recovery phrase yet'}
+          <div class="row"><div class="text">{status.phrase_enrolled ? t('recoveryPage.phraseSet') : t('recoveryPage.phraseNone')}
             <div class="meta">{status.phrase_intro}</div></div>
-            <Button label={status.phrase_enrolled ? 'Replace…' : 'Create…'} onclick={() => open('phrase')} /></div>
+            <Button label={status.phrase_enrolled ? t('recoveryPage.replace') : t('recoveryPage.createBtn')} onclick={() => open('phrase')} /></div>
         </div>
       {/if}
     {/if}

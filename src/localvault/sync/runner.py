@@ -37,7 +37,10 @@ Failure handling
   to one record of that view, the whole view is dropped (``bad-peer-data``).
   A record whose wrapper ``schema`` is newer than this app understands
   (reason ``update-needed``) takes the same path and is reported as
-  ``SyncIssue("update-needed", "<device_id>:<item_id>")``.
+  ``SyncIssue("update-needed", "<device_id>:<item_id>")``.  A document whose file
+  has not been imported yet (reason ``attachment-missing``) is set aside the same
+  way as ``SyncIssue("attachment-missing", "<device_id>:<item_id>")``; the next
+  run tries again.
 * ``apply`` refusing because a record changed locally after the view was taken
   (reason ``vault-changed``) is retried once with a fresh ``local_view``; a
   second refusal gives ``SyncIssue("busy")``.
@@ -248,12 +251,13 @@ def run_merge(session: Any, lease: Any, *, device_id: str, views: Iterable[View]
         try:
             report = apply(session, lease, outcome, device_id=device_id, now=now)
         except BridgeError as exc:
-            if exc.reason in ("bad-remote", "update-needed") and exc.item_id in origin:
+            if exc.reason in ("bad-remote", "update-needed", "attachment-missing") and exc.item_id in origin:
                 bad, record_id = origin[exc.item_id]
                 peers, removed = _without_record(peers, bad, record_id)
                 if removed and (bad, record_id) not in quarantined:
                     quarantined.add((bad, record_id))
-                    kind = "update-needed" if exc.reason == "update-needed" else "bad-peer-record"
+                    kind = {"update-needed": "update-needed",
+                            "attachment-missing": "attachment-missing"}.get(exc.reason, "bad-peer-record")
                     issues.append(SyncIssue(kind, f"{bad}:{record_id}"))
                 else:  # not traceable to one record of that view: drop the view
                     issues.append(SyncIssue("bad-peer-data", bad))

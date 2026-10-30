@@ -1,13 +1,21 @@
 package app.localgatekeys.android.ui.vault
+import androidx.annotation.StringRes
+import app.localgatekeys.android.R
+import androidx.compose.ui.res.stringResource
 
+import app.localgatekeys.android.i18n.rememberTxt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.ui.unit.Dp
+import app.localgatekeys.android.sync.SyncStatusSummary
+import app.localgatekeys.android.ui.onboarding.SetupCard
+import app.localgatekeys.android.ui.sync.SyncStatusPill
 import app.localgatekeys.android.ui.shell.FloatingTabBarBottomGap
 import app.localgatekeys.android.ui.shell.FloatingTabBarHeight
 import kotlinx.coroutines.CancellationException
@@ -42,6 +50,7 @@ import app.localgatekeys.android.ui.theme.lgkGroupSurface
 import app.localgatekeys.android.vault.Copier
 import app.localgatekeys.android.vault.CodesRow
 import app.localgatekeys.android.vault.VaultGroup
+import app.localgatekeys.android.vault.VaultItem
 import app.localgatekeys.android.vault.VaultListModel
 import app.localgatekeys.core.primitives.SystemClock
 import app.localgatekeys.core.primitives.UnixClock
@@ -65,12 +74,41 @@ data class VaultSeams(
     val onOpenItem: (id: String) -> Unit = {},
     /** Pull to refresh: sync with the PC (Task 10). */
     val onRefresh: suspend () -> Unit = {},
+    /**
+     * Marks or unmarks a favorite through the store, off the main thread, then reloads the list and tells sync
+     * (RootScaffold). Null: the rows offer no favorite action.
+     */
+    val onSetFavorite: (suspend (item: VaultItem, favorite: Boolean) -> Unit)? = null,
     /** The settings screen (Task 14). */
     val onOpenSettings: () -> Unit = {},
     /** The empty vault's "Restore from a backup" (first launch); null: not offered. */
     val onRestoreBackup: (() -> Unit)? = null,
+    /** The empty vault shows the "Import your passwords" card (AppSettings.importCardDismissed is off). */
+    val showImportCard: () -> Boolean = { false },
+    /** The card's "Not now": hides it on this phone. */
+    val onDismissImportCard: () -> Unit = {},
+    /** The card's "Import": opens the import page (Settings when it isn't available). */
+    val onImport: () -> Unit = {},
     val clock: UnixClock = SystemClock(),
+    /** "Finish setting up · n of 5" (workstream 4); null: no card. */
+    val setupCardText: String? = null,
+    /** The card's tap: the setup pages open again. */
+    val onOpenSetup: () -> Unit = {},
+    /** The card's Hide. */
+    val onHideSetup: () -> Unit = {},
+    /** The sync pill at the top of the vault (workstream 6); null: this phone does not sync. */
+    val syncStatus: SyncStatusSummary? = null,
+    /** The pill's tap: the Sync status sheet. */
+    val onOpenSyncStatus: () -> Unit = {},
+    /** Workstream 5: the actions a `>` search lists (only the ones this screen can run). */
+    val commands: List<app.localgatekeys.android.vault.SearchCommand> = emptyList(),
+    /** Runs a listed action (RootScaffold). */
+    val onCommand: (app.localgatekeys.android.vault.SearchCommand) -> Unit = {},
 )
+
+/** The rows' favorite action over [VaultSeams.onSetFavorite] (null when there is none). */
+internal fun VaultSeams.favoriteToggle(scope: kotlinx.coroutines.CoroutineScope): ((VaultItem) -> Unit)? =
+    onSetFavorite?.let { set -> { item: VaultItem -> scope.launch { set(item, !item.favorite) }; Unit } }
 
 /** Room under the last row for the floating tab bar: its height, its gaps and the navigation bar inset. */
 @Composable
@@ -81,15 +119,19 @@ internal fun tabBarClearance(): Dp =
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VaultScreen(model: VaultListModel, showCodesRow: Boolean, seams: VaultSeams) {
+    val txt = rememberTxt()
     val c = LgkTheme.colors
     val items by model.items.collectAsStateWithLifecycle()
     val loadError by model.loadError.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var refreshing by remember { mutableStateOf(false) }
     LaunchedEffect(model) { withContext(Dispatchers.IO) { model.reload() } }
-    val codeItems = remember(items, showCodesRow) { CodesRow.items(items, showCodesRow) }
-    val groups = remember(items) { VaultGroup.groups(items) }
+    val codeItems = remember(items, showCodesRow) { CodesRow.items(items, showCodesRow, txt) }
+    val sort by model.sort.collectAsStateWithLifecycle()
+    val groups = remember(items, sort) { VaultGroup.groups(items, sort) }
+    val toggleFavorite = seams.favoriteToggle(scope)
     val tick = rememberSecondTick(seams.clock)
+    var importCard by remember(seams) { mutableStateOf(seams.showImportCard()) }
 
     PullToRefreshBox(
         isRefreshing = refreshing,
@@ -115,10 +157,25 @@ fun VaultScreen(model: VaultListModel, showCodesRow: Boolean, seams: VaultSeams)
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = tabBarClearance()),
         ) {
             loadError?.let { item { Text(it, color = c.danger, modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)) } }
+            seams.syncStatus?.let { s ->
+                item(key = "sync-pill") {
+                    Box(Modifier.fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.CenterStart) {
+                        SyncStatusPill(s, seams.onOpenSyncStatus)
+                    }
+                }
+            }
+            seams.setupCardText?.let { text ->
+                item(key = "setup-card") { SetupCard(text, seams.onOpenSetup, seams.onHideSetup) }
+            }
+            if (items.isNotEmpty()) {
+                item(key = "sort") {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) { SortMenu(sort, model::setSort) }
+                }
+            }
             if (codeItems.isNotEmpty()) {
                 item(key = "codes") {
                     Column(Modifier.testTag("codes-row")) {
-                        SectionHeader("Codes")
+                        SectionHeader(stringResource(R.string.vault_codes))
                         Box(Modifier.fillMaxWidth().lgkGroupSurface()) {
                             LazyRow(
                                 contentPadding = PaddingValues(14.dp),
@@ -131,15 +188,20 @@ fun VaultScreen(model: VaultListModel, showCodesRow: Boolean, seams: VaultSeams)
                 }
             }
             for ((title, group) in groups) {
-                item(key = "header-$title") { SectionHeader(title) }
+                item(key = "header-$title") { SectionHeader(txt.s(title)) }
                 itemsIndexed(group, key = { _, it -> it.id }) { index, it ->
-                    VaultRow(it, index == 0, index == group.lastIndex, seams.onOpenItem, seams.clipboard, seams.clock)
+                    VaultRow(it, index == 0, index == group.lastIndex, seams.onOpenItem, seams.clipboard, seams.clock, toggleFavorite)
+                }
+            }
+            if (items.isEmpty() && loadError == null && importCard) {
+                item(key = "import-card") {
+                    ImportCard(onImport = seams.onImport, onNotNow = { seams.onDismissImportCard(); importCard = false })
                 }
             }
             if (items.isEmpty() && loadError == null) {
                 item {
                     Text(
-                        EMPTY_VAULT, color = c.secondaryText, style = MaterialTheme.typography.bodyLarge,
+                        stringResource(EMPTY_VAULT), color = c.secondaryText, style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().padding(top = 24.dp).testTag("empty-vault"),
                     )
@@ -149,7 +211,7 @@ fun VaultScreen(model: VaultListModel, showCodesRow: Boolean, seams: VaultSeams)
                     item {
                         Box(Modifier.fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.Center) {
                             TextButton(restore, modifier = Modifier.testTag("empty-vault-restore")) {
-                                Text(RESTORE_FROM_BACKUP, color = c.accentText, style = MaterialTheme.typography.bodyLarge)
+                                Text(stringResource(RESTORE_FROM_BACKUP), color = c.accentText, style = MaterialTheme.typography.bodyLarge)
                             }
                         }
                     }
@@ -159,5 +221,22 @@ fun VaultScreen(model: VaultListModel, showCodesRow: Boolean, seams: VaultSeams)
     }
 }
 
-const val EMPTY_VAULT = "No items yet. Tap + to add one."
-const val RESTORE_FROM_BACKUP = "Restore from a backup"
+/** The empty vault's "Import your passwords" card; it goes away once the vault has an item. */
+@Composable
+private fun ImportCard(onImport: () -> Unit, onNotNow: () -> Unit) {
+    val c = LgkTheme.colors
+    Column(Modifier.fillMaxWidth().padding(top = 16.dp).lgkGroupSurface().padding(16.dp).testTag("import-card")) {
+        Text(stringResource(IMPORT_CARD_TITLE), color = c.text, style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(IMPORT_CARD_TEXT), color = c.secondaryText, style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(top = 4.dp))
+        Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(onImport, modifier = Modifier.testTag("import-card-import")) { Text(stringResource(R.string.home_import), color = c.accentText) }
+            TextButton(onNotNow, modifier = Modifier.testTag("import-card-not-now")) { Text(stringResource(R.string.common_not_now), color = c.secondaryText) }
+        }
+    }
+}
+
+@StringRes val IMPORT_CARD_TITLE = R.string.vault_import_card_title
+@StringRes val IMPORT_CARD_TEXT = R.string.vault_import_card_text
+@StringRes val EMPTY_VAULT = R.string.vault_empty
+@StringRes val RESTORE_FROM_BACKUP = R.string.vault_restore_from_backup

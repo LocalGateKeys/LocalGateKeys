@@ -1,6 +1,7 @@
 <script>
   /** Desktop app logins: bind an app (map its fields), refresh a binding, or fill a saved login now. */
   import ErrorLogLink from './ErrorLogLink.svelte';
+  import { formatNumber, t } from '../lib/i18n.svelte.js';
   import { call } from '../lib/api.js';
   import { notice, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
@@ -81,60 +82,60 @@
   }
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label="Desktop app login">
+<div class="sheet glass" role="dialog" aria-label={t('desktopSheet.title')}>
   <header>
-    <h2>{form ? (form.rebind ? 'Refresh binding' : 'Map login fields') : 'Desktop app login'}</h2>
-    <button class="close" aria-label="Close" onclick={onclose}>✕</button>
+    <h2>{form ? (form.rebind ? t('desktopSheet.refreshTitle') : t('desktopSheet.mapTitle')) : t('desktopSheet.title')}</h2>
+    <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
   {#if countdown}
-    <p class="big" role="status">Switch to the desktop login. Checking in {countdown} seconds…</p>
+    <p class="big" role="status">{t('desktopSheet.countdown', { count: countdown, number: formatNumber(countdown) })}</p>
   {:else if signIn}
-    <p class="muted pre">App: {signIn.app} · Window: {signIn.title}{'\n'}Sign-in button now: {signIn.current}</p>
-    <p class="muted">Choose only the real login action. LocalGateKeys saves its exact name and identity and checks it again right before use.</p>
-    <div class="group buttons" role="group" aria-label="Buttons in the app">
+    <p class="muted pre">{t('desktopSheet.signInInfo', { app: signIn.app, window: signIn.title, current: signIn.current })}</p>
+    <p class="muted">{t('desktopSheet.chooseOnly')}</p>
+    <div class="group buttons" role="group" aria-label={t('desktopSheet.buttonsInApp')}>
       {#each signIn.buttons as b (b.index)}<button class="choice" onclick={() => chooseButton(b.index)}>{b.name}</button>{/each}
     </div>
-    <footer><Button label="Back" onclick={() => (signIn = null)} /></footer>
+    <footer><Button label={t('common.back')} onclick={() => (signIn = null)} /></footer>
   {:else if !form}
-    <p class="muted">LocalGateKeys reads the app's window and field layout through Windows UI Automation. It never reads what is typed in the app.</p>
+    <p class="muted">{t('desktopSheet.explain')}</p>
     <footer>
-      {#if entryId}<Button label="Fill this app now" variant="primary" onclick={fillNow} />{/if}
-      <Button label={entryId ? 'Refresh binding…' : 'Inspect the app…'} variant={entryId ? undefined : 'primary'} onclick={inspect} />
+      {#if entryId}<Button label={t('desktopSheet.fillNow')} variant="primary" onclick={fillNow} />{/if}
+      <Button label={entryId ? t('desktopSheet.refreshBinding') : t('desktopSheet.inspect')} variant={entryId ? undefined : 'primary'} onclick={inspect} />
     </footer>
     {#if entryId}
       <footer>
-        <Button label="Map sign-in button…" onclick={mapSignIn} />
-        <Button label="Require web warning again" onclick={warnAgain} />
+        <Button label={t('desktopSheet.mapSignIn')} onclick={mapSignIn} />
+        <Button label={t('desktopSheet.warnAgain')} onclick={warnAgain} />
       </footer>
-      <p class="muted">Refreshing the binding turns off automatic sign-in and clears saved approvals.</p>
+      <p class="muted">{t('desktopSheet.refreshNote')}</p>
     {/if}
-    <p class="muted">Tip: press Ctrl+Shift+Space in the app to fill a saved login.</p>
+    <p class="muted">{t('desktopSheet.tip')}</p>
   {:else}
     <form onsubmit={save}>
       <p class="muted pre">{form.title}{'\n'}{form.app}{'\n'}{form.intro}</p>
       <div class="group">
-        <label class="row"><span>Username field</span>
-          <select aria-label="Username field" bind:value={userIndex}>
-            <option value="">(none)</option>
+        <label class="row"><span>{t('desktopSheet.usernameField')}</span>
+          <select aria-label={t('desktopSheet.usernameField')} bind:value={userIndex}>
+            <option value="">{t('desktopSheet.none')}</option>
             {#each form.controls as c (c.index)}<option value={c.index}>{c.label}</option>{/each}
           </select>
         </label>
-        <label class="row"><span>Password field</span>
-          <select aria-label="Password field" bind:value={passwordIndex}>
+        <label class="row"><span>{t('desktopSheet.passwordField')}</span>
+          <select aria-label={t('desktopSheet.passwordField')} bind:value={passwordIndex}>
             {#each form.controls as c (c.index)}<option value={c.index}>{c.label}</option>{/each}
           </select>
         </label>
       </div>
       {#if !form.rebind}
         <div class="group">
-          <Field label="Label" bind:value={label} />
-          <Field label="Username or email" bind:value={username} />
-          <Field label="Password (typed here, not into the app)" type="password" bind:value={password} autocomplete="new-password" />
+          <Field label={t('desktopSheet.label')} bind:value={label} />
+          <Field label={t('desktopSheet.usernameOrEmail')} bind:value={username} />
+          <Field label={t('desktopSheet.passwordTyped')} type="password" bind:value={password} autocomplete="new-password" />
         </div>
       {/if}
       <footer>
-        <Button label="Cancel" onclick={onclose} />
-        <Button type="submit" variant="primary" label={form.rebind ? 'Save binding' : 'Save login'} busy={busy} busyLabel="Saving…" disabled={passwordIndex === ''} />
+        <Button label={t('common.cancel')} onclick={onclose} />
+        <Button type="submit" variant="primary" label={form.rebind ? t('desktopSheet.saveBinding') : t('desktopSheet.saveLogin')} busy={busy} busyLabel={t('common.saving')} disabled={passwordIndex === ''} />
       </footer>
     </form>
   {/if}

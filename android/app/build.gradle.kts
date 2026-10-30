@@ -24,6 +24,8 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
+            // Pseudo-locales (en-XA, ar-XB) for finding clipped or hard-coded text.
+            isPseudoLocalesEnabled = true
         }
         release {
             isMinifyEnabled = true
@@ -61,8 +63,15 @@ val copyVectors = tasks.register<Copy>("copyVectors") {
     }
 }
 
+// Part C: the desktop's public suffix list, byte for byte, for the autofill and passkey matching.
+val copyAppAssets = tasks.register<Copy>("copyAppAssets") {
+    into(layout.buildDirectory.dir("generated/appAssets"))
+    from(rootDir.parentFile.resolve("src/localvault/assets")) { include("public_suffix_list.dat") }
+}
+
 androidComponents {
     onVariants { variant ->
+        variant.sources.assets?.addStaticSourceDirectory(layout.buildDirectory.dir("generated/appAssets").get().asFile.absolutePath)
         variant.androidTest?.sources?.assets?.addStaticSourceDirectory(
             layout.buildDirectory.dir("generated/vectors").get().asFile.absolutePath,
         )
@@ -71,6 +80,10 @@ androidComponents {
 
 tasks.matching { it.name.startsWith("merge") && it.name.endsWith("AndroidTestAssets") }.configureEach {
     dependsOn(copyVectors)
+}
+
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+    dependsOn(copyAppAssets)
 }
 
 dependencies {
@@ -83,6 +96,8 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.activity.compose)
+    // Per-app language: AppCompatDelegate.setApplicationLocales (stored for API < 33 by AppLocalesMetadataHolderService).
+    implementation(libs.androidx.appcompat)
     implementation(libs.argon2kt)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.lifecycle.process)
@@ -93,6 +108,10 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.zxing.core)
+    // Part C: the passkey and password provider (CredentialProviderService entries and request/response JSON).
+    implementation(libs.androidx.credentials)
+    // Inline autofill suggestions in the keyboard (API 30+): the suggestion chip layout.
+    implementation(libs.androidx.autofill)
     // Pro: the one-time product pro_unlimited through the Play Store app (the only Google Play dependency).
     implementation(libs.play.billing) {
         // Ruling 23: no Google telemetry uploader (datatransport/CCT, firebase-encoders with it) and none of the Play
@@ -116,4 +135,5 @@ dependencies {
     androidTestImplementation(libs.androidx.test.uiautomator)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4.accessibility)
 }

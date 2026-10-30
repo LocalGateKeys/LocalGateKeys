@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from ..api.result import ApiError
+from ..i18n import t
 
 # Tk app method -> (page route, {Tk kwarg: page param}).
 ROUTES: dict[str, tuple[str, dict[str, str]]] = {
@@ -43,7 +44,7 @@ class SecurityService:
 
     def _session(self) -> Any:
         if not self._controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile first.")
+            raise ApiError("locked", t("error.lockedProfile"))
         self._controller.require_lease(self._controller.guard.lease())
         return self._controller.session
 
@@ -85,7 +86,7 @@ class SecurityService:
             for entry in entries:
                 entry.clear()
             entries.clear()
-        warning = "Last automatic backup failed" if getattr(session, "backup_warning", None) else ""
+        warning = t("home.backupFailed") if getattr(session, "backup_warning", None) else ""
         try:
             directory = getattr(session, "backup_dir", None) or (Path(session.path).parent / "Backups")
             backup = backup_status(directory, warning)
@@ -107,7 +108,7 @@ class SecurityService:
         from ..settings_ui import settings_candidate
 
         if key not in SWITCHES:
-            raise ApiError("invalid", "Unknown preference in Settings.")
+            raise ApiError("invalid", t("settings.error.unknownPreference"))
         self._session()
         try:
             candidate = settings_candidate(self._controller.settings, {key: value})
@@ -115,4 +116,4 @@ class SecurityService:
             raise ApiError("invalid", str(exc)) from None
         candidate.save()
         self._controller.settings = candidate
-        return {"message": "Settings saved."}
+        return {"message": t("settings.saved")}

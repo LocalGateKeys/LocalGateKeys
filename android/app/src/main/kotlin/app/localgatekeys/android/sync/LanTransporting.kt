@@ -1,10 +1,14 @@
 package app.localgatekeys.android.sync
 
+import app.localgatekeys.core.lan.BlobFetch
+import app.localgatekeys.core.sync.AttachmentRef
 import app.localgatekeys.core.engine.ItemState
 import app.localgatekeys.core.group.GroupKey
 import app.localgatekeys.core.lan.DeviceIdentity
 import app.localgatekeys.core.lan.LanAddress
 import app.localgatekeys.core.lan.LanEndpoint
+import app.localgatekeys.core.lan.LanExchange
+import app.localgatekeys.core.lan.LanPublish
 import app.localgatekeys.core.lan.PinnedPeer
 
 /**
@@ -26,10 +30,50 @@ interface LanTransporting {
     ): List<ItemState>
 
     /**
+     * [exchangeViews], and when the pinned address does not answer, the host found again by discovery (plan
+     * 2026-10-29-sync-ip-change): [onMoved] receives the new address after a whole exchange there succeeded (pinned keys
+     * verified), so the caller can store it. The default does no discovery.
+     */
+    fun exchangeViewsFindingHost(
+        peer: PinnedPeer,
+        identity: DeviceIdentity,
+        groupKey: GroupKey,
+        localStates: List<ItemState>,
+        ownCounter: Long,
+        onMoved: (LanEndpoint) -> Unit,
+    ): List<ItemState> = exchangeViews(peer, identity, groupKey, localStates, ownCounter)
+
+    /**
+     * [exchangeViewsFindingHost] with rollback witnesses (`LanClient.exchange`): [publish] null sends nothing extra. The
+     * default (test fakes) publishes nothing and observes nothing.
+     */
+    fun exchangeWitnessing(
+        peer: PinnedPeer,
+        identity: DeviceIdentity,
+        groupKey: GroupKey,
+        localStates: List<ItemState>,
+        ownCounter: Long,
+        publish: LanPublish?,
+        onMoved: (LanEndpoint) -> Unit,
+    ): LanExchange = LanExchange(exchangeViewsFindingHost(peer, identity, groupKey, localStates, ownCounter, onMoved))
+
+    /**
      * The one enrollment request of a scanned offer; returns the inviter's reply bytes. [onConnected] is called once the
      * connection is up (the screen then stops offering Cancel). Throws [LanSocketException] when the dial fails.
      */
     fun enroll(endpoint: LanEndpoint, request: ByteArray, onConnected: () -> Unit): ByteArray
+
+    /**
+     * After an exchange, the attachment files [refs] from [peer] (`LanClient.fetchBlobs`); with no refs and [probe], one
+     * probe `blob-get`. The default (test fakes, older transports) fetches nothing and learns nothing.
+     */
+    fun fetchBlobs(
+        peer: PinnedPeer,
+        identity: DeviceIdentity,
+        groupKey: GroupKey,
+        refs: List<AttachmentRef>,
+        probe: Boolean,
+    ): BlobFetch = BlobFetch()
 
     companion object {
         /** Until Task 11: nothing can be reached. */

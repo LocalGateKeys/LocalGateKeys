@@ -24,7 +24,7 @@ def test_totp_confirm_is_a_security_switch_bound_to_the_broker_hook() -> None:
     assert requires_totp_confirmation(AppSettings()) is False
     sections = (SOURCE_ROOT / "shell" / "settings_sections.py").read_text(encoding="utf-8")
     locking = sections.split("def build_locking", 1)[1].split("\ndef ", 1)[0]
-    assert 'form.switch("totp_confirm", "Ask before releasing 2FA codes"' in locking
+    assert 'form.switch("totp_confirm", t("settings.totpConfirm.title")' in locking
     unlocking = sections.split("def build_unlocking", 1)[1].split("\ndef ", 1)[0]
     assert '"change_master_clicked"' in unlocking
 

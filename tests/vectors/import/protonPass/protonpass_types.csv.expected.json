@@ -1,0 +1,140 @@
+{
+  "format": "protonPass",
+  "input": "tests/vectors/import/_inputs/protonpass_types.csv",
+  "python_format": "protonpass-csv",
+  "result": {
+    "diagnostics": [
+      "Row 4: Proton Pass CSV does not include creditcard details; use the JSON export to import cards and identities fully."
+    ],
+    "records": [
+      {
+        "card": {},
+        "created": 1704067200,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "V",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "pw",
+        "source_row": 2,
+        "tags": [],
+        "title": "L",
+        "totp_uri": "",
+        "urls": [
+          "https://l.example.com"
+        ],
+        "username": "e@example.com"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Proton Pass item type",
+            "value": "Email alias"
+          },
+          {
+            "hidden": false,
+            "name": "Email",
+            "value": "a@alias.test"
+          }
+        ],
+        "favorite": false,
+        "folder": "V",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 3,
+        "tags": [],
+        "title": "A",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Proton Pass item type",
+            "value": "creditcard"
+          }
+        ],
+        "favorite": false,
+        "folder": "V",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 4,
+        "tags": [],
+        "title": "C",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Proton Pass item type",
+            "value": "Wi-Fi network"
+          },
+          {
+            "hidden": false,
+            "name": "Username",
+            "value": "u"
+          },
+          {
+            "hidden": true,
+            "name": "Password",
+            "value": "secret"
+          }
+        ],
+        "favorite": false,
+        "folder": "V",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 5,
+        "tags": [],
+        "title": "W",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": 1700000000,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "V",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "p",
+        "source_row": 6,
+        "tags": [],
+        "title": "Typeless",
+        "totp_uri": "",
+        "urls": [
+          "https://t.example.com"
+        ],
+        "username": "u"
+      }
+    ],
+    "source_format": "protonpass-csv"
+  }
+}

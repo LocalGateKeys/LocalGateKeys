@@ -1,6 +1,7 @@
 # Device sync
 
-Device sync keeps the same logins and notes on more than one PC. There is no
+Device sync keeps the same logins and notes on more than one device: Windows
+PCs, a Mac, an iPhone and an Android phone. There is no
 LocalGateKeys server and no account. Your devices talk to each other directly
 over your home Wi-Fi, or they leave encrypted files in a cloud-drive folder you
 choose (OneDrive, Dropbox, Google Drive, iCloud Drive). You can use either, or
@@ -12,7 +13,10 @@ This page describes the app as built. It makes no claim of an independent
 security audit. How the pieces work is in
 [ARCHITECTURE.md](ARCHITECTURE.md#10-device-sync).
 
-Open it from the **Tools** group in the sidebar, then **Sync**.
+Open it from the **Tools** group in the sidebar, then **Sync**. This page names
+the buttons of the Windows app; the Mac app uses the same names. The iPhone and
+Android apps join a group (by QR code or code text, or with a cloud folder) but
+cannot create one or show a code; set the group up on a PC or Mac.
 
 ## What syncs
 
@@ -25,8 +29,9 @@ Open it from the **Tools** group in the sidebar, then **Sync**.
 
 What does not sync in this version:
 
-- Collections, documents and attachments. An item that was in a collection
-  arrives without the collection link.
+- Collections. An item that was in a collection arrives without the collection
+  link. Documents and their files sync between devices that all run this
+  version or newer (see "Documents and files" below).
 - Per-PC trust. The approval for filling an embedded web view, browser approvals
   and sign-in settings stay on each PC. A login that arrives by sync starts with
   auto sign-in set to "never" on the receiving PC; you turn it on there if you
@@ -99,6 +104,12 @@ On another PC, **Join a folder...**, choose the folder that contains
 the sync password. The PC then merges what is there and starts writing its own
 file.
 
+On the iPhone, the folder picker only lets you choose folders from cloud apps
+that allow other apps to open their folders. Some, such as OneDrive, appear
+greyed out there even though their folders open normally in the Files app; this
+is a limit of those apps on iOS, not of LocalGateKeys. Sync the iPhone
+over Wi-Fi, or keep the group's folder in iCloud Drive.
+
 ## Add a cloud folder to a Wi-Fi group
 
 A group that so far syncs only over Wi-Fi keeps its devices and pairings when it
@@ -129,9 +140,11 @@ on this PC, then **Join a folder...** with the current sync password.
 
 ## Pair a PC or phone by QR (Wi-Fi)
 
-There is no QR scanner in the PC app. Between two PCs you copy the code text
-from one and paste it into the other. A phone app, which would scan the code, is
-not part of this release.
+A phone scans the QR code (**Scan QR code** on the phone's Sync screen) or takes
+the pasted code text (**Paste code text**). There is no QR scanner in the PC
+app: between two computers you copy the code text from one and paste it into
+the other (on a Mac, in the **Join with a code** section). The code is always shown on a PC or
+Mac.
 
 0. On the device that will show the code, choose **Turn on Wi-Fi sync...** on the
    Wi-Fi card. Enter this PC's own address on your home network and a port, for
@@ -144,8 +157,9 @@ not part of this release.
    works once. After five wrong attempts it stops working. Closing the window
    cancels it at once. If this vault is not in a group yet, this starts a
    Wi-Fi-only group.
-2. On the new PC, which needs no Wi-Fi setup of its own, choose **Join by QR
-   text...**. On the first PC choose **Copy code text** and paste it within the
+2. On a phone, choose **Scan QR code** and scan it within the 120 seconds. On a
+   new PC, which needs no Wi-Fi setup of its own, choose **Join by QR
+   text...**; on the first PC choose **Copy code text** and paste it within the
    120 seconds. The copied text is cleared from the clipboard after 120 seconds
    if it is still there.
 3. The new device shows a 6-digit code (for example `123 456`) and waits. The
@@ -163,7 +177,11 @@ not part of this release.
 
 Both devices must be unlocked and on the same network, and the first one must
 be listening (step 0). The code carries the first device's address, so the new
-PC does not need it.
+device does not need it. A phone has no listening address: it always connects
+to the PC or Mac, so every Wi-Fi sync with a phone is started by the phone.
+On Windows, the code window shows whether Windows Firewall lets other devices
+reach the port and, if not, offers **Allow through Windows Firewall** (Windows
+asks for permission first).
 
 ## Sync password
 
@@ -339,6 +357,25 @@ Other short messages on the screen, such as a wrong sync password, a weak
 password, "this folder already holds a group" or "this vault is already in a
 sync group", describe themselves and say what to do next.
 
+### Restored or rolled-back vaults
+
+Each device remembers how new the vaults of the other devices were (their vault generation) and publishes
+what it saw with its own sync file (a small witness file under `LocalGateKeys Sync/witness/`, or a Wi-Fi
+`witness` message). A device that is put back to an older copy of its vault is caught at the next sync, even
+when its local anchor file was deleted with it.
+
+| Message | Meaning and action |
+| --- | --- |
+| **This vault is older than one your other devices have seen** | Another device saw a newer copy of this vault. If you restored a backup yourself, choose **This was me — keep this copy** (the app asks you to confirm and for your master password or Windows Hello). If you did not, someone may have replaced the vault file with an old copy: sync brings back the newer items your other devices hold; check recent changes and change your master password. The warning comes back at every sync until you confirm it. |
+| Another device in your sync group is now using an older copy of its vault | If nobody restored a backup there, check that device. **Dismiss** accepts its older copy, so the warning stops. |
+| You restored an older backup. Your other devices were told this copy is the current one | Shown once after **This was me**. After restoring a backup with **Restore**, choose **This was me** at the next warning: the app never confirms on its own, because a file it could leave behind would be as easy to fake as the old vault copy. |
+
+Confirming raises this vault's generation above every value the other devices have seen, so they accept the
+restored copy from then on. Limits: a vault restored from a copy made before it joined sync has no witness;
+a device holding the group key can make another device show the warning (a false alarm, no data is lost);
+someone who controls the shared folder can hold back files and delay the warning until Wi-Fi sync or a later
+folder run. The iPhone, Mac and Android apps keep syncing as before but do not publish or check witnesses yet.
+
 ## Known limitations in this version
 
 - **Rare duplicate.** After some concurrent edit and delete histories across
@@ -378,7 +415,9 @@ sync group", describe themselves and say what to do next.
   yet seen the removal can still pass on edits the removed device made before it
   was cut off, until it catches up.
 - **Auto sign-in starts at "never"** for logins that arrive by sync.
-- **Collections, documents and attachments do not sync.**
+- **Collections do not sync.** Documents reach a device that has only received
+  them as the answering side of a Wi-Fi sync once that device starts a sync
+  itself, or through the cloud folder.
 - **Someone with write access to your cloud folder can stop sync** by deleting
   or damaging the key file or making it look like a competing password change.
   Your data stays local and readable; you reset sync on this PC and join again.
@@ -420,3 +459,23 @@ pin every recipe byte for byte.
   still read; every write is format 2. A device's file signature must carry the
   key from the member list first, else its Wi-Fi pairing key, else the key seen
   first; a changed key in the member list replaces the old one and is reported.
+
+## Documents and files (2026-10-29)
+
+Documents sync together with their files. The design and byte formats are in
+`docs/superpowers/plans/2026-10-29-attachment-sync.md`, the code in `src/localvault/sync/attachment_sync.py`
+and `attachment_flow.py`, and the vectors in `tests/vectors/sync/attachments/vectors.json`.
+
+- Each file becomes one immutable encrypted blob, padded to 64 KiB and named after the SHA-256 of
+  its ciphertext. In the cloud folder it is `attachments/<blob id>.lgkblob`. Over Wi-Fi it moves as
+  `blob-get` / `blob` messages. The name, type, size and key travel only inside the sealed, signed view.
+- A device imports and checks the file before it applies the document. A damaged or swapped file is
+  refused and nothing is stored. A document whose file has not arrived yet is set aside
+  (`attachment-missing`) and tried again on the next sync.
+- A file that is already there is never sent again. Deleting a document moves it to the trash
+  everywhere, like any item. Blobs nobody references are removed from the folder after 7 days.
+- Older versions never receive documents. In the cloud folder, documents are published only when
+  every other member wrote a signed capability file (`attachments/<device id>.lgkcap` plus `.lgksig`).
+  Over Wi-Fi, they are sent only to peers in `attachment_peers`, which are learned from a `blob-get`
+  probe. Older builds ignore the `attachments/` folder and answer the new messages with `bad-message`.
+- Limits: 25 MiB per file, 500 per view, and the 1 GiB local attachment quota.

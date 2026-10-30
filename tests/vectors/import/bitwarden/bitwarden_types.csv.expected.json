@@ -1,0 +1,76 @@
+{
+  "format": "bitwarden",
+  "input": "tests/vectors/import/_inputs/bitwarden_types.csv",
+  "python_format": "bitwarden-csv",
+  "result": {
+    "diagnostics": [
+      "Row 3: unsupported type 'card'; imported as a note."
+    ],
+    "records": [
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "k",
+            "value": "v"
+          }
+        ],
+        "favorite": true,
+        "folder": "F",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "body",
+        "password": "",
+        "source_row": 2,
+        "tags": [],
+        "title": "A note",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 3,
+        "tags": [],
+        "title": "A card",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "p",
+        "source_row": 4,
+        "tags": [],
+        "title": "No type",
+        "totp_uri": "otpauth://totp/x?secret=AB",
+        "urls": [
+          "https://a.example.com",
+          "https://b.example.com"
+        ],
+        "username": "u"
+      }
+    ],
+    "source_format": "bitwarden-csv"
+  }
+}

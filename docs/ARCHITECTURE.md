@@ -274,7 +274,7 @@ All under `src/localvault/sync/` unless noted.
 
 | Module | Role |
 | --- | --- |
-| `engine.py` | Pure version-vector merge. No I/O, no clocks. Dominating vector wins; concurrent live edits keep a winner and emit a deterministic conflict copy; edit vs delete keeps the edit. The iOS app is meant to mirror these rules. |
+| `engine.py` | Pure version-vector merge. No I/O, no clocks. Dominating vector wins; concurrent live edits keep a winner and emit a deterministic conflict copy; edit vs delete keeps the edit. The iOS/Mac core (`ios/LGKCore`) and the Android core (`android/lgk-core`) implement the same rules and pass the shared vectors. |
 | `vault_bridge.py` | Turns the unlocked vault into engine states (`local_view`) and writes a merge outcome back in one transaction (`apply`). Defines what syncs and what is device-local. Holds `SyncGroupState` (group id, epoch, group key, device identity, peers, counters), stored inside the vault payload under `sync_group`, so nothing about sync sits in a settings file. |
 | `group.py` | Group key, key derivation, and the sealed view / device file format (`LGKSYNC1`). |
 | `keyring.py` | The keyring file: group key wrapped by the sync password (Argon2id) and by each member's X25519 key, with the MAC chain. Create, join, `accept_keyring`, `rotate`. |
@@ -284,13 +284,26 @@ All under `src/localvault/sync/` unless noted.
 | `pairing.py` | Pairing offers, the QR text, and the enrollment request and reply formats. |
 | `transport.py` | Bounded authenticated private-LAN transport: signed hellos, AES-GCM channel, literal private IPs, no discovery. |
 | `state.py` | Pinned-peer store used by the transport (`SyncState`, revocation). |
+| `lan_address.py` | The private and link-local address ranges a LAN endpoint may use (`LAN_NETWORKS`), an explicit list the phone apps apply too. |
+| `lan_interfaces.py` | Ranks this PC's addresses a phone on the same Wi-Fi can reach, for the address suggested in the QR setup. |
+| `firewall.py` | Windows Firewall status for the sync port, and the inbound rule added only from the "Allow through Windows Firewall" button (elevated `netsh`). |
+| `phone_restore.py` | Restores a phone backup (`LGKMBAK1`) by passing it to `run_merge` as one peer view. |
 | `install.py` | Per-installation id in the data directory, used to detect a vault copied to another PC. |
 | `service.py` | Background service and the `SyncGate`: scheduling, single-flight runs, lock and lease handling, UI job queue, status. |
 | `manifest.py`, `conflicts.py` | Earlier catalog-manifest and conflict-record primitives from the first LAN implementation. The group sync path does not use them for merging. |
-| `src/localvault/sync_ui.py` | The Sync screen: a pure view model (`sync_view`, all user copy for issues) plus the Tk screen. |
+| `src/localvault/app/sync_view.py` | Sync screen view models and all user copy for issues (no UI toolkit). |
+| `src/localvault/app/sync.py` | The background service for the WebView UI and the Sync page's actions (bridge calls that submit jobs to the sync worker). |
+| `webui/src/components/SyncPage.svelte` | The Sync page. |
 
 The former `src/localvault/sync_vault.py` adapter was removed; the vault bridge
 replaces it.
+
+The iPhone and Mac apps share the sync core in `ios/LGKCore/Sources/LGKCore/Sync`
+(screens in `ios/App/Sync` and `ios/Mac/Sync`); the Android app uses
+`android/lgk-core` (screens in `android/app`). Phones only join: they scan or
+paste a QR offer, or join a cloud folder, and connect out to a PC or Mac over
+Wi-Fi without listening themselves. The Mac app can also create a group, listen
+and show the QR code.
 
 ### Trust model
 
@@ -377,3 +390,8 @@ docstring is the authority):
 - Runs are single-flight. Triggers: unlock, a five-minute tick, ten seconds after
   a local change (the app polls a cheap write marker), and "Sync now".
 - `reset` is called only after explicit user confirmation.
+
+The contracts above are written for the classic Tk UI. In the WebView UI
+(`src/localvault/app/sync.py`) the barrier is `VaultLockBarrier`: holding the
+gate holds the controller's vault lock, which page calls also take, so a sync
+run's vault writes exclude user saves in the same way.

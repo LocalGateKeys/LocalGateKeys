@@ -1,5 +1,9 @@
 package app.localgatekeys.android.ui.editor
+import app.localgatekeys.android.R
+import androidx.compose.ui.res.stringResource
 
+import app.localgatekeys.android.editor.EditorScreenText
+import app.localgatekeys.android.i18n.rememberTxt
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +52,7 @@ import kotlinx.coroutines.withContext
  */
 @Composable
 fun PasskeyEditScreen(model: PasskeyRenameModel, onDone: (SaveResult) -> Unit, onCancel: () -> Unit) {
+    val txt = rememberTxt()
     val c = LgkTheme.colors
     val title by model.title.collectAsStateWithLifecycle()
     val error by model.errorFlow.collectAsStateWithLifecycle()
@@ -55,6 +60,7 @@ fun PasskeyEditScreen(model: PasskeyRenameModel, onDone: (SaveResult) -> Unit, o
     val monitor = LocalActivityMonitor.current
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
+    val nameLabel = stringResource(R.string.passkey_editor_name)
     var confirmDelete by remember { mutableStateOf(false) }
     BackHandler(onBack = onCancel)
 
@@ -71,7 +77,7 @@ fun PasskeyEditScreen(model: PasskeyRenameModel, onDone: (SaveResult) -> Unit, o
     Box(Modifier.fillMaxSize().testTag("passkey-editor")) {
         AuroraBackground()
         Column(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
-            SheetHeader(PasskeyRenameModel.TITLE, onCancel, saveEnabled = !busy, onSave = {
+            SheetHeader(txt.s(PasskeyRenameModel.TITLE), onCancel, saveEnabled = !busy, onSave = {
                 run(model::save) { r -> if (r == SaveResult.SAVED || r == SaveResult.UNCHANGED) onDone(r) }
             })
             Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -84,17 +90,17 @@ fun PasskeyEditScreen(model: PasskeyRenameModel, onDone: (SaveResult) -> Unit, o
                             textStyle = MaterialTheme.typography.bodyLarge.copy(color = c.text),
                             cursorBrush = SolidColor(c.accent),
                             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                            modifier = Modifier.fillMaxWidth().testTag("passkey-name").semantics { contentDescription = "Name" },
+                            modifier = Modifier.fillMaxWidth().testTag("passkey-name").semantics { contentDescription = nameLabel },
                             decorationBox = { inner ->
                                 Box {
-                                    if (title.isEmpty()) Text("Name", color = c.secondaryText, style = MaterialTheme.typography.bodyLarge)
+                                    if (title.isEmpty()) Text(stringResource(R.string.passkey_editor_name), color = c.secondaryText, style = MaterialTheme.typography.bodyLarge)
                                     inner()
                                 }
                             },
                         )
                     }
                     Text(
-                        PasskeyRenameModel.FOOTER, color = c.secondaryText, style = MaterialTheme.typography.bodySmall,
+                        txt.s(PasskeyRenameModel.FOOTER), color = c.secondaryText, style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(start = 4.dp, top = 6.dp),
                     )
                 }
@@ -102,12 +108,12 @@ fun PasskeyEditScreen(model: PasskeyRenameModel, onDone: (SaveResult) -> Unit, o
                 TextButton(
                     { confirmDelete = true }, enabled = !busy,
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.groupSurface),
-                ) { Text(PasskeyRenameModel.DELETE, color = c.danger) }
+                ) { Text(txt.s(PasskeyRenameModel.DELETE), color = c.danger) }
             }
         }
     }
     if (confirmDelete) {
-        ConfirmDelete(PasskeyRenameModel.DELETE_TITLE, PasskeyRenameModel.DELETE_MESSAGE, onDismiss = { confirmDelete = false }) {
+        ConfirmDelete(txt.s(PasskeyRenameModel.DELETE_TITLE), txt.s(PasskeyRenameModel.DELETE_MESSAGE), onDismiss = { confirmDelete = false }) {
             confirmDelete = false
             run(model::delete) { r -> if (r == SaveResult.SAVED) onDone(SaveResult.SAVED) }
         }
@@ -116,8 +122,8 @@ fun PasskeyEditScreen(model: PasskeyRenameModel, onDone: (SaveResult) -> Unit, o
         AlertDialog(
             onDismissRequest = { model.clearAlreadyRemoved(); onDone(SaveResult.SAVED) },
             // The list reloads (the passkey is gone) and the screen closes.
-            confirmButton = { TextButton({ model.clearAlreadyRemoved(); onDone(SaveResult.SAVED) }) { Text("OK") } },
-            title = { Text(EditorModel.ALREADY_REMOVED_MESSAGE) },
+            confirmButton = { TextButton({ model.clearAlreadyRemoved(); onDone(SaveResult.SAVED) }) { Text(stringResource(R.string.common_ok)) } },
+            title = { Text(txt.s(EditorScreenText.ALREADY_REMOVED)) },
         )
     }
 }

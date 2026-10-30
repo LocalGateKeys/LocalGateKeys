@@ -130,6 +130,14 @@ HTTPS URLs compiled into `src/localvault/updates.py`.
       licence Worker recorded since the last list are in it
       (cloudflare/license-issuer/README.md, "Refunds and revocation").
 
+## 9b. Accessibility (Windows)
+
+- [ ] Narrator: the sidebar, sync pill, palette, item list, detail pane and setup guide read every button
+      by name; Tab reaches every control with a visible focus ring.
+- [ ] Windows text size at 200% (Settings > Accessibility > Text size): no clipped text on the vault,
+      Settings, Sync status and setup pages, in the dark and the light theme.
+- [ ] `npm test` in webui/ passes `a11y.test.js` (axe audit and 4.5:1 token contrast, both themes).
+
 ## 10. Announce
 
 - [ ] Release notes = the CHANGELOG section plus the manifest/SBOM hashes and

@@ -834,4 +834,120 @@ class LanSessionTest {
         assertTrue(LanClient.versionMismatch(1).detail.contains("the other device runs an older LocalGateKeys"))
         assertTrue(LanClient.versionMismatch(3).detail.contains("this device runs an older LocalGateKeys"))
     }
+
+    // ---- rollback witnesses (2026-10-29, desktop test_sync_lan witness cases) ----
+
+    private val witnessClock = FixedClock(1790000900)
+
+    /** B's whole view as one `view` message. */
+    private fun oneChunk(raw: ByteArray): ByteArray = LanMessages.encode(
+        LanMessage.View(groupId, 1, "0123456789abcdef0123456789abcdef", 0, 1, raw.size.toLong(), Base64Std.encode(raw)),
+    )
+
+    private fun bView(generation: Long? = null, witness: Map<String, Long>? = null): ByteArray =
+        ViewFile.encode(groupKey(), identity("B").deviceId, 3, emptyList(), witnessClock, SystemRandomSource(), vaultGeneration = generation, witness = witness)
+
+    private fun witnessClient(): LanClient =
+        LanClient(identity("A"), groupKey(), HelloCounterSource(MemoryCounterStore(), witnessClock), SystemRandomSource(), witnessClock)
+
+    @Test
+    fun lan_witness_vector_parses_and_opens() {
+        val m = LanMessages.parse(Vectors.sync("witness/lan_witness_A.bin").readBytes()) as LanMessage.Witness
+        val a = identity("A").deviceId
+        val side = ViewFile.decode(Base64Std.decodeStrict(m.view), groupKey(), a, maxBytes = 16384, maxRecords = 0)
+        assertEquals(2L, side.first.format)
+        assertEquals(40L, side.first.vaultGeneration)
+        assertEquals(mapOf(identity("B").deviceId to 12L), side.first.witness)
+        assertEquals(0L, side.first.counter)
+        assertEquals(emptyList(), side.second)
+        // The client opens it as the observation of A (what B's client would do).
+        val asB = LanClient(identity("B"), groupKey(), HelloCounterSource(MemoryCounterStore(), witnessClock), SystemRandomSource(), witnessClock)
+        assertEquals(app.localgatekeys.core.sync.Observation(a, 40, mapOf(identity("B").deviceId to 12L)), asB.openWitness(a, m))
+        // Too long a view text is too-large; a missing key is bad-message.
+        val long = canon(
+            mapOf(
+                "type" to JsonValue.Str("witness"), "group_id" to JsonValue.Str(groupId), "epoch" to JsonValue.Int(1),
+                "view" to JsonValue.Str("A".repeat(LanMessages.MAX_WITNESS_CHARS + 4)),
+            ),
+        )
+        assertEquals("too-large", syncReason { LanMessages.parse(long) })
+        val missing = canon(mapOf("type" to JsonValue.Str("witness"), "group_id" to JsonValue.Str(groupId), "epoch" to JsonValue.Int(1)))
+        assertEquals("bad-message", syncReason { LanMessages.parse(missing) })
+    }
+
+    @Test
+    fun format1_exchange_is_followed_by_one_witness_message() {
+        val a = identity("A")
+        val bId = identity("B").deviceId
+        val sent = ArrayList<LanMessage>()
+        val connector = FakeConnector { n ->
+            FakeConnection(identity("B"), pinned("A"), (n + 1).toLong(), null) { req ->
+                val msg = LanMessages.parse(req)
+                sent.add(msg)
+                when (msg) {
+                    is LanMessage.View -> oneChunk(bView())
+                    is LanMessage.Witness -> {
+                        val raw = ViewFile.encode(groupKey(), bId, 3, emptyList(), witnessClock, SystemRandomSource(), vaultGeneration = 12, witness = mapOf(a.deviceId to 40))
+                        LanMessages.encode(LanMessage.Witness(groupId, 1, Base64Std.encode(raw)))
+                    }
+                    else -> throw LanSyncException("unexpected")
+                }
+            }
+        }
+        val out = witnessClient().exchange(pinned("B"), emptyList(), 7, connector, LanPublish(false, 40, mapOf(bId to 11)))
+        assertEquals(2, sent.size)
+        val view = sent[0] as LanMessage.View
+        assertEquals(1L, ViewFile.decode(Base64Std.decodeStrict(view.view), groupKey(), a.deviceId).first.format)
+        val w = ViewFile.decode(Base64Std.decodeStrict((sent[1] as LanMessage.Witness).view), groupKey(), a.deviceId, maxRecords = 0).first
+        assertEquals(2L, w.format)
+        assertEquals(40L, w.vaultGeneration)
+        assertEquals(mapOf(bId to 11L), w.witness)
+        assertEquals(7L, w.counter)
+        assertEquals(app.localgatekeys.core.sync.Observation(bId, 12, mapOf(a.deviceId to 40L)), out.observation)
+    }
+
+    @Test
+    fun an_older_peer_answering_bad_message_to_the_witness_is_silent() {
+        val connector = FakeConnector { n ->
+            FakeConnection(identity("B"), pinned("A"), (n + 1).toLong(), null) { req ->
+                when (LanMessages.parse(req)) {
+                    is LanMessage.View -> oneChunk(bView())
+                    else -> LanMessages.encode(LanMessage.Error("bad-message"))
+                }
+            }
+        }
+        val out = witnessClient().exchange(pinned("B"), emptyList(), 7, connector, LanPublish(false, 40, emptyMap()))
+        assertEquals(null, out.observation)
+        assertEquals(null, out.issue)
+        assertEquals(2, connector.opened.size)
+    }
+
+    @Test
+    fun inline_exchange_sends_format2_and_reads_the_answer_header() {
+        val a = identity("A")
+        val bId = identity("B").deviceId
+        val kinds = ArrayList<Long>()
+        val connector = FakeConnector { n ->
+            FakeConnection(identity("B"), pinned("A"), (n + 1).toLong(), null) { req ->
+                val msg = LanMessages.parse(req) as? LanMessage.View ?: throw LanSyncException("unexpected")
+                kinds.add(ViewFile.decode(Base64Std.decodeStrict(msg.view), groupKey(), a.deviceId).first.format)
+                oneChunk(bView(12, mapOf(a.deviceId to 40)))
+            }
+        }
+        val out = witnessClient().exchange(pinned("B"), emptyList(), 7, connector, LanPublish(true, 40, mapOf(bId to 11)))
+        assertEquals(listOf(2L), kinds) // no witness message after a format-2 exchange
+        assertEquals(app.localgatekeys.core.sync.Observation(bId, 12, mapOf(a.deviceId to 40L)), out.observation)
+    }
+
+    @Test
+    fun a_bad_view_refusal_of_a_format2_view_is_peer_refused_bad_view() {
+        val connector = FakeConnector { n ->
+            FakeConnection(identity("B"), pinned("A"), (n + 1).toLong(), null) { LanMessages.encode(LanMessage.Error("bad-view")) }
+        }
+        val e = assertFailsWith<LanSyncException> {
+            witnessClient().exchange(pinned("B"), emptyList(), 7, connector, LanPublish(true, 40, emptyMap()))
+        }
+        assertEquals("peer-refused", e.reason)
+        assertEquals("bad-view", e.detail)
+    }
 }

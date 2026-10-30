@@ -16,19 +16,14 @@ from typing import Any, Mapping
 from ..api.result import ApiError
 from ..backup import private_temporary_directory
 from ..secret_text import SecretText, is_blank_secret, secrets_match
+from ..i18n import t
 
-INTRO = ("Backups are encrypted files saved on this computer or a location you choose. To restore one, you need "
-         "its backup password and the vault password in use when it was created.")
-PHRASE_INTRO = ("A 24-word recovery phrase can replace a forgotten vault password. It is shown once, never stored "
-                "by LocalGateKeys, and replaces any earlier phrase.")
-CARD_INTRO = ("Write these 24 words down in order and keep them sealed, away from this computer and your backups. "
-              "Anyone with the phrase can open the vault. It is shown only now; LocalGateKeys does not store it and "
-              "cannot show it again.")
-PHRASE_MISMATCH = ("Those words do not match the phrase in that order. Check your written copy and try again, or go "
-                   "back to the phrase.")
-PHRASE_CONFIRMED = ("Recovery phrase confirmed. Keep the written copy sealed and separate from your backups; it is "
-                    "not stored anywhere by LocalGateKeys.")
-NOT_RESTORED = "Nothing was restored as a new profile. Your existing profiles and current vault are unchanged."
+INTRO = ("recovery.backupsAreEncryptedFilesSaved")
+PHRASE_INTRO = ("recovery.a24WordRecoveryPhrase")
+CARD_INTRO = ("recovery.writeThese24WordsDown")
+PHRASE_MISMATCH = ("recovery.thoseWordsDoNotMatch")
+PHRASE_CONFIRMED = ("recovery.recoveryPhraseConfirmedKeepThe")
+NOT_RESTORED = "recovery.nothingWasRestoredAsA"
 
 
 def result_message(result: Mapping[str, Any]) -> str:
@@ -38,43 +33,37 @@ def result_message(result: Mapping[str, Any]) -> str:
     safe = summarize_recovery(result)
     operation, kind = safe.get("operation"), safe.get("format_kind")
     if operation == "create" and kind == "catalog":
-        return "Older backup created. It contains saved items and settings, but not attachment files."
+        return t("recovery.olderBackupCreatedItContains")
     if operation == "create":
-        return "Encrypted backup created. Your vault password was not stored in the backup."
+        return t("recovery.encryptedBackupCreatedYourVault")
     if operation == "verify":
-        return "Backup verified. No profile data was changed."
+        return t("recovery.backupVerifiedNoProfileData")
     if operation == "restore" and safe.get("committed") and safe.get("profile_name"):
-        return f"“{safe['profile_name']}” was restored as a new profile. Your existing vault is unchanged."
+        return t("recovery.restoredAsNewProfile", name=safe['profile_name'])
     if operation == "restore" and safe.get("committed"):
-        return "The temporary restore test completed. Your profiles and current vault are unchanged."
+        return t("recovery.theTemporaryRestoreTestCompleted")
     if operation == "recovery-kit":
-        return "Recovery kit saved. Keep it with your encrypted backup."
+        return t("recovery.recoveryKitSavedKeepIt")
     if safe.get("catalog_verified"):
-        return "Test profile opened successfully."
-    return "Backup details checked. No profile data was changed."
+        return t("recovery.testProfileOpenedSuccessfully")
+    return t("recovery.backupDetailsCheckedNoProfile")
 
 
 def restore_confirmation(name: str, planned: Mapping[str, Any]) -> str:
     kind, entries = planned.get("format_kind"), planned.get("entries")
-    item_copy = f"{entries} saved items" if type(entries) is int else "saved items"
+    item_copy = t("recovery.savedItemsCount", count=entries) if type(entries) is int else t("recovery.savedItems")
     if kind == "catalog":
-        contents = f"This older backup includes {item_copy} and settings. It does not include attachment files."
+        contents = t("recovery.thisOlderBackupIncludesAnd", item_copy=item_copy)
     else:
         attachments = planned.get("attachments")
-        attachment_copy = (f" and {attachments} attachment files" if type(attachments) is int
-                           else " and attachment files")
-        contents = f"This full backup includes {item_copy}, settings{attachment_copy}."
-    return (f"{contents}\n\nA new profile named “{name}” will be created. "
-            "Your existing profiles and current vault will stay unchanged. "
-            "Sign-in and device trust settings in the restored profile will be turned off.")
+        attachment_copy = (t("recovery.attachmentFilesCount", count=attachments) if type(attachments) is int
+                           else t("recovery.attachmentFiles"))
+        contents = t("recovery.fullBackupIncludes", items=item_copy, attachments=attachment_copy)
+    return (t("recovery.aNewProfileNamedWill", contents=contents, name=name))
 
 
 def rollback_confirmation(rollback: Any) -> str:
-    return (f"This backup is older than the vault that is currently on disk "
-            f"(backup generation {rollback.restored_generation}, current generation "
-            f"{rollback.current_generation}).\n\nRestoring it rolls the vault back and replaces the "
-            "rollback-protection anchor with the older generation. Changes made after this backup "
-            "was created will not be in the restored profile.\n\nRoll back to this older backup?")
+    return (t("recovery.thisBackupIsOlderThan", restored_generation=rollback.restored_generation, current_generation=rollback.current_generation))
 
 
 class RecoveryWebService:
@@ -103,14 +92,14 @@ class RecoveryWebService:
         profiles = controller.profiles
         record = profiles.active_profile()
         if record is None:
-            raise ApiError("no_profile", "Choose a profile first.")
+            raise ApiError("no_profile", t("recovery.chooseAProfileFirst"))
         stamp = controller.guard.stamp()
 
         def selected_profile_current() -> None:
             if controller.guard.stamp() != stamp:
-                raise StaleSession("The profile or session changed. Open Backup & restore again.")
+                raise StaleSession(t("recovery.theProfileOrSessionChanged"))
             if not any(item.id == record.id for item in profiles.list_profiles()):
-                raise StaleSession("The selected profile is no longer available.")
+                raise StaleSession(t("recovery.theSelectedProfileIsNo"))
 
         if not controller.is_unlocked():
             selected_profile_current()
@@ -126,7 +115,7 @@ class RecoveryWebService:
         def current_check() -> None:
             selected_profile_current()
             if controller.session is not session:
-                raise StaleSession("The active profile changed. Open Backup & restore again.")
+                raise StaleSession(t("recovery.theActiveProfileChangedOpen"))
             controller.require_lease(lease)
 
         recovery = RecoveryController(session, profile_name=record.name, lease=lease, guard=controller.guard,
@@ -146,14 +135,14 @@ class RecoveryWebService:
         except ApiError:
             raise
         except StaleSession as exc:
-            raise ApiError("session_changed", str(exc) or "The vault locked or changed. Try again.") from None
+            raise ApiError("session_changed", str(exc) or t("recovery.theVaultLockedOrChanged")) from None
         except (RecoveryError, VaultError, OSError, ValueError) as exc:
-            raise ApiError("invalid", str(exc) or "The backup operation failed.") from None
+            raise ApiError("invalid", str(exc) or t("recovery.theBackupOperationFailed")) from None
 
     def _open(self, title: str) -> Path:
         source = self._dialogs.open_file(title)
         if not source:
-            raise ApiError("cancelled", "No file was chosen.")
+            raise ApiError("cancelled", t("recovery.noFileWasChosen"))
         return Path(source)
 
     # ---------------------------------------------------------------- status
@@ -170,7 +159,7 @@ class RecoveryWebService:
                 enrolled = bool(record and recovery_phrase_enrolled(controller.profiles.vault_path(record.id)))
         except Exception:  # noqa: BLE001 - a status row only
             enrolled = False
-        return {"can_create": unlocked, "phrase_enrolled": enrolled, "intro": INTRO, "phrase_intro": PHRASE_INTRO,
+        return {"can_create": unlocked, "phrase_enrolled": enrolled, "intro": t(INTRO), "phrase_intro": t(PHRASE_INTRO),
                 "trial": bool(self._trial.get("profile")), "kit_ready": self._kit_ready()}
 
     # --------------------------------------------------------------- backups
@@ -181,23 +170,23 @@ class RecoveryWebService:
         from ..backup_filename import BackupFilenameError, backup_save_as_options, normalize_backup_filename
 
         if not self._controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile to create a backup.")
+            raise ApiError("locked", t("recovery.unlockThisProfileToCreate"))
         if is_blank_secret(backup_password) or is_blank_secret(confirmation) or is_blank_secret(vault_password):
-            raise ApiError("invalid", "Enter both passwords and confirm the backup password.")
+            raise ApiError("invalid", t("recovery.enterBothPasswordsAndConfirm"))
         if not secrets_match(confirmation, backup_password):
-            raise ApiError("invalid", "Backup passwords do not match.")
+            raise ApiError("invalid", t("recovery.backupPasswordsDoNotMatch"))
         center = self._run(self._center)
-        selected = self._dialogs.save_file("Create backup (.lgk)", backup_save_as_options()["initialfile"])
+        selected = self._dialogs.save_file(t("recovery.createBackupLgk"), backup_save_as_options()["initialfile"])
         if not selected:
-            raise ApiError("cancelled", "No file was chosen.")
+            raise ApiError("cancelled", t("recovery.noFileWasChosen"))
         try:
             destination = normalize_backup_filename(selected).expanduser().absolute()
         except BackupFilenameError as exc:
             raise ApiError("invalid", str(exc)) from None
         overwrite = False
         if destination.exists():
-            if not self._port.confirm("Replace this backup?", f"{destination.name} already exists. Replace it?"):
-                raise ApiError("cancelled", "Cancelled.")
+            if not self._port.confirm(t("recovery.replaceThisBackup"), t("recovery.alreadyExistsReplaceIt", name=destination.name)):
+                raise ApiError("cancelled", t("error.cancelled"))
             overwrite = True
         result = self._run(lambda: center.create_backup(
             destination, backup_password=backup_password, backup_password_confirmation=confirmation,
@@ -206,9 +195,9 @@ class RecoveryWebService:
 
     def verify(self, backup_password: str | SecretText, vault_password: str | SecretText) -> dict[str, Any]:
         if is_blank_secret(backup_password) or is_blank_secret(vault_password):
-            raise ApiError("invalid", "Enter both passwords.")
+            raise ApiError("invalid", t("recovery.enterBothPasswords"))
         center = self._run(self._center)
-        source = self._open("Choose backup to verify")
+        source = self._open(t("recovery.chooseBackupToVerify"))
         result = self._run(lambda: center.verify_backup(source, backup_password=backup_password,
                                                         vault_password=vault_password))
         self.verified_backup = True
@@ -218,9 +207,9 @@ class RecoveryWebService:
         from ..vault import RollbackRequiresConfirmation
 
         if not str(profile_name).strip() or is_blank_secret(backup_password) or is_blank_secret(vault_password):
-            raise ApiError("invalid", "Enter a profile name and both passwords.")
+            raise ApiError("invalid", t("recovery.enterAProfileNameAnd"))
         center = self._run(self._center)
-        source = self._open("Choose backup to restore")
+        source = self._open(t("recovery.chooseBackupToRestore"))
 
         def run() -> dict[str, Any]:
             from ..recovery import RecoveryError
@@ -229,17 +218,16 @@ class RecoveryWebService:
             planned = center.preview_restore(source, profile_record=record, backup_password=backup_password,
                                              vault_password=vault_password)
             if not planned.get("requires_confirmation"):
-                raise RecoveryError("This backup could not be previewed for restore")
-            if not self._port.confirm("Restore as a new profile?", restore_confirmation(record.name, planned)):
-                return {"message": NOT_RESTORED, "restored": False}
+                raise RecoveryError(t("recovery.thisBackupCouldNotBe"))
+            if not self._port.confirm(t("recovery.restoreAsANewProfile"), restore_confirmation(record.name, planned)):
+                return {"message": t(NOT_RESTORED), "restored": False}
             kwargs = dict(profile_record=record, confirm=True, expected_sha256=planned.get("backup_sha256"),
                           backup_password=backup_password, vault_password=vault_password)
             try:
                 result = center.restore(source, **kwargs)
             except RollbackRequiresConfirmation as rollback:
-                if not self._port.confirm("Roll back to an older backup?", rollback_confirmation(rollback)):
-                    return {"message": "Nothing was restored. The newer vault on disk and your rollback protection "
-                                       "are unchanged.", "restored": False}
+                if not self._port.confirm(t("recovery.rollBackToAnOlder"), rollback_confirmation(rollback)):
+                    return {"message": t("recovery.nothingWasRestoredTheNewer"), "restored": False}
                 result = center.restore(source, allow_rollback=True, **kwargs)
             return {"message": result_message(result), "restored": True}
 
@@ -258,21 +246,21 @@ class RecoveryWebService:
             except OSError:
                 pass
         self._trial = {}
-        return {"message": "Test cancelled. Existing profiles and backup files are unchanged."}
+        return {"message": t("recovery.testCancelledExistingProfilesAnd")}
 
     def test_restore(self, backup_password: str | SecretText, vault_password: str | SecretText) -> dict[str, Any]:
         if not self._controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile to test a restore.")
+            raise ApiError("locked", t("recovery.unlockThisProfileToTest"))
         if is_blank_secret(backup_password) or is_blank_secret(vault_password):
-            raise ApiError("invalid", "Enter both passwords.")
+            raise ApiError("invalid", t("recovery.enterBothPasswords"))
         self.cancel_trial()
         center = self._run(self._center)
-        source = self._open("Choose backup to test")
+        source = self._open(t("recovery.chooseBackupToTest"))
         try:
             # Inside the owner-only data folder, not the shared system temp (cleanup junction race).
             directory = private_temporary_directory("localgatekeys-restore-test-")
         except OSError:
-            raise ApiError("invalid", "Could not prepare a private folder for the test restore.") from None
+            raise ApiError("invalid", t("recovery.couldNotPrepareAPrivate")) from None
         destination = Path(directory.name) / "profile"
 
         def run() -> dict[str, Any]:
@@ -281,11 +269,10 @@ class RecoveryWebService:
             planned = center.preview_restore(source, destination, backup_password=backup_password,
                                              vault_password=vault_password)
             if not planned.get("requires_confirmation"):
-                raise RecoveryError("This backup could not be previewed for a test restore")
-            if not self._port.confirm("Test this restore?", (
-                    "A temporary copy will be opened in an isolated location. Your profiles and current vault will "
-                    "stay unchanged. The test copy is removed when this window closes.")):
-                raise ApiError("cancelled", "Cancelled.")
+                raise RecoveryError(t("recovery.thisBackupCouldNotBe2"))
+            if not self._port.confirm(t("recovery.testThisRestore"), (
+                    t("recovery.aTemporaryCopyWillBe"))):
+                raise ApiError("cancelled", t("error.cancelled"))
             return center.restore(source, destination, confirm=True, expected_sha256=planned.get("backup_sha256"),
                                   backup_password=backup_password, vault_password=vault_password)
 
@@ -300,9 +287,9 @@ class RecoveryWebService:
 
     def verify_trial(self, vault_password: str | SecretText) -> dict[str, Any]:
         if not self._trial.get("profile"):
-            raise ApiError("invalid", "Test a restore first.")
+            raise ApiError("invalid", t("recovery.testARestoreFirst"))
         if is_blank_secret(vault_password):
-            raise ApiError("invalid", "Enter the vault password.")
+            raise ApiError("invalid", t("recovery.enterTheVaultPassword"))
         center = self._run(self._center)
         result = self._run(lambda: center.verify_restored_catalog(self._trial["profile"],
                                                                   vault_password=vault_password))
@@ -310,18 +297,18 @@ class RecoveryWebService:
 
     def write_kit(self) -> dict[str, Any]:
         if not self._kit_ready():
-            raise ApiError("invalid", "Verify the test profile before writing a recovery kit.")
+            raise ApiError("invalid", t("recovery.verifyTheTestProfileBefore"))
         center = self._run(self._center)
-        target = self._dialogs.save_file("Write recovery kit (.json)", "recovery-kit.json")
+        target = self._dialogs.save_file(t("recovery.writeRecoveryKitJson"), "recovery-kit.json")
         if not target:
-            raise ApiError("cancelled", "No file was chosen.")
+            raise ApiError("cancelled", t("recovery.noFileWasChosen"))
         result = self._run(lambda: center.recovery_kit(Path(target), backup=self._trial["backup"], overwrite=False))
         return {"message": result_message(result)}
 
     # -------------------------------------------------------- recovery phrase
     def phrase_create(self, vault_password: str | SecretText) -> dict[str, Any]:
         if not self._controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile to manage its recovery phrase.")
+            raise ApiError("locked", t("recovery.unlockThisProfileToManage"))
         center = self._run(self._center)
         phrase = self._run(lambda: center.create_recovery_phrase(vault_password))
         # Replacing a phrase rotates the data key; the notes say what that changed.
@@ -340,19 +327,18 @@ class RecoveryWebService:
         self._challenges.clear()
         token = secrets.token_urlsafe(12)
         self._challenges[token] = challenge
-        return {"token": token, "words": words, "positions": list(challenge.positions), "intro": CARD_INTRO,
+        return {"token": token, "words": words, "positions": list(challenge.positions), "intro": t(CARD_INTRO),
                 "notes": [note for note in (notes or []) if isinstance(note, str) and note]}
 
     def phrase_confirm(self, token: str, answers: list[str]) -> dict[str, Any]:
         challenge = self._challenges.get(str(token))
         if challenge is None:
-            raise ApiError("expired", "This recovery phrase card is closed. Create a new phrase to try again.")
+            raise ApiError("expired", t("recovery.thisRecoveryPhraseCardIs"))
         if not challenge.verify(list(answers or [])):
-            return {"confirmed": False, "message": PHRASE_MISMATCH}
+            return {"confirmed": False, "message": t(PHRASE_MISMATCH)}
         self._challenges.pop(str(token), None)
-        return {"confirmed": True, "message": PHRASE_CONFIRMED}
+        return {"confirmed": True, "message": t(PHRASE_CONFIRMED)}
 
     def phrase_close(self, token: str) -> dict[str, Any]:
         self._challenges.pop(str(token), None)
-        return {"message": "A recovery phrase is active, but you did not confirm it. If you did not write it down, "
-                           "open Recovery phrase again to replace it."}
+        return {"message": t("recovery.aRecoveryPhraseIsActive")}

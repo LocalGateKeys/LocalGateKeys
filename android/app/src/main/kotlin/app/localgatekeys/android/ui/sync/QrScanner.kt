@@ -1,4 +1,7 @@
 package app.localgatekeys.android.ui.sync
+import androidx.annotation.StringRes
+import app.localgatekeys.android.R
+import androidx.compose.ui.res.stringResource
 
 import android.Manifest
 import android.content.Context
@@ -98,14 +101,10 @@ object QrScanner {
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
     /** Ruling 19: shown in the Sync tab when the camera permission is off (Open Settings goes to the app's page). */
-    const val SYNC_DENIED_TEXT =
-        "LocalGateKeys is not allowed to use the camera, so it cannot scan the code. In Settings, tap Permissions, then " +
-            "Camera, and choose Allow. Then scan the code again, or use Paste code text instead."
+    @StringRes val SYNC_DENIED_TEXT = R.string.scanner_denied_sync
 
     /** Ruling 19: shown in the 2FA scanner when the camera permission is off. */
-    const val TOTP_DENIED_TEXT =
-        "LocalGateKeys is not allowed to use the camera, so it cannot scan the code. In Settings, tap Permissions, then " +
-            "Camera, and choose Allow. Then scan the code again, or paste the setup key instead."
+    @StringRes val TOTP_DENIED_TEXT = R.string.scanner_denied_totp
 
     /**
      * Reads a QR code from one camera frame's luminance plane (Y of YUV_420_888: [rowStride] bytes per row). Null when
@@ -206,13 +205,13 @@ fun QrScannerScreen(
         GlassBackdropHost(Modifier.fillMaxSize()) { AuroraBackground() }
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onCancel) { Text("Cancel", color = c.accentText) }
+                TextButton(onCancel) { Text(stringResource(R.string.common_cancel), color = c.accentText) }
                 Text(
                     title, color = c.text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center, modifier = Modifier.weight(1f).semantics { heading() },
                 )
                 // Balances the Cancel button so the title stays centred (invisible, not a control).
-                TextButton({}, enabled = false, modifier = Modifier.clearAndSetSemantics {}) { Text("Cancel", color = Color.Transparent) }
+                TextButton({}, enabled = false, modifier = Modifier.clearAndSetSemantics {}) { Text(stringResource(R.string.common_cancel), color = Color.Transparent) }
             }
             when (granted) {
                 true -> CameraPreview(onCode, onUnavailable, Modifier.fillMaxSize().background(Color.Black))
@@ -227,7 +226,7 @@ fun QrScannerScreen(
                         Button(
                             { permission.openSettings() },
                             colors = ButtonDefaults.buttonColors(containerColor = c.accent, contentColor = Color.White),
-                        ) { Text("Open Settings", fontWeight = FontWeight.SemiBold) }
+                        ) { Text(stringResource(R.string.scanner_open_settings), fontWeight = FontWeight.SemiBold) }
                     }
                 }
                 null -> Box(Modifier.fillMaxSize())

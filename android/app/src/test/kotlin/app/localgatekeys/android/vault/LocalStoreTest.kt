@@ -184,6 +184,37 @@ class LocalStoreTest {
         }
     }
 
+    // Rollback witnesses (2026-10-29): stored only when not default, validated on read.
+    @Test fun witness_fields_round_trip_and_are_omitted_when_default() {
+        val plain = sampleChange(0).sync!!
+        val fields = (LocalStore.encodeSync(plain) as JsonValue.Obj).fields
+        for (k in listOf("peer_generations", "rollback_suspected", "witness_peers", "witness_counters", "generation_offset")) {
+            assertFalse(k, k in fields)
+        }
+        val desk = "d1111111-0000-4000-8000-00000000000d"
+        val state = plain.copy(
+            peerGenerations = mapOf(desk to 40L), rollbackSuspected = 12, witnessPeers = listOf(desk),
+            witnessCounters = mapOf(desk to 7L), generationOffset = 3,
+        )
+        val store = open()
+        val base = sampleChange(0)
+        store.commit(StoreChange(0, base.records, base.meta, state))
+        assertEquals(state, open().load().sync)
+        val json = (LocalStore.encodeSync(state) as JsonValue.Obj).fields
+        assertEquals(JsonValue.Int(12), json["rollback_suspected"])
+        assertEquals(JsonValue.Arr(listOf(s(desk))), json["witness_peers"])
+        for ((k, bad) in listOf(
+            "peer_generations" to obj("not an id!" to JsonValue.Int(1)),
+            "peer_generations" to obj(desk to JsonValue.Int(-1)),
+            "witness_counters" to obj(desk to JsonValue.Int(1L shl 53)),
+            "witness_peers" to JsonValue.Arr(listOf(s(desk), s(desk))),
+            "rollback_suspected" to JsonValue.Str("x"),
+            "generation_offset" to JsonValue.Int(-1),
+        )) {
+            assertEquals(k, LocalStoreException.Kind.CORRUPT, kind { LocalStore.decodeSync(JsonValue.Obj(json + (k to bad))) })
+        }
+    }
+
     @Test fun a_commit_keeps_the_signers() {
         val store = open()
         val base = sampleChange(0)

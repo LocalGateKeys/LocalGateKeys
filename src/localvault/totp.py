@@ -8,6 +8,8 @@ import time
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse
 
+from .i18n import t
+
 
 class TotpError(ValueError):
     pass
@@ -260,16 +262,16 @@ def parse_migration_uri(uri: str) -> dict[str, object]:
     algorithms land in "skipped" with a reason instead of being dropped silently.
     """
     if not isinstance(uri, str) or len(uri) > 64 * 1024:
-        raise TotpError("Migration link is too long")
+        raise TotpError(t("totp.err.linkTooLong"))
     try:
         parsed = urlparse(uri.strip())
         if parsed.scheme != "otpauth-migration" or parsed.netloc.casefold() != "offline":
-            raise TotpError("Expected an otpauth-migration://offline link")
+            raise TotpError(t("totp.err.expectedMigration"))
         data = (parse_qs(parsed.query, max_num_fields=64).get("data") or [""])[0]
     except TotpError:
         raise
     except ValueError as exc:
-        raise TotpError("Expected an otpauth-migration://offline link") from exc
+        raise TotpError(t("totp.err.expectedMigration")) from exc
     if not data:
         raise TotpError("Migration link has no data")
     try:
@@ -330,14 +332,22 @@ def parse_migration_uri(uri: str) -> dict[str, object]:
     return {"accounts": accounts, "skipped": skipped, "batch_index": batch_index, "batch_size": batch_size}
 
 
+def migration_match_score(account: dict, label: str, origin: str = "") -> int:
+    """How clearly an export account (issuer, label) belongs to a credential (label, origin); 0 is no match."""
+    try:
+        host = urlparse(origin).hostname or ""
+    except ValueError:
+        host = ""
+    words = {w for w in (label.casefold(), host.casefold(), host.casefold().removeprefix("www.").split(".")[0]) if w}
+    issuer = str(account.get("issuer", "")).casefold()
+    name = str(account.get("label", "")).casefold()
+    return sum(1 for w in words if w and (w in issuer or (issuer and issuer in w) or w in name))
+
+
 def match_migration_account(accounts: list[dict], label: str, origin: str = "") -> dict | None:
     """Pick the export account that clearly belongs to a credential, else None."""
-    host = urlparse(origin).hostname or ""
-    words = {w for w in (label.casefold(), host.casefold(), host.casefold().removeprefix("www.").split(".")[0]) if w}
     def score(acc: dict) -> int:
-        issuer = str(acc.get("issuer", "")).casefold()
-        name = str(acc.get("label", "")).casefold()
-        return sum(1 for w in words if w and (w in issuer or (issuer and issuer in w) or w in name))
+        return migration_match_score(acc, label, origin)
     ranked = sorted(((score(a), i) for i, a in enumerate(accounts)), reverse=True)
     if len(accounts) == 1:
         return accounts[0]

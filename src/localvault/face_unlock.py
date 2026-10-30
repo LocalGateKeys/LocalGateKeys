@@ -48,6 +48,7 @@ from .vault import (
     unlock_context_for_header,
 )
 from .windows_hello import wipe
+from .i18n import t
 
 SCHEME = "rgb-webcam-sface-dpapi-aes256gcm-v1"
 MAX_RECORD_BYTES = 96 * 1024
@@ -58,8 +59,7 @@ FIELDS = {
 # Present after a v2-to-v3 vault upgrade: the original ``context`` stays in the
 # AEAD/DPAPI entropy and ``unlock_context`` names the v3 vault state.
 OPTIONAL_FIELDS = {"unlock_context"}
-STALE_MESSAGE = ("The vault password or header changed (or the vault format was upgraded without this setup). "
-                 "Use your master password and set up camera verification again.")
+STALE_MESSAGE = ("faceUnlock.theVaultPasswordOrHeader")
 _TEMPLATE_FIELDS = {"version", "model", "threshold", "count", "dimension", "data"}
 _FAILURE_LOCK = threading.Lock()
 _FAILURES: dict[str, tuple[int, float]] = {}
@@ -95,13 +95,13 @@ def _decode_variable(value: Any, *, minimum: int, maximum: int, label: str) -> b
             raise ValueError
         return decoded
     except (ValueError, TypeError) as exc:
-        raise FaceError(f"The encrypted camera-verification {label} is damaged. Use your master password.") from exc
+        raise FaceError(t("faceUnlock.theEncryptedCameraVerificationIs", label=label)) from exc
 
 
 def _decode_exact(value: Any, size: int, label: str) -> bytes:
     raw = _decode_variable(value, minimum=size, maximum=size, label=label)
     if len(raw) != size:
-        raise FaceError(f"The encrypted camera-verification {label} is damaged. Use your master password.")
+        raise FaceError(t("faceUnlock.theEncryptedCameraVerificationIs", label=label))
     return raw
 
 
@@ -118,13 +118,13 @@ def _entropy(record: dict[str, Any]) -> bytes:
 
 def _validate_profile(value: Any) -> str:
     if not isinstance(value, str) or not 1 <= len(value) <= 128 or "\0" in value:
-        raise FaceError("Camera verification belongs to an invalid profile. Use your master password.")
+        raise FaceError(t("faceUnlock.cameraVerificationBelongsToAn"))
     return value
 
 
 def _validate_id(value: Any) -> str:
     if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{32}", value):
-        raise FaceError("The camera-verification setup is invalid. Use your master password.")
+        raise FaceError(t("faceUnlock.theCameraVerificationSetupIs"))
     return value
 
 
@@ -133,11 +133,11 @@ class DPAPIProtector:
 
     def __init__(self) -> None:
         if sys.platform != "win32":
-            raise FaceUnavailable("RGB camera verification is currently available only in the Windows app.")
+            raise FaceUnavailable(t("faceUnlock.rgbCameraVerificationIsCurrently"))
         try:
             import win32crypt  # type: ignore
         except Exception as exc:
-            raise FaceUnavailable("Windows data protection is unavailable. Use your master password.") from exc
+            raise FaceUnavailable(t("faceUnlock.windowsDataProtectionIsUnavailable")) from exc
         self.api = win32crypt
         self.flags = int(getattr(win32crypt, "CRYPTPROTECT_UI_FORBIDDEN", 0x1))
 
@@ -145,7 +145,7 @@ class DPAPIProtector:
         try:
             return bytes(self.api.CryptProtectData(bytes(value), description, entropy, None, None, self.flags))
         except Exception as exc:
-            raise FaceError("Windows could not encrypt the local camera-verification data.") from exc
+            raise FaceError(t("faceUnlock.windowsCouldNotEncryptThe")) from exc
 
     def unprotect(self, value: bytes, entropy: bytes) -> bytearray:
         try:
@@ -153,16 +153,15 @@ class DPAPIProtector:
             return bytearray(plain)
         except Exception as exc:
             raise FaceError(
-                "Windows could not decrypt this profile's camera-verification data. "
-                "Use your master password and set it up again."
+                t("faceUnlock.windowsCouldNotDecryptThis")
             ) from exc
 
 
 def _encode_templates(embeddings: Sequence[Sequence[float]], threshold: float) -> bytearray:
     if not 3 <= len(embeddings) <= 12:
-        raise FaceError("Enrollment needs between 3 and 12 clear face samples.")
+        raise FaceError(t("faceUnlock.enrollmentNeedsBetween3And"))
     if not 0.40 <= float(threshold) <= 0.75:
-        raise FaceError("The face-matching threshold is invalid.")
+        raise FaceError(t("faceUnlock.theFaceMatchingThresholdIs"))
     normalized = [normalize_embedding(values) for values in embeddings]
     packed = bytearray()
     for values in normalized:
@@ -205,8 +204,7 @@ def _decode_templates(value: bytes | bytearray) -> tuple[list[list[float]], floa
         return templates, threshold
     except (ValueError, TypeError, KeyError, UnicodeDecodeError, json.JSONDecodeError, struct.error) as exc:
         raise FaceError(
-            "The encrypted face template is damaged or uses a different recognition model. "
-            "Use your master password and enroll again."
+            t("faceUnlock.theEncryptedFaceTemplateIs")
         ) from exc
 
 
@@ -240,8 +238,7 @@ def _load_record(path: Path, profile_id: str | None) -> dict[str, Any]:
         if isinstance(exc, FaceError):
             raise
         raise FaceError(
-            "Camera verification is not set up for this profile, or its local encrypted setup is damaged. "
-            "Use your master password and open Settings › Unlocking."
+            t("faceUnlock.cameraVerificationIsNotSet")
         ) from exc
 
 
@@ -253,7 +250,7 @@ def _check_vault_context(path: Path, record: dict[str, Any]) -> None:
     header, _source = _read_vault_header(path)
     current = unlock_context_for_header(header)
     if not secrets.compare_digest(current, _effective_context(record)):
-        raise FaceError(STALE_MESSAGE)
+        raise FaceError(t(STALE_MESSAGE))
 
 
 def upgrade_envelope_context(path: Path, old_context: str, new_context: str) -> bool:
@@ -312,7 +309,7 @@ def prepare_enrollment(profile_id: str, context: str, embeddings: Sequence[Seque
                        protector_factory: Callable[[], Any] = DPAPIProtector) -> PreparedFaceEnrollment:
     _validate_profile(profile_id)
     if not isinstance(context, str) or not re.fullmatch(r"[0-9a-f]{64}", context):
-        raise FaceError("The vault changed before camera enrollment could start.")
+        raise FaceError(t("faceUnlock.theVaultChangedBeforeCamera"))
     record = {
         "version": 1,
         "scheme": SCHEME,
@@ -338,9 +335,9 @@ def prepare_enrollment(profile_id: str, context: str, embeddings: Sequence[Seque
 
 def commit_enrollment(session: VaultSession, prepared: PreparedFaceEnrollment) -> None:
     if session.face_binding():
-        raise FaceError("Remove the previous camera-verification setup before enrolling again.")
+        raise FaceError(t("faceUnlock.removeThePreviousCameraVerification"))
     if not secrets.compare_digest(session.unlock_context(), prepared.record["context"]):
-        raise FaceError("The vault changed during enrollment. No camera setup was enabled.")
+        raise FaceError(t("faceUnlock.theVaultChangedDuringEnrollment"))
     record = dict(prepared.record)
     nonce, wrapped_key = session.wrap_unlock_key(prepared.secret, _context(record))
     record["nonce"], record["ciphertext"] = _encode(nonce), _encode(wrapped_key)
@@ -380,7 +377,7 @@ def unlock_verified_face(material: FaceMaterial, cancelled: threading.Event | No
                          backup_dir: Path | None = None, backup_count: int = 0,
                          protector_factory: Callable[[], Any] = DPAPIProtector) -> VaultSession:
     if cancelled is not None and cancelled.is_set():
-        raise FaceCancelled("Camera verification was cancelled. Your vault is still locked.")
+        raise FaceCancelled(t("faceCapture.cameraVerificationWasCancelledYour"))
     record = material.record
     _check_vault_context(material.path, record)
     secret = key = None
@@ -391,9 +388,9 @@ def unlock_verified_face(material: FaceMaterial, cancelled: threading.Event | No
             _entropy(record),
         )
         if len(secret) != 32:
-            raise FaceError("Windows returned invalid protected key material.")
+            raise FaceError(t("faceUnlock.windowsReturnedInvalidProtectedKey"))
         if cancelled is not None and cancelled.is_set():
-            raise FaceCancelled("Camera verification was cancelled. Your vault is still locked.")
+            raise FaceCancelled(t("faceCapture.cameraVerificationWasCancelledYour"))
         try:
             key = bytearray(AESGCM(secret).decrypt(
                 _decode_exact(record["nonce"], 12, "nonce"),
@@ -401,7 +398,7 @@ def unlock_verified_face(material: FaceMaterial, cancelled: threading.Event | No
                 _context(record),
             ))
         except InvalidTag as exc:
-            raise FaceError("The encrypted camera-verification setup could not be authenticated.") from exc
+            raise FaceError(t("faceUnlock.theEncryptedCameraVerificationSetup")) from exc
         session = _unlock_vault_with_face_key(
             material.path,
             key,
@@ -478,7 +475,7 @@ def disable_enrollment(session: VaultSession, current_password: Any = None) -> d
         envelope_path(session.path).unlink(missing_ok=True)
     except OSError as exc:
         raise FaceError(
-            "Camera verification was revoked in the encrypted vault, but its encrypted sidecar could not be removed."
+            t("faceUnlock.cameraVerificationWasRevokedIn")
         ) from exc
     return result
 
@@ -554,7 +551,7 @@ def check_attempt(record_id: str, *, now: float | None = None) -> None:
         count, blocked_until = _FAILURES.get(record_id, (0, 0.0))
     if blocked_until > now:
         wait = max(1, int(math.ceil(blocked_until - now)))
-        raise FaceError(f"Too many unsuccessful camera checks. Try again in {wait} seconds or use your master password.")
+        raise FaceError(t("faceUnlock.tooManyUnsuccessfulCameraChecks", wait=wait))
 
 
 def record_failure(record_id: str, *, now: float | None = None) -> None:

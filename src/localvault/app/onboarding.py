@@ -1,38 +1,39 @@
-"""Getting started (the seven-stage setup guide) for the WebView UI, from ``FeatureUI.onboarding_clicked``.
+"""Set up LocalGateKeys: the five-step setup guide shared by every platform (UX plan workstream 4).
 
-Progress lives in the profile's ``onboarding.json`` through the Tk-free
-``OnboardingController``; only choices and stage names are stored. Stages
-that need another screen return a ``route`` for the page to open.
+Steps, adapted for Windows: 1 create vault (done by the time the vault is open), 2 unlock with
+Windows Hello, 3 import, 4 check the recovery phrase (create it and retype three named words on the
+show-once phrase card), 5 install the browser extension. Every step can be skipped, and the first
+screen has **Skip setup**. Skipped steps stay on the "Finish setting up · 3 of 5" card at the top of
+the vault until it is hidden; Settings has **Show setup again**.
+
+Progress is per device and per profile: ``setup.json`` next to the vault, never synced. Only step
+names and the hidden flag are stored, no secrets.
 """
 from __future__ import annotations
 
+import json
+import os
+import tempfile
 from pathlib import Path
 from typing import Any, Callable
 
 from ..api.result import ApiError
+from ..i18n import t
 
-STAGES = ("welcome", "security", "demo", "bridge_diagnostic", "first_item", "backup", "complete")
-LABELS = {"welcome": "Welcome", "security": "Security check", "demo": "Safe walkthrough",
-          "bridge_diagnostic": "Browser connection", "first_item": "First item", "backup": "Recovery backup",
-          "complete": "Complete"}
-PRIMARY = {"welcome": "Save safety choice", "security": "Review security", "demo": "Save demo choice",
-           "bridge_diagnostic": "Test connection", "first_item": "Add first item", "backup": "Verify backup",
-           "complete": "Done"}
-SPECS = {
-    "welcome": ("Choose the local safety default for this profile.",
-                "Choose whether to keep strict offline mode enabled."),
-    "security": ("Review password health and session controls.", "Open Security check."),
-    "demo": ("Choose whether to open the safe metadata walkthrough.",
-             "Save your choice. No demo records or secrets are created."),
-    "bridge_diagnostic": ("Check the local browser connection.",
-                          "Test the connection. If it is unavailable, retry or open Connections."),
-    "first_item": ("Add a real item to the active profile.", "Save an item in Add item, then confirm it here."),
-    "backup": ("Create and verify an encrypted recovery backup.",
-               "Verify a backup in Backups & recovery, then confirm it here."),
-    "complete": ("Review completed or skipped steps. You can return to setup anytime.",
-                 "Select Done to close onboarding."),
+STEPS = ("vault", "unlock", "import", "phrase", "browser")
+LABELS = {"vault": "unlock.create", "unlock": "unlock.hello", "import": "home.importTitle",
+          "phrase": "onboarding.checkYourRecoveryPhrase", "browser": "onboarding.installTheBrowserExtension"}
+TEXT = {
+    "vault": "onboarding.yourVaultIsCreatedAnd",
+    "unlock": "onboarding.unlockWithYourFaceFingerprint",
+    "import": "onboarding.bringLoginsOverFromA",
+    "phrase": "onboarding.createARecoveryPhraseAnd",
+    "browser": "onboarding.fillAndSaveLoginsIn",
 }
-INTRO = ("Nothing is filled or shared automatically during setup. You choose which optional connections to enable.")
+PRIMARY = {"vault": "common.done", "unlock": "onboarding.setUpWindowsHello", "import": "home.import",
+           "phrase": "onboarding.openRecoveryPhrase", "browser": "onboarding.testConnection"}
+FORMAT = "localgatekeys-setup-v1"
+FILE_NAME = "setup.json"
 
 
 def _collect_report() -> dict[str, Any]:
@@ -41,28 +42,132 @@ def _collect_report() -> dict[str, Any]:
     return collect_report()
 
 
+class SetupStore:
+    """``setup.json``: {"format", "done": [...], "skipped": [...], "hidden": bool}. Local to this device."""
+
+    def __init__(self, path: Path | str) -> None:
+        self.path = Path(path)
+
+    def load(self) -> dict[str, Any]:
+        empty = {"done": [], "skipped": [], "hidden": False}
+        try:
+            data = json.loads(self.path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            return empty
+        except (OSError, ValueError):
+            return empty  # a damaged file only restarts the guide
+        if not isinstance(data, dict) or data.get("format") != FORMAT:
+            return empty
+        done = [s for s in data.get("done", []) if s in STEPS] if isinstance(data.get("done"), list) else []
+        skipped = [s for s in data.get("skipped", []) if s in STEPS and s not in done] \
+            if isinstance(data.get("skipped"), list) else []
+        return {"done": done, "skipped": skipped, "hidden": data.get("hidden") is True}
+
+    def save(self, state: dict[str, Any]) -> None:
+        data = {"format": FORMAT, "done": [s for s in STEPS if s in state["done"]],
+                "skipped": [s for s in STEPS if s in state["skipped"]], "hidden": bool(state["hidden"])}
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        fd, temporary = tempfile.mkstemp(prefix=f".{self.path.name}.", suffix=".tmp", dir=str(self.path.parent))
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                json.dump(data, stream, sort_keys=True, separators=(",", ":"))
+            os.replace(temporary, self.path)
+        except OSError:
+            try:
+                os.unlink(temporary)
+            except OSError:
+                pass
+            raise ApiError("invalid", t("onboarding.setupProgressCouldNotBe")) from None
+
+
 class OnboardingWebService:
     def __init__(self, controller: Any, recovery: Any = None, *,
                  diagnostics: Callable[[], dict[str, Any]] = _collect_report,
-                 apply_setting: Callable[[str, Any], Any] | None = None) -> None:
+                 apply_setting: Callable[[str, Any], Any] | None = None,
+                 phrase_enrolled: Callable[[Path], bool] | None = None) -> None:
         self._controller = controller
         self._recovery = recovery
         self._diagnostics = diagnostics
-        self._apply_setting = apply_setting or self._save_setting
-        self._connection: bool | None = None
+        self._phrase_enrolled = phrase_enrolled or self._vault_phrase_enrolled
         self._message = ""
-        self._first_item_count: int | None = None
-        self._flow: Any = None
-        self._flow_key: Any = None
+        self._connection: bool | None = None
         controller.on_lock.append(self._reset)
 
-    def _save_setting(self, key: str, value: Any) -> None:
-        settings = self._controller.settings
-        setattr(settings, key, value)
+    @staticmethod
+    def _vault_phrase_enrolled(path: Path) -> bool:
+        from ..vault import recovery_phrase_enrolled
+
         try:
-            settings.save()
-        except OSError:
-            raise ApiError("invalid", "The setting could not be saved.") from None
+            return bool(recovery_phrase_enrolled(path))
+        except Exception:  # noqa: BLE001 - unknown means not yet done
+            return False
+
+    def _reset(self) -> None:
+        self._message = ""
+        self._connection = None
+
+    def _store(self) -> SetupStore:
+        controller = self._controller
+        if not controller.is_unlocked():
+            raise ApiError("locked", t("error.lockedProfile"))
+        return SetupStore(Path(controller.session.path).parent / FILE_NAME)
+
+    def _detected(self) -> set[str]:
+        """Steps finished elsewhere in the app count as done here too."""
+        found = {"vault"}
+        hello = self._controller.offers.get("hello") if isinstance(getattr(self._controller, "offers", None), dict) \
+            else None
+        try:
+            if hello is not None and hello():
+                found.add("unlock")
+        except Exception:  # noqa: BLE001, S110 - Windows Hello unavailable is a normal answer
+            pass
+        if self._phrase_enrolled(Path(self._controller.session.path)):
+            found.add("phrase")
+        return found
+
+    def _state(self) -> tuple[SetupStore, dict[str, Any]]:
+        store = self._store()
+        state = store.load()
+        detected = self._detected() - set(state["done"])
+        if detected:
+            state["done"] = [s for s in STEPS if s in state["done"] or s in detected]
+            state["skipped"] = [s for s in state["skipped"] if s not in detected]
+        return store, state
+
+    @staticmethod
+    def _current(state: dict[str, Any]) -> str | None:
+        for step in STEPS:
+            if step not in state["done"] and step not in state["skipped"]:
+                return step
+        return None
+
+    def _view(self, state: dict[str, Any]) -> dict[str, Any]:
+        current = self._current(state)
+        done = len(state["done"])
+        remaining = [s for s in STEPS if s not in state["done"]]
+        return {
+            "title": t("onboardingPage.title"),
+            "subtitle": t("onboarding.fiveShortStepsSkipAny"),
+            "steps": [{"key": s, "label": t(LABELS[s]), "text": t(TEXT[s]), "primary": t(PRIMARY[s]),
+                       "state": "done" if s in state["done"] else "skipped" if s in state["skipped"]
+                       else "current" if s == current else "todo"} for s in STEPS],
+            "current": current, "done": done, "total": len(STEPS),
+            "progress": f"{done} of {len(STEPS)}",
+            "message": self._message,
+            "complete": not remaining,
+            "card": bool(remaining) and not state["hidden"],
+            "hidden": state["hidden"],
+        }
+
+    def view(self) -> dict[str, Any]:
+        store, state = self._state()
+        return self._view(state)
+
+    def card(self) -> dict[str, Any]:
+        """The vault card: shown while a step is left and the card is not hidden."""
+        view = self.view()
+        return {"card": view["card"], "progress": view["progress"], "done": view["done"], "total": view["total"]}
 
     def test_connection(self) -> dict[str, Any]:
         """The browser-connection check, run as its own call (outside the vault lock): it can take seconds."""
@@ -74,122 +179,74 @@ class OnboardingWebService:
         self._connection = connection.get("status") == "connected"
         return {"connected": self._connection}
 
-    def _reset(self) -> None:
-        if self._flow is not None:
-            try:
-                self._flow.invalidate()
-            except Exception:  # noqa: BLE001, S110
-                pass
-        self._flow = None
+    @staticmethod
+    def _step(value: Any) -> str:
+        if value not in STEPS:
+            raise ApiError("invalid", t("onboarding.unknownSetupStep"))
+        return value
+
+    def _mark(self, store: SetupStore, state: dict[str, Any], step: str) -> None:
+        if step not in state["done"]:
+            state["done"].append(step)
+        state["skipped"] = [s for s in state["skipped"] if s != step]
+        store.save(state)
+
+    def perform(self, step: Any) -> dict[str, Any]:
+        """Start (or confirm) one step. Steps done on another page return a ``route`` to open."""
+        step = self._step(step)
+        store, state = self._state()
         self._message = ""
-        self._first_item_count = None
-
-    def _onboarding(self) -> Any:
-        from ..next_release_ui import OnboardingController, OnboardingStore
-
-        controller = self._controller
-        if not controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile first.")
-        lease = controller.guard.lease()
-        controller.require_lease(lease)
-        profile = controller.profiles.active_profile()
-        key = (profile.id, controller.guard.stamp())
-        if self._flow is None or self._flow_key != key:
-            store = OnboardingStore(Path(controller.session.path).parent / "onboarding.json")
-            self._flow = OnboardingController(str(profile.id), store,
-                                              session_checker=lambda: controller.require_lease(lease))
-            self._flow_key = key
-        return self._flow
-
-    def view(self) -> dict[str, Any]:
-        flow = self._onboarding()
-        state = flow.state
-        stage = state.stage
-        purpose, action = SPECS[stage]
-        status = ("Completed" if stage in state.completed else "Skipped" if stage in state.skipped else "Pending")
-        primary = PRIMARY[stage]
-        if self._message and stage == "first_item":
-            primary = "Confirm saved item"
-            action = "Save a real item in Add item, then select Confirm saved item."
-        elif self._message and stage == "backup":
-            primary = "Confirm backup"
-        return {
-            "title": "Getting started",
-            "subtitle": "Follow setup at your pace. Progress is saved locally and can be resumed later.",
-            "intro": INTRO,
-            "stages": [{"key": s, "label": LABELS[s], "state": "done" if s in state.completed else "skipped"
-                        if s in state.skipped else "current" if s == stage else "todo"} for s in STAGES],
-            "stage": stage, "heading": f"Stage {STAGES.index(stage) + 1} of {len(STAGES)} · {LABELS[stage]}",
-            "purpose": purpose, "action": f"Next: {action}", "status": self._message or status,
-            "primary": primary, "can_skip": stage != "complete",
-            "offline": bool(getattr(self._controller.settings, "strict_offline_mode", True)),
-        }
-
-    def _next(self, flow: Any, stage: str) -> None:
-        index = STAGES.index(stage)
-        if index < len(STAGES) - 1:
-            flow.advance(STAGES[index + 1])
-        self._message = ""
-
-    def perform(self, choice: bool | None = None) -> dict[str, Any]:
-        flow = self._onboarding()
-        stage = flow.state.stage
         route = None
-        if stage == "welcome":
-            value = bool(choice) if choice is not None else True
-            self._apply_setting("strict_offline_mode", value)  # through Settings: validation, events
-            flow.choose("offline_mode", value)
-            self._next(flow, stage)
-        elif stage == "security":
-            route = {"route": "security"}
-            self._next(flow, stage)
-        elif stage == "demo":
-            value = bool(choice)
-            flow.choose("demo_enabled", value)
-            if value:
-                route = {"route": "collections"}
-            self._next(flow, stage)
-        elif stage == "bridge_diagnostic":
+        if step == "vault":
+            self._mark(store, state, step)
+        elif step == "unlock":
+            route = {"route": "hello", "params": {"startHello": True}}
+        elif step == "import":
+            self._mark(store, state, step)  # opening Import is the step; cancelling it there is the user's choice
+            route = {"route": "import"}
+        elif step == "phrase":
+            if "phrase" not in state["done"]:
+                route = {"route": "recovery", "params": {"initial": "phrase"}}
+                self._message = t("onboarding.createThePhraseWriteIt")
+        elif step == "browser":
             if self._connection is None:
                 self.test_connection()  # the page normally ran it already, outside the vault lock
             connected, self._connection = self._connection, None
-            if not connected:
-                self._message = "Connection unavailable. Retry or open Connections for help."
+            if connected:
+                self._mark(store, state, step)
             else:
-                flow.choose("bridge_diagnostic", True)
-                self._next(flow, stage)
-        elif stage == "first_item":
-            count = len(self._controller.session.item_service.all_metadata_summaries())
-            if self._first_item_count is None:
-                self._first_item_count = count
-                self._message = "Add item is open. Save an item in your profile, then confirm below."
-                route = {"route": "new-item"}
-            elif count <= self._first_item_count:
-                self._message = "No saved item yet. Save one in Add item, then confirm below."
-            else:
-                flow.choose("first_item_created", True)
-                self._next(flow, stage)
-        elif stage == "backup":
-            if not getattr(self._recovery, "verified_backup", False):
-                self._message = "Backups & recovery is open. Verify a backup, then confirm below."
-                route = {"route": "recovery", "params": {"initial": "verify"}}
-            else:
-                flow.choose("backup_verified", True)
-                self._next(flow, stage)
-        elif stage == "complete":
-            return {**self.view(), "done": True}
-        return {**self.view(), **({"open": route} if route else {})}
+                self._message = t("onboarding.theBrowserExtensionDidNot")
+                route = None
+        return {**self._view(state), **({"open": route} if route else {})}
 
-    def skip(self) -> dict[str, Any]:
-        flow = self._onboarding()
-        stage = flow.state.stage
-        if stage == "complete":
-            return self.view()
-        # One save: advance (which marks the stage completed), then mark it skipped instead.
-        index = STAGES.index(stage)
-        state = flow._state
-        state.advance(STAGES[index + 1])
-        state.skip(stage)
-        flow._save()
+    def skip(self, step: Any = None) -> dict[str, Any]:
+        store, state = self._state()
+        step = self._current(state) if step is None else self._step(step)
+        if step is not None and step not in state["done"] and step not in state["skipped"]:
+            state["skipped"].append(step)
+            store.save(state)
         self._message = ""
-        return self.view()
+        return self._view(state)
+
+    def skip_all(self) -> dict[str, Any]:
+        """**Skip setup** on the first screen: every step left goes to the card."""
+        store, state = self._state()
+        state["skipped"] = [s for s in STEPS if s not in state["done"]]
+        store.save(state)
+        self._message = ""
+        return self._view(state)
+
+    def hide(self) -> dict[str, Any]:
+        store, state = self._state()
+        state["hidden"] = True
+        store.save(state)
+        return self._view(state)
+
+    def show_again(self) -> dict[str, Any]:
+        """Settings › **Show setup again**: the card comes back and skipped steps are offered again."""
+        store, state = self._state()
+        state["hidden"] = False
+        state["skipped"] = []
+        store.save(state)
+        self._message = ""
+        return self._view(state)

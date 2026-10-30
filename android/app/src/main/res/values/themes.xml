@@ -7,4 +7,11 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
+
+    <!-- MainActivity is an AppCompatActivity (per-app language below Android 13), which needs an AppCompat theme. -->
+    <style name="Theme.LocalGateKeys.Main" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/lgk_window_background</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
 </resources>

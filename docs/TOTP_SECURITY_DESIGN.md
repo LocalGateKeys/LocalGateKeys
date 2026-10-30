@@ -1,7 +1,8 @@
 # 2FA (TOTP) secrets: security design, import and auto-fill
 
 Status: phase 1 (import + guarded auto-fill) and the memory/validation/
-confirmation parts of phase 2 are implemented. The separate Hello-wrapped
+confirmation parts of phase 2, the `totp_confirm` settings switch and the
+export opt-in are implemented. The separate Hello-wrapped
 TOTP key (`totp_vault`, sections 1 and 7) and the write-only editor
 (section 3) are designed, **not built**.
 
@@ -20,7 +21,7 @@ sits at an unlocked PC — gets both factors. The goals below restore as much of
 | T2 | Someone uses an unlocked, unattended PC | Optional per-code confirmation (`totp_confirm`); session lock wipes the TOTP section | Confirmation implemented (desktop dialog); Hello/face prompt planned |
 | T3 | Phishing page asks for the code | Codes are released only to the exact origin stored on the credential | Implemented |
 | T4 | Malicious page script / other extension scrapes codes | Code only after a trusted user click; one code per grant; no clipboard by default | Implemented |
-| T5 | Secret leaks through exports, logs, diagnostics, screenshots | Broker responses carry only codes; `totp`/`otp` keys redacted from logs/diagnostics; write-only UI and export opt-in | Broker + redaction implemented; write-only editor and export opt-in planned |
+| T5 | Secret leaks through exports, logs, diagnostics, screenshots | Broker responses carry only codes; `totp`/`otp` keys redacted from logs/diagnostics; write-only UI and export opt-in | Broker, redaction and export opt-in implemented; write-only editor planned |
 | T6 | Secret lingers in memory | Decode into `bytearray` → compute → wipe in `finally`; never cached | Implemented (see section 4 for residuals) |
 | T7 | Lost TPM key (new PC, reinstall) | Recovery-phrase-wrapped backup of the TOTP key | Planned |
 | T8 | Hostile otpauth URI / Authenticator export (oversized secrets, absurd parameters, malformed protobuf) | Strict bounds on every field; parsers raise only `TotpError` | Implemented |
@@ -63,10 +64,11 @@ the code. Declining returns `{"ok": false, "error": "user_cancelled"}` and
 does **not** consume the grant, so the user can click Fill again; accepting
 releases exactly one code (plus `next_code`) and consumes the grant.
 
+The setting is the "Ask before releasing 2FA codes" switch in Settings ›
+Locking (`shell/settings_sections.py`).
+
 Still to do:
 
-* A checkbox in Security settings that toggles `totp_confirm` (the setting
-  exists and is honoured; no UI writes it yet).
 * The original design's three-way `never | every 5 minutes | every code`
   with Hello/face as the prompt. Once the Hello-wrapped key exists the
   `confirm` dialog becomes the fallback and `unwrap` the primary prompt.
@@ -80,6 +82,8 @@ Still to do:
   re-entry and is logged in `activity`.
 * Default export/backup excludes TOTP secrets; including them is an explicit
   checkbox with a warning. Encrypted LocalGateKeys backups always keep them.
+  (Export part in place today: `include_totp` defaults to `False` in
+  `export.py` / `app/import_export.py` and adds `ExportWarning.TOTP`.)
 * `totp`/`otp` keys stay in the redaction list used by `next_release_ui`,
   `error_log` and `diagnostics`. (In place today.)
 
@@ -182,6 +186,21 @@ Rules:
   and the decoded list is dropped when the dialog closes. Multi-batch exports
   show "Batch n of m"; paste the next QR for the remaining accounts.
 
+### 7a. Scan sheet (Windows, implemented)
+
+* `app/qr_import.py` decodes a pasted snip, a chosen or dropped picture file
+  (PNG, JPEG or BMP, re-validated by `check_image` in Python) or webcam frames.
+  Pictures exist only in memory; nothing is written to disk or logged. The app
+  never captures the screen.
+* `app/qr_accounts.py` keeps the decoded accounts under a random token (dropped
+  on lock, on close and after use); the page gets issuer, account name and the
+  logins that match (`totp.migration_match_score`), never a secret.
+* One key opens a login in the editor with the key applied; the user saves.
+  An export is added in bulk through `import_workflow` (plan, review, atomic
+  apply), so duplicates and the free plan's item limit follow the file-import
+  rules. Multi-part exports are merged code by code (same batch size only).
+* Every step checks Pro (`totp`) and shows the upgrade screen on the free plan.
+
 ## 8. Backup of the TOTP key (planned, not built)
 
 TK is additionally wrapped with a key derived from the existing recovery
@@ -200,6 +219,7 @@ the primary email and banking accounts.
 2. Phase 2a (done): bytearray key handling with wipe-in-`finally`, strict
    parser bounds and fuzz tests, `totp_confirm` setting honoured by the
    broker, secret-free broker responses verified by test.
-3. Phase 2b (remaining): Security-settings checkbox for `totp_confirm`,
-   `totp_vault` + Hello-wrapped TK with migration, Hello/face as the
-   confirmation prompt, write-only editor, export opt-in, recovery wrap.
+3. Phase 2b (partly done): settings switch for `totp_confirm` and export
+   opt-in are in place. Remaining: `totp_vault` + Hello-wrapped TK with
+   migration, Hello/face as the confirmation prompt, write-only editor,
+   recovery wrap.

@@ -1,0 +1,72 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSFaceIDUsageDescription" : {
+      "comment" : "Face ID permission prompt (AutoFill).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entsperren Sie Ihren Tresor mit Face ID, um Passwörter auszufüllen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock your vault with Face ID to fill passwords."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquea tu bóveda con Face ID para rellenar contraseñas."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sblocca la tua cassaforte con Face ID per compilare le password."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Face IDで保管庫のロックを解除して、パスワードを入力します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Face ID로 보관함의 잠금을 해제하여 비밀번호를 채웁니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ontgrendel je kluis met Face ID om wachtwoorden in te vullen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odblokuj sejf za pomocą Face ID, aby uzupełniać hasła."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloqueie seu cofre com o Face ID para preencher senhas."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 Face ID 解锁您的保管库以填充密码。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

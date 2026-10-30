@@ -13,6 +13,7 @@ from typing import Any
 from .. import licensing
 from ..api.result import ApiError
 from .licence_view import PRO_PITCH, PURCHASE_URL, install_result_text, licence_view, upgrade_prompt_text
+from ..i18n import t
 
 _log = logging.getLogger(__name__)
 
@@ -80,42 +81,42 @@ class LicenceService:
         view = licence_view(st, self._count())
         headline, body = upgrade_prompt_text(st)
         return {"headline": view.headline, "details": list(view.detail_lines), "can_remove": view.can_remove,
-                "warning": view.warning, "pitch": PRO_PITCH, "purchase_url": PURCHASE_URL or "",
+                "warning": view.warning, "pitch": t(PRO_PITCH), "purchase_url": PURCHASE_URL or "",
                 "upgrade": {"headline": headline, "body": body}, "pro": st.pro_enabled}
 
     def install(self, text: str) -> dict[str, Any]:
         text = str(text or "").strip()
         if not text:
-            raise ApiError("invalid", "Paste your licence key")
+            raise ApiError("invalid", t("licencePage.pasteKey"))
         try:
             lic = licensing.install_license(text)
         except licensing.LicenseError as exc:
             raise ApiError("invalid", str(exc)) from None
         except Exception:  # noqa: BLE001
             _log.warning("Licence install failed", exc_info=True)
-            raise ApiError("invalid", "The licence could not be installed.") from None
+            raise ApiError("invalid", t("licence.theLicenceCouldNotBe")) from None
         self.after_unlock()
         return {"message": install_result_text(licensing.status(), lic), **self.view()}
 
     def install_file(self) -> dict[str, Any]:
-        path = self._dialogs.open_file("Open licence file")
+        path = self._dialogs.open_file(t("licence.openLicenceFile"))
         if not path:
-            raise ApiError("cancelled", "No file was chosen.")
+            raise ApiError("cancelled", t("recovery.noFileWasChosen"))
         try:
             with open(path, encoding="utf-8") as handle:
                 text = handle.read(65_536)
         except (OSError, UnicodeDecodeError):
-            raise ApiError("invalid", "That file could not be read.") from None
+            raise ApiError("invalid", t("licence.thatFileCouldNotBe")) from None
         return self.install(text)
 
     def remove(self) -> dict[str, Any]:
-        if not self._port.confirm("Remove licence",
-                                  "Remove the licence from this device? Your vault and data are not affected."):
-            raise ApiError("cancelled", "Cancelled.")
+        if not self._port.confirm(t("licencePage.remove"),
+                                  t("licence.removeTheLicenceFromThis")):
+            raise ApiError("cancelled", t("error.cancelled"))
         try:
             licensing.remove_license()
         except Exception:  # noqa: BLE001
             _log.warning("Licence removal failed", exc_info=True)
-            raise ApiError("invalid", "The licence could not be removed.") from None
+            raise ApiError("invalid", t("licence.theLicenceCouldNotBe2")) from None
         self.after_unlock()
-        return {"message": "Licence removed.", **self.view()}
+        return {"message": t("licence.licenceRemoved"), **self.view()}

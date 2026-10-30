@@ -1,0 +1,432 @@
+[
+  {
+    "format": "bitwarden",
+    "input": "tests/fixtures/imports/bitwarden.csv",
+    "python_format": "bitwarden-csv"
+  },
+  {
+    "format": "bitwarden",
+    "input": "tests/fixtures/imports/bitwarden.json",
+    "python_format": "bitwarden-json"
+  },
+  {
+    "format": null,
+    "input": "tests/fixtures/imports/bitwarden_account_restricted.json",
+    "python_format": null
+  },
+  {
+    "format": "bitwardenEncrypted",
+    "input": "tests/fixtures/imports/bitwarden_protected.json",
+    "python_format": "bitwarden-encrypted-json"
+  },
+  {
+    "format": "chrome",
+    "input": "tests/fixtures/imports/chrome.csv",
+    "python_format": "chrome-csv"
+  },
+  {
+    "format": "dashlane",
+    "input": "tests/fixtures/imports/dashlane/credentials.csv",
+    "python_format": "dashlane-csv"
+  },
+  {
+    "format": "dashlane",
+    "input": "tests/fixtures/imports/dashlane/ids.csv",
+    "python_format": "dashlane-csv"
+  },
+  {
+    "format": "dashlane",
+    "input": "tests/fixtures/imports/dashlane/payments.csv",
+    "python_format": "dashlane-csv"
+  },
+  {
+    "format": "dashlane",
+    "input": "tests/fixtures/imports/dashlane/personalInfo.csv",
+    "python_format": "dashlane-csv"
+  },
+  {
+    "format": "dashlane",
+    "input": "tests/fixtures/imports/dashlane/securenotes.csv",
+    "python_format": "dashlane-csv"
+  },
+  {
+    "format": "chrome",
+    "input": "tests/fixtures/imports/edge_legacy.csv",
+    "python_format": "chrome-csv"
+  },
+  {
+    "format": "firefox",
+    "input": "tests/fixtures/imports/firefox.csv",
+    "python_format": "firefox-csv"
+  },
+  {
+    "format": "keePassXML",
+    "input": "tests/fixtures/imports/keepass.xml",
+    "python_format": "keepass-xml"
+  },
+  {
+    "format": "keePassCSV",
+    "input": "tests/fixtures/imports/keepass2.csv",
+    "python_format": "keepass-csv"
+  },
+  {
+    "format": "keePassCSV",
+    "input": "tests/fixtures/imports/keepassxc.csv",
+    "python_format": "keepass-csv"
+  },
+  {
+    "format": "lastPass",
+    "input": "tests/fixtures/imports/lastpass.csv",
+    "python_format": "lastpass-csv"
+  },
+  {
+    "format": "onePassword1PUX",
+    "input": "tests/fixtures/imports/onepassword/export.data",
+    "python_format": "1pux"
+  },
+  {
+    "format": "onePasswordCSV",
+    "input": "tests/fixtures/imports/onepassword.csv",
+    "python_format": "1password-csv"
+  },
+  {
+    "format": "protonPass",
+    "input": "tests/fixtures/imports/protonpass/Proton Pass/data.json",
+    "python_format": "protonpass-json"
+  },
+  {
+    "format": "protonPass",
+    "input": "tests/fixtures/imports/protonpass.csv",
+    "python_format": "protonpass-csv"
+  },
+  {
+    "format": "appleCSV",
+    "input": "tests/fixtures/imports/safari.csv",
+    "python_format": "safari-csv"
+  },
+  {
+    "format": "generic",
+    "input": "tests/vectors/import/_inputs/array.json",
+    "python_format": "csv"
+  },
+  {
+    "format": null,
+    "input": "tests/vectors/import/_inputs/binary.bin",
+    "python_format": null
+  },
+  {
+    "format": "bitwardenEncrypted",
+    "input": "tests/vectors/import/_inputs/bitwarden_argon2.json",
+    "python_format": "bitwarden-encrypted-json"
+  },
+  {
+    "format": "bitwardenEncrypted",
+    "input": "tests/vectors/import/_inputs/bitwarden_bad_argon.json",
+    "python_format": "bitwarden-encrypted-json"
+  },
+  {
+    "format": "bitwardenEncrypted",
+    "input": "tests/vectors/import/_inputs/bitwarden_bad_iterations.json",
+    "python_format": "bitwarden-encrypted-json"
+  },
+  {
+    "format": "bitwardenEncrypted",
+    "input": "tests/vectors/import/_inputs/bitwarden_pbkdf2.json",
+    "python_format": "bitwarden-encrypted-json"
+  },
+  {
+    "format": "bitwardenEncrypted",
+    "input": "tests/vectors/import/_inputs/bitwarden_tampered.json",
+    "python_format": "bitwarden-encrypted-json"
+  },
+  {
+    "format": "bitwarden",
+    "input": "tests/vectors/import/_inputs/bitwarden_types.csv",
+    "python_format": "bitwarden-csv"
+  },
+  {
+    "format": "bitwarden",
+    "input": "tests/vectors/import/_inputs/bitwarden_types.json",
+    "python_format": "bitwarden-json"
+  },
+  {
+    "format": "generic",
+    "input": "tests/vectors/import/_inputs/bom_tabs.csv",
+    "python_format": "csv"
+  },
+  {
+    "format": "chrome",
+    "input": "tests/vectors/import/_inputs/cp1252.csv",
+    "python_format": "chrome-csv"
+  },
+  {
+    "format": "dashlane",
+    "input": "tests/vectors/import/_inputs/dashlane.zip",
+    "python_format": "dashlane-zip"
+  },
+  {
+    "format": "dashlane",
+    "input": "tests/vectors/import/_inputs/dashlane_credentials_dupes.csv",
+    "python_format": "dashlane-csv"
+  },
+  {
+    "format": "dashlane",
+    "input": "tests/vectors/import/_inputs/dashlane_encrypted.zip",
+    "python_format": "dashlane-zip"
+  },
+  {
+    "format": "dashlane",
+    "input": "tests/vectors/import/_inputs/dashlane_export.zip",
+    "python_format": "dashlane-zip"
+  },
+  {
+    "format": "dashlane",
+    "input": "tests/vectors/import/_inputs/dashlane_legacy.csv",
+    "python_format": "dashlane-csv"
+  },
+  {
+    "format": "dashlane",
+    "input": "tests/vectors/import/_inputs/dashlane_nested.zip",
+    "python_format": "dashlane-zip"
+  },
+  {
+    "format": null,
+    "input": "tests/vectors/import/_inputs/empty.csv",
+    "python_format": null
+  },
+  {
+    "format": "firefox",
+    "input": "tests/vectors/import/_inputs/firefox_fallback.csv",
+    "python_format": "firefox-csv"
+  },
+  {
+    "format": "generic",
+    "input": "tests/vectors/import/_inputs/generic.csv",
+    "python_format": "csv"
+  },
+  {
+    "format": null,
+    "input": "tests/vectors/import/_inputs/kdb1.kdb",
+    "python_format": null
+  },
+  {
+    "format": "keePassKDBX",
+    "input": "tests/vectors/import/_inputs/kdbx3_keepass.kdbx",
+    "python_format": "kdbx"
+  },
+  {
+    "format": "keePassKDBX",
+    "input": "tests/vectors/import/_inputs/kdbx3_salsa20.kdbx",
+    "python_format": "kdbx"
+  },
+  {
+    "format": "keePassKDBX",
+    "input": "tests/vectors/import/_inputs/kdbx4.kdbx",
+    "python_format": "kdbx"
+  },
+  {
+    "format": "keePassKDBX",
+    "input": "tests/vectors/import/_inputs/kdbx4_aes_argon2d.kdbx",
+    "python_format": "kdbx"
+  },
+  {
+    "format": "keePassKDBX",
+    "input": "tests/vectors/import/_inputs/kdbx4_aeskdf_plain.kdbx",
+    "python_format": "kdbx"
+  },
+  {
+    "format": "keePassKDBX",
+    "input": "tests/vectors/import/_inputs/kdbx4_aeskdf_rounds.kdbx",
+    "python_format": "kdbx"
+  },
+  {
+    "format": "keePassKDBX",
+    "input": "tests/vectors/import/_inputs/kdbx4_argon_iterations.kdbx",
+    "python_format": "kdbx"
+  },
+  {
+    "format": "keePassKDBX",
+    "input": "tests/vectors/import/_inputs/kdbx4_argon_memory.kdbx",
+    "python_format": "kdbx"
+  },
+  {
+    "format": "keePassKDBX",
+    "input": "tests/vectors/import/_inputs/kdbx4_argon_work.kdbx",
+    "python_format": "kdbx"
+  },
+  {
+    "format": "keePassKDBX",
+    "input": "tests/vectors/import/_inputs/kdbx4_chacha_argon2id.kdbx",
+    "python_format": "kdbx"
+  },
+  {
+    "format": "keePassKDBX",
+    "input": "tests/vectors/import/_inputs/kdbx4_keyfile.kdbx",
+    "python_format": "kdbx"
+  },
+  {
+    "format": "keePassKDBX",
+    "input": "tests/vectors/import/_inputs/kdbx4_truncated.kdbx",
+    "python_format": "kdbx"
+  },
+  {
+    "format": "keePassKDBX",
+    "input": "tests/vectors/import/_inputs/kdbx4_twofish.kdbx",
+    "python_format": "kdbx"
+  },
+  {
+    "format": "keePassXML",
+    "input": "tests/vectors/import/_inputs/keepass_types.xml",
+    "python_format": "keepass-xml"
+  },
+  {
+    "format": "keePassCSV",
+    "input": "tests/vectors/import/_inputs/keepassxc_root.csv",
+    "python_format": "keepass-csv"
+  },
+  {
+    "format": "lastPass",
+    "input": "tests/vectors/import/_inputs/lastpass_notes.csv",
+    "python_format": "lastpass-csv"
+  },
+  {
+    "format": null,
+    "input": "tests/vectors/import/_inputs/not_a_zip.1pux",
+    "python_format": null
+  },
+  {
+    "format": null,
+    "input": "tests/vectors/import/_inputs/not_kdbx.kdbx",
+    "python_format": null
+  },
+  {
+    "format": "generic",
+    "input": "tests/vectors/import/_inputs/one_column.txt",
+    "python_format": "csv"
+  },
+  {
+    "format": "onePassword1PUX",
+    "input": "tests/vectors/import/_inputs/onepassword.1pux",
+    "python_format": "1pux"
+  },
+  {
+    "format": "onePassword1PUX",
+    "input": "tests/vectors/import/_inputs/onepassword_bad_json.1pux",
+    "python_format": "1pux"
+  },
+  {
+    "format": "onePassword1PUX",
+    "input": "tests/vectors/import/_inputs/onepassword_corrupt.1pux",
+    "python_format": "1pux"
+  },
+  {
+    "format": "onePassword1PUX",
+    "input": "tests/vectors/import/_inputs/onepassword_encrypted.1pux",
+    "python_format": "1pux"
+  },
+  {
+    "format": null,
+    "input": "tests/vectors/import/_inputs/onepassword_no_data.1pux",
+    "python_format": null
+  },
+  {
+    "format": "onePassword1PUX",
+    "input": "tests/vectors/import/_inputs/onepassword_stored.1pux",
+    "python_format": "1pux"
+  },
+  {
+    "format": "onePasswordCSV",
+    "input": "tests/vectors/import/_inputs/onepassword_tags.csv",
+    "python_format": "1password-csv"
+  },
+  {
+    "format": "onePassword1PUX",
+    "input": "tests/vectors/import/_inputs/onepassword_types.1pux",
+    "python_format": "1pux"
+  },
+  {
+    "format": null,
+    "input": "tests/vectors/import/_inputs/onepif.1pif",
+    "python_format": null
+  },
+  {
+    "format": "onePassword1PUX",
+    "input": "tests/vectors/import/_inputs/onepux.1pux",
+    "python_format": "1pux"
+  },
+  {
+    "format": null,
+    "input": "tests/vectors/import/_inputs/other.json",
+    "python_format": null
+  },
+  {
+    "format": null,
+    "input": "tests/vectors/import/_inputs/other.xml",
+    "python_format": null
+  },
+  {
+    "format": null,
+    "input": "tests/vectors/import/_inputs/pgp.txt",
+    "python_format": null
+  },
+  {
+    "format": "protonPass",
+    "input": "tests/vectors/import/_inputs/proton.zip",
+    "python_format": "protonpass-json"
+  },
+  {
+    "format": null,
+    "input": "tests/vectors/import/_inputs/proton_encrypted.json",
+    "python_format": null
+  },
+  {
+    "format": null,
+    "input": "tests/vectors/import/_inputs/proton_pgp.zip",
+    "python_format": null
+  },
+  {
+    "format": "protonPass",
+    "input": "tests/vectors/import/_inputs/protonpass_elsewhere.zip",
+    "python_format": "protonpass-json"
+  },
+  {
+    "format": "protonPass",
+    "input": "tests/vectors/import/_inputs/protonpass_export.zip",
+    "python_format": "protonpass-json"
+  },
+  {
+    "format": null,
+    "input": "tests/vectors/import/_inputs/protonpass_no_data.zip",
+    "python_format": null
+  },
+  {
+    "format": "protonPass",
+    "input": "tests/vectors/import/_inputs/protonpass_types.csv",
+    "python_format": "protonpass-csv"
+  },
+  {
+    "format": "protonPass",
+    "input": "tests/vectors/import/_inputs/protonpass_types.json",
+    "python_format": "protonpass-json"
+  },
+  {
+    "format": null,
+    "input": "tests/vectors/import/_inputs/random.zip",
+    "python_format": null
+  },
+  {
+    "format": "chrome",
+    "input": "tests/vectors/import/_inputs/semicolon.csv",
+    "python_format": "chrome-csv"
+  },
+  {
+    "format": "chrome",
+    "input": "tests/vectors/import/_inputs/too_many.csv",
+    "python_format": "chrome-csv"
+  },
+  {
+    "format": "chrome",
+    "input": "tests/vectors/import/_inputs/utf16.csv",
+    "python_format": "chrome-csv"
+  }
+]

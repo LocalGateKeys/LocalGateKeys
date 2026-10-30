@@ -4,6 +4,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from pathlib import Path
 from urllib.parse import urlsplit
+from ..i18n import t
 
 from . import (
     ImportedRecord,
@@ -91,10 +92,10 @@ def load_generic_csv(source: Path | str | bytes, *, column_mapping: Mapping[str,
             if not column:
                 continue
             if normalize_header(column) not in normalized:
-                raise ImportFormatError(f"Column {column!r} does not exist in the CSV header")
+                raise ImportFormatError(t("chrome.columnDoesNotExistIn", column=column))
             mapping[target] = normalized[normalize_header(column)]
     if "password" not in mapping and "notes" not in mapping:
-        raise ImportFormatError("CSV columns could not be mapped; choose the password column")
+        raise ImportFormatError(t("chrome.csvColumnsCouldNotBe"))
     result = ImportResult(source_format, fields=tuple(header))
     for row in rows:
         number = int(row["__row__"])
@@ -109,7 +110,7 @@ def load_generic_csv(source: Path | str | bytes, *, column_mapping: Mapping[str,
                 result.records.append(ImportedRecord(kind="note", title=title or f"Row {number}", notes=notes,
                                                      folder=values.get("folder", ""), source_row=number))
             else:
-                result.diagnostics.append(f"Row {number}: empty row; skipped.")
+                result.diagnostics.append(t("chrome.rowEmptyRowSkipped", number=number))
             continue
         result.records.append(ImportedRecord(
             kind="login", title=title, username=username, password=password, urls=[url] if url else [],
@@ -135,7 +136,7 @@ def load_browser_csv(source: Path | str | bytes) -> ImportResult:
         username = pick(row, "username")
         password = pick(row, "password")
         if not (url or username or password):
-            result.diagnostics.append(f"Row {number}: empty row; skipped.")
+            result.diagnostics.append(t("chrome.rowEmptyRowSkipped", number=number))
             continue
         title = pick(row, "name", "title") or host_title(url)
         record = ImportedRecord(kind="login", title=title, username=username, password=password,

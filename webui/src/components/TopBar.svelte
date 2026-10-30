@@ -1,4 +1,5 @@
 <script>
+  import { t } from '../lib/i18n.svelte.js';
   import Button from './Button.svelte';
 
   let { query = $bindable(''), oninput, onlock, onnew, onpalette, searchInput = $bindable() } = $props();
@@ -10,17 +11,17 @@
     <input
       bind:this={searchInput}
       type="search"
-      placeholder="Search this profile"
-      aria-label="Search this profile"
+      placeholder={t('topbar.search')}
+      aria-label={t('topbar.search')}
       bind:value={query}
       {oninput}
       spellcheck="false"
     />
-    <button class="hint" onclick={onpalette} aria-label="Open command palette">Ctrl K</button>
+    <button class="hint" onclick={onpalette} aria-label={t('topbar.palette')}>Ctrl K</button>
   </div>
   <div class="actions">
-    <Button label="Lock" variant="glass" onclick={onlock} />
-    <Button label="New item" variant="primary" onclick={onnew} />
+    <Button label={t('topbar.lock')} variant="glass" onclick={onlock} />
+    <Button label={t('topbar.newItem')} variant="primary" onclick={onnew} />
   </div>
 </div>
 

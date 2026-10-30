@@ -1,5 +1,6 @@
 package app.localgatekeys.android.ui.sync
 
+import app.localgatekeys.android.i18n.appTxt
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -96,7 +97,7 @@ class FolderJoinSheetTest {
             slots = slots, folders = folders, lan = LanTransporting.UNAVAILABLE,
             random = SystemRandomSource(), clock = SystemClock(), licenseKeys = emptyMap(),
         )
-        return SyncCoordinator(store, deps, scope)
+        return SyncCoordinator(store, deps, scope, appTxt())
     }
 
     private fun show(c: SyncCoordinator, picker: FolderPicking) {
@@ -109,9 +110,9 @@ class FolderJoinSheetTest {
 
     @Test fun the_card_says_google_drive_cannot_be_chosen_and_offers_join() {
         show(coordinator(FakeStore(StoreSnapshot())), ScriptedPicker(FolderPick.Cancelled))
-        scrollTo(FolderJoinText.GOOGLE_DRIVE_NOTICE)
-        rule.onNodeWithText(SyncScreenText.FOLDER_NOT_JOINED).assertIsDisplayed()
-        rule.onNodeWithText(FolderJoinText.GOOGLE_DRIVE_NOTICE).assertIsDisplayed()
+        scrollTo(appTxt().s(FolderJoinText.GOOGLE_DRIVE_NOTICE))
+        rule.onNodeWithText(appTxt().s(SyncScreenText.FOLDER_NOT_JOINED)).assertIsDisplayed()
+        rule.onNodeWithText(appTxt().s(FolderJoinText.GOOGLE_DRIVE_NOTICE)).assertIsDisplayed()
         scrollTo("Join a folder…")
         rule.onNodeWithText("Join a folder…").assertIsDisplayed()
     }
@@ -124,7 +125,7 @@ class FolderJoinSheetTest {
         rule.waitForIdle()
         assertEquals(1, picker.picks)
         rule.onNodeWithTag("folder-password").assertIsDisplayed()
-        rule.onNodeWithText(FolderJoinText.FOOTER).assertIsDisplayed()
+        rule.onNodeWithText(appTxt().s(FolderJoinText.FOOTER)).assertIsDisplayed()
         rule.onNodeWithTag("folder-join").assertIsNotEnabled() // no password yet
         // A masked password field (the keyboard gets the password type and no suggestions).
         rule.onNodeWithTag("folder-password-field").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Password))
@@ -147,7 +148,7 @@ class FolderJoinSheetTest {
         rule.onNodeWithTag("folder-password").assertDoesNotExist()
         rule.waitUntil(5_000) { c.actionError.value != null }
         assertEquals(listOf("content://test.provider/tree/f"), folders.opened)
-        rule.onNodeWithText(SyncWording.errorText("folder-missing")).assertIsDisplayed()
+        rule.onNodeWithText(SyncWording(appTxt()).errorText("folder-missing")).assertIsDisplayed()
         assertEquals("That folder does not exist or is not available.", c.actionError.value)
     }
 
@@ -157,7 +158,7 @@ class FolderJoinSheetTest {
         rule.onNodeWithText("Join a folder…").performClick()
         rule.waitForIdle()
         rule.onNodeWithTag("folder-password").assertDoesNotExist()
-        rule.onNodeWithText(SyncWording.errorText("folder-error")).assertIsDisplayed()
+        rule.onNodeWithText(SyncWording(appTxt()).errorText("folder-error")).assertIsDisplayed()
     }
 
     @Test fun choosing_the_folder_again_asks_no_password() {
@@ -167,7 +168,7 @@ class FolderJoinSheetTest {
         show(c, ScriptedPicker(FolderPick.Picked("content://test.provider/tree/again")))
         rule.waitUntil(5_000) { c.membership.value.hasFolder }
         scrollTo("Choose the folder again…")
-        rule.onNodeWithText(SyncScreenText.FOLDER_PICK_AGAIN).assertIsDisplayed() // no folder URI on this phone yet
+        rule.onNodeWithText(appTxt().s(SyncScreenText.FOLDER_PICK_AGAIN)).assertIsDisplayed() // no folder URI on this phone yet
         rule.onNodeWithText("Choose the folder again…").performClick()
         rule.waitUntil(5_000) { folders.opened.isNotEmpty() }
         rule.onNodeWithTag("folder-password").assertDoesNotExist()

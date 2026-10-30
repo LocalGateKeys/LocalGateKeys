@@ -1,5 +1,6 @@
 package app.localgatekeys.android.vault
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -9,7 +10,7 @@ import org.junit.Test
 class VaultSearchTest {
     private val items = itemsOf(webLogin, deskLogin, note, card)
 
-    private fun ids(q: String) = VaultSearch.rank(items, q).map { it.id }
+    private fun ids(q: String) = VaultSearch.rank(items, q, EnglishTxt()).map { it.id }
 
     @Test fun empty_query_returns_everything_most_recent_first() {
         assertEquals(listOf("w1", "c1", "n1", "d1"), ids("  "))
@@ -30,7 +31,7 @@ class VaultSearchTest {
         assertEquals(emptyList<String>(), ids("rotated"))
         assertEquals(emptyList<String>(), ids("pantry"))
         assertEquals(emptyList<String>(), ids("4111"))
-        assertTrue(VaultSearch.rank(items, "4111111111111111").isEmpty())
+        assertTrue(VaultSearch.rank(items, "4111111111111111", EnglishTxt()).isEmpty())
     }
 
     @Test fun every_token_must_match() {
@@ -49,7 +50,7 @@ class VaultSearchTest {
 
     @Test fun rank_exact_then_prefix_then_contains() {
         fun n(id: String, title: String, at: Long) = rec("id" to s(id), "kind" to s("note"), "title" to s(title), "updated_at" to i(at))
-        val got = VaultSearch.rank(itemsOf(n("a", "my bank", 3), n("b", "bank", 1), n("c", "bank of x", 2)), "Bank").map { it.id }
+        val got = VaultSearch.rank(itemsOf(n("a", "my bank", 3), n("b", "bank", 1), n("c", "bank of x", 2)), "Bank", EnglishTxt()).map { it.id }
         assertEquals(listOf("b", "c", "a"), got)
     }
 
@@ -76,8 +77,8 @@ class VaultSearchTest {
         val nfc = "café"
         val nfd = "café"
         val items = itemsOf(rec("id" to s("u1"), "kind" to s("note"), "title" to s(nfc), "updated_at" to i(1)))
-        assertEquals(listOf("u1"), VaultSearch.rank(items, nfc).map { it.id })
-        val fields = VaultSearch.fields(items[0])
+        assertEquals(listOf("u1"), VaultSearch.rank(items, nfc, EnglishTxt()).map { it.id })
+        val fields = VaultSearch.fields(items[0], EnglishTxt())
         assertEquals(VaultSearch.RANK_EXACT, VaultSearch.tokenRank(fields, null, nfc))
         assertNotEquals(VaultSearch.RANK_EXACT, VaultSearch.tokenRank(fields, null, nfd))
         assertFalse(VaultSearch.containsScalars(nfc, "e"))
@@ -98,24 +99,24 @@ class VaultSearchTest {
     @Test fun type_filters() {
         assertEquals(
             listOf("All types", "Favorites", "Browser", "Desktop", "Note", "Payment card"),
-            VaultSearch.filterOptions(items).map { it.label },
+            VaultSearch.filterOptions(items, EnglishTxt()).map { it.label(EnglishTxt()) },
         )
-        assertEquals(listOf("n1"), VaultSearch.apply(items, "", VaultFilter.Kind("note")).map { it.id })
-        assertEquals(listOf("n1", "d1"), VaultSearch.apply(items, "", VaultFilter.Favorites).map { it.id })
-        assertEquals(listOf("w1"), VaultSearch.apply(items, "sample", VaultFilter.Kind("web")).map { it.id })
+        assertEquals(listOf("n1"), VaultSearch.apply(items, "", VaultFilter.Kind("note"), EnglishTxt()).map { it.id })
+        assertEquals(listOf("n1", "d1"), VaultSearch.apply(items, "", VaultFilter.Favorites, EnglishTxt()).map { it.id })
+        assertEquals(listOf("w1"), VaultSearch.apply(items, "sample", VaultFilter.Kind("web"), EnglishTxt()).map { it.id })
     }
 
     @Test fun filter_options_order_other_kinds_by_label() {
         fun k(id: String, kind: String) = rec("id" to s(id), "kind" to s(kind), "title" to s(id))
-        val got = VaultSearch.filterOptions(itemsOf(k("a", "wifi"), k("b", "api_key"), k("c", "note"), k("d", "desktop")))
+        val got = VaultSearch.filterOptions(itemsOf(k("a", "wifi"), k("b", "api_key"), k("c", "note"), k("d", "desktop")), EnglishTxt())
         assertEquals(
             listOf("All types", "Favorites", "Desktop", "API key", "Note", "Wi-Fi network"),
-            got.map { it.label },
+            got.map { it.label(EnglishTxt()) },
         )
     }
 
     @Test fun ties_on_rank_and_time_keep_id_order() {
         fun n(id: String) = rec("id" to s(id), "kind" to s("note"), "title" to s("same"), "updated_at" to i(5))
-        assertEquals(listOf("a", "b", "c"), VaultSearch.rank(itemsOf(n("c"), n("a"), n("b")), "same").map { it.id })
+        assertEquals(listOf("a", "b", "c"), VaultSearch.rank(itemsOf(n("c"), n("a"), n("b")), "same", EnglishTxt()).map { it.id })
     }
 }

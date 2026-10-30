@@ -23,6 +23,7 @@ android/
       sync/       folder sync and runner (join, run once)
       passkey/    passkey records, keys, authenticator data
       totp/       two-factor codes
+      password/   password strength estimate and the desktop's common-password list
       backup/     the LGKMBAK1 phone backup file
     src/test/kotlin/...   tests; support/ holds in-memory folder and store, deterministic randomness and the fixtures
 ```

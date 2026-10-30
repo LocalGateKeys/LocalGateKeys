@@ -1,5 +1,9 @@
 package app.localgatekeys.android.ui.vault
+import app.localgatekeys.android.R
+import androidx.compose.ui.res.stringResource
+import androidx.annotation.StringRes
 
+import app.localgatekeys.android.i18n.rememberTxt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -8,6 +12,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,6 +37,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,24 +56,40 @@ import app.localgatekeys.android.ui.theme.lgkGroupSurface
 import app.localgatekeys.android.unlock.LocalActivityMonitor
 import app.localgatekeys.android.vault.VaultListModel
 import app.localgatekeys.android.vault.VaultSearch
+import app.localgatekeys.android.vault.SearchCommand
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-const val NO_ITEMS = "No items."
-const val NO_MATCHES = "No matches."
+@StringRes val NO_ITEMS = R.string.vault_no_items
+@StringRes val NO_MATCHES = R.string.vault_no_matches
+@StringRes val NO_ACTIONS = R.string.vault_no_actions
 
-/** The Search tab: a search field, a type filter menu and the matches as one solid group, over the same list model. */
+/**
+ * The Search tab: a search field, a type filter menu and the matches as one solid group, over the same list model.
+ * A query starting with `>` lists actions instead (workstream 5, [SearchCommand]); [focusKey] above 0 focuses the field
+ * (Ctrl+K), again each time it changes.
+ */
 @Composable
-fun SearchScreen(model: VaultListModel, seams: VaultSeams) {
+fun SearchScreen(model: VaultListModel, seams: VaultSeams, focusKey: Int = 0) {
+    val txt = rememberTxt()
     val c = LgkTheme.colors
     val items by model.items.collectAsStateWithLifecycle()
     val query by model.query.collectAsStateWithLifecycle()
     val filter by model.filter.collectAsStateWithLifecycle()
     val monitor = LocalActivityMonitor.current
     LaunchedEffect(model) { withContext(Dispatchers.IO) { model.reload() } }
-    val visible = remember(items, query, filter) { VaultSearch.apply(items, query, filter) }
-    val options = remember(items) { VaultSearch.filterOptions(items) }
+    val sort by model.sort.collectAsStateWithLifecycle()
+    val visible = remember(items, query, filter, sort) { VaultListModel.visible(items, query, filter, sort, txt) }
+    val scope = rememberCoroutineScope()
+    val toggleFavorite = seams.favoriteToggle(scope)
+    val options = remember(items) { VaultSearch.filterOptions(items, txt) }
     val tickClock = seams.clock
+    val commands = remember(query, seams.commands) { SearchCommand.parse(query, txt, seams.commands) }
+    val focus = remember { FocusRequester() }
+    val searchLabel = txt.s(R.string.search_hint)
+    LaunchedEffect(focusKey) { if (focusKey > 0) runCatching { focus.requestFocus() } }
 
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -78,7 +100,7 @@ fun SearchScreen(model: VaultListModel, seams: VaultSeams) {
                 Icon(Icons.Filled.Search, null, Modifier.size(20.dp), tint = c.secondaryText)
                 Spacer(Modifier.width(8.dp))
                 Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-                    if (query.isEmpty()) Text("Search", color = c.secondaryText, style = MaterialTheme.typography.bodyLarge)
+                    if (query.isEmpty()) Text(stringResource(if (seams.commands.isEmpty()) R.string.search_hint else R.string.search_hint_actions), color = c.secondaryText, style = MaterialTheme.typography.bodyLarge)
                     BasicTextField(
                         value = query,
                         onValueChange = {
@@ -89,25 +111,49 @@ fun SearchScreen(model: VaultListModel, seams: VaultSeams) {
                         textStyle = MaterialTheme.typography.bodyLarge.copy(color = c.text),
                         cursorBrush = SolidColor(c.accent),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        modifier = Modifier.fillMaxWidth().testTag("search-field").semantics { contentDescription = "Search" },
+                        modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag("search-field").semantics { contentDescription = searchLabel },
                     )
                 }
             }
-            TypeFilterMenu(filter.label, options.map { it to (it == filter) }) { model.filter.value = it }
+            // Sorting orders the plain list; a typed search stays in relevance order.
+            SortMenu(sort, model::setSort, showLabel = false)
+            TypeFilterMenu(filter.label(txt), options.map { it to (it == filter) }) { model.filter.value = it }
         }
         Spacer(Modifier.height(8.dp))
         LazyColumn(Modifier.fillMaxSize().testTag("search-results"), contentPadding = PaddingValues(bottom = tabBarClearance())) {
-            if (visible.isEmpty()) {
+            if (commands != null) {
+                if (commands.isEmpty()) {
+                    item {
+                        Text(
+                            stringResource(NO_ACTIONS), color = c.secondaryText, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(top = 24.dp).testTag("search-empty"),
+                        )
+                    }
+                } else {
+                    item(key = "commands") {
+                        Column(Modifier.fillMaxWidth().lgkGroupSurface().testTag("command-list")) {
+                            for (cmd in commands) {
+                                CommandRow(cmd) {
+                                    model.query.value = ""
+                                    seams.onCommand(cmd)
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if (visible.isEmpty()) {
                 item {
                     Text(
-                        if (query.isEmpty()) NO_ITEMS else NO_MATCHES,
+                        stringResource(if (query.isEmpty()) NO_ITEMS else NO_MATCHES),
                         color = c.secondaryText, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().padding(top = 24.dp).testTag("search-empty"),
                     )
                 }
             }
-            itemsIndexed(visible, key = { _, it -> it.id }) { index, it ->
-                VaultRow(it, index == 0, index == visible.lastIndex, seams.onOpenItem, seams.clipboard, tickClock)
+            if (commands == null) {
+                itemsIndexed(visible, key = { _, it -> it.id }) { index, it ->
+                    VaultRow(it, index == 0, index == visible.lastIndex, seams.onOpenItem, seams.clipboard, tickClock, toggleFavorite)
+                }
             }
         }
     }
@@ -119,6 +165,8 @@ private fun TypeFilterMenu(
     options: List<Pair<app.localgatekeys.android.vault.VaultFilter, Boolean>>,
     onPick: (app.localgatekeys.android.vault.VaultFilter) -> Unit,
 ) {
+    val txt = rememberTxt()
+    val typeDescription = txt.s(R.string.search_type_description, label)
     val c = LgkTheme.colors
     var open by remember { mutableStateOf(false) }
     Box {
@@ -127,7 +175,7 @@ private fun TypeFilterMenu(
                 .height(48.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .clickable(role = Role.Button) { open = true }
-                .semantics { contentDescription = "Type: $label" }
+                .semantics { contentDescription = typeDescription }
                 .testTag("type-filter")
                 .padding(horizontal = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -139,11 +187,28 @@ private fun TypeFilterMenu(
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             for ((option, selected) in options) {
                 DropdownMenuItem(
-                    text = { Text(option.label) },
-                    trailingIcon = { if (selected) Icon(Icons.Filled.Check, "Selected") },
+                    text = { Text(option.label(txt)) },
+                    trailingIcon = { if (selected) Icon(Icons.Filled.Check, stringResource(R.string.common_selected)) },
                     onClick = { open = false; onPick(option) },
                 )
             }
         }
     }
+}
+
+/** One action row of a `>` search. */
+@Composable
+private fun CommandRow(cmd: SearchCommand, onClick: () -> Unit) {
+    val txt = rememberTxt()
+    Text(
+        cmd.title(txt),
+        color = LgkTheme.colors.text,
+        style = MaterialTheme.typography.bodyLarge,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onClick)
+            .heightIn(min = 48.dp)
+            .padding(horizontal = 16.dp, vertical = 14.dp)
+            .testTag("command-row"),
+    )
 }

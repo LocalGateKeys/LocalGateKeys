@@ -2,12 +2,29 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import Toast from './Toast.svelte';
-import { notice, toast } from '../lib/toast.js';
+import { notice, routeAction, toast } from '../lib/toast.js';
 import ErrorLogLink from './ErrorLogLink.svelte';
 import ItemList from './ItemList.svelte';
 import { fakeApi } from '../test/fakeApi.js';
+import { setMessages } from '../lib/i18n.svelte.js';
+import enCatalog from '../../../src/localvault/assets/i18n/en.json';
 
 describe('Toast', () => {
+  it('shows one error-log button in another language', async () => {
+    setMessages('de', { ...enCatalog, 'toast.openErrorLog': 'Fehlerprotokoll öffnen' });
+    try {
+      render(Toast);
+      toast('Failed', 'See the error log.', 'error', [{ id: 'errorlog', label: 'Fehlerprotokoll öffnen', run: () => {} }]);
+      await tick();
+      expect(screen.getAllByRole('button', { name: 'Fehlerprotokoll öffnen' })).toHaveLength(1);
+    } finally { setMessages('en', enCatalog); }
+  });
+
+  it('keeps the id of a route action, so the error-log button is not doubled', async () => {
+    expect(routeAction({ id: 'errorlog', label: 'x', route: 'errorlog' })).toMatchObject({ id: 'errorlog', label: 'x' });
+    expect(routeAction({ label: 'y', route: 'settings' })).not.toHaveProperty('id');
+  });
+
   it('can be dismissed by hand', async () => {
     render(Toast);
     toast('Saved.');
@@ -49,13 +66,47 @@ describe('Toast', () => {
 });
 
 describe('Open error log', () => {
-  it('is offered on notices and inline text that mention the error log', async () => {
+  const emit = (detail) => window.dispatchEvent(new CustomEvent('lgk', { detail: { name: 'toast', detail } }));
+
+  it('is offered on a notice Python flagged with error_log', async () => {
     const api = fakeApi({ errorlog_open: vi.fn().mockResolvedValue({ ok: true }) });
     render(Toast);
-    toast('Something went wrong. Details are in the error log.', '', 'error');
+    emit({ kind: 'error', message: 'Something went wrong. Details are in the error log.', error_log: true });
     await tick();
     await fireEvent.click(screen.getByRole('button', { name: 'Open error log' }));
     expect(api.errorlog_open).toHaveBeenCalled();
+  });
+
+  it('is offered in another language, where the wording does not say "error log"', async () => {
+    setMessages('de', { ...enCatalog, 'toast.openErrorLog': 'Fehlerprotokoll öffnen', 'errorLogLink.open': 'Fehlerprotokoll öffnen' });
+    try {
+      const api = fakeApi({ errorlog_open: vi.fn().mockResolvedValue({ ok: true }) });
+      render(Toast);
+      emit({ kind: 'error', message: 'Etwas ist schiefgelaufen. Einzelheiten stehen im Protokoll.', error_log: true });
+      await tick();
+      await fireEvent.click(screen.getByRole('button', { name: 'Fehlerprotokoll öffnen' }));
+      expect(api.errorlog_open).toHaveBeenCalled();
+    } finally { setMessages('en', enCatalog); }
+  });
+
+  it('is not guessed from English text without the flag', async () => {
+    fakeApi();
+    render(Toast);
+    emit({ kind: 'error', message: 'See the error log.' });
+    await tick();
+    expect(screen.queryByRole('button', { name: 'Open error log' })).toBeNull();
+  });
+
+  it('follows a failed call to the inline text, whatever the language', async () => {
+    setMessages('de', { ...enCatalog, 'errorLogLink.open': 'Fehlerprotokoll öffnen' });
+    try {
+      const message = 'Die Synchronisierung konnte nicht beendet werden. Einzelheiten stehen im Protokoll.';
+      fakeApi({ sync_run: vi.fn().mockResolvedValue({ ok: false, error: { code: 'sync_failed', message, error_log: true } }) });
+      const { call } = await import('../lib/api.js');
+      await call('sync_run');
+      render(ErrorLogLink, { text: message });
+      expect(screen.getByRole('button', { name: 'Fehlerprotokoll öffnen' })).toBeTruthy();
+    } finally { setMessages('en', enCatalog); }
   });
 
   it('stays away from other text', () => {

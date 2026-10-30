@@ -17,6 +17,7 @@ from typing import Any
 
 from ..face_models import DEFAULT_MATCH_THRESHOLD, FaceModelError, FaceObservation
 from ..face_unlock import FaceCancelled, FaceError, FaceUnavailable
+from ..i18n import t
 
 ENROLL_SAMPLES = 8
 # Identity rules (shared with the classic window's camera dialog):
@@ -58,12 +59,11 @@ TIMEOUT_SECONDS = 30
 STALL_SECONDS = 3
 FRAME_INTERVAL = 0.12  # about 8 preview frames a second
 PREVIEW_PIXELS = 240
-PRIVACY = "Nothing is uploaded. No photo or video is saved."
-TIMEOUT_TEXT = ("Face not recognised in time. Use your master password, improve lighting, "
-                "or set up camera verification again.")
-STALLED_TEXT = "The webcam stopped returning images. Close other camera apps and retry."
-CRASHED_TEXT = "The camera verification window stopped unexpectedly. Use your master password."
-CANCELLED_TEXT = "Camera verification was cancelled. Your vault is still locked."
+PRIVACY = "cameraView.noUpload"
+TIMEOUT_TEXT = ("faceCapture.faceNotRecognisedInTime")
+STALLED_TEXT = "qrImport.theWebcamStoppedReturningImages2"
+CRASHED_TEXT = "faceCapture.theCameraVerificationWindowStopped"
+CANCELLED_TEXT = "faceCapture.cameraVerificationWasCancelledYour"
 
 
 @dataclass
@@ -156,8 +156,7 @@ def _open_camera(cv2: Any, start_index: int = 0) -> tuple[Any, int]:
                     except Exception:
                         pass
     raise FaceUnavailable(
-        "No usable webcam was found. Close other camera apps, check Windows camera privacy settings, "
-        "then retry or use your master password."
+        t("faceCapture.noUsableWebcamWasFound")
     ) from last_error
 
 
@@ -193,7 +192,7 @@ class FaceCapture:
                  encode: Callable[..., str | None] | None = None,
                  sleep: Callable[[float], None] = time.sleep) -> None:
         if mode not in {"enroll", "verify"}:
-            raise ValueError("Unknown camera operation")
+            raise ValueError(t("faceCapture.unknownCameraOperation"))
         self.mode = mode
         self._templates = [list(values) for values in templates]
         self._threshold = float(threshold)
@@ -236,7 +235,7 @@ class FaceCapture:
             try:
                 engine = self._engine_factory()
                 encode = self._encode or jpeg_preview(engine)
-                self._say("Starting camera…", PRIVACY, 0.0)
+                self._say(t("cameraView.starting"), t(PRIVACY), 0.0)
                 capture, index = self._open_camera(engine.cv2, 0)
             except FaceModelError as exc:
                 raise FaceUnavailable(str(exc)) from None
@@ -246,7 +245,7 @@ class FaceCapture:
             progress = 0.0
             started = last_frame = self._clock()
             last_preview = -FRAME_INTERVAL
-            self._say("Look at the camera", PRIVACY, 0.0)
+            self._say(t("faceCapture.lookAtTheCamera"), t(PRIVACY), 0.0)
             while not self._cancelled.is_set():
                 now = self._clock()
                 if self._switch.is_set():
@@ -256,16 +255,16 @@ class FaceCapture:
                     self._wipe(samples)
                     run = 0
                     liveness, progress = PassiveLiveness(), 0.0
-                    self._say("Switching camera…", PRIVACY, 0.0)
+                    self._say(t("qrImport.switchingCamera"), t(PRIVACY), 0.0)
                     capture, index = self._open_camera(engine.cv2, (index + 1) % 4)
                     started = last_frame = self._clock()
                     continue
                 if now - started > TIMEOUT_SECONDS:
-                    raise FaceError(TIMEOUT_TEXT)
+                    raise FaceError(t(TIMEOUT_TEXT))
                 ok, frame = capture.read()
                 if not ok or frame is None:
                     if self._clock() - last_frame > STALL_SECONDS:
-                        raise FaceUnavailable(STALLED_TEXT)
+                        raise FaceUnavailable(t(STALLED_TEXT))
                     self._sleep(0.08)
                     continue
                 last_frame = self._clock()
@@ -275,36 +274,36 @@ class FaceCapture:
                 liveness.update(observation)
                 done: Any = None
                 if not observation.usable:
-                    self._say(observation.quality_reason or "Look at the camera", PRIVACY, progress)
+                    self._say(observation.quality_reason or t("faceCapture.lookAtTheCamera"), t(PRIVACY), progress)
                 elif self.mode == "enroll":
                     if liveness.completed and counter % 3 == 0:
                         feature = list(observation.feature or ())
                         if feature and abs(observation.yaw) <= 0.30:
                             if samples and not same_person(feature, samples):
-                                self._say("Look at the camera", "Keep the same face in view.", progress)
+                                self._say(t("faceCapture.lookAtTheCamera"), t("faceCapture.keepTheSameFaceIn"), progress)
                             else:
                                 samples.append(feature)
                                 progress = len(samples) / ENROLL_SAMPLES
-                                self._say("Keep moving your head slowly…", PRIVACY, progress)
+                                self._say(t("faceCapture.keepMovingYourHeadSlowly"), t(PRIVACY), progress)
                                 if len(samples) >= ENROLL_SAMPLES:
                                     done = [list(values) for values in samples]
                 else:
                     verdict = frame_verdict(observation.feature or (), self._templates, self._threshold)
                     if verdict == "match":
                         run += 1
-                        self._say("Look at the camera", PRIVACY, progress)
+                        self._say(t("faceCapture.lookAtTheCamera"), t(PRIVACY), progress)
                     else:
                         run = 0
                         if verdict == "stranger":
                             # Someone else is in view: the check starts over, liveness included,
                             # so frames from two people can never add up to an unlock.
                             liveness = PassiveLiveness()
-                            self._say("Face not recognised", "Try better lighting, or use your master password.", 0.0)
+                            self._say(t("faceCapture.faceNotRecognised"), t("faceCapture.tryBetterLightingOrUse"), 0.0)
                     progress = min(liveness.progress, run / VERIFY_RUN)
                     if liveness.completed and run >= VERIFY_RUN:
                         done = True
                 if done is not None:
-                    self._say("Face recognised" if self.mode == "verify" else "Face set up", "", 1.0, "success")
+                    self._say(t("faceCapture.faceRecognised") if self.mode == "verify" else t("faceCapture.faceSetUp"), "", 1.0, "success")
                     return done
                 if now - last_preview >= FRAME_INTERVAL and not self._cancelled.is_set():
                     last_preview = now
@@ -315,13 +314,13 @@ class FaceCapture:
                     if image:
                         self._emit("face.frame", {"image": image, "progress": round(progress, 3)})
                 self._sleep(0.04)
-            raise FaceCancelled(CANCELLED_TEXT if self.mode == "verify" else "Camera enrollment was cancelled.")
+            raise FaceCancelled(t(CANCELLED_TEXT) if self.mode == "verify" else t("faceCapture.cameraEnrollmentWasCancelled"))
         except (FaceError, FaceCancelled) as exc:
             self._say(str(exc), "", 0.0, "cancelled" if isinstance(exc, FaceCancelled) else "failed")
             raise
         except Exception:
-            self._say(CRASHED_TEXT, "", 0.0, "failed")
-            raise FaceUnavailable(CRASHED_TEXT) from None
+            self._say(t(CRASHED_TEXT), "", 0.0, "failed")
+            raise FaceUnavailable(t(CRASHED_TEXT)) from None
         finally:
             if capture is not None:
                 try:

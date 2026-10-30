@@ -37,12 +37,13 @@ from .importers import kdbx as _kdbx
 from .importers._source import iso_timestamp
 from .importers.bitwarden import BITWARDEN_CSV_COLUMNS
 from .winpaths import system32
+from .i18n import t
 
 EXPORT_FORMATS: dict[str, str] = {
-    "csv": "Bitwarden-compatible CSV (plaintext)",
-    "json": "Bitwarden JSON (plaintext)",
-    "keepass-xml": "KeePass 2 XML (plaintext)",
-    "kdbx": "KeePass KDBX 4 (encrypted)",
+    "csv": "export.bitwardenCompatibleCsvPlaintext",
+    "json": "export.bitwardenJsonPlaintext",
+    "keepass-xml": "export.keepass2XmlPlaintext",
+    "kdbx": "export.keepassKdbx4Encrypted",
 }
 EXPORT_SUFFIXES = {"csv": ".csv", "json": ".json", "keepass-xml": ".xml", "kdbx": ".kdbx"}
 # Same floor as the master password and .lgk backup passwords.
@@ -52,28 +53,23 @@ KDBX_MIN_PASSWORD = 12
 class ExportWarning:
     """User-facing warning texts for the export UI."""
 
-    PLAINTEXT = ("This export stores every password, note, custom field and one-time password secret as "
-                 "plain text. Anyone who can read the file can read your passwords.")
-    TOTP = ("Including one-time password secrets lets another password manager generate your codes, "
-            "but it also removes the protection of your second factor if the file leaks.")
-    SPREADSHEET = ("Do not open the CSV in a spreadsheet application; values beginning with =, +, - or @ "
-                   "can be interpreted as formulas and the file may be cached in temporary locations.")
-    DELETE_AFTER = ("Import the file into the destination application right away, then delete it and empty "
-                    "the Recycle Bin. Cloud-synced folders and backups may keep copies.")
-    KDBX = ("The .kdbx file is encrypted with the password you choose. Pick a long, unique password; "
-            "there is no way to recover the contents without it.")
-    PERMISSIONS = "The file's permissions could not be restricted to your Windows account."
+    PLAINTEXT = ("export.thisExportStoresEveryPassword")
+    TOTP = ("export.includingOneTimePasswordSecrets")
+    SPREADSHEET = ("export.doNotOpenTheCsv")
+    DELETE_AFTER = ("export.importTheFileIntoThe")
+    KDBX = ("export.theKdbxFileIsEncrypted")
+    PERMISSIONS = "export.theFileSPermissionsCould"
 
     @classmethod
     def for_format(cls, export_format: str, *, include_totp: bool) -> tuple[str, ...]:
         if export_format == "kdbx":
-            return (cls.KDBX,)
-        warnings = [cls.PLAINTEXT]
+            return (t(cls.KDBX),)
+        warnings = [t(cls.PLAINTEXT)]
         if include_totp:
-            warnings.append(cls.TOTP)
+            warnings.append(t(cls.TOTP))
         if export_format == "csv":
-            warnings.append(cls.SPREADSHEET)
-        warnings.append(cls.DELETE_AFTER)
+            warnings.append(t(cls.SPREADSHEET))
+        warnings.append(t(cls.DELETE_AFTER))
         return tuple(warnings)
 
 
@@ -97,7 +93,7 @@ class ExportSummary:
 
     @property
     def label(self) -> str:
-        return EXPORT_FORMATS.get(self.format, self.format)
+        return t(EXPORT_FORMATS[self.format]) if self.format in EXPORT_FORMATS else self.format
 
 
 # --------------------------------------------------------------------------- record collection
@@ -208,7 +204,7 @@ def collect_export_records(session: Any) -> tuple[list[ImportedRecord], list[str
     for entry in session.all_entries():
         record = entry_to_record(entry)
         if record is None:
-            diagnostics.append(f"Credential {entry.get('id', '?')} has an unsupported kind and was skipped.")
+            diagnostics.append(t("export.credentialHasAnUnsupportedKind", v1=entry.get('id', '?')))
         else:
             records.append(record)
     items = getattr(session, "items", None)
@@ -236,7 +232,7 @@ def _records_from(source: Any) -> tuple[list[ImportedRecord], list[str]]:
         elif isinstance(item, Mapping):
             record = entry_to_record(item) if item.get("kind") in {"web", "desktop"} else item_to_record(item)
             if record is None:
-                diagnostics.append("An entry with an unsupported kind was skipped.")
+                diagnostics.append(t("export.anEntryWithAnUnsupported"))
             else:
                 records.append(record)
         else:
@@ -427,9 +423,9 @@ def atomic_write(path: Path | str, data: bytes, *, overwrite: bool = False, rest
     """
     destination = Path(path)
     if destination.exists() and not overwrite:
-        raise ExportError("Export destination already exists")
+        raise ExportError(t("export.exportDestinationAlreadyExists"))
     if destination.is_dir():
-        raise ExportError("Export destination is a directory")
+        raise ExportError(t("export.exportDestinationIsADirectory"))
     private_dir: Path | None = None
     try:
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -443,7 +439,7 @@ def atomic_write(path: Path | str, data: bytes, *, overwrite: bool = False, rest
     except OSError as exc:
         if private_dir is not None:
             shutil.rmtree(private_dir, ignore_errors=True)
-        raise ExportError("Could not create the export file") from exc
+        raise ExportError(t("export.couldNotCreateTheExport")) from exc
     temporary = Path(name)
     restricted = False
     try:
@@ -456,14 +452,14 @@ def atomic_write(path: Path | str, data: bytes, *, overwrite: bool = False, rest
         if prepare is not None:
             prepare(temporary)
         if destination.exists() and not overwrite:
-            raise ExportError("Export destination already exists")
+            raise ExportError(t("export.exportDestinationAlreadyExists"))
         os.replace(temporary, destination)
     except ExportError:
         temporary.unlink(missing_ok=True)
         raise
     except OSError as exc:
         temporary.unlink(missing_ok=True)
-        raise ExportError("Could not write the export file") from exc
+        raise ExportError(t("export.couldNotWriteTheExport")) from exc
     finally:
         if private_dir is not None:
             shutil.rmtree(private_dir, ignore_errors=True)
@@ -477,7 +473,7 @@ def _summary(path: Path, export_format: str, records: list[ImportedRecord], diag
         by_kind[record.kind] = by_kind.get(record.kind, 0) + 1
     warnings = list(ExportWarning.for_format(export_format, include_totp=include_totp))
     if restrict_requested and not restricted:
-        warnings.append(ExportWarning.PERMISSIONS)
+        warnings.append(t(ExportWarning.PERMISSIONS))
     return ExportSummary(
         path=Path(path), format=export_format, count=len(records), skipped=len(diagnostics), by_kind=by_kind,
         include_totp=include_totp, totp_count=sum(1 for record in records if record.totp_uri),
@@ -618,7 +614,7 @@ def export_kdbx(session_or_entries: Any, path: Path | str, password: str, *, inc
                 keyfile: bytes | Path | None = None, database_name: str = "LocalGateKeys") -> ExportSummary:
     """Write an encrypted KDBX 4 database (AES-256-CBC, Argon2d, HMAC-SHA256 blocks)."""
     if not password or len(password) < KDBX_MIN_PASSWORD:
-        raise ExportError(f"Choose a password of at least {KDBX_MIN_PASSWORD} characters for the .kdbx export")
+        raise ExportError(t("export.chooseAPasswordOfAt", KDBX_MIN_PASSWORD=KDBX_MIN_PASSWORD))
     try:
         return _export(
             session_or_entries, path, "kdbx",

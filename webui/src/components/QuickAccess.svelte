@@ -1,11 +1,13 @@
 <script>
   /** Quick access: search this profile from anywhere (hotkey, tray, palette) and open the item. */
   import { call } from '../lib/api.js';
+  import { t } from '../lib/i18n.svelte.js';
   import { okOrToast } from '../lib/toast.js';
 
   let { onclose, onopen } = $props();
-  const KINDS = [['', 'All types'], ['credentials', 'Credentials'], ['note', 'Notes'], ['bookmark', 'Bookmarks'],
-    ['safe', 'Safe items'], ['document', 'Documents'], ['identity', 'Identities']];
+  const KINDS = [['', 'quickAccess.allTypes'], ['credentials', 'quickAccess.credentials'], ['note', 'quickAccess.notes'],
+    ['bookmark', 'quickAccess.bookmarks'], ['safe', 'quickAccess.safe'], ['document', 'quickAccess.documents'],
+    ['identity', 'quickAccess.identities']]; // labels are catalog keys
   let query = $state('');
   let kind = $state('');
   let rows = $state([]);
@@ -27,17 +29,17 @@
 </script>
 
 <div class="scrim">
-  <div class="card glass" role="dialog" aria-modal="true" aria-label="Quick access" tabindex="-1" onkeydown={keys}>
-    <h2>Quick access</h2>
-    <p class="muted">Profile: {profile} · Search credential and typed-item metadata. Open a row for its deliberate action.</p>
+  <div class="card glass" role="dialog" aria-modal="true" aria-label={t('quickAccess.title')} tabindex="-1" onkeydown={keys}>
+    <h2>{t('quickAccess.title')}</h2>
+    <p class="muted">{t('quickAccess.intro', { profile })}</p>
     <div class="bar">
-      <input bind:this={input} bind:value={query} oninput={typed} placeholder="Find a login, note or bookmark" aria-label="Find a login, note or bookmark" />
-      <select aria-label="Type" bind:value={kind} onchange={search}>{#each KINDS as [value, label] (value)}<option {value}>{label}</option>{/each}</select>
+      <input bind:this={input} bind:value={query} oninput={typed} placeholder={t('quickAccess.find')} aria-label={t('quickAccess.find')} />
+      <select aria-label={t('quickAccess.type')} bind:value={kind} onchange={search}>{#each KINDS as [value, label] (value)}<option {value}>{t(label)}</option>{/each}</select>
     </div>
-    <div class="group list" role="listbox" aria-label="Results">
+    <div class="group list" role="listbox" aria-label={t('quickAccess.results')}>
       {#each rows as r (r.ref.id)}
         <button role="option" aria-selected="false" class="row" onclick={() => onopen(r.ref)}><span>{r.title}</span><span class="muted">{r.subtitle}</span></button>
-      {:else}<p class="empty">No matches.</p>{/each}
+      {:else}<p class="empty">{t('quickAccess.noMatches')}</p>{/each}
     </div>
   </div>
 </div>

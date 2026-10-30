@@ -20,16 +20,15 @@ from ..attachments import (
 )
 from ..vault import ItemLimitReached, ProFeatureRequired, VaultError
 from .licence_view import pro_required
+from ..i18n import t
 
-OPEN_OFF_TITLE = "Opening documents is off"
-OPEN_OFF_TEXT = ('"Open documents in other apps" is off. Turn it on to open this file, or use Save a copy… instead.')
-OPEN_WARNING_TITLE = "Open a decrypted copy?"
+OPEN_OFF_TITLE = "documents.openingDocumentsIsOff"
+OPEN_OFF_TEXT = ("documents.openDocumentsInOtherApps")
+OPEN_WARNING_TITLE = "documents.openADecryptedCopy"
 OPEN_WARNING_TEXT = (
-    "To open this file in another app, LocalGateKeys puts a decrypted copy in your profile folder on this PC. "
-    "It is deleted as soon as you close the file in that app (and at the latest when the vault locks). "
-    "The other app may keep its own recent-files list or backups.\n\nYou won't be asked again."
+    "documents.toOpenThisFileIn"
 )
-COPY_SAVED_TEXT = "A decrypted copy was written outside the vault. Protect or delete it when finished."
+COPY_SAVED_TEXT = "documents.aDecryptedCopyWasWritten"
 
 
 class Dialogs(Protocol):
@@ -74,19 +73,19 @@ class DocumentService:
 
     def _session(self) -> Any:
         if not self._controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile first.")
+            raise ApiError("locked", t("error.lockedProfile"))
         return self._controller.session
 
     @staticmethod
     def _id(ref: dict[str, Any]) -> str:
         if ref.get("source") != "typed" or ref.get("kind") != "document":
-            raise ApiError("invalid", "Choose a document.")
+            raise ApiError("invalid", t("documents.chooseADocument"))
         return ref["id"]
 
     def _pick(self, title: str) -> Path:
         path = self._dialogs.open_file(title)
         if not path:
-            raise ApiError("cancelled", "No file was chosen.")
+            raise ApiError("cancelled", t("recovery.noFileWasChosen"))
         return Path(path)
 
     def _lease(self) -> Any:
@@ -96,7 +95,7 @@ class DocumentService:
             lease = self._controller.guard.lease()
             self._controller.require_lease(lease)
         except StaleSession:
-            raise ApiError("session_changed", "The vault locked or changed. Try again.") from None
+            raise ApiError("session_changed", t("recovery.theVaultLockedOrChanged")) from None
         return lease
 
     def _still(self, lease: Any) -> None:
@@ -106,12 +105,12 @@ class DocumentService:
         try:
             self._controller.require_lease(lease)
         except StaleSession:
-            raise ApiError("session_changed", "The vault locked or changed while the dialog was open.") from None
+            raise ApiError("session_changed", t("documents.theVaultLockedOrChanged")) from None
 
     def create(self, title: str, description: str) -> dict[str, Any]:
         session = self._session()
         lease = self._lease()
-        source = self._pick("Choose encrypted document source")
+        source = self._pick(t("documents.chooseEncryptedDocumentSource"))
         self._still(lease)
         try:
             # The default title is the file name, without bidi tricks that disguise it in the list.
@@ -132,7 +131,7 @@ class DocumentService:
         session = self._session()
         item_id = self._id(ref)
         lease = self._lease()
-        source = self._pick("Choose a replacement file")
+        source = self._pick(t("documents.chooseAReplacementFile"))
         self._still(lease)
         try:
             # The replacement keeps its own file name (Tk kept the old one, mislabelling the file).
@@ -150,7 +149,7 @@ class DocumentService:
         try:
             record = session.documents.attachment_for(self._id(ref))
         except (VaultError, ValueError) as exc:
-            raise ApiError("vault_error", f"Attachment unavailable: {exc}") from None
+            raise ApiError("vault_error", t("documents.attachmentUnavailable", exc=exc)) from None
         name = record.get("name")
         if isinstance(name, str):
             name = strip_format_controls(name)  # shown and suggested without bidi tricks
@@ -172,15 +171,15 @@ class DocumentService:
         item_id = self._id(ref)
         settings = self._controller.settings
         if not settings.document_open_enabled:
-            raise ApiError("needs_setting", OPEN_OFF_TEXT, fix={
-                "section": "privacy", "key": "document_open_enabled", "value": True, "label": "Turn on and open"})
+            raise ApiError("needs_setting", t(OPEN_OFF_TEXT), fix={
+                "section": "privacy", "key": "document_open_enabled", "value": True, "label": t("documents.turnOnAndOpen")})
         # Refuse a type outside the allow-list before the one-time warning is shown.
         if not can_open_externally(str(self.info(ref).get("name") or "")):
-            raise ApiError("unsupported_type", OPEN_NOT_ALLOWED_TEXT)
+            raise ApiError("unsupported_type", t(OPEN_NOT_ALLOWED_TEXT))
         lease = self._controller.guard.lease()
         if not settings.document_open_warning_seen:
-            if not self._port.confirm(OPEN_WARNING_TITLE, OPEN_WARNING_TEXT):
-                raise ApiError("cancelled", "Cancelled.")
+            if not self._port.confirm(t(OPEN_WARNING_TITLE), t(OPEN_WARNING_TEXT)):
+                raise ApiError("cancelled", t("error.cancelled"))
             settings.document_open_warning_seen = True
             try:
                 settings.save()
@@ -191,20 +190,20 @@ class DocumentService:
             path = session.documents.open_externally(item_id)
         except (VaultError, OSError, ValueError) as exc:
             raise ApiError("vault_error", str(exc)) from None
-        return {"message": f"Opened {Path(path).name}. Its decrypted copy is deleted when you close it."}
+        return {"message": t("documents.openedItsDecryptedCopyIs", name=Path(path).name)}
 
     def save_copy(self, ref: dict[str, Any]) -> dict[str, Any]:
         session = self._session()
         item_id = self._id(ref)
         name = self.info(ref).get("name") or "document"
         lease = self._lease()
-        target = self._dialogs.save_file("Save a decrypted copy", str(name))
+        target = self._dialogs.save_file(t("documents.saveADecryptedCopy"), str(name))
         if not target:
-            raise ApiError("cancelled", "No file was chosen.")
+            raise ApiError("cancelled", t("recovery.noFileWasChosen"))
         self._still(lease)
         try:
             session.documents.export(item_id, Path(target), overwrite=True)
         except (VaultError, OSError, ValueError) as exc:
             raise ApiError("vault_error", str(exc)) from None
-        self._port.notify("info", "Copy saved", COPY_SAVED_TEXT)
-        return {"message": "Copy saved"}
+        self._port.notify("info", t("documents.copySaved"), t(COPY_SAVED_TEXT))
+        return {"message": t("documents.copySaved")}

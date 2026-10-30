@@ -21,6 +21,8 @@ from math import comb
 from pathlib import Path
 from typing import Any
 
+from .i18n import t
+
 DEFAULT_SYMBOLS = "!@#$%^&*()-_=+[]{}:,.?"
 AMBIGUOUS = set("Il1O0o|`'\"")
 # Display name -> separator character.  Keys are stable preference aliases.
@@ -210,7 +212,7 @@ def generate_password(
     if symbols:
         requested.append(("symbols", symbol_set, max(1, int(min_symbols))))
     if not requested:
-        raise ValueError("Select at least one character group")
+        raise ValueError(t("generator.error.noGroup"))
     groups: list[tuple[str, int]] = []
     for name, alphabet, minimum in requested:
         usable = "".join(dict.fromkeys(ch for ch in alphabet if ch not in excluded))
@@ -240,7 +242,7 @@ def generate_passphrase(
     if separator in SEPARATORS:
         separator = SEPARATORS[separator]
     if separator not in SEPARATORS.values():
-        raise ValueError("Separator must be one of: dash, space, dot, underscore or none")
+        raise ValueError(t("generator.error.separator"))
     count = max(3, min(int(words), 16))
     source = wordlist or load_wordlist()
     chosen = [secrets.choice(source) for _ in range(count)]
@@ -265,13 +267,13 @@ def generate_username(style: str = "word", *, domain: str | None = None, prefix:
     if style == "word":
         return f"{secrets.choice(load_wordlist())}{secrets.randbelow(9900) + 100}"
     if style != "alias":
-        raise ValueError("Username style must be 'word' or 'alias'")
+        raise ValueError(t("generator.error.usernameStyle"))
     normalized_domain = (domain or "").strip().lower()
     if not normalized_domain or not _DOMAIN_RE.fullmatch(normalized_domain):
-        raise ValueError("Enter a valid email domain such as example.com")
+        raise ValueError(t("generator.error.domain"))
     normalized_prefix = (prefix or "").strip().lower() or secrets.choice(load_wordlist())
     if not _PREFIX_RE.fullmatch(normalized_prefix):
-        raise ValueError("The alias prefix may contain letters, digits, '.', '_' or '-'")
+        raise ValueError(t("generator.error.prefix"))
     alphabet = string.ascii_lowercase + string.digits
     token = "".join(secrets.choice(alphabet) for _ in range(8))
     return f"{normalized_prefix}+{token}@{normalized_domain}"
@@ -712,53 +714,52 @@ def _display_time(seconds: float) -> str:
     minute, hour, day, month, year = 60, 3600, 86400, 86400 * 31, 86400 * 365
     century = year * 100
     if seconds < 1:
-        return "less than a second"
+        return t("strength.time.underSecond")
     for unit, name in ((century, None), (year, "year"), (month, "month"), (day, "day"), (hour, "hour"),
                        (minute, "minute"), (1, "second")):
         if seconds >= unit:
             if name is None:
-                return "centuries"
-            count = round(seconds / unit)
-            return f"{count} {name}{'s' if count != 1 else ''}"
-    return "less than a second"
+                return t("strength.time.centuries")
+            return t(f"strength.time.{name}", count=round(seconds / unit))
+    return t("strength.time.underSecond")
 
 
 def _feedback(score: int, sequence: list[PatternMatch]) -> tuple[str, tuple[str, ...]]:
     if not sequence:
-        return "", ("Use a few characters, avoiding common patterns.",)
+        return "", (t("strength.fb.fewChars"),)
     if score > 2:
         return "", ()
     longest = max(sequence, key=lambda match: len(match.token))
-    suggestions: list[str] = ["Add another word or two. Uncommon words are better."]
+    suggestions: list[str] = [t("strength.fb.addWord")]
     warning = ""
     if longest.pattern == "dictionary":
         if longest.detail.startswith("common"):
-            warning = "This is a very common password." if len(sequence) == 1 else "This is similar to a commonly used password."
+            warning = t("strength.fb.veryCommon") if len(sequence) == 1 else t("strength.fb.similarCommon")
         else:
-            warning = "A single word is easy to guess." if len(sequence) == 1 else "Common words are easy to guess."
+            warning = t("strength.fb.singleWord") if len(sequence) == 1 else t("strength.fb.commonWords")
         if "+l33t" in longest.detail:
-            suggestions.append("Predictable substitutions like '@' instead of 'a' do not help much.")
+            suggestions.append(t("strength.fb.l33t"))
         if "+reversed" in longest.detail:
-            suggestions.append("Reversed words are not much harder to guess.")
+            suggestions.append(t("strength.fb.reversed"))
         if longest.token != longest.token.lower() and _uppercase_variations(longest.token) == 2:
-            suggestions.append("Capitalization does not help very much.")
+            suggestions.append(t("strength.fb.caps"))
     elif longest.pattern == "spatial":
-        warning = "Short keyboard patterns are easy to guess." if "turns=1" in longest.detail else \
-            "Straight rows of keys are easy to guess."
-        suggestions.append("Use a longer keyboard pattern with more turns.")
+        warning = t("strength.fb.shortKeys") if "turns=1" in longest.detail else \
+            t("strength.fb.rows")
+        suggestions.append(t("strength.fb.longerKeys"))
     elif longest.pattern == "repeat":
-        warning = 'Repeats like "aaa" are easy to guess.' if len(set(longest.token)) == 1 else \
-            'Repeats like "abcabcabc" are only slightly harder to guess than "abc".'
-        suggestions.append("Avoid repeated words and characters.")
+        warning = t("strength.fb.repeatSingle") if len(set(longest.token)) == 1 else \
+            t("strength.fb.repeatGroup")
+        suggestions.append(t("strength.fb.avoidRepeats"))
     elif longest.pattern == "sequence":
-        warning = 'Sequences like "abc" or "6543" are easy to guess.'
-        suggestions.append("Avoid sequences.")
+        warning = t("strength.fb.sequence")
+        suggestions.append(t("strength.fb.avoidSequences"))
     elif longest.pattern == "date":
-        warning = "Dates are often easy to guess."
-        suggestions.append("Avoid dates and years that are associated with you.")
+        warning = t("strength.fb.dates")
+        suggestions.append(t("strength.fb.avoidDates"))
     elif longest.pattern == "bruteforce" and len(longest.token) <= 8:
-        warning = "This is too short to resist a fast offline attack."
-        suggestions = ["Add more characters; length matters most."]
+        warning = t("strength.fb.tooShort")
+        suggestions = [t("strength.fb.addChars")]
     return warning, tuple(suggestions)
 
 
@@ -778,7 +779,7 @@ def _estimate(password: str, depth: int = 0) -> StrengthEstimate:
     guesses = max(1.0, guesses)
     score = _score(guesses)
     seconds = guesses / _OFFLINE_FAST_HASH_PER_SECOND
-    warning, suggestions = _feedback(score, sequence) if password else ("Password is empty.", ())
+    warning, suggestions = _feedback(score, sequence) if password else (t("strength.fb.empty"), ())
     return StrengthEstimate(
         score=score,
         guesses=guesses,
@@ -807,7 +808,7 @@ class PasswordHealth:
 def assess_password(password: str) -> PasswordHealth:
     """Backwards-compatible 0-100 view over :func:`estimate_strength`."""
     if not password:
-        return PasswordHealth(0, "Empty", 0.0, ("Password is empty",))
+        return PasswordHealth(0, t("strength.health.empty"), 0.0, (t("strength.fb.empty"),))
     estimate = estimate_strength(password)
     score = max(0, min(100, round(estimate.guesses_log10 * 100 / 14)))
     reasons = [part for part in (estimate.warning, *estimate.suggestions) if part]
@@ -817,14 +818,20 @@ def assess_password(password: str) -> PasswordHealth:
     if patterned and estimate.guesses < 1e14 and score >= 60:
         score = 59
         if not reasons:
-            reasons.append("Built from recognizable patterns; add more words or characters.")
-    label = "Strong" if score >= 80 else "Review" if score >= 60 else "Weak" if score >= 35 else "Very weak"
+            reasons.append(t("strength.fb.patterns"))
+    label = (t("strength.health.strong") if score >= 80 else t("strength.health.review") if score >= 60
+             else t("strength.health.weak") if score >= 35 else t("strength.health.veryWeak"))
     return PasswordHealth(score, label, math.log2(estimate.guesses), tuple(reasons) if score < 80 else ())
 
 
 # --------------------------------------------------------------------------- vault-wide checks
 
-STRENGTH_LABELS = ("Very weak", "Weak", "Fair", "Strong", "Very strong")
+STRENGTH_LABELS = ("Very weak", "Weak", "Fair", "Strong", "Very strong")  # English ids; shown via strength_label()
+
+
+def strength_label(score: int) -> str:
+    """The shown name of a 0-4 strength score, in the active language."""
+    return t(f"strength.label.{max(0, min(4, int(score)))}")
 
 HEALTH_CATEGORY_LABELS = {
     "weak": "Weak",
@@ -834,13 +841,24 @@ HEALTH_CATEGORY_LABELS = {
 }
 
 
+# Tag on a login whose password was generated as a placeholder (a 2FA QR code added it without the real
+# password). Health leaves its password out of weak and reuse scoring, and breach checks skip it.
+NEEDS_PASSWORD_TAG = "needs-password"  # noqa: S105 - a tag name, not a password
+
+
+def needs_password(entry: dict[str, Any]) -> bool:
+    tags = entry.get("tags")
+    return isinstance(tags, (list, tuple)) and NEEDS_PASSWORD_TAG in tags
+
+
 def vault_health(entries: list[dict[str, Any]], *, old_after_days: int = 365, now: int | None = None) -> dict[str, Any]:
     """Categorize every entry once without retaining any password text."""
     current = int(time.time()) if now is None else int(now)
     password_to_ids: dict[str, list[str]] = {}
     rows: list[dict[str, Any]] = []
     for entry in entries:
-        password = str(entry.get("password", ""))
+        placeholder = needs_password(entry)
+        password = "" if placeholder else str(entry.get("password", ""))
         entry_id = str(entry.get("id", ""))
         digest = hashlib.sha256(password.encode("utf-8")).hexdigest() if password else ""
         if digest:
@@ -852,7 +870,7 @@ def vault_health(entries: list[dict[str, Any]], *, old_after_days: int = 365, no
             "label": str(entry.get("label", "")),
             "username": str(entry.get("username", "")),
             "kind": str(entry.get("kind", "")),
-            "score": score,
+            "score": 4 if placeholder else score,
             "digest": digest,
             "has_2fa": bool(entry.get("totp")),
             "updated_at": updated,

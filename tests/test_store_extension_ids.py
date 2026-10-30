@@ -40,13 +40,16 @@ def store_ids(monkeypatch):
 
 
 def test_placeholders_are_unassigned_and_ignored_until_filled_in() -> None:
-    # The Edge Add-ons ID is assigned; flip the Chrome assertion when its listing exists.
-    assert config.CHROME_WEB_STORE_EXTENSION_ID == ""
+    # Both store IDs are assigned.
+    assert config.CHROME_WEB_STORE_EXTENSION_ID == "fcilinmkccknaoeobcdnploacggajbdg"
     assert config.EDGE_ADDONS_EXTENSION_ID == "oclkjglnfefdmhddgicmbadaoehakbjj"
-    assert config.CHROMIUM_EXTENSION_IDS == (config.EXTENSION_ID, config.EDGE_ADDONS_EXTENSION_ID)
+    assert config.CHROMIUM_EXTENSION_IDS == (config.EXTENSION_ID, config.CHROME_WEB_STORE_EXTENSION_ID,
+                                             config.EDGE_ADDONS_EXTENSION_ID)
     assert config.EXTENSION_ORIGINS == (
         f"chrome-extension://{config.EXTENSION_ID}/",
         f"extension://{config.EXTENSION_ID}/",
+        f"chrome-extension://{config.CHROME_WEB_STORE_EXTENSION_ID}/",
+        f"extension://{config.CHROME_WEB_STORE_EXTENSION_ID}/",
         f"chrome-extension://{config.EDGE_ADDONS_EXTENSION_ID}/",
         f"extension://{config.EDGE_ADDONS_EXTENSION_ID}/",
     )

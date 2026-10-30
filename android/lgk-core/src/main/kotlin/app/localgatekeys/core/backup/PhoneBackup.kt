@@ -14,6 +14,10 @@ import app.localgatekeys.core.primitives.CryptoBox
 import app.localgatekeys.core.primitives.CryptoBoxException
 import app.localgatekeys.core.primitives.Identifier
 import app.localgatekeys.core.primitives.RandomSource
+import app.localgatekeys.core.sync.AttachmentRef
+import app.localgatekeys.core.sync.AttachmentSync
+import app.localgatekeys.core.sync.AttachmentSyncException
+import app.localgatekeys.core.sync.Documents
 
 /** A failed phone backup read or write. [reason] is one of the format's reason strings. */
 class PhoneBackupException(val reason: String) : Exception(messageFor(reason)) {
@@ -40,6 +44,8 @@ class BackupHeader(
     val kdf: Map<String, Any>,
     salt: ByteArray,
     nonce: ByteArray,
+    /** 1, or 2 when the backup carries document files. */
+    val version: Int = PhoneBackupFormat.VERSION,
 ) {
     private val saltBytes: ByteArray = salt.copyOf()
     private val nonceBytes: ByteArray = nonce.copyOf()
@@ -56,10 +62,11 @@ class BackupHeader(
         kdf: Map<String, Any> = this.kdf,
         salt: ByteArray = this.saltBytes,
         nonce: ByteArray = this.nonceBytes,
-    ): BackupHeader = BackupHeader(createdAt, platform, kdf, salt, nonce)
+        version: Int = this.version,
+    ): BackupHeader = BackupHeader(createdAt, platform, kdf, salt, nonce, version)
 
     override fun equals(other: Any?): Boolean =
-        other is BackupHeader && createdAt == other.createdAt && platform == other.platform && kdf == other.kdf &&
+        other is BackupHeader && createdAt == other.createdAt && platform == other.platform && kdf == other.kdf && version == other.version &&
             saltBytes.contentEquals(other.saltBytes) && nonceBytes.contentEquals(other.nonceBytes)
 
     override fun hashCode(): Int {
@@ -68,10 +75,11 @@ class BackupHeader(
         h = 31 * h + kdf.hashCode()
         h = 31 * h + saltBytes.contentHashCode()
         h = 31 * h + nonceBytes.contentHashCode()
+        h = 31 * h + version
         return h
     }
 
-    override fun toString(): String = "BackupHeader(createdAt=$createdAt, platform=$platform, kdf=$kdf)"
+    override fun toString(): String = "BackupHeader(createdAt=$createdAt, platform=$platform, kdf=$kdf, version=$version)"
 }
 
 data class PhoneBackup(
@@ -80,11 +88,16 @@ data class PhoneBackup(
     val appVersion: String,
     val proHint: Boolean,
     val states: List<ItemState>,
+    /** Format 2: blob id -> sealed sync blob of a live document's file (shape-checked against [states], not opened). */
+    val files: Map<String, ByteArray> = emptyMap(),
 ) {
     /** Counts only: the states hold plaintext secrets. */
     override fun toString(): String =
-        "PhoneBackup(header=$header, deviceId=$deviceId, appVersion=$appVersion, proHint=$proHint, states=${states.size})"
+        "PhoneBackup(header=$header, deviceId=$deviceId, appVersion=$appVersion, proHint=$proHint, states=${states.size}, files=${files.size})"
 }
+
+/** The files a writer includes (blob id -> blob) and the attachment ids of documents left without their file. */
+class SelectedFiles(val files: Map<String, ByteArray>, val leftOut: List<String>)
 
 /**
  * The `LGKMBAK1` phone backup file (tests/vectors/backup/README.md; Python reference `phone_backup.py`).
@@ -93,8 +106,13 @@ data class PhoneBackup(
 object PhoneBackupFormat {
     const val FORMAT = "LGKMBAK1"
     const val VERSION = 1
-    const val MAX_FILE_BYTES = 64 shl 20
+    const val FILES_VERSION = 2
+    const val MAX_FILE_BYTES = 256 shl 20
     const val MAX_STATES = 20000
+    const val MAX_FILES = 500
+
+    /** Writers include document files until their sealed blobs add up to this; the rest are left out. */
+    const val MAX_BACKUP_FILES_BYTES: Long = 160L * 1024 * 1024
 
     private const val MAX_INT = (1L shl 53) - 1
     private const val SALT_LEN = 16
@@ -105,6 +123,8 @@ object PhoneBackupFormat {
     private val HEADER_KEYS = setOf("created_at", "format", "kdf", "nonce", "platform", "salt", "version")
     private val KDF_KEYS = setOf("name", "time_cost", "memory_cost_kib", "parallelism")
     private val PAYLOAD_KEYS = setOf("app_version", "device_id", "pro_hint", "states", "version")
+    private val PAYLOAD_KEYS_V2 = PAYLOAD_KEYS + "files"
+    private val FILE_KEYS = setOf("blob", "data")
     private val STATE_KEYS = setOf("deleted", "deleted_at", "id", "item", "vv")
 
     private val PRODUCTION_KDF: Map<String, Long> =
@@ -125,8 +145,8 @@ object PhoneBackupFormat {
         } catch (e: CryptoBoxException) {
             fail("wrong-password-or-damaged")
         }
-        val p = parsePayload(plain)
-        return PhoneBackup(env.header, p.deviceId, p.appVersion, p.proHint, p.states)
+        val p = parsePayload(plain, env.header.version)
+        return PhoneBackup(env.header, p.deviceId, p.appVersion, p.proHint, p.states, p.files)
     }
 
     fun write(
@@ -139,6 +159,7 @@ object PhoneBackupFormat {
         proHint: Boolean,
         random: RandomSource,
         kdf: Map<String, Int>? = null,
+        files: Map<String, ByteArray> = emptyMap(),
     ): ByteArray {
         val costs: Map<String, Long> = if (kdf == null) {
             PRODUCTION_KDF
@@ -154,6 +175,8 @@ object PhoneBackupFormat {
         ) {
             fail("bad-payload")
         }
+        val version = if (files.isEmpty()) VERSION else FILES_VERSION
+        if (files.isNotEmpty()) checkFiles(files, ordered)
         val salt = random.bytes(SALT_LEN)
         val nonce = random.bytes(NONCE_LEN)
         require(salt.size == SALT_LEN && nonce.size == NONCE_LEN) { "salt must be 16 bytes and nonce 12 bytes" }
@@ -172,18 +195,24 @@ object PhoneBackupFormat {
                 "nonce" to JsonValue.Str(Base64Std.encode(nonce)),
                 "platform" to JsonValue.Str(platform),
                 "salt" to JsonValue.Str(Base64Std.encode(salt)),
-                "version" to JsonValue.Int(VERSION.toLong()),
+                "version" to JsonValue.Int(version.toLong()),
             ),
         )
-        val payload = JsonValue.Obj(
-            mapOf(
-                "app_version" to JsonValue.Str(appVersion),
-                "device_id" to JsonValue.Str(deviceId),
-                "pro_hint" to JsonValue.Bool(proHint),
-                "states" to JsonValue.Arr(ordered.map(::stateJson)),
-                "version" to JsonValue.Int(VERSION.toLong()),
-            ),
+        val fields = linkedMapOf(
+            "app_version" to JsonValue.Str(appVersion),
+            "device_id" to JsonValue.Str(deviceId),
+            "pro_hint" to JsonValue.Bool(proHint),
+            "states" to JsonValue.Arr(ordered.map(::stateJson)),
+            "version" to JsonValue.Int(version.toLong()),
         )
+        if (files.isNotEmpty()) {
+            fields["files"] = JsonValue.Arr(
+                files.keys.sorted().map { b ->
+                    JsonValue.Obj(mapOf("blob" to JsonValue.Str(b), "data" to JsonValue.Str(Base64Std.encode(files.getValue(b)))))
+                },
+            )
+        }
+        val payload = JsonValue.Obj(fields)
         val key = derive(password, salt, costs["time_cost"]!!, costs["memory_cost_kib"]!!, costs["parallelism"]!!, forWrite = true)
         val ct = CryptoBox.sealGcm(
             key, nonce, CanonicalJson.encode(payload, Dialect.UTF8), CanonicalJson.encode(header, Dialect.UTF8),
@@ -217,8 +246,8 @@ object PhoneBackupFormat {
         }
         val version = h["version"]
         if (version !is JsonValue.Int) fail("not-a-backup")
-        if (version.v > VERSION) fail("unsupported-version")
-        if (version.v != VERSION.toLong()) fail("not-a-backup")
+        if (version.v > FILES_VERSION) fail("unsupported-version")
+        if (version.v != VERSION.toLong() && version.v != FILES_VERSION.toLong()) fail("not-a-backup")
         val costs = kdfCosts(h["kdf"]) ?: fail("bad-kdf")
         val kdf = mapOf<String, Any>(
             "name" to "argon2id",
@@ -226,7 +255,7 @@ object PhoneBackupFormat {
             "memory_cost_kib" to costs[1],
             "parallelism" to costs[2],
         )
-        return Envelope(header, BackupHeader(created.v, platform.v, kdf, salt, nonce), ct)
+        return Envelope(header, BackupHeader(created.v, platform.v, kdf, salt, nonce, version.v.toInt()), ct)
     }
 
     private fun b64(v: JsonValue?, length: Int?): ByteArray {
@@ -272,21 +301,89 @@ object PhoneBackupFormat {
 
     // ---- payload ----------------------------------------------------------------------------
 
-    private class Payload(val deviceId: String, val appVersion: String, val proHint: Boolean, val states: List<ItemState>)
+    private class Payload(
+        val deviceId: String,
+        val appVersion: String,
+        val proHint: Boolean,
+        val states: List<ItemState>,
+        val files: Map<String, ByteArray>,
+    )
 
-    private fun parsePayload(plain: ByteArray): Payload {
+    /** The format-2 rules for [files] against [states] (`bad-payload` on any failure). */
+    fun checkFiles(files: Map<String, ByteArray>, states: Iterable<ItemState>) {
+        if (files.isEmpty() || files.size > MAX_FILES) fail("bad-payload")
+        val sizes = HashMap<String, Long>()
+        for (ref in Documents.refs(states)) sizes[ref.blob] = ref.blobSize
+        for ((blob, data) in files) {
+            try {
+                AttachmentSync.checkBlobShape(data, blob)
+            } catch (e: AttachmentSyncException) {
+                fail("bad-payload")
+            }
+            if (sizes[blob] != data.size.toLong()) fail("bad-payload") // not named by a live document, or another size
+        }
+    }
+
+    /**
+     * The files a writer includes: live documents in state-id order, each blob ([fetch] returns it or null) while
+     * the total stays within [budget] and [MAX_FILES]. A missing blob, or one that does not fit, is left out and its
+     * document stays in the backup without its file.
+     */
+    fun selectFiles(
+        states: Iterable<ItemState>,
+        fetch: (AttachmentRef) -> ByteArray?,
+        budget: Long = MAX_BACKUP_FILES_BYTES,
+    ): SelectedFiles {
+        val files = LinkedHashMap<String, ByteArray>()
+        val leftOut = ArrayList<String>()
+        var total = 0L
+        for (ref in Documents.refs(states.sortedBy { it.itemId })) {
+            if (ref.blob in files) continue
+            val blob = fetch(ref)
+            if (blob == null || blob.size.toLong() != ref.blobSize || files.size >= MAX_FILES || total + blob.size > budget) {
+                leftOut.add(ref.attachmentId)
+                continue
+            }
+            files[ref.blob] = blob
+            total += blob.size
+        }
+        return SelectedFiles(files, leftOut)
+    }
+
+    private fun parseFiles(raw: JsonValue?): Map<String, ByteArray> {
+        if (raw !is JsonValue.Arr || raw.items.isEmpty() || raw.items.size > MAX_FILES) fail("bad-payload") // count first
+        val out = LinkedHashMap<String, ByteArray>()
+        var previous: String? = null
+        for (entry in raw.items) {
+            if (entry !is JsonValue.Obj || entry.fields.keys != FILE_KEYS) fail("bad-payload")
+            val blob = entry.fields["blob"]
+            val data = entry.fields["data"]
+            if (blob !is JsonValue.Str || data !is JsonValue.Str) fail("bad-payload")
+            if (previous != null && blob.v <= previous) fail("bad-payload") // unsorted or duplicate
+            previous = blob.v
+            out[blob.v] = try {
+                Base64Std.decodeStrict(data.v)
+            } catch (e: Base64Exception) {
+                fail("bad-payload")
+            }
+        }
+        return out
+    }
+
+    private fun parsePayload(plain: ByteArray, version: Int): Payload {
         val payload = try {
             CanonicalJson.parse(plain)
         } catch (e: JsonException) {
             fail("bad-payload")
         }
-        if (payload !is JsonValue.Obj || payload.fields.keys != PAYLOAD_KEYS) fail("bad-payload")
+        val keys = if (version == FILES_VERSION) PAYLOAD_KEYS_V2 else PAYLOAD_KEYS
+        if (payload !is JsonValue.Obj || payload.fields.keys != keys) fail("bad-payload")
         val f = payload.fields
         val appVersion = f["app_version"]
         val deviceId = f["device_id"]
         val proHint = f["pro_hint"]
         val list = f["states"]
-        if (f["version"] != JsonValue.Int(VERSION.toLong()) ||
+        if (f["version"] != JsonValue.Int(version.toLong()) ||
             appVersion !is JsonValue.Str || !validAppVersion(appVersion.v) ||
             deviceId !is JsonValue.Str || !Identifier.isValid(deviceId.v) ||
             proHint !is JsonValue.Bool || list !is JsonValue.Arr || list.items.size > MAX_STATES
@@ -301,7 +398,12 @@ object PhoneBackupFormat {
             previous = state.itemId
             states.add(state)
         }
-        return Payload(deviceId.v, appVersion.v, proHint.v, states)
+        var files: Map<String, ByteArray> = emptyMap()
+        if (version == FILES_VERSION) {
+            files = parseFiles(f["files"])
+            checkFiles(files, states)
+        }
+        return Payload(deviceId.v, appVersion.v, proHint.v, states, files)
     }
 
     private fun parseState(raw: JsonValue): ItemState {

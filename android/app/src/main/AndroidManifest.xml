@@ -9,6 +9,28 @@
 
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
+    <!-- Part C: the autofill service checks these browsers' signing certificates against the privileged list
+         (Android 11+ package visibility). Keep in step with FillTarget.BROWSERS. -->
+    <queries>
+        <package android:name="com.android.chrome" />
+        <package android:name="com.chrome.beta" />
+        <package android:name="com.chrome.dev" />
+        <package android:name="com.chrome.canary" />
+        <package android:name="org.chromium.chrome" />
+        <package android:name="org.mozilla.firefox" />
+        <package android:name="org.mozilla.firefox_beta" />
+        <package android:name="org.mozilla.fenix" />
+        <package android:name="org.mozilla.focus" />
+        <package android:name="com.microsoft.emmx" />
+        <package android:name="com.brave.browser" />
+        <package android:name="com.brave.browser_beta" />
+        <package android:name="com.sec.android.app.sbrowser" />
+        <package android:name="com.sec.android.app.sbrowser.beta" />
+        <package android:name="com.opera.browser" />
+        <package android:name="com.vivaldi.browser" />
+        <package android:name="com.duckduckgo.mobile.android" />
+    </queries>
+
     <application
         android:name=".LgkApp"
         android:allowBackup="false"
@@ -18,18 +40,109 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:localeConfig="@xml/locales_config"
         android:supportsRtl="true"
         android:theme="@style/Theme.LocalGateKeys">
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:theme="@style/Theme.LocalGateKeys.Main"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- UX workstream 9: open a shared item (.lgkshare) from Files, Downloads or a messaging app. Content URIs
+                 only (MainActivity.receiveShare); the package is checked before anything is kept. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:host="*" />
+                <data android:mimeType="*/*" />
+                <data android:pathPattern=".*\\.lgkshare" />
+                <data android:pathPattern=".*\\..*\\.lgkshare" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/vnd.localgatekeys.share" />
+            </intent-filter>
         </activity>
+
+        <!-- Task 12: shared document copies and camera output, from cacheDir/open-documents only; read access is granted
+             per share and the copy is deleted afterwards. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.documents"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/document_paths" />
+        </provider>
+
+        <!-- Part C: autofill (fill and save) and the Credential Manager provider (passwords and passkeys, Android 14+).
+             Exported only for the system to bind (each requires its bind permission). The sheets they open are not
+             exported: only this app's own PendingIntents start them. -->
+        <service
+            android:name=".autofill.LgkAutofillService"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_AUTOFILL_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.autofill.AutofillService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.autofill"
+                android:resource="@xml/autofill_service" />
+        </service>
+
+        <service
+            android:name=".passkey.LgkCredentialProviderService"
+            android:enabled="@bool/credential_provider_enabled"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_CREDENTIAL_PROVIDER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.credentials.CredentialProviderService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.credentials.provider"
+                android:resource="@xml/credential_provider" />
+        </service>
+
+        <activity
+            android:name=".autofill.FillAuthActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@style/Theme.LocalGateKeys"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".autofill.SaveLoginActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@style/Theme.LocalGateKeys"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".passkey.PasskeyActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@style/Theme.LocalGateKeys" />
+
+        <!-- Per-app language below Android 13: AppCompat stores the chosen locale here. -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
 
         <!-- Library receivers that would be exported: the app has exactly one exported component, MainActivity. -->
         <receiver

@@ -1,5 +1,8 @@
 package app.localgatekeys.android.generator
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.Txt
+import androidx.annotation.StringRes
 import kotlin.math.log2
 
 /**
@@ -8,8 +11,10 @@ import kotlin.math.log2
  * Capitalising every word is not random, so it adds nothing. Port of `ios/App/Generator/GeneratorStrength.swift`.
  */
 object GeneratorStrength {
-    enum class Level(val label: String) {
-        WEAK("Weak"), FAIR("Fair"), STRONG("Strong"), VERY_STRONG("Very strong");
+    enum class Level(@StringRes val label: Int) {
+        WEAK(R.string.strength_label_1), FAIR(R.string.strength_label_2), STRONG(R.string.strength_label_3),
+        VERY_STRONG(R.string.strength_label_4),
+        ;
 
         /** Filled segments of the 4-segment bar. */
         val segments: Int get() = ordinal + 1

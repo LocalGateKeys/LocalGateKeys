@@ -120,6 +120,34 @@ class SafFolderAccess(
         false
     }
 
+    /** `COLUMN_LAST_MODIFIED` in Unix seconds; null when the provider does not report it (the blob is then kept). */
+    override fun modifiedAt(path: String): Long? = try {
+        val d = resolve(parts(path))
+        if (d == null || d.isDir) {
+            null
+        } else {
+            resolver.query(docUri(d.id), arrayOf(Document.COLUMN_LAST_MODIFIED), null, null, null)?.use { c ->
+                if (c.moveToFirst() && !c.isNull(0)) c.getLong(0).takeIf { it > 0 }?.div(1000) else null
+            }
+        }
+    } catch (e: Exception) {
+        null
+    }
+
+    /** `COLUMN_SIZE`; null when the provider does not report it. */
+    override fun size(path: String): Long? = try {
+        val d = resolve(parts(path))
+        if (d == null || d.isDir) {
+            null
+        } else {
+            resolver.query(docUri(d.id), arrayOf(Document.COLUMN_SIZE), null, null, null)?.use { c ->
+                if (c.moveToFirst() && !c.isNull(0)) c.getLong(0) else null
+            }
+        }
+    } catch (e: Exception) {
+        null
+    }
+
     // MARK: writing
 
     private sealed interface Placed {

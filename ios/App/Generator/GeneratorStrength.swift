@@ -9,10 +9,10 @@ enum GeneratorStrength {
 
         var label: String {
             switch self {
-            case .weak: "Weak"
-            case .fair: "Fair"
-            case .strong: "Strong"
-            case .veryStrong: "Very strong"
+            case .weak: String(localized: "Weak")
+            case .fair: String(localized: "Fair")
+            case .strong: String(localized: "Strong")
+            case .veryStrong: String(localized: "Very strong")
             }
         }
 

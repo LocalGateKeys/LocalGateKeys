@@ -8,7 +8,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The installed app exposes exactly one entry point: MainActivity (debug builds add the Compose tooling PreviewActivity). */
+/** The installed app exposes one entry point, MainActivity, plus the permission-guarded system services (debug builds add PreviewActivity). */
 class ManifestExportTest {
     @Test fun only_main_activity_is_exported() {
         val ctx = InstrumentationRegistry.getInstrumentation().targetContext
@@ -21,7 +21,22 @@ class ManifestExportTest {
             info.services.orEmpty().filter { it.exported }.forEach { add(it.name) }
             info.providers.orEmpty().filter { it.exported }.forEach { add(it.name) }
         }.filterNot { it == "androidx.compose.ui.tooling.PreviewActivity" }
-        assertEquals(listOf("app.localgatekeys.android.MainActivity"), exported)
+        // Part C: the two system services are exported for the system to bind, each behind its bind permission.
+        // The provider is disabled below Android 14 (it is then not listed).
+        val services = buildMap {
+            put("app.localgatekeys.android.autofill.LgkAutofillService", "android.permission.BIND_AUTOFILL_SERVICE")
+            if (android.os.Build.VERSION.SDK_INT >= 34) {
+                put("app.localgatekeys.android.passkey.LgkCredentialProviderService", "android.permission.BIND_CREDENTIAL_PROVIDER_SERVICE")
+            }
+        }
+        assertEquals(listOf("app.localgatekeys.android.MainActivity") + services.keys, exported)
+        for ((name, permission) in services) {
+            assertEquals(name, permission, info.services.orEmpty().first { it.name == name }.permission)
+        }
+        // The autofill, save and passkey sheets open only through this app's own PendingIntents.
+        for (sheet in listOf("autofill.FillAuthActivity", "autofill.SaveLoginActivity", "passkey.PasskeyActivity")) {
+            assertFalse(sheet, info.activities.orEmpty().first { it.name == "app.localgatekeys.android.$sheet" }.exported)
+        }
         assertFalse(info.receivers.orEmpty().any { it.name.contains("ProfileInstallReceiver") })
     }
 

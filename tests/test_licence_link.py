@@ -104,12 +104,15 @@ def test_second_instance_that_installed_nothing_does_not_signal(signer, monkeypa
     assert calls == []
 
 
-def test_signal_reaches_the_watcher():
+def test_signal_reaches_the_watcher(monkeypatch):
     import os
     import threading
+    import uuid
 
     if os.name != "nt":
         pytest.skip("Windows named events")
+    # A running LocalGateKeys watches the real (auto-reset) event and would take the signal first.
+    monkeypatch.setattr(licence_link, "EVENT_NAME", f"Local\\LocalGateKeys.Test.{uuid.uuid4().hex}")
     seen = threading.Event()
     licence_link.watch_for_installs(seen.set)
     licence_link.signal_running_app()

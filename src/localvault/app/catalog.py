@@ -8,10 +8,12 @@ from __future__ import annotations
 import difflib
 import hmac
 import re
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
+from ..i18n import catalog, t
 from ..item_schema import ITEM_KINDS
 
 # Stable presentation vocabulary for the desktop shell.  The strings are kept
@@ -33,30 +35,19 @@ SHELL_LABELS = {
     "help": "Help & setup",
 }
 
-_KIND_LABEL_OVERRIDES = {
-    "web": "Website login",
-    "desktop": "Desktop login",
-    "card": "Payment card",
-    "bank_account": "Bank account",
-    "ssh_key": "SSH key",
-    "api_key": "API key",
-    "wifi": "Wi-Fi network",
-    "passkey": "Passkey",
-}
-
 
 def kind_label(kind: str) -> str:
     """Human label for any catalog kind, including kinds added to the schema later."""
 
     kind = str(kind or "")
-    if kind in _KIND_LABEL_OVERRIDES:
-        return _KIND_LABEL_OVERRIDES[kind]
-    return kind.replace("_", " ").strip().capitalize() or "Item"
+    if f"kind.{kind}" in catalog():
+        return t(f"kind.{kind}")
+    return kind.replace("_", " ").strip().capitalize() or t("kind.unknown")
 
 
 # Discovered from the schema at import time so a new item kind shows up in the
 # list and the type filter without touching the shell.
-DISPLAY_KIND_LABELS = {kind: kind_label(kind) for kind in sorted(ITEM_KINDS)}
+DISPLAY_KIND_LABELS = {kind: str(catalog("en").get(f"kind.{kind}") or kind) for kind in sorted(ITEM_KINDS)}  # English: only fixes KIND_ORDER
 # Credentials first, then typed kinds alphabetically by label.
 KIND_ORDER = ("web", "desktop") + tuple(
     kind for kind, _label in sorted(DISPLAY_KIND_LABELS.items(), key=lambda pair: pair[1].casefold())
@@ -157,6 +148,56 @@ def rank_search_results(rows: list[tuple[Any, dict[str, str]]], query: str) -> l
     return [row[3] for row in ranked]
 
 
+# ------------------------------------------------------------- list sort
+#: The vault list sort options (tests/vectors/vault_sort; rule in scripts/make_sort_vectors.py).
+SORT_OPTIONS = ("title_asc", "title_desc", "modified_desc", "created_desc")
+SORT_LABELS = {"title_asc": "Title A–Z", "title_desc": "Title Z–A",
+               "modified_desc": "Date modified", "created_desc": "Date created"}  # English ids; see sort_label()
+
+
+def sort_label(option: str) -> str:
+    """The shown name of a list sort option, in the active language."""
+    return t(f"sort.{option}")
+DEFAULT_SORT = "title_asc"
+
+
+def sort_title_key(title: str) -> str:
+    """NFKD, combining marks dropped, then lowercased; compared by code points."""
+    text = unicodedata.normalize("NFKD", title or "")
+    return "".join(c for c in text if unicodedata.category(c) != "Mn").lower()
+
+
+def _stamp(value: Any) -> int:
+    return value if isinstance(value, int) and not isinstance(value, bool) else 0
+
+
+def sort_items(items: list[Any], option: str, favorites_first: bool, *,
+               title: Any = None) -> list[Any]:
+    """Order the plain (no search) vault list by the shared sort rule.
+
+    ``title(item)`` gives the display title (default: ``item.title``). Ties go by
+    title key, then id, for every option; favorites first keeps each group's order.
+    """
+    option = option if option in SORT_OPTIONS else DEFAULT_SORT
+    get_title = title or (lambda it: str(getattr(it, "title", "") or ""))
+
+    def base(it: Any):
+        key = sort_title_key(get_title(it))
+        ident = str(getattr(it, "id", ""))
+        if option == "title_asc":
+            return (key, ident)
+        if option == "title_desc":
+            return ([-ord(c) for c in key] + [1], ident)
+        field = "updated_at" if option == "modified_desc" else "created_at"
+        return (-_stamp(getattr(it, field, 0)), key, ident)
+
+    ranked = sorted(items, key=base)
+    if favorites_first:
+        ranked = ([i for i in ranked if getattr(i, "favorite", False)]
+                  + [i for i in ranked if not getattr(i, "favorite", False)])
+    return ranked
+
+
 # ------------------------------------------------------------- list filters
 @dataclass(frozen=True)
 class FilterOption:
@@ -173,12 +214,13 @@ class FilterOption:
 
 
 _FILTER_LABELS_STATIC = {None: "All types", "favorite": SHELL_LABELS["favorites"],
-                         "web": SHELL_LABELS["web"], "desktop": SHELL_LABELS["desktop"]}
+                         "web": SHELL_LABELS["web"], "desktop": SHELL_LABELS["desktop"]}  # English ids
+_FILTER_KEYS = {None: "filter.allTypes", "favorite": "filter.favorites", "web": "filter.web", "desktop": "filter.desktop"}
 
 
 def filter_kind_label(kind: str | None) -> str:
-    if kind in _FILTER_LABELS_STATIC:
-        return _FILTER_LABELS_STATIC[kind]
+    if kind in _FILTER_KEYS:
+        return t(_FILTER_KEYS[kind])
     return kind_label(str(kind))
 
 
@@ -186,7 +228,7 @@ def filter_options(summaries: list[Any], collections: list[dict[str, Any]],
                    views: list[dict[str, Any]]) -> list[FilterOption]:
     """Build the dropdown: every kind present, then collections, then pinned views."""
 
-    options = [FilterOption("All types", None, "all"), FilterOption(SHELL_LABELS["favorites"], "favorite", "favorite")]
+    options = [FilterOption(t("filter.allTypes"), None, "all"), FilterOption(t("filter.favorites"), "favorite", "favorite")]
     present = {str(summary.kind) for summary in summaries}
     for kind in KIND_ORDER:
         if kind in present:
@@ -195,11 +237,11 @@ def filter_options(summaries: list[Any], collections: list[dict[str, Any]],
         options.append(FilterOption(filter_kind_label(kind), kind, kind))
     for row in sorted(collections, key=lambda row: str(row.get("name", "")).casefold()):
         if row.get("id"):
-            options.append(FilterOption(f"Collection: {_safe_display(str(row.get('name', '')), 60)}",
+            options.append(FilterOption(t("filter.collection", name=_safe_display(str(row.get('name', '')), 60)),
                                         f"collection:{row['id']}", "collection"))
     for row in views:
         if row.get("pinned") and row.get("id") and not row.get("disabled"):
-            options.append(FilterOption(f"View: {_safe_display(str(row.get('name', '')), 60)}",
+            options.append(FilterOption(t("filter.view", name=_safe_display(str(row.get('name', '')), 60)),
                                         f"view:{row['id']}", "view"))
     return options
 

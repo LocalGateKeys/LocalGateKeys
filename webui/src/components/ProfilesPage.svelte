@@ -2,6 +2,7 @@
   /** Profiles: one encrypted vault per person. Add, rename, recolour, photo, remove. */
   import ErrorLogLink from './ErrorLogLink.svelte';
   import { call } from '../lib/api.js';
+  import { t } from '../lib/i18n.svelte.js';
   import { okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
 
@@ -14,7 +15,7 @@
 
   async function load() {
     const result = await call('profiles_manage');
-    if (okOrToast(result, 'Could not open Profiles')) data = result;
+    if (okOrToast(result, t('profilesPage.openFailed'))) data = result;
   }
   $effect(() => { load(); });
 
@@ -37,10 +38,10 @@
   }
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label="Profiles">
+<div class="sheet glass" role="dialog" aria-label={t('profilesPage.title')}>
   <header>
-    <h2>Profiles</h2>
-    <button class="close" aria-label="Close" onclick={onclose}>✕</button>
+    <h2>{t('profilesPage.title')}</h2>
+    <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
   {#if data}
     <p class="muted">{data.intro}</p>
@@ -51,31 +52,31 @@
             {#if p.photo}<img src={p.photo} alt="" />{:else}{p.initials}{/if}
           </div>
           {#if editing?.id === p.id}
-            <input aria-label="Profile name" bind:value={editing.name} />
-            <div class="swatches" role="radiogroup" aria-label="Accent colour">
+            <input aria-label={t('profilesPage.profileName')} bind:value={editing.name} />
+            <div class="swatches" role="radiogroup" aria-label={t('profilesPage.accentColour')}>
               {#each COLORS as c (c)}
                 <button role="radio" aria-checked={editing.color === c} aria-label={c} class:on={editing.color === c} style:background={c} onclick={() => (editing.color = c)}></button>
               {/each}
             </div>
             <div class="actions">
-              <Button label="Cancel" onclick={() => (editing = null)} />
-              <Button label="Save" variant="primary" onclick={save} />
+              <Button label={t('common.cancel')} onclick={() => (editing = null)} />
+              <Button label={t('common.save')} variant="primary" onclick={save} />
             </div>
           {:else}
-            <div class="name">{p.name}{p.active ? ' · this profile' : ''}</div>
+            <div class="name">{p.active ? t('profilesPage.thisProfile', { name: p.name }) : p.name}</div>
             <div class="actions">
-              <Button label="Edit" onclick={() => (editing = { id: p.id, name: p.name, color: p.color })} />
-              <Button label="Photo…" onclick={() => act('profiles_photo', p.id)} />
-              {#if p.photo}<Button label="Remove photo" onclick={() => act('profiles_remove_photo', p.id)} />{/if}
-              <Button label="Remove" variant="danger" onclick={() => act('profiles_delete', p.id)} />
+              <Button label={t('profilesPage.edit')} onclick={() => (editing = { id: p.id, name: p.name, color: p.color })} />
+              <Button label={t('profilesPage.photo')} onclick={() => act('profiles_photo', p.id)} />
+              {#if p.photo}<Button label={t('profilesPage.removePhoto')} onclick={() => act('profiles_remove_photo', p.id)} />{/if}
+              <Button label={t('profilesPage.remove')} variant="danger" onclick={() => act('profiles_delete', p.id)} />
             </div>
           {/if}
         </div>
       {/each}
     </div>
     <form class="add" onsubmit={add}>
-      <input aria-label="New profile name" placeholder="Profile name" bind:value={adding} />
-      <Button type="submit" label="Add profile" disabled={!adding.trim()} />
+      <input aria-label={t('profilesPage.newName')} placeholder={t('profilesPage.profileName')} bind:value={adding} />
+      <Button type="submit" label={t('profilesPage.add')} disabled={!adding.trim()} />
     </form>
     {#if error}<p class="error" role="alert">{error}<ErrorLogLink text={error} /></p>{/if}
     <p class="muted note">{data.note}</p>

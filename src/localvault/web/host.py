@@ -20,10 +20,11 @@ import time
 from typing import Any, Callable, TypeVar
 
 from ..browser_broker import BrowserBroker
+from ..i18n import t
 
 T = TypeVar("T")
 _log = logging.getLogger(__name__)
-UNLOCK_TOAST = "LocalGateKeys is locked. Unlock it to continue with the browser request."
+UNLOCK_TOAST = "host.localgatekeysIsLockedUnlockIt"
 
 
 class _ReleasingPort:
@@ -151,7 +152,7 @@ class WebAgentHost(BrowserBroker):
             return False
         if self._popup is None:
             self.raise_window()
-            self._bus.emit("toast", {"kind": "info", "message": UNLOCK_TOAST})
+            self._bus.emit("toast", {"kind": "info", "message": t(UNLOCK_TOAST)})
         else:
             with self._popup_lock:
                 if self._unlock_waits == 0:
@@ -260,8 +261,8 @@ class WebAgentHost(BrowserBroker):
         self._bus.emit("toast", {"kind": kind, "message": str(text)})
 
     # -------------------------------------------------------------- locking
-    def lock(self, reason: str = "Vault locked.") -> None:
-        self._controller.lock(reason)
+    def lock(self, reason: str = "palette.vaultLocked") -> None:
+        self._controller.lock(t(reason))
 
     def emergency_lock(self) -> None:
         from ..app.lockmodes import LockModes
@@ -342,7 +343,7 @@ class WebAgentHost(BrowserBroker):
             except Exception as exc:  # noqa: BLE001 - one unavailable integration must not stop the app
                 _log.warning("%s could not start: %s", name, exc)
                 if name == "hotkey":
-                    self.set_status(f"Agent running. Hotkey unavailable: {exc}", "warning")
+                    self.set_status(t("host.agentRunningHotkeyUnavailable2", exc=exc), "warning")
             self.integrations.append(component)
         controller.on_lock.append(self._refresh_tray)
         controller.on_unlock.append(self._refresh_tray)
@@ -411,7 +412,7 @@ class WebAgentHost(BrowserBroker):
         except Exception as exc:  # noqa: BLE001
             problem = str(exc)
         if problem:  # fall back to the shortcut that worked
-            self.set_status(f"Agent running. Hotkey unavailable: {problem}", "warning")
+            self.set_status(t("host.agentRunningHotkeyUnavailable", problem=problem), "warning")
             try:
                 replacement.stop()
             except Exception:  # noqa: BLE001
@@ -441,13 +442,13 @@ class WebAgentHost(BrowserBroker):
         try:
             self.settings.save()
         except OSError:
-            self.set_status("The setting could not be saved.", "error")
+            self.set_status(t("settings.error.notSaved"), "error")
 
     def _toggle_browser(self) -> None:
         self.settings.browser_enabled = not self.settings.browser_enabled
         self._save_settings()
         self._refresh_tray()
-        self.set_status(f"Browser integration {'enabled' if self.settings.browser_enabled else 'paused'}.")
+        self.set_status(t("host.browserIntegration", v1='enabled' if self.settings.browser_enabled else 'paused'))
 
     def _toggle_desktop(self) -> None:
         self.settings.desktop_overlay_enabled = not self.settings.desktop_overlay_enabled
@@ -464,7 +465,7 @@ class WebAgentHost(BrowserBroker):
             return
         # Revoke capabilities on the notification thread at once, then lock.
         self.guard.invalidate()
-        self.post(lambda: self.lock(f"Vault locked: {reason}."))
+        self.post(lambda: self.lock(t("host.vaultLocked", reason=reason)))
 
     def _navigate(self, route: str) -> None:
         self._open_window()
@@ -495,7 +496,7 @@ class WebAgentHost(BrowserBroker):
         tray = getattr(self, "tray", None)
         if self.settings.minimize_to_tray and tray is not None and getattr(tray, "available", False):
             self.hide_main_window()
-            self.set_status("LocalGateKeys is still running in the system tray.")
+            self.set_status(t("host.localgatekeysIsStillRunningIn"))
             return False
         return True
 

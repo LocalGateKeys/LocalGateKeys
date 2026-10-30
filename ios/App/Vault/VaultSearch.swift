@@ -1,5 +1,9 @@
 import Foundation
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 /// A type filter (desktop `FilterOption` without collections and smart views).
 enum VaultFilter: Hashable, Sendable {
@@ -7,10 +11,10 @@ enum VaultFilter: Hashable, Sendable {
 
     var label: String {
         switch self {
-        case .all: "All types"
-        case .favorites: "Favorites"
-        case .kind("web"): "Browser"
-        case .kind("desktop"): "Desktop"
+        case .all: String(localized: "All types")
+        case .favorites: String(localized: "Favorites")
+        case .kind("web"): String(localized: "Browser")
+        case .kind("desktop"): String(localized: "Desktop")
         case .kind(let k): VaultItem.kindLabel(k)
         }
     }
@@ -154,5 +158,53 @@ enum SequenceRatio {
             queue.append((alo, i, blo, j)); queue.append((i + k, ahi, j + k, bhi))
         }
         return 2.0 * Double(matches) / Double(total)
+    }
+}
+
+/// The vault list orders (`tests/vectors/vault_sort/cases.json`, rule in `scripts/make_sort_vectors.py`).
+/// Raw values are the vector option names and the stored setting.
+enum VaultSortOption: String, CaseIterable, Identifiable, Sendable {
+    case titleAsc = "title_asc", titleDesc = "title_desc", modifiedDesc = "modified_desc", createdDesc = "created_desc"
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .titleAsc: String(localized: "Title A–Z")
+        case .titleDesc: String(localized: "Title Z–A")
+        case .modifiedDesc: String(localized: "Date modified")
+        case .createdDesc: String(localized: "Date created")
+        }
+    }
+}
+
+/// The shared sort rule (version 1): title key = NFKD, combining marks (Mn) dropped, lowercased, compared by
+/// Unicode scalar values; missing timestamps are 0; ties go by title key ascending, then id ascending
+/// (Title Z–A reverses only the title comparison). Favorites first keeps each group in that order.
+enum VaultSort {
+    static func titleKey(_ title: String) -> [UInt32] {
+        let stripped = title.decomposedStringWithCompatibilityMapping.unicodeScalars
+            .filter { $0.properties.generalCategory != .nonspacingMark }
+        return String(String.UnicodeScalarView(stripped)).lowercased().unicodeScalars.map(\.value)
+    }
+
+    static func idKey(_ id: String) -> [UInt32] { id.unicodeScalars.map(\.value) }
+
+    static func less(_ a: [UInt32], _ b: [UInt32]) -> Bool { a.lexicographicallyPrecedes(b) }
+
+    static func sorted(_ items: [VaultItem], by option: VaultSortOption, favoritesFirst: Bool) -> [VaultItem] {
+        let keyed = items.map { (item: $0, title: titleKey($0.title), id: idKey($0.id)) }
+        let ranked = keyed.sorted { a, b in
+            switch option {
+            case .titleAsc, .titleDesc:
+                if a.title != b.title { return option == .titleAsc ? less(a.title, b.title) : less(b.title, a.title) }
+            case .modifiedDesc, .createdDesc:
+                let x = option == .modifiedDesc ? a.item.updatedAt : a.item.createdAt
+                let y = option == .modifiedDesc ? b.item.updatedAt : b.item.createdAt
+                if x != y { return x > y }
+                if a.title != b.title { return less(a.title, b.title) }
+            }
+            return less(a.id, b.id)
+        }.map(\.item)
+        guard favoritesFirst else { return ranked }
+        return ranked.filter(\.favorite) + ranked.filter { !$0.favorite }
     }
 }

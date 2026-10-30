@@ -16,14 +16,17 @@ What syncs
 * Credentials are validated against what the vault's own writers can
   produce: an allowlist of top-level fields, the vault's credential
   validator, and the writers' types and bounds (tags 20 x 40, notes 20000,
-  recovery codes 100 x 512, password history 5 rows, custom fields 50 and
+  recovery codes 100 x 512, password history 10 rows read, custom fields 50 and
   TOTP as small dicts of JSON scalars, the desktop binding's typed keys;
   other scope keys are kept).  A remote record that fails is rejected with
   ``BridgeError``.  A local record that fails is skipped
   (``LocalView.skipped`` / ``ApplyReport.skipped``): no state, meta untouched,
   never overwritten, and every other record still syncs.
-* Typed ``document`` items do not sync in v1 (they are attachment-backed and
-  attachments are out of scope); they are invisible to sync.
+* Typed ``document`` items sync (2026-10-29): inside ``local_view`` / ``apply`` their
+  wrapper carries one more key, ``attachment`` (``attachment_sync.AttachmentRef``),
+  and a received one is applied only once its file was imported
+  (``attachment-missing`` otherwise).  Transports leave them out of views for
+  older readers (``publishable``).  Outside those two calls they stay invisible.
 * The Pro licence as namespace ``"license"``: ``{"ns": "license", "schema": 1,
   "updated_at": 0, "record": <signed bundle>}`` under the state id
   ``licensing.sync_state_id(license_id)``.  Published: the vault's licence copy
@@ -99,12 +102,16 @@ import base64
 import binascii
 import contextlib
 import copy
+import dataclasses
 import hashlib
 import json
 import logging
 import math
-from collections.abc import Callable, Iterator, Mapping
+import time
+from collections.abc import Callable, Iterable, Iterator, Mapping
+from contextvars import ContextVar
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from .. import licensing
@@ -151,11 +158,12 @@ _DESKTOP_BINDING_MODES = frozenset({"strict", "embedded_web_volatile", "dynamic_
 # Bounds of the vault's own credential writers: set_details (tags 20 x 40,
 # recovery codes 100 x 512, custom fields 50, notes 20000), set_entry_extras
 # (totp and custom-field dicts stored as given, custom fields cut to 50) and
-# upsert_web/_apply_entry_fields (password history cut to 5).
+# upsert_web/_apply_entry_fields (password history written cut to 5, read up to 10:
+# vault.PASSWORD_HISTORY_READ_LIMIT, so a newer peer writing 10 rows still syncs).
 _MAX_ENTRY_TAGS = 20
 _MAX_RECOVERY_CODES = 100
 _MAX_CUSTOM_FIELDS = 50
-_MAX_PASSWORD_HISTORY = 5
+_MAX_PASSWORD_HISTORY = 10
 _MAX_SMALL_DICT_KEYS = 16
 _MAX_SCALAR_TEXT = 4096
 _MAX_ENTRY_BYTES = 512 * 1024
@@ -437,7 +445,138 @@ def _wrapper(ns: str, record: Mapping[str, Any]) -> dict[str, Any]:
         rec = normal_form(ns, record)
     except (VaultError, ItemSchemaError, TotpError, OriginError) as exc:
         raise BridgeError(f"Vault record {record.get('id')!r} is malformed: {exc}") from None
-    return {"ns": ns, "schema": ITEM_WRAPPER_SCHEMA, "updated_at": _rank_updated_at(rec), "record": rec}
+    out = {"ns": ns, "schema": ITEM_WRAPPER_SCHEMA, "updated_at": _rank_updated_at(rec), "record": rec}
+    if ns == "item" and rec.get("kind") == DOCUMENT_KIND:
+        out["attachment"] = _document_ref(rec)
+    return out
+
+
+# --- documents (attachment sync, docs/superpowers/plans/2026-10-29-attachment-sync.md) ------------
+#
+# While ``local_view`` or ``apply`` runs, ``_DOC_SESSION`` holds the session and ``document``
+# items sync: their wrapper carries one more key, ``attachment`` (an ``AttachmentRef`` dict) built
+# from this vault's catalog row.  Outside those calls documents stay invisible, as before.  The
+# blob id of a catalog row is deterministic, so it is cached by (id, sha256, key).
+
+DOCUMENT_KIND = "document"
+_DOC_SESSION: ContextVar[Any] = ContextVar("lgk_sync_doc_session", default=None)
+#: Keyed by a hash of (id, sha256, key) so no attachment key outlives a lock in this process-wide cache.
+_BLOB_IDS: dict[bytes, tuple[str, int]] = {}
+_MAX_BLOB_IDS = 4096
+
+
+def _blob_cache_key(row: Mapping[str, Any]) -> bytes:
+    text = json.dumps([row.get("id"), row.get("sha256"), row.get("key")], ensure_ascii=True)
+    return hashlib.sha256(b"lgk-blob-id-cache|" + text.encode("ascii")).digest()
+
+
+def _documents_on() -> bool:
+    return _DOC_SESSION.get() is not None
+
+
+@contextlib.contextmanager
+def _documents(session: Any) -> Iterator[None]:
+    token = _DOC_SESSION.set(session)
+    try:
+        yield
+    finally:
+        _DOC_SESSION.reset(token)
+
+
+def remember_blob(row: Mapping[str, Any], blob_id: str, blob_size: int) -> None:
+    """Cache the blob id of a catalog row (``AttachmentRef.catalog_record`` shape)."""
+    if len(_BLOB_IDS) >= _MAX_BLOB_IDS:
+        _BLOB_IDS.clear()
+    _BLOB_IDS[_blob_cache_key(row)] = (blob_id, blob_size)
+
+
+def _catalog_row(payload: Mapping[str, Any], attachment_id: Any) -> dict[str, Any] | None:
+    rows = payload.get("attachments", [])
+    if not isinstance(rows, list):
+        return None
+    return next((r for r in rows if isinstance(r, dict) and r.get("id") == attachment_id), None)
+
+
+def _document_ref(record: Mapping[str, Any]) -> dict[str, Any]:
+    """The ``attachment`` reference of a document record in this vault (BridgeError if unavailable)."""
+    session = _DOC_SESSION.get()
+    if session is None:
+        raise BridgeError(f"Record {record.get('id')!r} is a kind that does not sync")
+    from ..attachments import AttachmentError, AttachmentStore
+    from .attachment_sync import AttachmentRef, AttachmentSyncError
+
+    typed = record.get("payload")
+    attachment_id = typed.get("attachment_id") if isinstance(typed, dict) else None
+    row = _catalog_row(session._require_typed_catalog(), attachment_id)
+    if row is None:
+        raise BridgeError(f"Document {record.get('id')!r} has no attachment", reason="attachment-missing",
+                          item_id=record.get("id"))
+    try:
+        cached = _BLOB_IDS.get(_blob_cache_key(row))
+        if cached is None:
+            ref_dict, _blob = AttachmentStore(session).export_sync_blob(row["id"])
+            remember_blob(row, ref_dict["blob"], ref_dict["blob_size"])
+            cached = (ref_dict["blob"], ref_dict["blob_size"])
+        key = base64.b64decode(str(row.get("key", "")).encode("ascii"), validate=True)
+        ref = AttachmentRef(row.get("id"), cached[0], cached[1], row.get("name"),
+                            row.get("mime_type") or "application/octet-stream", row.get("size"),
+                            row.get("sha256"), key)
+    except (AttachmentError, AttachmentSyncError, binascii.Error, ValueError, TypeError, OSError) as exc:
+        raise BridgeError(f"Document {record.get('id')!r} attachment cannot be synced: {exc}",
+                          reason="attachment-missing", item_id=record.get("id")) from None
+    return ref.to_dict()
+
+
+def _check_remote_document(item: Mapping[str, Any], record: Mapping[str, Any], item_id: str) -> None:
+    """A received document's reference must be well formed and name its record's attachment."""
+    from .attachment_sync import AttachmentRef, AttachmentSyncError
+
+    try:
+        ref = AttachmentRef.from_value(item.get("attachment"))
+    except AttachmentSyncError as exc:
+        raise BridgeError(f"Sync state {item_id!r} has a malformed attachment ({exc.reason})",
+                          item_id=item_id) from None
+    typed = record.get("payload")
+    if not isinstance(typed, dict) or typed.get("attachment_id") != ref.attachment_id:
+        raise BridgeError(f"Sync state {item_id!r} names another attachment", item_id=item_id)
+
+
+def _require_attachment(session: Any, item: Mapping[str, Any], item_id: str) -> None:
+    """Refuse to store a received document until its file was imported (``attachment-missing``)."""
+    from .attachment_sync import AttachmentRef
+
+    ref = AttachmentRef.from_value(item["attachment"])
+    row = _catalog_row(session._require_typed_catalog(), ref.attachment_id)
+    if row is None or {**row, "mime_type": row.get("mime_type") or "application/octet-stream"} != ref.catalog_record():
+        raise BridgeError(f"Document {item_id!r} waits for its file", reason="attachment-missing",
+                          item_id=item_id)
+    remember_blob(row, ref.blob, ref.blob_size)
+
+
+def is_document_state(state: ItemState) -> bool:
+    item = state.item
+    return (isinstance(item, dict) and item.get("ns") == "item" and isinstance(item.get("record"), dict)
+            and item["record"].get("kind") == DOCUMENT_KIND)
+
+
+def publishable(states: Any, *, documents: bool) -> tuple[ItemState, ...]:
+    """*states* to publish; without *documents* the document items are left out (older readers)."""
+    return tuple(s for s in states if documents or not is_document_state(s))
+
+
+def document_refs(states: Any) -> list[Any]:
+    """The well-formed references of the live document states in *states* (others are skipped)."""
+    from .attachment_sync import AttachmentRef, AttachmentSyncError
+
+    out = []
+    for state in states:
+        if state.deleted or not is_document_state(state):
+            continue
+        try:
+            out.append(AttachmentRef.from_value(state.item.get("attachment")))
+        except AttachmentSyncError:
+            continue
+    return out
 
 
 def _ns_of(record: Any) -> str:
@@ -454,7 +593,7 @@ def _live_records(payload: Mapping[str, Any]) -> dict[str, tuple[str, dict[str, 
         for record in rows:
             if not isinstance(record, dict) or not isinstance(record.get("id"), str):
                 raise BridgeError(f"Vault {key} are malformed")
-            if ns == "item" and record.get("kind") in UNSYNCED_ITEM_KINDS:
+            if ns == "item" and record.get("kind") in UNSYNCED_ITEM_KINDS and not _documents_on():
                 continue
             if record["id"] in out:
                 raise BridgeError(f"Record id {record['id']!r} appears more than once in the vault")
@@ -619,6 +758,35 @@ def published_licenses(session: Any) -> tuple[dict[str, Any], ...]:
     return tuple(published[sid]["record"] for sid in sorted(published))
 
 
+def licenses_in_views(views: Iterable[Any]) -> tuple[dict[str, Any], ...]:
+    """The verified, unrevoked licence bundles peer *views* carry; touches no vault.
+
+    For licence-only sync on a free PC (``SyncService(licence_only=True)``):
+    only live states in the ``license`` namespace whose bundle verifies and
+    hashes to its state id count; every other state is ignored.  At most
+    ``MAX_SYNC_LICENSES`` per view.
+    """
+    out: list[dict[str, Any]] = []
+    for view in views:
+        found = 0
+        for state in getattr(view, "states", ()) or ():
+            if found >= MAX_SYNC_LICENSES:
+                break
+            if not isinstance(state, ItemState) or state.deleted or not _is_license_id(state.item_id):
+                continue
+            item = state.item
+            if not isinstance(item, dict) or item.get("ns") != LICENSE_NS or "updated_at" not in item:
+                continue
+            if _quiet_license(state):
+                continue  # revoked, or no licence keys in this build
+            try:
+                out.append(_unwrap_license(state, item, is_copy=False))
+            except BridgeError:
+                continue
+            found += 1
+    return tuple(out)
+
+
 def _json_copy(value: Any) -> Any:
     """A plain-JSON deep copy of *value* (canonical round trip)."""
     return json.loads(canonical_json(value))
@@ -638,6 +806,12 @@ def _bumped(vv: Mapping[str, int], device_id: str) -> dict[str, int] | None:
 
 
 def local_view(session: Any, lease: Any, *, device_id: str, now: int) -> LocalView:
+    """Engine states for every synced record and tombstone, documents included (``_local_view``)."""
+    with _documents(session):
+        return _local_view(session, lease, device_id=device_id, now=now)
+
+
+def _local_view(session: Any, lease: Any, *, device_id: str, now: int) -> LocalView:
     """Engine states for every synced record and tombstone; persists changed meta.
 
     A live record that fails validation is skipped (``result.skipped``): it
@@ -724,6 +898,11 @@ def _unwrap(state: ItemState, *, is_copy: bool) -> tuple[str, dict[str, Any]]:
                           reason="update-needed", item_id=state.item_id)
     required = {"ns", "schema", "updated_at", "record"}
     allowed = required | {"id"} if is_copy else required
+    document = (_documents_on() and isinstance(item, dict) and isinstance(item.get("record"), dict)
+                and item.get("ns") == "item" and item["record"].get("kind") == DOCUMENT_KIND)
+    if document:
+        required = required | {"attachment"}
+        allowed = allowed | {"attachment"}
     if not isinstance(item, dict) or not required <= set(item) or set(item) - allowed:
         raise BridgeError(f"Sync state {state.item_id!r} is malformed")
     if type(schema) is not int or schema < 1:
@@ -745,7 +924,9 @@ def _unwrap(state: ItemState, *, is_copy: bool) -> tuple[str, dict[str, Any]]:
     if _ns_of(record) != ns:
         raise BridgeError(f"Sync state {state.item_id!r} is in the wrong namespace")
     if ns == "item" and record.get("kind") in UNSYNCED_ITEM_KINDS:
-        raise BridgeError(f"Sync state {state.item_id!r} is a kind that does not sync")
+        if not document:
+            raise BridgeError(f"Sync state {state.item_id!r} is a kind that does not sync")
+        _check_remote_document(item, record, state.item_id)
     return ns, record
 
 
@@ -829,8 +1010,11 @@ def _with_suffix(text: Any, limit: int) -> Any:
 
 
 def _remote_wrapper(ns: str, record: Mapping[str, Any]) -> dict[str, Any]:
-    return {"ns": ns, "schema": ITEM_WRAPPER_SCHEMA, "updated_at": _rank_updated_at(record),
-            "record": copy.deepcopy(dict(record))}
+    out = {"ns": ns, "schema": ITEM_WRAPPER_SCHEMA, "updated_at": _rank_updated_at(record),
+           "record": copy.deepcopy(dict(record))}
+    if ns == "item" and record.get("kind") == DOCUMENT_KIND and _documents_on():
+        out["attachment"] = _document_ref(record)
+    return out
 
 
 def _history_error(exc: HistoryError) -> BridgeError:
@@ -1000,6 +1184,12 @@ class _Applier:
 
 
 def apply(session: Any, lease: Any, outcome: MergeOutcome, *, device_id: str, now: int) -> ApplyReport:
+    """Write a merge outcome; a document only once its file was imported (``_apply``)."""
+    with _documents(session):
+        return _apply(session, lease, outcome, device_id=device_id, now=now)
+
+
+def _apply(session: Any, lease: Any, outcome: MergeOutcome, *, device_id: str, now: int) -> ApplyReport:
     """Write a merge outcome into the vault in one transaction.
 
     The outcome must come from ``merge(local_view(...), ...)`` taken on this
@@ -1079,6 +1269,8 @@ def apply(session: Any, lease: Any, outcome: MergeOutcome, *, device_id: str, no
                         meta[state.item_id] = _live_meta(stored, state.vv)
                         received.append(record)
                         continue
+                    if "attachment" in state.item:
+                        _require_attachment(session, state.item, state.item_id)
                     stored, changed = work.store(ns, record)
                     applied += changed
                     vv = state.vv if stored == _remote_wrapper(ns, record) else bump(state.vv, device_id)
@@ -1093,6 +1285,8 @@ def apply(session: Any, lease: Any, outcome: MergeOutcome, *, device_id: str, no
                         record["label"] = _with_suffix(record.get("label"), _MAX_ENTRY_LABEL)
                     else:
                         record["title"] = _with_suffix(record.get("title"), MAX_TITLE)
+                    if "attachment" in state.item:
+                        _require_attachment(session, state.item, state.item_id)
                     stored, changed = work.store(ns, record)
                     applied += changed
                     vv = state.vv if stored == _remote_wrapper(ns, record) else bump(state.vv, device_id)
@@ -1173,7 +1367,9 @@ MAX_MEMBERS_SEEN = 64
 SYNC_GROUP_VERSION = 1
 MAX_STORED_KEYRING_BYTES = 256 * 1024
 _OPTIONAL_GROUP_KEYS = frozenset({"own_counter", "peer_digests", "members_epoch", "members", "keyring",
-                                  "hello_counter", "lan_removed", "unacked_members", "view_signers"})
+                                  "hello_counter", "lan_removed", "unacked_members", "view_signers",
+                                  "peer_generations", "rollback_suspected", "witness_peers",
+                                  "witness_counters", "attachment_peers", "peer_synced_at"})
 _IDENTITY_KEYS = frozenset({"device_id", "signing_private", "exchange_private"})
 
 
@@ -1243,10 +1439,21 @@ class SyncGroupState:
     wrote a signed view, and each peer's key once a signed view of it verified
     (trust on first use within an epoch).  A pinned peer's view must carry a
     valid signature by that key; adopting a new epoch keeps only the own entry.
-    The nine newer fields are optional in stored form; the last three are written
+    Rollback witnesses (2026-10-29, ``witness.py``): ``peer_generations`` maps
+    a peer id to the highest vault generation it published; ``rollback_suspected``
+    is the highest generation of THIS vault a peer has seen above our own (0 =
+    none; sticky until acknowledged); ``witness_peers`` are peer ids that showed
+    support for view format 2 (a format-2 view, a witness file or a LAN witness
+    message).  ``witness_counters`` maps a folder peer to the view counter of
+    the last view whose generation this device saw (format 2 or a matching
+    witness file); a newer view of a witnessing peer without one is reported
+    as ``witness-missing`` after a grace run.  A folder device writes format-2 views only once every other
+    member is listed; a LAN device writes one to a peer only once it is listed.
+    The thirteen newer fields are optional in stored form; the last seven are written
     only when they differ from their defaults, so an older version still reads
     an unaffected state (one that holds ``view_signers`` is refused by a version
-    from before 2026-10-24).
+    from before 2026-10-24, one that holds a witness field by a version from
+    before 2026-10-29).
     """
 
     group_id: str
@@ -1266,6 +1473,16 @@ class SyncGroupState:
     lan_removed: bool = False
     unacked_members: tuple[str, ...] = ()
     view_signers: Mapping[str, str] = field(default_factory=dict)
+    peer_generations: Mapping[str, int] = field(default_factory=dict)
+    rollback_suspected: int = 0
+    witness_peers: tuple[str, ...] = ()
+    witness_counters: Mapping[str, int] = field(default_factory=dict)
+    #: Wi-Fi peers that answered a ``blob-get`` (attachment sync, 2026-10-29): they get documents.
+    attachment_peers: tuple[str, ...] = ()
+    #: Per-device "last synced" time (UX workstream 6, Android ``PeerSyncedAt``): peer id -> unix
+    #: seconds when this device last accepted that peer's newer data (a newer folder view, or a
+    #: Wi-Fi merge that changed records).  Local only: never sent; written only when non-empty.
+    peer_synced_at: Mapping[str, int] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         _text(self.group_id, "group id", MAX_GROUP_ID)
@@ -1352,6 +1569,55 @@ class SyncGroupState:
             if not is_valid_id(dev) or not _is_public_key_b64(public):
                 raise BridgeError("Sync view signers are malformed")
         object.__setattr__(self, "view_signers", dict(sorted(signers.items())))
+        gens = self.peer_generations
+        if not isinstance(gens, Mapping) or len(gens) > MAX_PEERS_SEEN:
+            raise BridgeError("Sync peer generations are malformed")
+        for dev, gen in gens.items():
+            if not is_valid_id(dev) or type(gen) is not int or not 0 <= gen <= _MAX_INT53:
+                raise BridgeError("Sync peer generations are malformed")
+        object.__setattr__(self, "peer_generations", dict(sorted(gens.items())))
+        if type(self.rollback_suspected) is not int or not 0 <= self.rollback_suspected <= _MAX_INT53:
+            raise BridgeError("Sync rollback suspicion is malformed")
+        capable = self.witness_peers
+        if isinstance(capable, (str, bytes, Mapping)) or not hasattr(capable, "__iter__"):
+            raise BridgeError("Sync witness peers are malformed")
+        capable = tuple(capable)
+        if (len(capable) > MAX_PEERS_SEEN or len(set(capable)) != len(capable)
+                or not all(is_valid_id(m) for m in capable)):
+            raise BridgeError("Sync witness peers are malformed")
+        object.__setattr__(self, "witness_peers", tuple(sorted(capable)))
+        wc = self.witness_counters
+        if not isinstance(wc, Mapping) or len(wc) > MAX_PEERS_SEEN:
+            raise BridgeError("Sync witness counters are malformed")
+        for dev, ctr in wc.items():
+            if not is_valid_id(dev) or type(ctr) is not int or not 0 <= ctr <= _MAX_INT53:
+                raise BridgeError("Sync witness counters are malformed")
+        object.__setattr__(self, "witness_counters", dict(sorted(wc.items())))
+        ap = self.attachment_peers
+        if isinstance(ap, (str, bytes, Mapping)) or not hasattr(ap, "__iter__"):
+            raise BridgeError("Sync attachment peers are malformed")
+        ap = tuple(ap)
+        if len(ap) > MAX_PEERS_SEEN or len(set(ap)) != len(ap) or not all(is_valid_id(m) for m in ap):
+            raise BridgeError("Sync attachment peers are malformed")
+        object.__setattr__(self, "attachment_peers", tuple(sorted(ap)))
+        ps = self.peer_synced_at
+        if not isinstance(ps, Mapping) or len(ps) > MAX_PEERS_SEEN:
+            raise BridgeError("Sync peer times are malformed")
+        for dev, at in ps.items():
+            if not is_valid_id(dev) or type(at) is not int or not 0 <= at <= _MAX_INT53:
+                raise BridgeError("Sync peer times are malformed")
+        object.__setattr__(self, "peer_synced_at", dict(sorted(ps.items())))
+
+    def synced_with(self, peers: Any, now: int, limit: int = MAX_PEERS_SEEN) -> SyncGroupState:
+        """This state with *peers* synced at *now* (the *limit* most recent peers kept)."""
+        peers = [p for p in peers if p != self.device_id]
+        if not peers:
+            return self
+        now = max(0, min(int(now), _MAX_INT53))
+        times = {**self.peer_synced_at, **{p: now for p in peers}}
+        if len(times) > limit:
+            times = dict(sorted(times.items(), key=lambda kv: kv[1], reverse=True)[:limit])
+        return dataclasses.replace(self, peer_synced_at=times)
 
     @property
     def device_id(self) -> str:
@@ -1384,6 +1650,18 @@ class SyncGroupState:
             out["unacked_members"] = list(self.unacked_members)
         if self.view_signers:
             out["view_signers"] = dict(self.view_signers)
+        if self.peer_generations:
+            out["peer_generations"] = dict(self.peer_generations)
+        if self.rollback_suspected:
+            out["rollback_suspected"] = self.rollback_suspected
+        if self.witness_peers:
+            out["witness_peers"] = list(self.witness_peers)
+        if self.witness_counters:
+            out["witness_counters"] = dict(self.witness_counters)
+        if self.attachment_peers:
+            out["attachment_peers"] = list(self.attachment_peers)
+        if self.peer_synced_at:
+            out["peer_synced_at"] = dict(self.peer_synced_at)
         return out
 
     @classmethod
@@ -1397,6 +1675,11 @@ class SyncGroupState:
                 or not isinstance(raw.get("members", []), list)
                 or not isinstance(raw.get("unacked_members", []), list)
                 or not isinstance(raw.get("view_signers", {}), dict)
+                or not isinstance(raw.get("peer_generations", {}), dict)
+                or not isinstance(raw.get("witness_peers", []), list)
+                or not isinstance(raw.get("witness_counters", {}), dict)
+                or not isinstance(raw.get("attachment_peers", []), list)
+                or not isinstance(raw.get("peer_synced_at", {}), dict)
                 or not isinstance(raw.get("keyring"), (str, type(None)))):
             raise BridgeError("Stored sync group state is malformed")
         keyring = None
@@ -1417,7 +1700,13 @@ class SyncGroupState:
                    members=tuple(raw.get("members", [])), keyring=keyring,
                    hello_counter=raw.get("hello_counter", 0), lan_removed=raw.get("lan_removed", False),
                    unacked_members=tuple(raw.get("unacked_members", [])),
-                   view_signers=raw.get("view_signers", {}))
+                   view_signers=raw.get("view_signers", {}),
+                   peer_generations=raw.get("peer_generations", {}),
+                   rollback_suspected=raw.get("rollback_suspected", 0),
+                   witness_peers=tuple(raw.get("witness_peers", [])),
+                   witness_counters=raw.get("witness_counters", {}),
+                   attachment_peers=tuple(raw.get("attachment_peers", [])),
+                   peer_synced_at=raw.get("peer_synced_at", {}))
 
 
 def load_sync_state(session: Any) -> SyncGroupState | None:
@@ -1454,6 +1743,40 @@ def save_sync_state(session: Any, state: SyncGroupState) -> bool:
     return True
 
 
+def acknowledge_vault_rollback(session: Any, lease: Any) -> bool:
+    """The user confirmed this vault was restored on purpose (``vault-rollback``).
+
+    Raises the vault's generation floor above every value a peer witnessed
+    (``rollback_suspected + 1``) and clears ``rollback_suspected`` in the same
+    save, so the next published generation is above the witnesses and the
+    warning stops.  Returns False (and writes nothing) when nothing was suspected.
+    """
+    _check_lease(session, lease)
+    state = load_sync_state(session)
+    if state is None or state.rollback_suspected <= 0:
+        return False
+    session.raise_generation_floor(min(state.rollback_suspected + 1, _MAX_INT53))
+    _check_lease(session, lease)
+    save_sync_state(session, dataclasses.replace(state, rollback_suspected=0))
+    return True
+
+
+def forget_peer_generation(session: Any, lease: Any, peer_id: str) -> bool:
+    """The user dismissed ``peer-vault-rollback`` for *peer_id*: accept its older copy.
+
+    Drops the remembered generation of that peer, so its next view is
+    remembered as it is and no longer reported.  Returns whether one was dropped.
+    """
+    _check_lease(session, lease)
+    state = load_sync_state(session)
+    if state is None or not isinstance(peer_id, str) or peer_id not in state.peer_generations:
+        return False
+    left = {k: v for k, v in state.peer_generations.items() if k != peer_id}
+    _check_lease(session, lease)
+    save_sync_state(session, dataclasses.replace(state, peer_generations=left))
+    return True
+
+
 def clear_sync_state(session: Any) -> None:
     payload = session._require_typed_catalog()
     if "sync_group" in payload:
@@ -1464,7 +1787,9 @@ def clear_sync_state(session: Any) -> None:
 __all__ = [
     "CONFLICT_SUFFIX", "COUNTER_OVERFLOW", "ITEM_WRAPPER_SCHEMA", "LOCAL_ONLY_ENTRY_FIELDS", "LOCAL_ONLY_ITEM_FIELDS",
     "LOCAL_ONLY_ITEM_PAYLOAD_FIELDS", "MAX_SYNC_RECORDS", "TOMBSTONE_MAX_AGE_DAYS", "UNSYNCED_ITEM_KINDS",
-    "ApplyReport", "BridgeError", "LocalView", "SyncGroupState", "apply", "check_remote_state", "clear_sync_state",
-    "load_sync_state", "local_view", "normal_form", "prune_tombstones", "published_licenses", "save_sync_state",
+    "RESTORED_MARKER_SUFFIX", "ApplyReport", "BridgeError", "LocalView", "SyncGroupState",
+    "acknowledge_vault_rollback", "apply", "forget_peer_generation", 
+    "check_remote_state", "clear_sync_state",
+    "licenses_in_views", "load_sync_state", "local_view", "normal_form", "prune_tombstones", "published_licenses", "save_sync_state",
     "sync_only_save", "wrapper_digest",
 ]

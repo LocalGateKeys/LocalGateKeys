@@ -5,6 +5,7 @@
   <url><loc>https://localgatekeys.app/pricing</loc></url>
   <url><loc>https://localgatekeys.app/security</loc></url>
   <url><loc>https://localgatekeys.app/get-started</loc></url>
+  <url><loc>https://localgatekeys.app/help</loc></url>
   <url><loc>https://localgatekeys.app/download</loc></url>
   <url><loc>https://localgatekeys.app/support</loc></url>
   <url><loc>https://localgatekeys.app/licence</loc></url>
@@ -14,4 +15,85 @@
   <url><loc>https://localgatekeys.app/legal/terms-of-sale</loc></url>
   <url><loc>https://localgatekeys.app/legal/refunds</loc></url>
   <url><loc>https://localgatekeys.app/legal/vulnerability-disclosure</loc></url>
+  <url><loc>https://localgatekeys.app/es/</loc></url>
+  <url><loc>https://localgatekeys.app/es/features</loc></url>
+  <url><loc>https://localgatekeys.app/es/pricing</loc></url>
+  <url><loc>https://localgatekeys.app/es/security</loc></url>
+  <url><loc>https://localgatekeys.app/es/get-started</loc></url>
+  <url><loc>https://localgatekeys.app/es/help</loc></url>
+  <url><loc>https://localgatekeys.app/es/download</loc></url>
+  <url><loc>https://localgatekeys.app/es/support</loc></url>
+  <url><loc>https://localgatekeys.app/es/licence</loc></url>
+  <url><loc>https://localgatekeys.app/it/</loc></url>
+  <url><loc>https://localgatekeys.app/it/features</loc></url>
+  <url><loc>https://localgatekeys.app/it/pricing</loc></url>
+  <url><loc>https://localgatekeys.app/it/security</loc></url>
+  <url><loc>https://localgatekeys.app/it/get-started</loc></url>
+  <url><loc>https://localgatekeys.app/it/help</loc></url>
+  <url><loc>https://localgatekeys.app/it/download</loc></url>
+  <url><loc>https://localgatekeys.app/it/support</loc></url>
+  <url><loc>https://localgatekeys.app/it/licence</loc></url>
+  <url><loc>https://localgatekeys.app/pl/</loc></url>
+  <url><loc>https://localgatekeys.app/pl/features</loc></url>
+  <url><loc>https://localgatekeys.app/pl/pricing</loc></url>
+  <url><loc>https://localgatekeys.app/pl/security</loc></url>
+  <url><loc>https://localgatekeys.app/pl/get-started</loc></url>
+  <url><loc>https://localgatekeys.app/pl/help</loc></url>
+  <url><loc>https://localgatekeys.app/pl/download</loc></url>
+  <url><loc>https://localgatekeys.app/pl/support</loc></url>
+  <url><loc>https://localgatekeys.app/pl/licence</loc></url>
+  <url><loc>https://localgatekeys.app/zh-hans/</loc></url>
+  <url><loc>https://localgatekeys.app/zh-hans/features</loc></url>
+  <url><loc>https://localgatekeys.app/zh-hans/pricing</loc></url>
+  <url><loc>https://localgatekeys.app/zh-hans/security</loc></url>
+  <url><loc>https://localgatekeys.app/zh-hans/get-started</loc></url>
+  <url><loc>https://localgatekeys.app/zh-hans/help</loc></url>
+  <url><loc>https://localgatekeys.app/zh-hans/download</loc></url>
+  <url><loc>https://localgatekeys.app/zh-hans/support</loc></url>
+  <url><loc>https://localgatekeys.app/zh-hans/licence</loc></url>
+  <url><loc>https://localgatekeys.app/ja/</loc></url>
+  <url><loc>https://localgatekeys.app/ja/features</loc></url>
+  <url><loc>https://localgatekeys.app/ja/pricing</loc></url>
+  <url><loc>https://localgatekeys.app/ja/security</loc></url>
+  <url><loc>https://localgatekeys.app/ja/get-started</loc></url>
+  <url><loc>https://localgatekeys.app/ja/help</loc></url>
+  <url><loc>https://localgatekeys.app/ja/download</loc></url>
+  <url><loc>https://localgatekeys.app/ja/support</loc></url>
+  <url><loc>https://localgatekeys.app/ja/licence</loc></url>
+  <url><loc>https://localgatekeys.app/de/</loc></url>
+  <url><loc>https://localgatekeys.app/de/features</loc></url>
+  <url><loc>https://localgatekeys.app/de/pricing</loc></url>
+  <url><loc>https://localgatekeys.app/de/security</loc></url>
+  <url><loc>https://localgatekeys.app/de/get-started</loc></url>
+  <url><loc>https://localgatekeys.app/de/help</loc></url>
+  <url><loc>https://localgatekeys.app/de/download</loc></url>
+  <url><loc>https://localgatekeys.app/de/support</loc></url>
+  <url><loc>https://localgatekeys.app/de/licence</loc></url>
+  <url><loc>https://localgatekeys.app/pt-br/</loc></url>
+  <url><loc>https://localgatekeys.app/pt-br/features</loc></url>
+  <url><loc>https://localgatekeys.app/pt-br/pricing</loc></url>
+  <url><loc>https://localgatekeys.app/pt-br/security</loc></url>
+  <url><loc>https://localgatekeys.app/pt-br/get-started</loc></url>
+  <url><loc>https://localgatekeys.app/pt-br/help</loc></url>
+  <url><loc>https://localgatekeys.app/pt-br/download</loc></url>
+  <url><loc>https://localgatekeys.app/pt-br/support</loc></url>
+  <url><loc>https://localgatekeys.app/pt-br/licence</loc></url>
+  <url><loc>https://localgatekeys.app/ko/</loc></url>
+  <url><loc>https://localgatekeys.app/ko/features</loc></url>
+  <url><loc>https://localgatekeys.app/ko/pricing</loc></url>
+  <url><loc>https://localgatekeys.app/ko/security</loc></url>
+  <url><loc>https://localgatekeys.app/ko/get-started</loc></url>
+  <url><loc>https://localgatekeys.app/ko/help</loc></url>
+  <url><loc>https://localgatekeys.app/ko/download</loc></url>
+  <url><loc>https://localgatekeys.app/ko/support</loc></url>
+  <url><loc>https://localgatekeys.app/ko/licence</loc></url>
+  <url><loc>https://localgatekeys.app/nl/</loc></url>
+  <url><loc>https://localgatekeys.app/nl/features</loc></url>
+  <url><loc>https://localgatekeys.app/nl/pricing</loc></url>
+  <url><loc>https://localgatekeys.app/nl/security</loc></url>
+  <url><loc>https://localgatekeys.app/nl/get-started</loc></url>
+  <url><loc>https://localgatekeys.app/nl/help</loc></url>
+  <url><loc>https://localgatekeys.app/nl/download</loc></url>
+  <url><loc>https://localgatekeys.app/nl/support</loc></url>
+  <url><loc>https://localgatekeys.app/nl/licence</loc></url>
 </urlset>

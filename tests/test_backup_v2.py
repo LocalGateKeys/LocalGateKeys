@@ -16,6 +16,7 @@ from localvault.backup import (
     restore_full_backup,
 )
 from localvault.config import atomic_write_json
+from localvault.settings import SETTINGS_VERSION
 from localvault.vault import create_vault, unlock_vault
 
 MASTER = "synthetic backup master password"
@@ -312,3 +313,28 @@ def test_v2_kdf_header_uses_vault_defaults_and_accepts_only_bounded_parameters(c
     monkeypatch.undo()
     with pytest.raises(BackupError):
         _restore(rewrite({"memory_cost_kib": 16384}), case_dir / "in-range-tamper")
+
+
+def test_v2_full_backup_keeps_the_per_device_language_out(case_dir: Path) -> None:
+    import json
+
+    profile, _item_id, _marker = _profile(case_dir / "source")
+    atomic_write_json(profile / "settings.json", {"version": SETTINGS_VERSION, "language": "de"})
+    backup = _export(case_dir, profile)
+    with zipfile.ZipFile(backup) as archive:
+        settings_blobs = [archive.read(n) for n in archive.namelist() if n.endswith("settings.json")]
+    if settings_blobs:
+        assert all("language" not in json.loads(b) for b in settings_blobs)
+
+    # Restoring a backup that carries a language keeps this device's choice.
+    restored = case_dir / "restored"
+    _restore(backup, restored)
+    atomic_write_json(restored / "settings.json", {"version": SETTINGS_VERSION, "language": "fr"})
+    _restore(backup, restored, replace=True, allow_rollback=True)
+    assert json.loads((restored / "settings.json").read_text("utf-8"))["language"] == "fr"
+
+
+def test_validated_full_settings_ignore_a_language_key() -> None:
+    from localvault.backup import _full_validate_settings
+
+    assert "language" not in _full_validate_settings({"version": SETTINGS_VERSION, "language": "ja"})

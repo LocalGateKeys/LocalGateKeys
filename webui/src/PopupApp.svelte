@@ -1,6 +1,7 @@
 <script>
   /** The small popup window: unlock (profile chips, password, Hello, camera) and the questions a fill asks
    * when it was started outside the app (field button, Ctrl+Shift+Space, browser). Python shows and hides it. */
+  import { t } from './lib/i18n.svelte.js';
   import Modal from './components/Modal.svelte';
   import PasswordModal from './components/PasswordModal.svelte';
   import PasskeyModal from './components/PasskeyModal.svelte';
@@ -56,8 +57,8 @@
       {:else if modal.kind === 'choose' || modal.kind === 'confirm_remember'}
         <ChoiceModal request={modal} guardMs={GUARD_MS} onanswer={(value) => answer(modal.id, value)} />
       {:else if modal.kind === 'upgrade'}
-        <Modal title="LocalGateKeys Pro" message={modal.message} allowLabel="Enter licence" denyLabel="Not now" guardMs={GUARD_MS}
-          extraLabel={modal.purchase_url ? 'Buy Pro' : ''}
+        <Modal title="LocalGateKeys Pro" message={modal.message} allowLabel={t('app.enterLicence')} denyLabel={t('common.notNow')} guardMs={GUARD_MS}
+          extraLabel={modal.purchase_url ? t('app.buyPro') : ''}
           onextra={() => { call('system_open_url', modal.purchase_url); answer(modal.id, 'cancel'); }}
           onanswer={(yes) => answer(modal.id, yes ? 'enter' : 'cancel')} />
       {:else}
@@ -71,7 +72,7 @@
       <Unlock {vault} brand={false} onswitchprofile={() => (choosingProfile = true)} />
     {/if}
   {:else}
-    <p class="done" role="status">Unlocked.</p>
+    <p class="done" role="status">{t('popup.unlocked')}</p>
   {/if}
 </main>
 

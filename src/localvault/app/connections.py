@@ -7,14 +7,14 @@ from pathlib import Path
 from typing import Any, Callable
 
 from ..api.result import ApiError
+from ..i18n import t
 
 FRIENDLY = {
-    "ready": "Ready", "not_registered": "Not registered", "not_registered_or_manifest_missing": "Not registered",
-    "launcher_missing": "Launcher missing", "manifest_mismatch": "Needs repair",
-    "invalid_registration": "Invalid registration",
+    "ready": "connections.ready", "not_registered": "connections.notRegistered", "not_registered_or_manifest_missing": "connections.notRegistered",
+    "launcher_missing": "connections.launcherMissing", "manifest_mismatch": "connections.needsRepair",
+    "invalid_registration": "connections.invalidRegistration",
 }
-FOOTER = ("No recent connection? Open the browser extension → Connection test. Keep this app running. Version "
-          "mismatch? Update both the desktop files and extension, then reload the page.")
+FOOTER = ("connections.noRecentConnectionOpenThe")
 
 
 def _collect(**kwargs: Any) -> dict[str, Any]:
@@ -50,59 +50,57 @@ class ConnectionsService:
         host_ready = bool(report.get("native_host_exists") and report.get("native_host_hash_matches"))
         if not report.get("windows"):
             headline, summary, status, tone = (
-                "Windows browser connection",
-                "Browser extension connections are available in the Windows desktop build.",
-                "This environment is local-only.", "neutral")
+                t("connections.windowsBrowserConnection"),
+                t("connections.browserExtensionConnectionsAreAvailable"),
+                t("connections.thisEnvironmentIsLocalOnly"), "neutral")
         elif ready and report.get("extension_recent"):
             headline, summary, status, tone = (
-                "Connected to your browser", f"The extension checked in recently through {', '.join(ready)}.",
+                t("connections.connectedToYourBrowser"), t("connections.theExtensionCheckedInRecently", v1=', '.join(ready)),
                 "Ready", "success")
         elif ready and host_ready:
             headline, summary, status, tone = (
-                "Bridge is ready",
-                "The native bridge is installed. Open the extension on a website to test the connection.",
-                "Waiting for extension", "warning")
+                t("connections.bridgeIsReady"),
+                t("connections.theNativeBridgeIsInstalled"),
+                t("connections.waitingForExtension"), "warning")
         elif not report.get("configured") or not report.get("native_host_exists"):
             headline, summary, status, tone = (
-                "Connection needs setup", "The native bridge is not configured for this installation yet.",
-                "Action needed", "warning")
+                t("connections.connectionNeedsSetup"), t("connections.theNativeBridgeIsNot"),
+                t("connections.actionNeeded"), "warning")
         else:
             headline, summary, status, tone = (
-                "Connection needs attention",
-                "Refresh the bridge registration, then reload the browser extension and run its connection test.",
-                "Action needed", "warning")
+                t("connections.connectionNeedsAttention"),
+                t("connections.refreshTheBridgeRegistrationThen"),
+                t("connections.actionNeeded"), "warning")
         browsers = []
         if registrations:
             for browser in ("Chrome", "Edge"):
                 state = str(registrations.get(browser, "not_registered"))
-                browsers.append({"browser": browser, "state": FRIENDLY.get(state, state.replace("_", " ").title()),
+                browsers.append({"browser": browser, "state": t(FRIENDLY[state]) if state in FRIENDLY else state.replace("_", " ").title(),
                                  "ok": state == "ready"})
         return {"headline": headline, "summary": summary, "status": status, "tone": tone, "browsers": browsers,
-                "empty": "" if registrations else "Use the Windows desktop build to connect Chrome or Edge.",
-                "can_repair": bool(report.get("windows")), "details": json.dumps(report, indent=2), "footer": FOOTER}
+                "empty": "" if registrations else t("connections.useTheWindowsDesktopBuild"),
+                "can_repair": bool(report.get("windows")), "details": json.dumps(report, indent=2), "footer": t(FOOTER)}
 
     def repair(self) -> dict[str, Any]:
         if os.name != "nt":
-            raise ApiError("unsupported", "Bridge registration repair is available on Windows.")
-        if not self._port.confirm("Repair current-user bridge?",
-                                  "Recreates the LocalGateKeys native-host manifest and Chrome/Edge registration for "
-                                  "this installation. Vault data is not changed. Reload the extension afterward."):
-            raise ApiError("cancelled", "Cancelled.")
+            raise ApiError("unsupported", t("connections.bridgeRegistrationRepairIsAvailable"))
+        if not self._port.confirm(t("connections.repairCurrentUserBridge"),
+                                  t("connections.recreatesTheLocalgatekeysNativeHost")):
+            raise ApiError("cancelled", t("error.cancelled"))
         try:
             self._repair()
         except Exception as exc:  # noqa: BLE001 - details go to the local error log, not the page
             from ..error_log import log_exception
 
             log_exception("browser-bridge-repair", exc)
-            raise ApiError("repair_failed", "Repair failed. Details are in the error log.") from None
-        return {"title": "Browser connection repaired",
-                "message": "Native-host registration was refreshed. Fully close and reopen the browser, then run "
-                           "the extension Connection test."}
+            raise ApiError("repair_failed", t("connections.repairFailedDetailsAreIn")) from None
+        return {"title": t("connections.browserConnectionRepaired"),
+                "message": t("connections.nativeHostRegistrationWasRefreshed")}
 
     def export(self) -> dict[str, Any]:
-        target = self._dialogs.save_file("Export report", "localgatekeys-diagnostics.json")
+        target = self._dialogs.save_file(t("connectionsPage.export"), "localgatekeys-diagnostics.json")
         if not target:
-            raise ApiError("cancelled", "No file was chosen.")
+            raise ApiError("cancelled", t("recovery.noFileWasChosen"))
         # Serialise the whitelist-only report, never text from the page.
         Path(target).write_text(json.dumps(self._report(), indent=2), encoding="utf-8")
-        return {"message": "Report saved."}
+        return {"message": t("connections.reportSaved")}

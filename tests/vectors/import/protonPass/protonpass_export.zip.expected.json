@@ -1,0 +1,255 @@
+{
+  "format": "protonPass",
+  "input": "tests/vectors/import/_inputs/protonpass_export.zip",
+  "python_format": "protonpass-json",
+  "result": {
+    "diagnostics": [
+      "1 items in the Proton Pass trash were not imported."
+    ],
+    "records": [
+      {
+        "card": {},
+        "created": 1700000000,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Email",
+            "value": "alex@example.com"
+          },
+          {
+            "hidden": false,
+            "name": "Passkeys",
+            "value": "This login had a passkey in Proton Pass; passkeys cannot be exported, so sign in with the password and register a new passkey."
+          },
+          {
+            "hidden": true,
+            "name": "Backup codes",
+            "value": "1111-2222 3333-4444"
+          },
+          {
+            "hidden": false,
+            "name": "Handle",
+            "value": "@alex_example"
+          },
+          {
+            "hidden": true,
+            "name": "Second factor",
+            "value": "otpauth://totp/Second:alex?secret=GEZDGNBVGY3TQOJQ&issuer=Second"
+          }
+        ],
+        "favorite": true,
+        "folder": "Personal",
+        "identity": {},
+        "kind": "login",
+        "modified": 1700100000,
+        "notes": "Personal profile.",
+        "password": "proton-pass-1",
+        "source_row": 1,
+        "tags": [],
+        "title": "Example Social",
+        "totp_uri": "otpauth://totp/Social:alex?secret=JBSWY3DPEHPK3PXP&issuer=Social",
+        "urls": [
+          "https://social.example.com/login",
+          "https://m.social.example.com"
+        ],
+        "username": "alex_example"
+      },
+      {
+        "card": {},
+        "created": 1600000000,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "Personal",
+        "identity": {},
+        "kind": "login",
+        "modified": 1600000000,
+        "notes": "",
+        "password": "proton-pass-2",
+        "source_row": 2,
+        "tags": [],
+        "title": "Legacy shop",
+        "totp_uri": "",
+        "urls": [
+          "https://shop.example.com"
+        ],
+        "username": "alex@example.com"
+      },
+      {
+        "card": {},
+        "created": 1700000000,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "Personal",
+        "identity": {},
+        "kind": "note",
+        "modified": 1700000000,
+        "notes": "12-34-56",
+        "password": "",
+        "source_row": 3,
+        "tags": [],
+        "title": "Locker combination",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {
+          "cardholder": "Alex Example",
+          "cvv": "456",
+          "expiry": "09/2028",
+          "number": "4111111111111111",
+          "pin": "9876"
+        },
+        "created": 1700000000,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "Personal",
+        "identity": {},
+        "kind": "card",
+        "modified": 1700000000,
+        "notes": "Online purchases only.",
+        "password": "",
+        "source_row": 4,
+        "tags": [],
+        "title": "Shopping Visa",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": 1700000000,
+        "custom_fields": [
+          {
+            "hidden": true,
+            "name": "Social security number",
+            "value": "000-00-0000"
+          },
+          {
+            "hidden": true,
+            "name": "Passport number",
+            "value": "000000000"
+          },
+          {
+            "hidden": false,
+            "name": "birthdate",
+            "value": "1990-01-01"
+          },
+          {
+            "hidden": false,
+            "name": "floor",
+            "value": "2"
+          },
+          {
+            "hidden": false,
+            "name": "workEmail",
+            "value": "alex@work.example.com"
+          },
+          {
+            "hidden": false,
+            "name": "Gym number",
+            "value": "GYM-0042"
+          }
+        ],
+        "favorite": false,
+        "folder": "Personal",
+        "identity": {
+          "address_line1": "1 Example Road",
+          "city": "Exampleton",
+          "company": "Example Ltd",
+          "country": "GB",
+          "email": "alex@example.com",
+          "family_name": "Example",
+          "given_name": "Alex",
+          "job_title": "Tester",
+          "middle_name": "Q",
+          "name": "Alex Q Example",
+          "organization": "Example Ltd",
+          "phone": "+44 20 7946 0000",
+          "postal_code": "EX1 2PL",
+          "state": "Exampleshire",
+          "website": "https://alex.example.com"
+        },
+        "kind": "identity",
+        "modified": 1700000000,
+        "notes": "Primary identity.",
+        "password": "",
+        "source_row": 5,
+        "tags": [],
+        "title": "Alex (personal)",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": 1700000000,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Proton Pass item type",
+            "value": "Email alias"
+          },
+          {
+            "hidden": false,
+            "name": "Alias address",
+            "value": "news.fixture@passmail.example"
+          }
+        ],
+        "favorite": false,
+        "folder": "Personal",
+        "identity": {},
+        "kind": "note",
+        "modified": 1700000000,
+        "notes": "",
+        "password": "",
+        "source_row": 6,
+        "tags": [],
+        "title": "Newsletter alias",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": 1700000000,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Proton Pass item type",
+            "value": "Wi-Fi network"
+          },
+          {
+            "hidden": false,
+            "name": "Network name (SSID)",
+            "value": "ExampleOffice"
+          },
+          {
+            "hidden": true,
+            "name": "Wi-Fi password",
+            "value": "wifi-fixture-pass"
+          },
+          {
+            "hidden": false,
+            "name": "Security",
+            "value": "3"
+          }
+        ],
+        "favorite": false,
+        "folder": "Work",
+        "identity": {},
+        "kind": "note",
+        "modified": 1700000000,
+        "notes": "",
+        "password": "",
+        "source_row": 8,
+        "tags": [],
+        "title": "Office Wi-Fi",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      }
+    ],
+    "source_format": "protonpass-json"
+  }
+}

@@ -1,5 +1,6 @@
 package app.localgatekeys.android.unlock
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.settings.AppSettings
 import app.localgatekeys.android.settings.IdleLock
 import app.localgatekeys.android.settings.KeyValueStore
@@ -78,6 +79,19 @@ class VaultEraserTest {
         assertTrue(again.store.load().records.isEmpty())
         assertEquals(0L, again.store.load().revision)
         assertNull(again.slots.read(Slot.INSTALL_ID))
+    }
+
+    @Test fun erase_removes_the_fill_index_and_reports_a_failure() = runBlocking {
+        var calls = 0
+        VaultEraser(dirs, key, settings, fillIndex = { calls++; true }).erase()
+        assertEquals(1, calls)
+        val e = try {
+            VaultEraser(dirs, key, settings, fillIndex = { false }).erase()
+            null
+        } catch (x: VaultEraseFailure) {
+            x
+        }
+        assertEquals(listOf("fill-index"), e?.steps)
     }
 
     @Test fun erase_releases_every_persisted_folder_permission() = runBlocking {
@@ -181,11 +195,11 @@ class VaultEraserTest {
         assertEquals(
             "Erase this phone's vault?\n\nThis deletes every item, the vault's keys and its sync settings from this phone. " +
                 "Your PC and the sync folder are not changed. If this phone was your only copy, the items are gone.",
-            VaultEraser.CONFIRM_TEXT_1,
+            EnglishTxt().s(VaultEraser.CONFIRM_TEXT_1),
         )
-        assertEquals("Are you sure? This cannot be undone. Erase this phone's vault now?", VaultEraser.CONFIRM_TEXT_2)
-        assertTrue(VaultEraser.CONFIRM_TEXT_1.startsWith("Erase this phone's vault?"))
-        assertTrue(VaultEraser.CONFIRM_TEXT_2.startsWith("Are you sure? This cannot be undone."))
+        assertEquals("Are you sure? This cannot be undone. Erase this phone's vault now?", EnglishTxt().s(VaultEraser.CONFIRM_TEXT_2))
+        assertTrue(EnglishTxt().s(VaultEraser.CONFIRM_TEXT_1).startsWith("Erase this phone's vault?"))
+        assertTrue(EnglishTxt().s(VaultEraser.CONFIRM_TEXT_2).startsWith("Are you sure? This cannot be undone."))
     }
 
     /** Port of the BootstrappingUnlocker test: a flag left set by an earlier failure recovers on the next launch. */
@@ -201,7 +215,7 @@ class VaultEraserTest {
             override suspend fun authenticate(reason: String, cipher: Cipher?): Cipher? = cipher
             override fun cancel() {}
         })
-        val m = AppLockModel(unlocker, clock, ManualScheduler(clock), settings, null, eraser())
+        val m = AppLockModel(unlocker, clock, ManualScheduler(clock), settings, null, eraser(), t = EnglishTxt())
 
         m.sceneBecameActive() // launch
 

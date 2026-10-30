@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy | LocalGateKeys</title>
+  <meta name="description" content="The LocalGateKeys apps collect nothing from your vault; in-app Pro purchases send the store receipt to the licence server. What this website, update checks, the licence revocation list and Pro purchases involve.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="legal app-legal">
+  <main id="main">
+    <nav class="wrap app-legal-nav" aria-label="Legal">
+      <a href="eula.html">Licence agreement</a> · <a href="privacy.html" aria-current="page">Privacy policy</a>
+    </nav>
+<article class="prose legal-doc">
+<h1 id="localgatekeys-privacy-policy">LocalGateKeys Privacy Policy</h1>
+<p>Effective date: 24 October 2026</p>
+<p>This policy explains what personal data Ilias Pelekas, 05-300 Mińsk Mazowiecki, Poland ("we", "us") processes in connection with the LocalGateKeys software, the website at localgatekeys.app and Pro purchases. We are the controller for the processing described here, except where we say another company is.</p>
+<h2 id="1-summary">1. Summary</h2>
+<ul><li><strong>The apps collect nothing from your vault.</strong> The LocalGateKeys apps, browser extension and local browser helper do not send us your vault, usage data, crash reports or analytics. There is no account. The only exception is a Pro purchase made in the App Store: the app sends the store's purchase record to our licence server (section 7).</li><li><strong>The website sets no cookies</strong> and uses no analytics, trackers, third-party scripts or third-party fonts.</li><li><strong>Payments are handled by our payment provider</strong>, our merchant of record. We never see your card details.</li><li><strong>Our servers only see ordinary connection data</strong> when the app checks for updates or downloads the licence revocation list, and you can turn both off with Strict offline mode.</li></ul>
+<h2 id="2-the-apps">2. The apps</h2>
+<h3 id="2-1-your-vault">2.1 Your vault</h3>
+<p>Your vault, attachments, backups and settings are stored on your devices. They are encrypted with keys derived from your master password, which never leaves your device. We do not receive, store or have any way to access them.</p>
+<h3 id="2-2-no-telemetry">2.2 No telemetry</h3>
+<p>The apps contain no telemetry, analytics, advertising identifiers or automatic crash reporting. Error logs are written only to your own device. If you choose to email us a log, we process what you send as described in section 6.</p>
+<h3 id="2-3-browser-extension">2.3 Browser extension</h3>
+<p>The extension communicates only with the LocalGateKeys app on the same computer, through a local helper program. It does not send page content, browsing history or logins to us or to anyone else. The browser's add-on store may process data about installations under its own privacy policy.</p>
+<h3 id="2-4-sync-pro">2.4 Sync (Pro)</h3>
+<ul><li><strong>Over your home network</strong>, your devices connect to each other directly. The data they exchange is encrypted end to end and does not pass through us.</li><li><strong>Through your own cloud folder</strong>, the app writes encrypted files to a folder on your device, and your cloud-drive provider uploads them. Your provider can see that the files exist, their size and when they change, but not their contents. Your agreement with that provider governs its processing. We do not receive these files.</li></ul>
+<h3 id="2-5-requests-to-other-websites-only-if-you-turn-them-on">2.5 Requests to other websites, only if you turn them on</h3>
+<p>Two optional features make the apps contact services other than ours. Both are off by default, and strict offline mode in the Windows app blocks both.</p>
+<ul><li><strong>Website icons.</strong> With "Show website icons" turned on, the app downloads each saved website's icon from that website's own address. No username, password or vault data is sent, but each download tells that website, and anyone who can watch your network, that your vault has an account there. The website sees your IP address and the time, under its own privacy policy.</li><li><strong>Breach checks.</strong> When you start a breach check, the app sends the first five characters of each password's SHA-1 hash to Have I Been Pwned. The service sees your IP address, never the password, the full hash, the username or the website.</li></ul>
+<p>We do not receive any of this data.</p>
+<h2 id="3-network-requests-the-app-makes-to-us">3. Network requests the app makes to us</h2>
+<p>The app contacts our update service at updates.localgatekeys.app in only two cases. Strict offline mode in Settings stops both.</p>
+<h3 id="3-1-update-checks">3.1 Update checks</h3>
+<p>When you choose Check for updates (or accept the app's offer to check after a long time offline), the app downloads one small signed file describing the latest version. The request contains:</p>
+<ul><li>your IP address, as for any internet connection;</li><li>the time of the request;</li><li>the address of the file requested;</li><li>the app's user agent, in the form <code>LocalGateKeys/&lt;version&gt;</code>, which tells us the version you use.</li></ul>
+<p>It contains no account, licence, device or vault identifier, and no cookie. The app does not download or install anything else unless you choose to, in your browser.</p>
+<h3 id="3-2-licence-revocation-list">3.2 Licence revocation list</h3>
+<p>Together with each update check, the app downloads a signed list of revoked licences and checks your licence against it on your device. The request contains the same connection data as an update check and nothing about your licence. We therefore cannot tell from it which licence, or which customer, made the request.</p>
+<h3 id="3-3-who-processes-this-data-and-for-how-long">3.3 Who processes this data and for how long</h3>
+<p>The update service is hosted by Cloudflare, Inc. as our processor. Cloudflare processes connection data to deliver the files and protect the service from abuse, under its data processing addendum. We do not keep our own logs of these requests, and we do not combine them with order data. Cloudflare's own retention of security logs is described in its privacy policy.</p>
+<p>Legal basis (where the GDPR applies): our legitimate interest in delivering updates and the revocation list securely (Article 6(1)(f) GDPR), and performing our contract with Pro customers (Article 6(1)(b)).</p>
+<h2 id="4-this-website">4. This website</h2>
+<p>The website is a set of static pages hosted on Cloudflare Pages. It sets no cookies and uses no analytics, advertising, tracking pixels, social media plugins, third-party scripts or externally hosted fonts.</p>
+<p>The one exception is the checkout page. It loads our payment provider's checkout script and payment form from our payment provider's servers, so that you can pay. Our payment provider processes what you enter there, and may use cookies or similar technology needed for the payment and to prevent fraud, under its own privacy policy: see the provider&#x27;s website. The page also creates a random code in your browser that links your payment to your licence page (section 5.4). It is kept only in that browser tab and sent only to our payment provider and our licence service.</p>
+<p>When you visit, Cloudflare, Inc. processes your IP address, browser user agent, the pages you request and the time, as our processor, in order to deliver the pages and protect the site against attacks. We do not use this data to identify or profile visitors. Legal basis: legitimate interests (Article 6(1)(f) GDPR).</p>
+<p>Links to the App Store, other app stores and our payment provider take you to other companies' websites, which have their own privacy policies.</p>
+<h2 id="5-purchases">5. Purchases</h2>
+<h3 id="5-1-the-merchant-of-record">5.1 The merchant of record</h3>
+<p>Pro is sold by our payment provider, which acts as the reseller and merchant of record. Our payment provider collects your payment details, billing information and tax information, processes the payment, calculates and remits tax and issues receipts and invoices. It is the controller of that data under its own privacy policy: see the provider&#x27;s website. We never receive your full card or bank details.</p>
+<h3 id="5-2-what-we-receive">5.2 What we receive</h3>
+<p>To issue and support your licence, our payment provider gives us:</p>
+<ul><li>your name and email address;</li><li>your country (and postcode, where required for tax);</li><li>your order number, product, price, tax, currency and date;</li><li>your VAT ID, if you entered one;</li><li>refund and chargeback status.</li></ul>
+<p>We use this data to generate and send your Licence File, resend it if you lose it, answer your questions, process refunds and revocations, prevent fraud and keep the records required by tax and accounting law.</p>
+<p>Legal bases: performance of a contract (Article 6(1)(b) GDPR), legal obligations (Article 6(1)(c)) and legitimate interests in preventing fraud (Article 6(1)(f)).</p>
+<h3 id="5-3-the-licence-file">5.3 The Licence File</h3>
+<p>Your licence contains a random licence ID, the edition, your name, your email address and the date it was issued, signed by us. Your name and email are included so that a licence can be traced to its buyer if it is shared. The licence is stored on your devices (also inside your encrypted vault) and checked there. The app never sends it to us.</p>
+<h3 id="5-4-issuing-and-retrieving-your-licence">5.4 Issuing and retrieving your licence</h3>
+<p>After payment, our payment provider notifies our licence service, which runs on Cloudflare Workers. The service asks our payment provider for your name and email address, creates your licence, and stores it in Cloudflare's key-value storage under a random link that only your browser knows, so the page you are sent to after checkout can show it. We keep issued licences there for 10 years so we can show or resend them, and an index from your order number to the licence so the same order is never issued twice. A separate record in Cloudflare's D1 database links that random link to your order number and licence ID, so one link can only ever show one order's licence; it holds no name, email or payment details and is kept as long as the licence.</p>
+<h3 id="5-5-retention">5.5 Retention</h3>
+<p>We keep order records for 5 years from the end of the calendar year in which the tax for the order became due, as required by tax and accounting law, and then delete them. Revoked licence IDs stay on the revocation list for as long as the licence could otherwise be used; the list contains licence IDs only, not names or email addresses.</p>
+<h2 id="6-support-emails">6. Support emails</h2>
+<p>If you email us, we process your email address, your message and anything you attach, in order to answer you. The email is processed by our email provider as our processor. We keep support emails for 2 years after the conversation ends. Please never send your master password, recovery phrase, vault file or unencrypted backups.</p>
+<p>Legal basis: legitimate interests in answering your request (Article 6(1)(f) GDPR), or performance of a contract if you are a customer (Article 6(1)(b)).</p>
+<h2 id="7-iphone-app">7. iPhone app</h2>
+<p>7.1 The LocalGateKeys iPhone and Mac apps send us nothing from your vault. They sync only with your own devices, over your own network, or through your own cloud folder. When you buy Pro in the app, the app sends the App Store's signed purchase record to our licence server, which checks it with Apple and returns a licence that also unlocks your other devices (see 7.3). The App Store privacy label therefore lists "Purchases: Purchase History", used only for app functionality, not linked to you and not used for tracking.</p>
+<p>7.2 Apple processes data about your App Store download and purchases under Apple's privacy policy. We receive only aggregated, non-identifying download and sales reports from Apple.</p>
+<p>7.3 The purchase record contains the product, the App Store's transaction identifiers and dates; it has no name, email or Apple Account details. We keep the original transaction identifier and the licence issued for it for as long as the licence can be used, so a reinstall gets the same licence and a refund can revoke it. To limit abuse, the licence server keeps a keyed hash of your IP address for up to one hour.</p>
+<p>7.4 If you choose to share analytics with app developers in your iPhone settings, Apple may provide us with crash reports that do not identify you. We use them only to fix bugs.</p>
+<h2 id="8-sharing">8. Sharing</h2>
+<p>We do not sell or rent personal data, and we do not share it for advertising. We share it only with:</p>
+<ul><li>Our payment provider, for orders and refunds;</li><li>Cloudflare, Inc., which hosts the website, the update service and the licence service;</li><li>our email provider, for support;</li><li>professional advisers and authorities, where required by law.</li></ul>
+<h2 id="9-international-transfers">9. International transfers</h2>
+<p>Cloudflare, our payment provider and our email provider may process data outside your country, including in the United States. Where the GDPR applies, these transfers are protected by an adequacy decision (such as the EU-US Data Privacy Framework, where the recipient is certified) or by the European Commission's standard contractual clauses.</p>
+<h2 id="10-your-rights">10. Your rights</h2>
+<p>Depending on where you live, you may have the right to access, correct, delete, restrict or object to the processing of your personal data, to data portability, and to withdraw consent. To exercise these rights, email privacy@localgatekeys.app. We may ask you to confirm you control the email address on an order.</p>
+<p>Because the apps do not send us your vault or usage data, we hold no such data to give you, correct or delete. Your vault is under your control on your devices.</p>
+<p>You have the right to complain to a data protection supervisory authority, in particular in the country where you live or work. Our lead authority is the President of the Personal Data Protection Office in Poland (Prezes Urzędu Ochrony Danych Osobowych, uodo.gov.pl).</p>
+<h2 id="11-children">11. Children</h2>
+<p>LocalGateKeys is not directed at children under 16, and we do not knowingly sell to them.</p>
+<h2 id="12-security">12. Security</h2>
+<p>We protect the data we hold (order records and support email) with access control and two-factor authentication on the accounts that store it. Licence files and update manifests are signed with keys that are not stored on the servers that publish them.</p>
+<h2 id="13-changes">13. Changes</h2>
+<p>We will post any changes to this policy on this page and update the effective date. If a change affects what the apps send, we will also describe it in the release notes before that version is released.</p>
+<h2 id="14-contact">14. Contact</h2>
+<p>Ilias Pelekas, 05-300 Mińsk Mazowiecki, Poland. Privacy questions: privacy@localgatekeys.app.</p>
+</article>
+  </main>
+</body>
+</html>

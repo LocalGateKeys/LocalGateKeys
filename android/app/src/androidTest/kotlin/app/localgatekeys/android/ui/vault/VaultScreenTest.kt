@@ -1,5 +1,6 @@
 package app.localgatekeys.android.ui.vault
 
+import app.localgatekeys.android.i18n.appTxt
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextEquals
@@ -27,6 +28,7 @@ import app.localgatekeys.core.sync.StoreChange
 import app.localgatekeys.core.sync.StoreSnapshot
 import app.localgatekeys.core.totp.Totp
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -78,7 +80,7 @@ class VaultScreenTest {
     }
 
     @Test fun a_web_login_and_a_two_factor_item_show_the_logins_group_and_the_codes_row() {
-        val model = VaultListModel(store(web, authenticator))
+        val model = VaultListModel(store(web, authenticator), appTxt())
         rule.setContent { LgkTheme { VaultScreen(model, showCodesRow = true, seams = seams) } }
         rule.waitUntil(5_000) { rule.onAllNodesWithTag("vault-row").fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithText("Logins").assertIsDisplayed()
@@ -91,14 +93,14 @@ class VaultScreenTest {
     }
 
     @Test fun the_codes_row_is_hidden_when_the_setting_is_off() {
-        val model = VaultListModel(store(web, authenticator))
+        val model = VaultListModel(store(web, authenticator), appTxt())
         rule.setContent { LgkTheme { VaultScreen(model, showCodesRow = false, seams = seams) } }
         rule.waitUntil(5_000) { rule.onAllNodesWithTag("vault-row").fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithTag("codes-row").assertDoesNotExist()
     }
 
     @Test fun tapping_a_tile_copies_the_code_and_tapping_a_row_opens_the_item() {
-        val model = VaultListModel(store(web))
+        val model = VaultListModel(store(web), appTxt())
         rule.setContent { LgkTheme { VaultScreen(model, showCodesRow = true, seams = seams) } }
         rule.waitUntil(5_000) { rule.onAllNodesWithTag("vault-row").fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithTag("code-tile").performClick()
@@ -108,7 +110,7 @@ class VaultScreenTest {
     }
 
     @Test fun a_long_press_shows_the_quick_actions_and_copy_username_copies() {
-        val model = VaultListModel(store(web))
+        val model = VaultListModel(store(web), appTxt())
         rule.setContent { LgkTheme { VaultScreen(model, showCodesRow = false, seams = seams) } }
         rule.waitUntil(5_000) { rule.onAllNodesWithTag("vault-row").fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithTag("vault-row").performTouchInput { longClick() }
@@ -120,14 +122,29 @@ class VaultScreenTest {
     }
 
     @Test fun an_empty_vault_shows_the_empty_state() {
-        val model = VaultListModel(store())
+        val model = VaultListModel(store(), appTxt())
         rule.setContent { LgkTheme { VaultScreen(model, showCodesRow = true, seams = seams) } }
         rule.waitUntil(5_000) { rule.onAllNodesWithTag("empty-vault").fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithText("No items yet. Tap + to add one.").assertIsDisplayed()
     }
 
+    @Test fun an_empty_vault_offers_import_until_not_now() {
+        val model = VaultListModel(store(), appTxt())
+        var imports = 0
+        var dismissed = false
+        val withCard = seams.copy(showImportCard = { !dismissed }, onImport = { imports++ }, onDismissImportCard = { dismissed = true })
+        rule.setContent { LgkTheme { VaultScreen(model, showCodesRow = true, seams = withCard) } }
+        rule.waitUntil(5_000) { rule.onAllNodesWithTag("import-card").fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("Import your passwords").assertIsDisplayed()
+        rule.onNodeWithTag("import-card-import").performClick()
+        assertEquals(1, imports)
+        rule.onNodeWithTag("import-card-not-now").performClick()
+        assertTrue(dismissed)
+        rule.waitUntil(5_000) { rule.onAllNodesWithTag("import-card").fetchSemanticsNodes().isEmpty() }
+    }
+
     @Test fun search_filters_and_reports_no_matches() {
-        val model = VaultListModel(store(web, authenticator))
+        val model = VaultListModel(store(web, authenticator), appTxt())
         rule.setContent { LgkTheme { SearchScreen(model, seams) } }
         rule.waitUntil(5_000) { rule.onAllNodesWithTag("vault-row").fetchSemanticsNodes().size == 2 }
         rule.onNodeWithTag("search-field").performTextInput("bank")

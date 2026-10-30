@@ -1,13 +1,15 @@
 <script>
   /** Live camera check: a round preview with a progress ring, driven by face.status / face.frame events.
    *  Frames exist only in this page's memory; nothing is saved. */
+  import { t } from '../lib/i18n.svelte.js';
   import { call, on } from '../lib/api.js';
   import Button from './Button.svelte';
 
-  let { title = 'Camera verification', mode = 'verify' } = $props();
+  let { title = undefined, mode = 'verify' } = $props();
+  const heading = $derived(title ?? t('cameraView.title'));
   let image = $state('');
-  let status = $state('Starting camera…');
-  let detail = $state('Nothing is uploaded. No photo or video is saved.');
+  let status = $state(t('cameraView.starting'));
+  let detail = $state(t('cameraView.noUpload'));
   let progress = $state(0);
   let phase = $state('running');
 
@@ -24,9 +26,9 @@
 </script>
 
 <div class="scrim">
-  <div class="card glass" role="dialog" aria-modal="true" aria-label={title}>
-    <h2>{title}</h2>
-    <p class="hint">{mode === 'verify' ? 'Look at the camera.' : 'Look at the camera and slowly move your head a little in a circle.'}</p>
+  <div class="card glass" role="dialog" aria-modal="true" aria-label={heading}>
+    <h2>{heading}</h2>
+    <p class="hint">{mode === 'verify' ? t('cameraView.lookVerify') : t('cameraView.lookEnroll')}</p>
     <div class="preview">
       <svg viewBox="0 0 280 280" aria-hidden="true">
         <circle cx="140" cy="140" r={R} class="track" />
@@ -38,8 +40,8 @@
     <p class="status" role="status">{status}</p>
     <p class="detail">{detail}</p>
     <footer>
-      <Button label="Try another camera" onclick={() => call('face_switch_camera')} disabled={phase !== 'running'} />
-      <Button label="Cancel" onclick={() => call('face_cancel')} />
+      <Button label={t('cameraView.tryAnother')} onclick={() => call('face_switch_camera')} disabled={phase !== 'running'} />
+      <Button label={t('common.cancel')} onclick={() => call('face_cancel')} />
     </footer>
   </div>
 </div>

@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from localvault import face_unlock as face
 from localvault import vault as V
 from localvault.app import unlock_methods
+from localvault.i18n import t
 from localvault.profiles import ProfileError, ProfileManager
 from tests.test_app_unlock_methods import MASTER as APP_MASTER
 from tests.test_app_unlock_methods import env  # noqa: F401 - pytest fixture
@@ -114,7 +115,7 @@ def test_profile_with_camera_unlock_is_not_deleted_until_camera_unlock_is_remove
 
 
 def test_camera_consent_states_the_windows_password_strength() -> None:
-    assert "only as strong as your Windows account password" in unlock_methods.FACE_CONFIRM
+    assert "only as strong as your Windows account password" in t(unlock_methods.FACE_CONFIRM)
 
 
 def test_settings_disable_rotates_and_reports(env) -> None:  # noqa: F811 - the imported fixture

@@ -1,5 +1,6 @@
 package app.localgatekeys.android.editor
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.vault.VaultItem
 import app.localgatekeys.android.vault.s
 import app.localgatekeys.android.vault.snapshot
@@ -35,15 +36,15 @@ class WebsiteInputTest {
 
     @Test fun plain_http_for_a_public_host_follows_canonicalize() {
         // Origin.canonicalize allows plain HTTP only for loopback hosts.
-        assertEquals(WebsiteInputError.Invalid(WebsiteInput.HTTP_MESSAGE), error("HTTP://Example.COM:8080/a"))
+        assertEquals(WebsiteInputError.Invalid(http = true), error("HTTP://Example.COM:8080/a"))
         assertEquals("https://example.com:8080", WebsiteInput.origin("HTTPS://Example.COM:8080/a"))
     }
 
     @Test fun not_a_site_has_a_friendly_error() {
         for (bad in listOf("not a site", "https://", "user@github.com", "ftp://github.com", "git hub.com/x", "github.com:99999", "git hub.com", "a\u0007b.com")) {
-            assertEquals(bad, WebsiteInputError.Invalid(WebsiteInput.INVALID_MESSAGE), error(bad))
+            assertEquals(bad, WebsiteInputError.Invalid(http = false), error(bad))
         }
-        assertEquals("Enter a website like github.com", WebsiteInput.INVALID_MESSAGE)
+        assertEquals("Enter a website like github.com", WebsiteInput.message(WebsiteInputError.Invalid(http = false), EnglishTxt()))
     }
 
     @Test fun empty_website_is_required() {
@@ -75,8 +76,8 @@ class WebsiteInputTest {
         val e = ed(store)
         e.set("label", "Site")
         assertEquals(SaveResult.INVALID, e.save())
-        assertEquals(WebsiteInput.REQUIRED_MESSAGE, e.websiteError)
-        assertEquals("Website is required", WebsiteInput.REQUIRED_MESSAGE)
+        assertEquals(WebsiteInput.message(WebsiteInputError.Required, EnglishTxt()), e.websiteError)
+        assertEquals("Website is required", WebsiteInput.message(WebsiteInputError.Required, EnglishTxt()))
         assertEquals("Check the website.", e.error)
         e.set("origin", "not a site")
         assertNull("editing the field clears its error", e.websiteError)

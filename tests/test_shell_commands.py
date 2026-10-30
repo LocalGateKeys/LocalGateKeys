@@ -42,7 +42,7 @@ def test_unlock_free_commands():
 
 def test_help_group():
     help_titles = {c.title for c in COMMANDS if c.group == "Help"}
-    assert {"Keyboard shortcuts", "Setup guide", "Open error log"} <= help_titles
+    assert {"Keyboard shortcuts", "Show setup", "Open error log"} <= help_titles
 
 
 def test_back_finds_backup_actions_first():

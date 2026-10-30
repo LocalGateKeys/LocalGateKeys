@@ -36,6 +36,7 @@ object SyncRunner {
         now: Long,
         licenseKeys: Map<String, ByteArray> = emptyMap(),
         known: Set<String> = emptySet(),
+        documents: ((AttachmentRef) -> Boolean)? = null,
     ): RunReport {
         val issues = ArrayList<SyncIssue>()
         val local = try {
@@ -54,14 +55,17 @@ object SyncRunner {
             }
             if (kept.size == view.states.size) view else PeerView(view.deviceId, kept)
         }
-        val fold = Engine.fold(local.states, plausible, device) { state -> check(state, licenseKeys) }
+        val fold = Engine.fold(local.states, plausible, device) { state -> check(state, licenseKeys, documents) }
         for (dev in fold.badViews) issues.add(SyncIssue("bad-peer-data", dev))
         for (q in fold.quarantined) {
-            val kind = if (q.reason == "update-needed") "update-needed" else "bad-peer-record"
+            val kind = when (q.reason) {
+                "update-needed", "attachment-missing" -> q.reason
+                else -> "bad-peer-record"
+            }
             issues.add(SyncIssue(kind, "${q.device}:${q.item}"))
         }
         val applied = try {
-            SyncMeta.applyRemote(fold.outcome, store.records, local.meta, device, now, licenseKeys)
+            SyncMeta.applyRemote(fold.outcome, store.records, local.meta, device, now, licenseKeys, documents)
         } catch (e: Exception) {
             issues.add(SyncIssue("apply-failed", (e.message ?: e.toString())))
             return RunReport(
@@ -93,7 +97,7 @@ object SyncRunner {
      * The bridge's refusal for a state the fold wants to store, or null (plays the desktop per-record apply check,
      * `vault_bridge.check_remote_state`; phone restore uses it to leave unreadable backup states out before the free cap).
      */
-    fun check(state: ItemState, licenseKeys: Map<String, ByteArray>): String? {
+    fun check(state: ItemState, licenseKeys: Map<String, ByteArray>, documents: ((AttachmentRef) -> Boolean)? = null): String? {
         if (state.deleted) return null
         val item = state.item ?: return null
         val isCopy: Boolean
@@ -106,7 +110,7 @@ object SyncRunner {
             isCopy = false
         }
         return try {
-            Wrapper.unwrap(state, isCopy, licenseKeys)
+            Wrapper.unwrap(state, isCopy, licenseKeys, documents)
             null
         } catch (e: RecordException) {
             e.reason ?: "bad-remote"

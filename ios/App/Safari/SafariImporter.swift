@@ -1,6 +1,10 @@
 import Foundation
 import Observation
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 /// What one Safari import did, for the notice.
 struct SafariImportResult: Equatable, Sendable {
@@ -20,10 +24,10 @@ struct SafariImportResult: Equatable, Sendable {
     /// 1 could not be imported"; nil when there is nothing to say.
     var notice: String? {
         var parts: [String] = []
-        if saved > 0 { parts.append(saved == 1 ? "1 login saved from Safari" : "\(saved) logins saved from Safari") }
-        if waiting > 0 { parts.append("\(waiting) waiting: upgrade to Pro to import") }
-        if damaged > 0 { parts.append("\(damaged) could not be read") }
-        if kept > 0 { parts.append("\(kept) could not be imported") }
+        if saved > 0 { parts.append(String(localized: "\(saved) logins saved from Safari")) }
+        if waiting > 0 { parts.append(String(localized: "\(waiting) waiting: upgrade to Pro to import")) }
+        if damaged > 0 { parts.append(String(localized: "\(damaged) could not be read")) }
+        if kept > 0 { parts.append(String(localized: "\(kept) could not be imported")) }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 }
@@ -44,6 +48,22 @@ struct SafariPendingSave: Identifiable, Equatable, Sendable {
     let username: String
     let change: Change
     let capturedAt: Int64
+}
+
+/// The review sheet's words, shared by the iPhone sheet (`SafariReviewSheet`) and the Mac one
+/// (`MacSafariReviewSheet`), so both ask the same question.
+enum SafariReviewCopy {
+    static let title = String(localized: "Save from Safari?")
+    static let footer = String(localized: "Saved from Safari since you last opened LocalGateKeys. Only the logins you keep selected are saved; the others are deleted.")
+    static let later = String(localized: "Decide later")
+    static let deleteAll = String(localized: "Delete all")
+    static func save(_ count: Int) -> String { count == 0 ? deleteAll : String(localized: "Save \(count)") }
+
+    /// "New login · https://accounts.example.com" or "Updates the saved password · ...": the full origin, so a
+    /// look-alike host is visible.
+    static func detail(_ item: SafariPendingSave) -> String {
+        (item.change == .new ? String(localized: "New login") : String(localized: "Updates the saved password")) + " \u{00B7} " + item.origin
+    }
 }
 
 /// Moves the logins the Safari extension saved (`SafariInbox`) into the vault, as the desktop's `upsert_web`
@@ -67,7 +87,7 @@ struct SafariImporter: Sendable {
     let isPro: Bool
     let random: any RandomSource
 
-    static let historyLimit = 5
+    static let historyLimit = VaultImporter.historyLimit
 
     init(store: any ItemStore, inbox: SafariInbox, clock: any UnixClock, isPro: Bool,
          random: any RandomSource = SystemRandomSource()) {
@@ -146,13 +166,7 @@ struct SafariImporter: Sendable {
                case .object(let wrapper)? = plan.snapshot.records[id], case .object(let stored)? = wrapper["record"] {
                 let old = stored["password"]?.stringValue ?? ""
                 if old.utf8.elementsEqual(entry.password.utf8) { plan.done.append(entry.id); continue }
-                var record = stored
-                var history = record["password_history"]?.arrayValue ?? []
-                history.insert(.object(["password": .string(old), "changed_at": .int(now)]), at: 0)
-                record["password_history"] = .array(Array(history.prefix(Self.historyLimit)))
-                record["password"] = .string(entry.password)
-                record["updated_at"] = .int(now)
-                if case .int(let created)? = record["created_at"], created > now { record["created_at"] = .int(now) }
+                let record = VaultImporter.withNewPassword(stored, entry.password, at: now)
                 if Self.put(record, for: entry, isNew: false, into: &plan) { continue }
                 // Refused, most likely because of the stored login (fields a newer desktop wrote): this entry
                 // may be the only copy of the new password, so it is never deleted. Retry with only the
@@ -176,27 +190,17 @@ struct SafariImporter: Sendable {
         return plan
     }
 
-    /// The live web login with this canonical origin and exactly this username (desktop `_web_login_match`).
-    /// Deleted items are not matched, so an update whose login was deleted becomes a new login.
+    /// The live web login with this canonical origin and exactly this username (`VaultImporter.match`).
     static func match(origin: String, username: String, in snapshot: StoreSnapshot) -> String? {
-        for id in snapshot.records.keys.sorted() where snapshot.meta[id]?.deleted != true {
-            guard case .object(let w)? = snapshot.records[id], w["ns"] == .string(Namespace.entry.rawValue),
-                  case .object(let r)? = w["record"], r["kind"] == .string("web"),
-                  case .string(let raw)? = r["scope"]?.objectValue?["origin"],
-                  let canonical = try? Origin.canonicalize(raw), canonical.utf8.elementsEqual(origin.utf8),
-                  case .string(let user)? = r["username"], user.utf8.elementsEqual(username.utf8) else { continue }
-            return id
-        }
-        return nil
+        VaultImporter.match(origin: origin, username: username, in: snapshot)
     }
 
     /// Normalises and wraps the record as the editor does. false when `Normalise` refuses it (nothing is
     /// changed then; the caller decides what happens to the entry).
     private static func put(_ record: [String: JSONValue], for entry: SafariInboxEntry, isNew: Bool, into plan: inout Plan) -> Bool {
-        guard let normal = try? Normalise.normalForm(ns: .entry, record: .object(record)),
-              case .object(let o) = normal, case .string(let id)? = o["id"] else { return false }
-        if isNew, plan.snapshot.records[id] != nil { return true }   // a random id collision: try again next run
-        plan.snapshot.records[id] = Wrapper.make(ns: .entry, record: normal)
+        // A random id collision: try again next run.
+        if isNew, case .string(let raw)? = record["id"], plan.snapshot.records[raw] != nil { return true }
+        guard let id = VaultImporter.put(record, ns: .entry, into: &plan.snapshot) else { return false }
         plan.saved.insert(id)
         plan.done.append(entry.id)
         plan.changed = true
@@ -234,9 +238,13 @@ final class SafariImportModel {
          directory: @escaping @Sendable () throws -> URL = { try SafariSaveFiles.directory() },
          show: (@MainActor (String) -> Void)? = nil) {
         self.clock = clock
-        self.background = background ?? UIKitBackgroundTasks()
+        self.background = background ?? PlatformBackgroundTasks.make()
         self.directory = directory
+        #if os(macOS)
+        self.show = show ?? { _ in }   // the Mac window shows the notice itself (MacSafariImport)
+        #else
         self.show = show ?? { CopyToast.shared.show($0, for: SafariImportModel.noticeDuration) }
+        #endif
     }
 
     /// Set once `afterUnlock` has finished for the current unlock (Pro re-read, index published, first

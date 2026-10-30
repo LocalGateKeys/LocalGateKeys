@@ -196,6 +196,7 @@ final class EditorAndLimitTests: XCTestCase {
         let n = editor(store, pro(), kind: .note)
         n.set("title", ""); n.set("body", "x")
         XCTAssertEqual(n.save(), .invalid, "the desktop refuses an empty title")
+        XCTAssertEqual(n.error, "Title can't be empty")
         XCTAssertEqual(ItemLimit.liveCount(store.snapshot), 1)
         guard case .object(let w)? = store.snapshot.records.values.first, case .object(let r)? = w["record"],
               case .object(let pl)? = r["payload"] else { return XCTFail() }
@@ -358,5 +359,13 @@ final class ProOutcomeTests: XCTestCase {
         fake.purchaseResult = .cancelled
         await p.buy()
         XCTAssertNil(p.message)
+    }
+
+    func testErrorsNameTheFieldTheScreenShows() {
+        XCTAssertEqual(EditorKind.web.friendlyError("label cannot be empty"), "Title can't be empty")
+        XCTAssertEqual(EditorKind.note.friendlyError("title cannot be empty"), "Title can't be empty")
+        XCTAssertEqual(EditorKind.web.friendlyError("origin is too long"), "Website is too long")
+        XCTAssertEqual(EditorKind.note.friendlyError("item title cannot be empty"), "Title can't be empty")
+        XCTAssertEqual(EditorKind.web.friendlyError("something else"), "something else")
     }
 }

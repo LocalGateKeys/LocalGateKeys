@@ -7,6 +7,7 @@ import LoginEditor from '../components/LoginEditor.svelte';
 import Generator from '../components/Generator.svelte';
 import Palette from '../components/Palette.svelte';
 import NewItem from '../components/NewItem.svelte';
+import Label from '../test/Label.svelte';
 import { ALPHA, NOTE, UNLOCKED, emit, fakeApi } from '../test/fakeApi.js';
 
 afterEach(() => { delete window.pywebview; vi.useRealTimers(); });
@@ -38,11 +39,48 @@ describe('Home list and sidebar', () => {
 
   it('shows the empty state and its action clears filters', async () => {
     api.items_list.mockResolvedValue({ ok: true, items: [], count: 0, chips: { attention: 0, no2fa: 0, expiring: 0 },
-      context: { title: 'All items', text: '' }, empty: { title: 'No matching items', text: 'Try another name, username or tag, or clear your filters.', action: 'Clear filters' } });
+      context: { title: 'All items', text: '' }, empty: { title: 'No matching items', text: 'Try another name, username or tag, or clear your filters.', action: 'Clear filters', action_id: 'clear_filters' } });
     render(Home, { vault: UNLOCKED });
     expect(await screen.findByText('No matching items')).toBeInTheDocument();
     await fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
     await waitFor(() => expect(api.items_list).toHaveBeenLastCalledWith(null, null, ''));
+  });
+
+  it('acts on the empty state action id, whatever language its text is in', async () => {
+    api.items_list.mockResolvedValue({ ok: true, items: [], count: 0, chips: { attention: 0, no2fa: 0, expiring: 0 },
+      context: { title: 'All items', text: '' }, empty: { title: 'Keine Treffer', text: '', action: 'Filter löschen', action_id: 'clear_filters' } });
+    render(Home, { vault: UNLOCKED });
+    await fireEvent.click(await screen.findByRole('button', { name: 'Filter löschen' }));
+    await waitFor(() => expect(api.items_list).toHaveBeenLastCalledWith(null, null, ''));
+  });
+
+  it('shows the import card on an empty vault; Import opens the import page, Not now hides it', async () => {
+    const empty = { ok: true, items: [], count: 0, chips: { attention: 0, no2fa: 0, expiring: 0 },
+      context: { title: 'All items', text: '' }, empty: { title: 'No items yet', text: '', action: 'New item', action_id: 'new_item' } };
+    api.items_list.mockResolvedValue({ ...empty, import_card: true });
+    render(Home, { vault: UNLOCKED });
+    const card = await screen.findByRole('region', { name: 'Import your passwords' });
+    expect(within(card).getByText('Bring your logins over from another password manager or browser.')).toBeInTheDocument();
+    await fireEvent.click(within(card).getByRole('button', { name: 'Not now' }));
+    await waitFor(() => expect(api.import_card_dismiss).toHaveBeenCalled());
+    api.items_list.mockResolvedValue({ ...empty, import_card: false });
+    emit('items.changed', {});
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Import your passwords' })).not.toBeInTheDocument());
+  });
+
+  it('the import card button opens the import page', async () => {
+    api.items_list.mockResolvedValue({ ok: true, items: [], count: 0, chips: { attention: 0, no2fa: 0, expiring: 0 },
+      context: { title: 'All items', text: '' }, empty: null, import_card: true });
+    render(Home, { vault: UNLOCKED });
+    const card = await screen.findByRole('region', { name: 'Import your passwords' });
+    await fireEvent.click(within(card).getByRole('button', { name: 'Import' }));
+    expect(await screen.findByText('Import passwords and items')).toBeInTheDocument();
+  });
+
+  it('hides the import card when the list has items', async () => {
+    render(Home, { vault: UNLOCKED });
+    await screen.findByRole('option', { name: /Alpha/ });
+    expect(screen.queryByRole('region', { name: 'Import your passwords' })).not.toBeInTheDocument();
   });
 
   it('moves the selection with the keyboard and loads the detail', async () => {
@@ -62,6 +100,18 @@ describe('Home list and sidebar', () => {
     emit('autolock.tick', { remaining: 60 });
     expect(await screen.findByText('Auto-lock in 1:00')).toBeInTheDocument();
     expect(screen.getByText('Clipboard clears in 9s')).toBeInTheDocument();
+  });
+
+  it('changes the sort and hides it while searching', async () => {
+    render(Home, { vault: UNLOCKED });
+    await screen.findByRole('option', { name: /Alpha/ });
+    await fireEvent.change(screen.getByRole('combobox', { name: 'Sort by' }), { target: { value: 'title_desc' } });
+    await waitFor(() => expect(api.items_sort_set).toHaveBeenLastCalledWith('title_desc', true));
+    await fireEvent.click(screen.getByRole('checkbox', { name: 'Favorites first' }));
+    await waitFor(() => expect(api.items_sort_set).toHaveBeenLastCalledWith('title_asc', false));
+    await fireEvent.input(screen.getByRole('searchbox'), { target: { value: 'alp' } });
+    expect(await screen.findByText('Best matches first')).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Sort by' })).not.toBeInTheDocument();
   });
 
   it('reloads the list on items.changed', async () => {
@@ -284,5 +334,16 @@ describe('CodesCard', () => {
     expect(screen.queryByText('Site 5')).toBeNull();
     await fireEvent.click(screen.getByRole('button', { name: 'Show all 6' }));
     expect(screen.getByText('Site 6')).toBeInTheDocument();
+  });
+});
+
+describe('Live language switch', () => {
+  it('re-renders a translated label when language_changed fires', async () => {
+    const api = fakeApi({ i18n_bundle: vi.fn().mockResolvedValue({ ok: true, lang: 'de', messages: { 'settings.language.label': 'Sprache' } }) });
+    render(Label);
+    expect(screen.getByTestId('label')).toHaveTextContent('Language');
+    emit('language_changed', { lang: 'de' });
+    await waitFor(() => expect(screen.getByTestId('label')).toHaveTextContent('Sprache'));
+    expect(api.i18n_bundle).toHaveBeenCalled();
   });
 });

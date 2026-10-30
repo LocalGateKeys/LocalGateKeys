@@ -125,7 +125,9 @@ def test_1pux_fixture_applies_typed_items_and_collections(session, workdir: Path
     assert mail["password"] == "1p-login-pass-7Q" and mail["totp"]["secret"] == "JBSWY3DPEHPK3PXP"
     assert "Personal" in mail["tags"]
     urls = session.items.web_urls(mail["id"])
-    assert [row["url"] for row in urls] == ["https://mail.example.com", "https://webmail.example.com"]
+    assert [row["url"] for row in urls] == ["https://mail.example.com", "https://webmail.example.com",
+                                           "https://mail.example.com/login"]
+    assert [row["match"] for row in urls] == ["exact_origin", "exact_origin", "starts_with"]
     assert session.find_web("https://forum.example.net")[0]["password"] == "archived-pass-1"
     items = _items(session)
     card = items["Travel Visa"]
@@ -168,7 +170,8 @@ def test_bitwarden_json_fixture(session):
 
     plan = plan_records(session, result.records, diagnostics=result.diagnostics)
     git_row = next(row for row in plan.rows if row.label == "Example Git")
-    assert [row["url"] for row in git_row.web_urls] == ["https://git.example.com", "https://sso.example.com"]
+    assert [row["url"] for row in git_row.web_urls] == ["https://git.example.com", "https://sso.example.com",
+                                                       "https://git.example.com/login"]
     plan.review()
     apply_import_plan(session, plan)
     entry = session.find_web("https://git.example.com")[0]

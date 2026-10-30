@@ -3,7 +3,19 @@ import ImageIO
 import UniformTypeIdentifiers
 import CryptoKit
 import Darwin
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
+
+#if os(macOS)
+import AppKit
+typealias PlatformImage = NSImage
+#else
+import UIKit
+typealias PlatformImage = UIImage
+#endif
 
 /// Website icons for the vault (desktop `item_icons` limits). Off by default (Settings › Show website icons):
 /// each download asks only `https://<host>/…` for the site's icon and sends nothing else, but it tells that
@@ -23,7 +35,7 @@ final class SiteIconStore {
     nonisolated static let freshFor: TimeInterval = 30 * 86_400
     nonisolated static let retryFailureAfter: TimeInterval = 86_400
 
-    private(set) var images: [String: UIImage] = [:]
+    private(set) var images: [String: PlatformImage] = [:]
     @ObservationIgnored private var failed: [String: Date] = [:]
     @ObservationIgnored private var inFlight: Set<String> = []
     @ObservationIgnored private var queue: [String] = []
@@ -43,7 +55,7 @@ final class SiteIconStore {
     }
 
     /// The icon for a host, if it is loaded. Safe to call while a view draws (changes nothing).
-    func image(for host: String) -> UIImage? {
+    func image(for host: String) -> PlatformImage? {
         guard settings.showWebsiteIcons, let host = Self.eligibleHost(host) else { return nil }
         return images[host]
     }
@@ -80,7 +92,7 @@ final class SiteIconStore {
         for path in ["/apple-touch-icon.png", "/favicon.ico"] {
             guard let url = URL(string: "https://\(host)\(path)") else { continue }
             guard let data = try? await fetch(url), let png = Self.normalized(data) else { continue }
-            guard settings.showWebsiteIcons, let image = UIImage(data: png) else { return }
+            guard settings.showWebsiteIcons, let image = PlatformImage(data: png) else { return }
             save(png, for: host)
             images[host] = image
             return
@@ -95,7 +107,7 @@ final class SiteIconStore {
         return directory?.appendingPathComponent(name + ".png")
     }
 
-    private func loadCached(_ host: String) -> UIImage? {
+    private func loadCached(_ host: String) -> PlatformImage? {
         guard let url = file(host),
               let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
               let modified = attrs[.modificationDate] as? Date,
@@ -103,7 +115,7 @@ final class SiteIconStore {
               let data = try? Data(contentsOf: url) else { return nil }
         // Icons cached by an earlier build were written with the weaker class: raise it (see `save`).
         try? FileManager.default.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: url.path)
-        return UIImage(data: data)
+        return PlatformImage(data: data)
     }
 
     /// `complete` protection (audit 2026-10-24 L-8): the list of sites with an account here is unreadable while
@@ -275,6 +287,7 @@ enum SiteIconAddress {
 }
 
 /// The square at the start of a row: the site's icon when there is one, else the kind's symbol.
+#if os(iOS)
 struct ItemAvatar: View {
     let item: VaultItem
     var size: CGFloat = 42
@@ -308,6 +321,7 @@ struct ItemAvatar: View {
         .task(id: item.iconHost) { if let host = item.iconHost { store.request(host) } }
     }
 }
+#endif
 
 extension VaultItem {
     /// The host whose icon a row shows: web logins, bookmarks and passkeys.

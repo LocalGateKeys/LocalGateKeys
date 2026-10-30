@@ -2,6 +2,7 @@
   /** Licence: status, paste a key or open a licence file, remove. Offline; no account. */
   import ErrorLogLink from './ErrorLogLink.svelte';
   import { call } from '../lib/api.js';
+  import { t } from '../lib/i18n.svelte.js';
   import { okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
 
@@ -13,7 +14,7 @@
 
   async function load() {
     const result = await call('licence_view');
-    if (okOrToast(result, 'Could not open Licence')) data = result;
+    if (okOrToast(result, t('licencePage.openFailed'))) data = result;
   }
   $effect(() => { load(); });
 
@@ -27,25 +28,25 @@
   }
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label="Licence">
+<div class="sheet glass" role="dialog" aria-label={t('licencePage.title')}>
   <header>
-    <h2>Licence</h2>
-    <button class="close" aria-label="Close" onclick={onclose}>✕</button>
+    <h2>{t('licencePage.title')}</h2>
+    <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
   {#if data}
     <div class="group card">
       <h3 class:warn={data.warning}>{data.headline}</h3>
       {#each data.details as line (line)}<p class="muted">{line}</p>{/each}
     </div>
-    <div class="section-label">Paste your licence key</div>
-    <textarea aria-label="Paste your licence key" bind:value={key} placeholder="LGK1-…" spellcheck="false"></textarea>
+    <div class="section-label">{t('licencePage.pasteKey')}</div>
+    <textarea aria-label={t('licencePage.pasteKey')} bind:value={key} placeholder="LGK1-…" spellcheck="false"></textarea>
     {#if error}<p class="error" role="alert">{error}<ErrorLogLink text={error} /></p>{/if}
     <footer>
-      {#if data.can_remove}<Button label="Remove licence" variant="danger" onclick={() => run('licence_remove')} />{/if}
+      {#if data.can_remove}<Button label={t('licencePage.remove')} variant="danger" onclick={() => run('licence_remove')} />{/if}
       <span class="spacer"></span>
-      <Button label="Open file…" onclick={() => run('licence_install_file')} />
-      {#if data.purchase_url}<Button label="Buy Pro" onclick={() => call('system_open_url', data.purchase_url)} />{/if}
-      <Button label="Install" variant="primary" busy={busy} busyLabel="Checking…" disabled={!key.trim()} onclick={() => run('licence_install', key)} />
+      <Button label={t('licencePage.openFile')} onclick={() => run('licence_install_file')} />
+      {#if data.purchase_url}<Button label={t('licencePage.buy')} onclick={() => call('system_open_url', data.purchase_url)} />{/if}
+      <Button label={t('licencePage.install')} variant="primary" busy={busy} busyLabel={t('licencePage.checking')} disabled={!key.trim()} onclick={() => run('licence_install', key)} />
     </footer>
   {/if}
 </div>

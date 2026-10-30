@@ -1,5 +1,7 @@
 package app.localgatekeys.android.ui.pro
 
+import app.localgatekeys.android.i18n.appTxt
+import app.localgatekeys.android.i18n.AndroidTxt
 import android.os.Build
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -63,6 +65,7 @@ class UpgradeSheetTest {
             return PurchaseOutcome.PURCHASED
         }
         override suspend fun restore() = entitled
+        override suspend fun purchaseToken(): String? = null
         override fun entitlementChanges(): Flow<Unit> = emptyFlow()
     }
 
@@ -118,7 +121,7 @@ class UpgradeSheetTest {
     }
 
     private fun show(store: Store, pro: ProModel) {
-        val model = VaultListModel(store, onLoad = pro::update)
+        val model = VaultListModel(store, appTxt(), onLoad = pro::update)
         val seams = VaultSeams(clipboard = Copier { _, _ -> }, isPro = { pro.isPro }, clock = clock)
         rule.setContent {
             LgkTheme { RootScaffold(model, settings, seams, DetailSeams(clipboard, toast), EditorSeams(store, Counting()), pro = pro) }
@@ -129,7 +132,7 @@ class UpgradeSheetTest {
     @Test fun a_full_free_plan_opens_the_sheet_and_buying_opens_the_editor() {
         val store = Store(StoreSnapshot(records(note(0), note(1), note(2), note(3))))
         val play = FakePurchases()
-        val pro = ProModel(play, emptyMap())
+        val pro = ProModel(play, emptyMap(), txt = AndroidTxt(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.resources))
         show(store, pro)
         rule.onNodeWithContentDescription("New item").performClick()
         rule.onNodeWithText("Payment card").performClick()
@@ -156,7 +159,7 @@ class UpgradeSheetTest {
     @Test fun no_product_says_not_available_and_disables_buy_and_close_returns() {
         val store = Store(StoreSnapshot(records(note(0), note(1), note(2), note(3))))
         val play = FakePurchases(ProOffer.Unavailable)
-        show(store, ProModel(play, emptyMap()))
+        show(store, ProModel(play, emptyMap(), txt = AndroidTxt(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.resources)))
         rule.onNodeWithContentDescription("New item").performClick()
         rule.onNodeWithText("Payment card").performClick()
         rule.waitUntil(5_000) { rule.onAllNodesWithText("Pro isn't available yet").fetchSemanticsNodes().isNotEmpty() }
@@ -171,7 +174,7 @@ class UpgradeSheetTest {
 
     @Test fun adding_a_two_factor_code_without_pro_opens_the_sheet_over_the_editor() {
         val store = Store(StoreSnapshot(records(web)))
-        val pro = ProModel(FakePurchases(), emptyMap())
+        val pro = ProModel(FakePurchases(), emptyMap(), txt = AndroidTxt(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.resources))
         show(store, pro)
         rule.onNodeWithTag("vault-row").performClick()
         rule.onNodeWithText("Edit").performClick()

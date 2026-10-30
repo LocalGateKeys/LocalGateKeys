@@ -13,7 +13,8 @@ const { createPage } = require("./helpers.cjs");
 
 const ROOT = path.join(__dirname, "..", "..");
 const EXT = path.join(ROOT, "browser-extension");
-const RESOURCES = path.join(ROOT, "ios", "SafariSave", "Resources");
+const RESOURCES_IOS = path.join(ROOT, "ios", "SafariSave", "Resources");
+const RESOURCES_MAC = path.join(ROOT, "ios", "SafariMac", "Resources");
 const BUILD = path.join(EXT, "build-safari-extension.cjs");
 const loadBuild = () => require(BUILD);
 const readSource = name => fs.readFileSync(path.join(EXT, name), "utf8");
@@ -28,25 +29,41 @@ const ORIGIN = "https://example.test";
 
 // ---- generated resources and manifest
 
-test("committed Safari resources match a fresh build", () => {
+for (const [platform, RESOURCES] of [["ios", RESOURCES_IOS], ["macos", RESOURCES_MAC]]) test(`committed Safari resources (${platform}) match a fresh build`, () => {
   const { build } = loadBuild();
   const out = fs.mkdtempSync(path.join(os.tmpdir(), "lgk-safari-"));
   try {
-    build(out);
+    build(out, platform);
     const fresh = fs.readdirSync(out).sort();
     assert.deepEqual(fs.readdirSync(RESOURCES).sort(), fresh, "same file list");
-    for (const name of fresh) {
+    const files = dir => fs.readdirSync(dir, { recursive: true, withFileTypes: true }).filter(e => e.isFile()).map(e => path.relative(dir, path.join(e.parentPath, e.name))).sort();
+    assert.deepEqual(files(RESOURCES), files(out), "same file tree");
+    for (const name of files(out)) {
       assert.ok(fs.readFileSync(path.join(RESOURCES, name)).equals(fs.readFileSync(path.join(out, name))), `${name} differs: run npm run build:safari`);
     }
     // Deterministic: a second build is byte-identical.
     const again = fs.mkdtempSync(path.join(os.tmpdir(), "lgk-safari-"));
     try {
-      build(again);
-      for (const name of fresh) assert.ok(fs.readFileSync(path.join(again, name)).equals(fs.readFileSync(path.join(out, name))), name);
+      build(again, platform);
+      for (const name of files(out)) assert.ok(fs.readFileSync(path.join(again, name)).equals(fs.readFileSync(path.join(out, name))), name);
     } finally { fs.rmSync(again, { recursive: true, force: true }); }
   } finally {
     fs.rmSync(out, { recursive: true, force: true });
   }
+});
+
+test("macOS manifest equals the iPhone one except for the description", () => {
+  const { safariManifest } = loadBuild();
+  const source = JSON.parse(readSource("manifest.json"));
+  const ios = safariManifest(source, "ios");
+  const mac = safariManifest(source, "macos");
+  assert.match(ios.description, /^__MSG_ext_description_ios__$/);
+  assert.match(mac.description, /^__MSG_ext_description_macos__$/);
+  const en = require("./i18n-stub.cjs").MESSAGES;
+  assert.match(en.ext_description_ios.message, /iPhone/);
+  assert.match(en.ext_description_macos.message, /on this Mac\.$/);
+  assert.deepEqual({ ...mac, description: "" }, { ...ios, description: "" });
+  assert.throws(() => safariManifest(source, "windows"));
 });
 
 test("safari manifest drops Chromium-only keys and keeps only storage and nativeMessaging", () => {
@@ -69,15 +86,16 @@ test("safari manifest drops Chromium-only keys and keeps only storage and native
   assert.equal(cs.all_frames, true);
   assert.equal(cs.run_at, "document_idle");
   assert.deepEqual(cs.matches, ["http://*/*", "https://*/*"]);
-  assert.doesNotMatch(m.description, /Windows|PC/);
+  assert.doesNotMatch(require("./i18n-stub.cjs").MESSAGES.ext_description_ios.message, /Windows|PC/);
   assert.equal(source.key !== undefined && source.background.service_worker, "background.js", "input not mutated");
   const referenced = new Set([...m.background.scripts, ...cs.js]);
   for (const file of referenced) assert.ok(SAFARI_FILES.includes(file), file);
   for (const file of SAFARI_FILES) assert.ok(referenced.has(file), `${file} is not loaded`);
-  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(RESOURCES, "manifest.json"), "utf8")), m);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(RESOURCES_IOS, "manifest.json"), "utf8")), m);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(RESOURCES_MAC, "manifest.json"), "utf8")), safariManifest(source, "macos"));
 });
 
-test("shared scripts are byte-identical to browser-extension/", () => {
+for (const RESOURCES of [RESOURCES_IOS, RESOURCES_MAC]) test(`shared scripts are byte-identical to browser-extension/ (${path.basename(path.dirname(RESOURCES))})`, () => {
   const { SAFARI_FILES } = loadBuild();
   assert.deepEqual([...SAFARI_FILES].sort(), ["api.js", "background-safari.js", "content.js", "heuristics.js", "login-safety.js"]);
   for (const name of SAFARI_FILES) {
@@ -87,7 +105,7 @@ test("shared scripts are byte-identical to browser-extension/", () => {
   for (const name of Object.values(SAFARI_ICONS)) {
     assert.ok(fs.readFileSync(path.join(RESOURCES, name)).equals(fs.readFileSync(path.join(EXT, "icons", name))), name);
   }
-  assert.deepEqual(fs.readdirSync(RESOURCES).sort(), [...SAFARI_FILES, ...Object.values(SAFARI_ICONS), "manifest.json"].sort(), "nothing else ships");
+  assert.deepEqual(fs.readdirSync(RESOURCES).sort(), [...SAFARI_FILES, ...Object.values(SAFARI_ICONS), "manifest.json", "_locales"].sort(), "nothing else ships");
   assert.equal(fs.existsSync(path.join(RESOURCES, "background.js")), false, "no desktop background");
   assert.equal(fs.existsSync(path.join(RESOURCES, "popup.html")), false, "no popup");
 });
@@ -102,6 +120,7 @@ function safariHarness({ native = () => ({ status: "new" }), startClock = 1_700_
   const calls = [], nudges = [], listeners = {};
   class FakeDate extends Date { static now() { return clock.now; } }
   const ns = {
+    i18n: { getMessage: require("./i18n-stub.cjs").getMessage },
     runtime: {
       id,
       getManifest: () => ({ version: "0.4.2" }),
@@ -436,6 +455,7 @@ test("desktop background status has no features key", async () => {
   let listener; const calls = [];
   const id = "testextension";
   const ns = {
+    i18n: { getMessage: require("./i18n-stub.cjs").getMessage },
     runtime: {
       id, getManifest: () => ({ version: "0.4.2", permissions: [] }), getURL: p => `chrome-extension://${id}/${p}`,
       onMessage: { addListener: f => { listener = f; } },

@@ -14,6 +14,7 @@ import app.localgatekeys.core.primitives.Base64Exception
 import app.localgatekeys.core.primitives.Base64Std
 import app.localgatekeys.core.primitives.CryptoBox
 import app.localgatekeys.core.primitives.CryptoBoxException
+import app.localgatekeys.core.primitives.Identifier
 import app.localgatekeys.core.primitives.RandomSource
 import app.localgatekeys.core.primitives.Scalars
 import app.localgatekeys.core.records.SyncMeta
@@ -564,7 +565,7 @@ class LocalStore private constructor(
         )
 
         internal fun encodeSync(s: SyncGroupState): JsonValue = JsonValue.Obj(
-            mapOf(
+            linkedMapOf(
                 "group_id" to JsonValue.Str(s.groupId), "epoch" to JsonValue.Int(s.epoch), "key" to b64(s.key),
                 "device_id" to JsonValue.Str(s.identity.deviceId), "signing" to b64(s.identity.signingPrivateKey),
                 "exchange" to b64(s.identity.exchangePrivateKey), "install_id" to JsonValue.Str(s.installId),
@@ -575,8 +576,30 @@ class LocalStore private constructor(
                 "keyring" to (s.keyring?.let { b64(it) } ?: JsonValue.Null), "own_counter" to JsonValue.Int(s.ownCounter),
                 // Pinned view signing keys (audit M-7), the iPhone's LocalStore JSON.
                 "view_signers" to JsonValue.Obj(s.viewSigners.mapValues { JsonValue.Str(it.value) }),
-            ),
+            ).also { o ->
+                // Rollback witnesses (2026-10-29, desktop `SyncGroupState`): written only when not default.
+                if (s.peerGenerations.isNotEmpty()) o["peer_generations"] = ints(s.peerGenerations)
+                if (s.rollbackSuspected != 0L) o["rollback_suspected"] = JsonValue.Int(s.rollbackSuspected)
+                if (s.witnessPeers.isNotEmpty()) o["witness_peers"] = JsonValue.Arr(s.witnessPeers.map { JsonValue.Str(it) })
+                if (s.witnessCounters.isNotEmpty()) o["witness_counters"] = ints(s.witnessCounters)
+                if (s.generationOffset != 0L) o["generation_offset"] = JsonValue.Int(s.generationOffset)
+                // Per-peer last sync times (UX workstream 6, local only): written only when known.
+                if (s.peerSyncedAt.isNotEmpty()) o["peer_synced_at"] = ints(s.peerSyncedAt)
+                // Wi-Fi peers that take documents (attachment sync, 2026-10-29): written only when not empty.
+                if (s.attachmentPeers.isNotEmpty()) o["attachment_peers"] = JsonValue.Arr(s.attachmentPeers.map { JsonValue.Str(it) })
+            },
         )
+
+        private const val MAX_INT53: Long = (1L shl 53) - 1
+        private const val MAX_WITNESS_PEERS = 64
+
+        /** A witness map (absent: empty): at most 64 valid ids, each an int 0..2**53-1. */
+        private fun witnessInts(f: Fields, k: String): Map<String, Long> {
+            if (!f.o.containsKey(k)) return emptyMap()
+            val m = f.ints(k)
+            if (m.size > MAX_WITNESS_PEERS || m.any { (d, g) -> !Identifier.isValid(d) || g !in 0..MAX_INT53 }) throw corrupt(k)
+            return m.toSortedMap()
+        }
 
         private class Fields(v: JsonValue) {
             val o: Map<String, JsonValue> = (v as? JsonValue.Obj)?.fields ?: throw corrupt("state")
@@ -621,7 +644,31 @@ class LocalStore private constructor(
                 keyring = if (f.o["keyring"] == JsonValue.Null) null else f.bytes("keyring"),
                 ownCounter = f.int("own_counter"),
                 viewSigners = signers,
+                peerGenerations = witnessInts(f, "peer_generations"),
+                rollbackSuspected = optWitnessInt(f, "rollback_suspected"),
+                witnessPeers = witnessPeers(f, "witness_peers"),
+                witnessCounters = witnessInts(f, "witness_counters"),
+                generationOffset = optWitnessInt(f, "generation_offset"),
+                peerSyncedAt = witnessInts(f, "peer_synced_at"),
+                attachmentPeers = witnessPeers(f, "attachment_peers"),
             )
+        }
+
+        private fun optWitnessInt(f: Fields, k: String): Long {
+            if (!f.o.containsKey(k)) return 0
+            val v = f.int(k)
+            if (v !in 0..MAX_INT53) throw corrupt(k)
+            return v
+        }
+
+        private fun witnessPeers(f: Fields, k: String): List<String> {
+            if (!f.o.containsKey(k)) return emptyList()
+            val items = (f.o[k] as? JsonValue.Arr)?.items ?: throw corrupt(k)
+            val ids = items.map { (it as? JsonValue.Str)?.v ?: throw corrupt(k) }
+            if (ids.size > MAX_WITNESS_PEERS || ids.toSet().size != ids.size || !ids.all { Identifier.isValid(it) }) {
+                throw corrupt(k)
+            }
+            return ids.sorted()
         }
     }
 }

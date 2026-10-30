@@ -1,0 +1,81 @@
+{
+  "format": "bitwarden",
+  "input": "tests/fixtures/imports/bitwarden.csv",
+  "python_format": "bitwarden-csv",
+  "result": {
+    "diagnostics": [],
+    "records": [
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Team",
+            "value": "Platform"
+          },
+          {
+            "hidden": false,
+            "name": "Recovery code",
+            "value": "rc-0000-1111"
+          }
+        ],
+        "favorite": true,
+        "folder": "Work",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "Work code hosting.",
+        "password": "bw-csv-pass-1",
+        "source_row": 2,
+        "tags": [],
+        "title": "Example Git",
+        "totp_uri": "otpauth://totp/Example%20Git?secret=JBSWY3DPEHPK3PXP",
+        "urls": [
+          "https://git.example.com/login",
+          "https://sso.example.com"
+        ],
+        "username": "alex.example"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "Admin page is on the sticker.",
+        "password": "",
+        "source_row": 3,
+        "tags": [],
+        "title": "Router admin",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "Personal",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "bw-csv-pass-2",
+        "source_row": 4,
+        "tags": [],
+        "title": "Example Shop",
+        "totp_uri": "",
+        "urls": [
+          "shop.example.com"
+        ],
+        "username": "alex@example.com"
+      }
+    ],
+    "source_format": "bitwarden-csv"
+  }
+}

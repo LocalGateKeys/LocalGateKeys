@@ -36,16 +36,19 @@ public enum ItemLimit {
         }
     }
 
-    /// The first stored licence state that verifies with LGKCore `License` under `keys`.
+    /// The stored licence state that verifies with LGKCore `License` under `keys` and was issued last (ties: the
+    /// greater licence id), so a licence just installed over an older one is the one shown.
     public static func validLicense(in snapshot: StoreSnapshot, keys: [String: [UInt8]]) -> LicenseInfo? {
         guard !keys.isEmpty else { return nil }
-        for (id, wrapper) in snapshot.records.sorted(by: { Scalars.less($0.key, $1.key) }) where id.hasPrefix(License.idPrefix) {
+        var best: LicenseInfo?
+        for (id, wrapper) in snapshot.records where id.hasPrefix(License.idPrefix) {
             guard case .object(let w) = wrapper, w["ns"] == .string(Namespace.license.rawValue), let bundle = w["record"],
                   let info = try? License.verify(bundle: bundle, keys: keys),
                   Scalars.equal(License.stateID(licenseID: info.licenseID), id) else { continue }
-            return info
+            if let b = best, (b.issuedAt, b.licenseID) >= (info.issuedAt, info.licenseID) { continue }
+            best = info
         }
-        return nil
+        return best
     }
 }
 
@@ -53,7 +56,7 @@ public enum ItemLimit {
 /// attachments are not created on the phone, and sync needs Pro on the PC (a free PC never syncs), which is
 /// also how the phone receives a desktop licence.
 public enum ProFeatures {
-    public static let totpMessage = "Adding or changing two-factor codes needs LocalGateKeys Pro. Codes you already saved keep working."
+    public static let totpMessage = String(localized: "Adding or changing two-factor codes needs LocalGateKeys Pro. Codes you already saved keep working.")
 
     /// Whether saving `new` over `old` needs Pro: adding or changing a code does; keeping or removing one never does.
     public static func totpChangeNeedsPro(new: JSONValue?, old: JSONValue?) -> Bool {

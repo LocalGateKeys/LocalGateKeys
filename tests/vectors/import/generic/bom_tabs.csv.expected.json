@@ -1,0 +1,38 @@
+{
+  "format": "generic",
+  "input": "tests/vectors/import/_inputs/bom_tabs.csv",
+  "mapping": {
+    "notes": "Note",
+    "password": "Password",
+    "title": "Name",
+    "url": "URL",
+    "username": "User Name"
+  },
+  "python_format": "csv",
+  "result": {
+    "diagnostics": [],
+    "records": [
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "note",
+        "source_row": 2,
+        "tags": [],
+        "title": "Tab,https://t.example.com,x",
+        "totp_uri": "",
+        "urls": [
+          "t"
+        ],
+        "username": "pw"
+      }
+    ],
+    "source_format": "csv"
+  }
+}

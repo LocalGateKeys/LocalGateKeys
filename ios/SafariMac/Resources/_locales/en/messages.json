@@ -1,0 +1,754 @@
+{
+  "bg_err_agent_access_denied": {
+    "message": "Windows denied access to the bridge. Run the browser and LocalGateKeys as the same Windows user without Administrator mode, then repair the current-user bridge."
+  },
+  "bg_err_agent_busy": {
+    "message": "The bridge is busy. Finish any open LocalGateKeys dialog and try again."
+  },
+  "bg_err_agent_connection_changed": {
+    "message": "The connection points to a different app instance. Restart LocalGateKeys from the repository used to repair the bridge."
+  },
+  "bg_err_agent_connection_lost": {
+    "message": "The local bridge disconnected before replying. Repair the bridge if this repeats. No automatic retry was made."
+  },
+  "bg_err_agent_offline": {
+    "message": "The older native host could not reach the app. If LocalGateKeys is already open, update the desktop app, repair the bridge, and restart it."
+  },
+  "bg_err_agent_state_invalid": {
+    "message": "The saved bridge connection is invalid or outdated. Exit LocalGateKeys fully, including the tray, and restart the repository copy."
+  },
+  "bg_err_agent_state_missing": {
+    "message": "No running connection was found. Finish choosing a profile in LocalGateKeys. If the main window is already open, restart the app from the same repository as the bridge."
+  },
+  "bg_err_agent_unavailable": {
+    "message": "The app connection is not accepting requests. Exit LocalGateKeys fully (including the tray), then restart it from the repository used to repair the bridge."
+  },
+  "bg_err_bridge_dependencies_missing": {
+    "message": "The native host is missing required Python packages. Refresh the repository environment, then run scripts/repair_browser_bridge.ps1."
+  },
+  "bg_err_bridge_internal_error": {
+    "message": "The native bridge encountered an error. Run scripts/test_browser_bridge.ps1 and share its sanitized report."
+  },
+  "bg_err_bridge_protocol_error": {
+    "message": "The local bridge returned an invalid response. Update all bridge files together and restart LocalGateKeys."
+  },
+  "bg_err_busy": {
+    "message": "Finish the open LocalGateKeys prompt first."
+  },
+  "bg_err_caller_not_browser": {
+    "message": "LocalGateKeys only accepts requests from a native host started by a signed browser. Restart the browser; if this repeats, repair the bridge from Connections in LocalGateKeys."
+  },
+  "bg_err_card_not_found": {
+    "message": "No payment card is saved in this profile."
+  },
+  "bg_err_client_not_allowed": {
+    "message": "LocalGateKeys rejected the native-host identity. Exit the app, run scripts/repair_browser_bridge.ps1 from the repository, then restart LocalGateKeys."
+  },
+  "bg_err_destination_changed": {
+    "message": "The page or active tab changed. Click the icon again on the intended login form."
+  },
+  "bg_err_gesture_nonce_invalid": {
+    "message": "The click expired or belongs to another page. Click again."
+  },
+  "bg_err_gesture_nonce_required": {
+    "message": "Update the browser extension: this action needs a fresh gesture nonce."
+  },
+  "bg_err_identity_not_found": {
+    "message": "No identity profile is available in this profile."
+  },
+  "bg_err_integration_disabled": {
+    "message": "Browser integration is paused in LocalGateKeys."
+  },
+  "bg_err_invalid_approval": {
+    "message": "The identity approval is invalid or expired. Start again."
+  },
+  "bg_err_invalid_card_fields": {
+    "message": "Choose only the reviewed card fields."
+  },
+  "bg_err_invalid_identity_fields": {
+    "message": "Choose only the reviewed contact or address fields."
+  },
+  "bg_err_invalid_request": {
+    "message": "The identity request was rejected because its page context changed."
+  },
+  "bg_err_not_found": {
+    "message": "No permitted saved login for this exact website. Save a login or check its fill policy."
+  },
+  "bg_err_origin_mismatch": {
+    "message": "The page origin changed. Start identity fill again on the intended page."
+  },
+  "bg_err_rate_limited": {
+    "message": "Too many password checks from this site in a short time. Wait a minute and try again."
+  },
+  "bg_err_session_changed": {
+    "message": "The vault locked, the profile changed, or this request expired. Click the icon again."
+  },
+  "bg_err_totp_not_found": {
+    "message": "No saved login for this exact site has a 2FA setup key."
+  },
+  "bg_err_unauthorized": {
+    "message": "The bridge token no longer matches the app. Exit LocalGateKeys fully, restart the repository copy, and reload this page."
+  },
+  "bg_err_unsupported_request": {
+    "message": "This extension action is not supported by the current bridge."
+  },
+  "bg_err_user_cancelled": {
+    "message": "Identity fill was cancelled before any field was released."
+  },
+  "bg_err_user_gesture_required": {
+    "message": "Start this action from the extension or an in-page LocalGateKeys button."
+  },
+  "bg_err_version_mismatch": {
+    "message": "Update/reload the extension and restart LocalGateKeys. Their versions do not match."
+  },
+  "bg_full_notice": {
+    "message": "Your free vault is full. Upgrade in LocalGateKeys to save more."
+  },
+  "bg_host_exited": {
+    "message": "The native host stopped unexpectedly. Open Connections in LocalGateKeys for diagnostics."
+  },
+  "bg_host_failed": {
+    "message": "Browser connection failed. Open Connections in LocalGateKeys."
+  },
+  "bg_host_forbidden": {
+    "message": "Extension ID is not allowed by the native-host registration. Repair the bridge."
+  },
+  "bg_host_not_registered": {
+    "message": "Native host is not registered. Repair the browser connection from LocalGateKeys."
+  },
+  "bg_not_waiting": {
+    "message": "This login is no longer waiting to be saved."
+  },
+  "bg_rate_limited": {
+    "message": "Too many login checks from this site. Wait a minute and try again."
+  },
+  "bg_save_inbox_full": {
+    "message": "Too many logins are waiting. Open LocalGateKeys to import them, then sign in again to save it."
+  },
+  "bg_save_invalid": {
+    "message": "This login could not be saved."
+  },
+  "bg_save_unavailable": {
+    "message": "Open LocalGateKeys and unlock it once to turn on saving from Safari, then sign in again to save it."
+  },
+  "bg_saved_notice": {
+    "message": "Saved. It will appear in LocalGateKeys next time you open it."
+  },
+  "bg_timeout": {
+    "message": "The LocalGateKeys bridge did not respond. Close any stale desktop prompt and try again."
+  },
+  "content_autosignin_skipped": {
+    "message": "Filled. Automatic sign-in was skipped because this form is unsupported or ambiguous. Sign in manually."
+  },
+  "content_cancel": {
+    "message": "Cancel"
+  },
+  "content_card": {
+    "message": "Card"
+  },
+  "content_card_approval_invalid": {
+    "message": "The card approval was invalid."
+  },
+  "content_card_brand": {
+    "message": "Card brand"
+  },
+  "content_card_cvv": {
+    "message": "Security code (CVV)"
+  },
+  "content_card_expiry": {
+    "message": "Expiry"
+  },
+  "content_card_expiry_month": {
+    "message": "Expiry month"
+  },
+  "content_card_expiry_year": {
+    "message": "Expiry year"
+  },
+  "content_card_name": {
+    "message": "Cardholder name"
+  },
+  "content_card_no_fields": {
+    "message": "This card has none of the fields on this payment form."
+  },
+  "content_card_number": {
+    "message": "Card number"
+  },
+  "content_card_origin": {
+    "message": "Card: $CARD$\nOrigin: $ORIGIN$",
+    "placeholders": {
+      "card": {
+        "content": "$1"
+      },
+      "origin": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_choose_account": {
+    "message": "Choose an account"
+  },
+  "content_choose_card": {
+    "message": "Choose a card"
+  },
+  "content_choose_card_fields": {
+    "message": "Choose card fields"
+  },
+  "content_choose_identity": {
+    "message": "Choose identity"
+  },
+  "content_choose_identity_fields": {
+    "message": "Choose identity fields"
+  },
+  "content_close": {
+    "message": "Close"
+  },
+  "content_confirm_in_app": {
+    "message": "Changes are confirmed in the desktop app."
+  },
+  "content_cvv_note": {
+    "message": "The security code is unticked by default; tick it only when this payment needs it."
+  },
+  "content_err_card_not_found": {
+    "message": "No payment card is saved in this profile."
+  },
+  "content_err_fill_disabled": {
+    "message": "Filling is disabled for this login."
+  },
+  "content_err_generic": {
+    "message": "Could not complete this request. Open Connections in LocalGateKeys."
+  },
+  "content_err_gesture_required": {
+    "message": "Start this action from the extension or an in-page LocalGateKeys button."
+  },
+  "content_err_invalid_approval": {
+    "message": "The approval is invalid or expired. Start again."
+  },
+  "content_err_invalid_card_fields": {
+    "message": "Choose only the reviewed card fields."
+  },
+  "content_err_nonce_invalid": {
+    "message": "The click expired or belongs to another page. Click again."
+  },
+  "content_err_nonce_required": {
+    "message": "Update the browser extension and reload this page."
+  },
+  "content_err_not_found": {
+    "message": "No saved login for this site."
+  },
+  "content_err_session_changed": {
+    "message": "Vault/profile changed. Click the icon again."
+  },
+  "content_err_totp_not_found": {
+    "message": "No saved login for this exact site has a 2FA setup key."
+  },
+  "content_err_user_cancelled": {
+    "message": "Unlock or confirmation cancelled."
+  },
+  "content_fill_card_title": {
+    "message": "Fill card with LocalGateKeys"
+  },
+  "content_fill_identity_title": {
+    "message": "Fill identity with LocalGateKeys"
+  },
+  "content_fill_otp_title": {
+    "message": "Fill 2FA code with LocalGateKeys"
+  },
+  "content_fill_title": {
+    "message": "Fill with LocalGateKeys"
+  },
+  "content_item_limit": {
+    "message": "Your free LocalGateKeys holds $LIMIT$ items. Upgrade to Pro for unlimited.",
+    "placeholders": {
+      "limit": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_login_typed_on": {
+    "message": "A login typed on $ORIGIN$",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_match_domain": {
+    "message": "matches domain"
+  },
+  "content_match_host": {
+    "message": "matches host"
+  },
+  "content_match_prefix": {
+    "message": "matches URL prefix"
+  },
+  "content_never_site": {
+    "message": "Never on this site"
+  },
+  "content_no_new_password": {
+    "message": "No unambiguous new-password fields were found."
+  },
+  "content_no_username": {
+    "message": "No username"
+  },
+  "content_not_now": {
+    "message": "Not now"
+  },
+  "content_page_changed_click_again": {
+    "message": "The page changed. Click again."
+  },
+  "content_profile": {
+    "message": "Profile: $PROFILE$",
+    "placeholders": {
+      "profile": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_profile_origin": {
+    "message": "Profile: $PROFILE$\nOrigin: $ORIGIN$",
+    "placeholders": {
+      "profile": {
+        "content": "$1"
+      },
+      "origin": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_pw_generated": {
+    "message": "Password generated"
+  },
+  "content_pw_generated_body": {
+    "message": "Filled the new-password fields. Save this password before leaving the page."
+  },
+  "content_reload_extension_and_page": {
+    "message": "Reload the extension and this page."
+  },
+  "content_reload_page": {
+    "message": "Reload this page after updating the extension."
+  },
+  "content_review_approve": {
+    "message": "Review and approve"
+  },
+  "content_save": {
+    "message": "Save"
+  },
+  "content_save_deferred": {
+    "message": "The login was captured while LocalGateKeys was locked. Unlock the desktop app to review whether it matches a saved login."
+  },
+  "content_save_exists": {
+    "message": "This account is already in LocalGateKeys. Send this sign-in to the app? It shows whether anything changed before saving."
+  },
+  "content_save_in_vault": {
+    "message": "Save in vault"
+  },
+  "content_save_login": {
+    "message": "Save login"
+  },
+  "content_save_new": {
+    "message": "Login completed. Save it in your local encrypted vault?"
+  },
+  "content_save_title": {
+    "message": "Save this login?"
+  },
+  "content_save_uncertain": {
+    "message": "LocalGateKeys captured a login attempt but could not confirm the site's success state. Save only if the sign-in succeeded."
+  },
+  "content_save_update": {
+    "message": "Save / update"
+  },
+  "content_save_update_title": {
+    "message": "Save / update in LocalGateKeys?"
+  },
+  "content_signin_question": {
+    "message": "Did you just sign in?"
+  },
+  "content_tampered": {
+    "message": "This page hid, moved or covered a LocalGateKeys button, so the click was ignored."
+  },
+  "content_totp_waiting": {
+    "message": "Waiting a moment for a fresh 2FA code…"
+  },
+  "content_unlock_in_desktop": {
+    "message": "Unlock in the LocalGateKeys desktop window. Your master password is never requested on this website."
+  },
+  "content_unlock_review": {
+    "message": "Unlock to review"
+  },
+  "content_unlock_review_title": {
+    "message": "Unlock to review this login"
+  },
+  "content_waiting_title": {
+    "message": "Waiting for LocalGateKeys…"
+  },
+  "content_which_totp": {
+    "message": "Which account's 2FA code?"
+  },
+  "err_card_ambiguous": {
+    "message": "The page has a missing or ambiguous card field."
+  },
+  "err_card_approved_changed": {
+    "message": "The approved card fields changed."
+  },
+  "err_card_field_gone": {
+    "message": "An approved card field is no longer visible."
+  },
+  "err_card_field_hidden": {
+    "message": "The card field is hidden, covered, or no longer part of a payment form."
+  },
+  "err_card_form_changed": {
+    "message": "The payment form changed before filling."
+  },
+  "err_card_form_changed_filling": {
+    "message": "The payment form changed while filling."
+  },
+  "err_card_unapproved": {
+    "message": "The card release contained unapproved fields."
+  },
+  "err_code_boxes": {
+    "message": "This code field has an unexpected number of boxes."
+  },
+  "err_code_field_hidden": {
+    "message": "The code field is hidden, covered, or no longer a 2FA field."
+  },
+  "err_form_other_origin": {
+    "message": "The form points to another origin. LocalGateKeys will not fill it."
+  },
+  "err_form_other_origin_short": {
+    "message": "The form points to another origin."
+  },
+  "err_identity_ambiguous": {
+    "message": "The page has a missing or ambiguous identity field."
+  },
+  "err_identity_approved_changed": {
+    "message": "The approved identity fields changed."
+  },
+  "err_identity_field_gone": {
+    "message": "An approved identity field is no longer visible."
+  },
+  "err_identity_field_hidden": {
+    "message": "The identity field is hidden, covered, or unsupported."
+  },
+  "err_identity_form_changed": {
+    "message": "The identity form changed before filling."
+  },
+  "err_login_form_changed": {
+    "message": "The login form changed while filling."
+  },
+  "err_request_cancelled": {
+    "message": "The request was cancelled before filling."
+  },
+  "err_review_required": {
+    "message": "Review the required fields before signing in."
+  },
+  "err_signin_cancelled_changed": {
+    "message": "Sign-in cancelled: vault, profile, or page changed."
+  },
+  "err_signin_cancelled_form": {
+    "message": "Sign-in cancelled because the form changed."
+  },
+  "err_target_field_hidden": {
+    "message": "The target field is hidden, covered, or no longer a login field."
+  },
+  "ext_description": {
+    "message": "Fill and save logins with the LocalGateKeys password manager for Windows. The extension talks only to the app on your own PC."
+  },
+  "ext_description_ios": {
+    "message": "Offers to save the logins you sign in with in Safari to LocalGateKeys on this iPhone."
+  },
+  "ext_description_macos": {
+    "message": "Offers to save the logins you sign in with in Safari to LocalGateKeys on this Mac."
+  },
+  "ext_name": {
+    "message": "LocalGateKeys"
+  },
+  "popup_actions_unavailable": {
+    "message": "Field actions are unavailable. Open LocalGateKeys and repair the browser connection, then refresh."
+  },
+  "popup_auto_need_page": {
+    "message": "Open an http or https page before changing automatic save."
+  },
+  "popup_auto_now_off": {
+    "message": "Automatic save is off for this site."
+  },
+  "popup_auto_now_on": {
+    "message": "Automatic save is on. You will be asked before a login is saved."
+  },
+  "popup_auto_off_hint": {
+    "message": "Off: LocalGateKeys won't offer to save on this site"
+  },
+  "popup_auto_on_hint": {
+    "message": "On: you're asked after a successful sign-in here"
+  },
+  "popup_auto_read_failed": {
+    "message": "Could not read this site's automatic-save setting. Try again."
+  },
+  "popup_auto_turn_off": {
+    "message": "Turn off save prompts on this site"
+  },
+  "popup_auto_turn_on": {
+    "message": "Turn on save prompts on this site"
+  },
+  "popup_auto_update_failed": {
+    "message": "Could not update automatic save for this site. Try again."
+  },
+  "popup_checking_connection": {
+    "message": "Checking connection…"
+  },
+  "popup_checking_connection_desc": {
+    "message": "Contacting LocalGateKeys without unlocking your vault."
+  },
+  "popup_checking_page": {
+    "message": "Checking this page…"
+  },
+  "popup_cmd_busy": {
+    "message": "Finish the open LocalGateKeys prompt, then try again."
+  },
+  "popup_cmd_cancelled": {
+    "message": "The fill was cancelled before any field was released."
+  },
+  "popup_cmd_card_form_not_found": {
+    "message": "No payment form was found on this page. Open a checkout form with a card-number field and try again."
+  },
+  "popup_cmd_card_not_found": {
+    "message": "No payment card is saved in this profile. Add a card in LocalGateKeys first."
+  },
+  "popup_cmd_destination_changed": {
+    "message": "This page changed. Open the popup again on the intended login form."
+  },
+  "popup_cmd_identity_not_found": {
+    "message": "No identity field was found on this page. Open a contact or address form and try again."
+  },
+  "popup_cmd_invalid_card": {
+    "message": "The page requested an unsupported card field. Choose card fields only."
+  },
+  "popup_cmd_invalid_identity": {
+    "message": "The page requested an unsupported identity field. Choose contact or address fields only."
+  },
+  "popup_cmd_nonce_invalid": {
+    "message": "The click expired or belongs to another page. Choose the action again."
+  },
+  "popup_cmd_nonce_required": {
+    "message": "Update and reload the extension: this action needs a fresh gesture nonce."
+  },
+  "popup_cmd_not_found": {
+    "message": "No saved login was found for this site. Save a login first or check its fill policy."
+  },
+  "popup_cmd_offline": {
+    "message": "LocalGateKeys is offline. Open the desktop app and repair the browser connection."
+  },
+  "popup_cmd_origin_mismatch": {
+    "message": "This page changed origin. Open the extension again on the intended page."
+  },
+  "popup_cmd_session_changed": {
+    "message": "The vault is locked or the profile changed. Click Fill login again to continue."
+  },
+  "popup_cmd_version_mismatch": {
+    "message": "Update and reload the extension and LocalGateKeys before filling identity fields."
+  },
+  "popup_connection_unavailable": {
+    "message": "Connection unavailable. $DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_current_site": {
+    "message": "Current site"
+  },
+  "popup_diag_agent_offline": {
+    "message": "Open LocalGateKeys, repair the browser connection, then try again."
+  },
+  "popup_diag_connection_lost": {
+    "message": "The bridge disconnected. Repair the browser connection and try again."
+  },
+  "popup_diag_default": {
+    "message": "Open LocalGateKeys and repair the browser connection, then try again."
+  },
+  "popup_diag_native_host": {
+    "message": "The native host could not be reached. Repair the browser connection in LocalGateKeys."
+  },
+  "popup_diag_state_invalid": {
+    "message": "Restart LocalGateKeys and repair the browser connection."
+  },
+  "popup_diag_state_missing": {
+    "message": "Finish choosing a profile in LocalGateKeys, then try again."
+  },
+  "popup_diag_timeout": {
+    "message": "The bridge took too long to respond. Close any desktop prompt and try again."
+  },
+  "popup_diag_unavailable": {
+    "message": "Restart LocalGateKeys, then refresh the connection."
+  },
+  "popup_diag_version_mismatch": {
+    "message": "Update the extension and LocalGateKeys, then restart both."
+  },
+  "popup_fb_generate": {
+    "message": "No unambiguous new-password fields were found. Open a sign-up or password-change form and try again."
+  },
+  "popup_fb_identity": {
+    "message": "No supported contact or address field was found. Open an identity form and try again."
+  },
+  "popup_fb_login": {
+    "message": "No supported login field was found. Open a sign-in form and try again."
+  },
+  "popup_fb_save": {
+    "message": "No current login field was found. Enter a login, then try again."
+  },
+  "popup_fill_card": {
+    "message": "Fill card…"
+  },
+  "popup_fill_card_desc": {
+    "message": "Pick a card, tick fields, confirm in the app"
+  },
+  "popup_fill_card_label": {
+    "message": "Fill card"
+  },
+  "popup_fill_identity": {
+    "message": "Fill identity"
+  },
+  "popup_fill_identity_desc": {
+    "message": "Review contact fields before filling"
+  },
+  "popup_fill_login": {
+    "message": "Fill login"
+  },
+  "popup_fill_login_desc": {
+    "message": "Choose a saved login for this page"
+  },
+  "popup_finish_setup_refresh": {
+    "message": "Finish LocalGateKeys setup, then refresh the connection before using field actions."
+  },
+  "popup_footer": {
+    "message": "Encrypted locally on this device"
+  },
+  "popup_generate_password": {
+    "message": "Generate password"
+  },
+  "popup_generate_password_desc": {
+    "message": "Create a password for sign-up"
+  },
+  "popup_guidance_checking": {
+    "message": "Checking LocalGateKeys before enabling this page's actions."
+  },
+  "popup_guidance_connected": {
+    "message": "Only this site's origin is checked. Nothing fills until you choose an action."
+  },
+  "popup_guidance_locked": {
+    "message": "Choose an action to request unlock; nothing fills automatically."
+  },
+  "popup_guidance_offline": {
+    "message": "Reconnect LocalGateKeys to use this site's actions."
+  },
+  "popup_guidance_setup": {
+    "message": "Finish LocalGateKeys setup before using this site's actions."
+  },
+  "popup_integration_disabled": {
+    "message": "Browser integration is paused. Re-enable it in LocalGateKeys Settings."
+  },
+  "popup_local_vault": {
+    "message": "LOCAL VAULT"
+  },
+  "popup_locked_desc": {
+    "message": "Choose an action to continue; the desktop app will ask before unlocking."
+  },
+  "popup_looking": {
+    "message": "$ACTION$ is looking for supported fields…",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_manual_by_design": {
+    "message": "MANUAL BY DESIGN"
+  },
+  "popup_need_login_page": {
+    "message": "Open an http or https page with a login form first."
+  },
+  "popup_page_unavailable": {
+    "message": "This page is not available to LocalGateKeys."
+  },
+  "popup_page_unavailable_hint": {
+    "message": "Open a standard http or https login page to use these actions."
+  },
+  "popup_page_unreachable": {
+    "message": "This page could not be reached. Reload the page and try again."
+  },
+  "popup_quick_actions": {
+    "message": "Quick actions"
+  },
+  "popup_ready_version": {
+    "message": "LocalGateKeys is ready$VERSION$. Nothing is unlocked until you choose an action.",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_refresh_connection": {
+    "message": "Refresh connection status"
+  },
+  "popup_refreshed_locked": {
+    "message": "Connection refreshed. Unlock will happen only after you choose an action."
+  },
+  "popup_refreshed_ready": {
+    "message": "Connection refreshed. LocalGateKeys is ready."
+  },
+  "popup_refreshed_setup": {
+    "message": "Connection refreshed. Finish LocalGateKeys setup, then refresh."
+  },
+  "popup_save_login": {
+    "message": "Save login"
+  },
+  "popup_save_login_desc": {
+    "message": "Save these login fields"
+  },
+  "popup_setup_desc": {
+    "message": "LocalGateKeys did not report a ready browser profile. Finish setup, then refresh."
+  },
+  "popup_site_hint": {
+    "message": "Actions stay on this page and require your choice."
+  },
+  "popup_started": {
+    "message": "$ACTION$ started on this page.",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_state_connected": {
+    "message": "Connected"
+  },
+  "popup_state_locked": {
+    "message": "Locked"
+  },
+  "popup_state_offline": {
+    "message": "Offline"
+  },
+  "popup_state_setup": {
+    "message": "Setup required"
+  },
+  "popup_tagline": {
+    "message": "Your keys. Your control."
+  },
+  "popup_this_page": {
+    "message": "THIS PAGE"
+  },
+  "popup_unlock_on_action": {
+    "message": "Unlock is requested only after you choose a field action."
+  },
+  "popup_version_suffix": {
+    "message": " (LocalGateKeys $VERSION$)",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_wait_checking": {
+    "message": "Still checking LocalGateKeys. Wait for the connection status, then try again."
+  }
+}

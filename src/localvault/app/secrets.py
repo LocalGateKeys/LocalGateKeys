@@ -14,7 +14,7 @@ from typing import Any
 
 from ..access_policy import normalized_policy
 from ..api.result import ApiError
-from ..item_schema import validate_bookmark_url
+from ..item_schema import validate_bookmark_url, web_page_address
 from ..session_guard import StaleSession
 from ..shell.overview_model import age_text
 from ..totp import TotpError, generate_totp
@@ -22,12 +22,12 @@ from ..vault import InvalidMasterPassword, VaultError
 from .catalog import _summary_title, kind_label
 from .presentation import safe_typed_fields
 from .setting_links import clipboard_result
+from ..i18n import t
 
 ROUTINE_REAUTH_GRACE_SECONDS = 120
 REVEAL_SECONDS = 30
-SESSION_CHANGED = "Session changed or expired. Action cancelled; unlock and try again."
-OPEN_WEBSITE_TEXT = ("This opens the selected URL in your normal browser and may contact the site over the "
-                     "network:\n\n{url}\n\nNo background fetch is performed by LocalGateKeys.")
+SESSION_CHANGED = "secrets.sessionChangedOrExpiredAction"
+OPEN_WEBSITE_TEXT = ("secrets.thisOpensTheSelectedUrl")
 
 
 def _format_code(code: str) -> str:
@@ -42,7 +42,7 @@ def live_code(config: dict[str, Any]) -> dict[str, Any]:
         code, remaining = generate_totp(config["secret"], digits=int(config.get("digits", 6)),
                                         period=period, algorithm=str(config.get("algorithm", "SHA1")))
     except (TotpError, ValueError):
-        raise ApiError("invalid_totp", "Invalid setup key") from None
+        raise ApiError("invalid_totp", t("secrets.invalidSetupKey")) from None
     finally:
         config.clear()
     return {"code": _format_code(code), "remaining": remaining, "period": period}
@@ -58,30 +58,30 @@ class SecretService:
     def _session_and_lease(self) -> tuple[Any, Any]:
         controller = self._controller
         if not controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile first.")
+            raise ApiError("locked", t("error.lockedProfile"))
         try:
             lease = controller.guard.lease()
             controller.require_lease(lease)
         except StaleSession:
-            raise ApiError("session_changed", SESSION_CHANGED) from None
+            raise ApiError("session_changed", t(SESSION_CHANGED)) from None
         return controller.session, lease
 
     def _require(self, lease: Any) -> None:
         try:
             self._controller.require_lease(lease)
         except StaleSession:
-            raise ApiError("session_changed", SESSION_CHANGED) from None
+            raise ApiError("session_changed", t(SESSION_CHANGED)) from None
 
     @staticmethod
     def _credential(session: Any, ref: dict[str, Any]) -> dict[str, Any]:
         if ref.get("source") != "credential":
-            raise ApiError("not_login", "Select a login before copying credentials.")
+            raise ApiError("not_login", t("secrets.selectALoginBeforeCopying"))
         detail = session.credential_detail(ref["id"])
         if detail is None:
-            raise ApiError("not_found", "This item no longer exists.")
+            raise ApiError("not_found", t("share.thisItemNoLongerExists"))
         if not isinstance(detail.get("revision"), int):
             detail.clear()
-            raise ApiError("changed", "This credential cannot be verified. Reopen the vault and try again.")
+            raise ApiError("changed", t("secrets.thisCredentialCannotBeVerified"))
         return detail
 
     def reauthenticate(self, title: str, lease: Any, *, allow_hello: bool = False) -> None:
@@ -103,16 +103,16 @@ class SecretService:
         profile = controller.profiles.active_profile()
         # The port hands over a SecretText this method owns: it is wiped however the check ends.
         password = self._port.ask_password(
-            title, f"Profile: {profile.name if profile else ''}\nEnter the master password again:")
+            title, t("secrets.profileEnterTheMasterPassword", v1=profile.name if profile else ''))
         try:
             self._require(lease)
             if password is None:
-                raise ApiError("cancelled", "Cancelled.")
+                raise ApiError("cancelled", t("error.cancelled"))
             try:
                 controller.session.verify_master_password(password)
             except (InvalidMasterPassword, VaultError):
-                self._port.notify("error", "Not authorized", "Master password did not match, or the vault changed.")
-                raise ApiError("not_authorized", "Master password did not match, or the vault changed.") from None
+                self._port.notify("error", t("unlockMethods.notAuthorized"), t("unlockMethods.masterPasswordDidNotMatch"))
+                raise ApiError("not_authorized", t("unlockMethods.masterPasswordDidNotMatch")) from None
         finally:
             if password is not None:
                 password.wipe()
@@ -134,7 +134,7 @@ class SecretService:
         session, _lease = self._session_and_lease()
         summary = next((s for s in session.item_service.all_metadata_summaries() if str(s.id) == ref["id"]), None)
         if summary is None:
-            raise ApiError("not_found", "This item no longer exists.")
+            raise ApiError("not_found", t("share.thisItemNoLongerExists"))
         title = _summary_title(summary) or "Untitled"
         subtitle = self._subtitle(session, summary)
         tags = [str(t) for t in getattr(summary, "tags", ()) or ()]
@@ -151,7 +151,7 @@ class SecretService:
             scope = detail.get("scope") if isinstance(detail.get("scope"), dict) else {}
             kind = str(detail.get("kind", "web"))
             origin = str(scope.get("origin") or "") if kind == "web" else ""
-            target = origin if kind == "web" else str(scope.get("exe_path") or "")
+            target = web_page_address(scope) if kind == "web" else str(scope.get("exe_path") or "")
             return {
                 "kind": kind, "title": title, "subtitle": subtitle, "username": str(detail.get("username") or ""),
                 "has_password": True, "has_totp": isinstance(detail.get("totp"), dict) and bool(detail["totp"].get("secret")),
@@ -186,7 +186,7 @@ class SecretService:
         revision = detail["revision"]
         strict = bool(normalized_policy(detail.get("policy")).get("require_master_password"))
         detail.clear()
-        self.reauthenticate("Confirm to reveal this password", lease, allow_hello=not strict)
+        self.reauthenticate(t("secrets.confirmToRevealThisPassword"), lease, allow_hello=not strict)
         self._require(lease)
         try:
             password = session.credential_secret(ref["id"], expected_revision=revision)
@@ -200,7 +200,7 @@ class SecretService:
         if field == "totp":
             return self._copy_totp(ref)
         if field not in ("username", "password"):
-            raise ApiError("invalid", "Unknown field.")
+            raise ApiError("invalid", t("secrets.unknownField"))
         session, lease = self._session_and_lease()
         detail = self._credential(session, ref)
         revision = detail["revision"]
@@ -208,7 +208,7 @@ class SecretService:
         username = str(detail.get("username") or "")
         detail.clear()
         if field == "password" or strict:
-            title = "Confirm to copy this password" if field == "password" and not strict else "Open sensitive credential"
+            title = t("secrets.confirmToCopyThisPassword") if field == "password" and not strict else t("loginExtras.openSensitiveCredential")
             self.reauthenticate(title, lease, allow_hello=not strict)
         self._require(lease)
         if field == "password":
@@ -221,10 +221,10 @@ class SecretService:
             current = again.get("revision")
             again.clear()
             if current != revision:
-                raise ApiError("changed", "This credential changed. Select it again before copying.")
+                raise ApiError("changed", t("secrets.thisCredentialChangedSelectIt"))
             value = username
         if not value:
-            raise ApiError("empty", f"No {field} is saved for this login.")
+            raise ApiError("empty", t("secrets.noIsSavedForThis", field=field))
         self._copy_secret(value, lease)
         return self._clipboard_result(f"{field.capitalize()} copied.")
 
@@ -241,33 +241,33 @@ class SecretService:
         session, _lease = self._session_and_lease()
         config, strict = self._totp_config(session, ref)
         if config is None:
-            raise ApiError("no_totp", "Not set up")
+            raise ApiError("no_totp", t("security.notSetUp"))
         if strict:
             config.clear()
-            raise ApiError("strict", "Hidden · click to show")
+            raise ApiError("strict", t("detailPane.hiddenClick"))
         return live_code(config)
 
     def _copy_totp(self, ref: dict[str, Any]) -> dict[str, Any]:
         session, lease = self._session_and_lease()
         if ref.get("source") != "credential":
-            raise ApiError("not_login", "Select a login before copying its two-factor code.")
+            raise ApiError("not_login", t("secrets.selectALoginBeforeCopying2"))
         config, strict = self._totp_config(session, ref)
         if config is None:
-            raise ApiError("no_totp", "This login has no two-factor setup key saved.")
+            raise ApiError("no_totp", t("secrets.thisLoginHasNoTwo"))
         try:
             if strict:
-                self.reauthenticate("Open sensitive credential", lease, allow_hello=False)
+                self.reauthenticate(t("loginExtras.openSensitiveCredential"), lease, allow_hello=False)
             try:
                 code, remaining = generate_totp(config["secret"], digits=int(config.get("digits", 6)),
                                                 period=int(config.get("period", 30)),
                                                 algorithm=str(config.get("algorithm", "SHA1")))
             except (TotpError, ValueError):
                 raise ApiError("invalid_totp",
-                               "The saved two-factor setup key is invalid. Open the login to fix it.") from None
+                               t("secrets.theSavedTwoFactorSetup")) from None
         finally:
             config.clear()
         self._copy_secret(code, lease)
-        return self._clipboard_result(f"Two-factor code copied; it changes in {remaining}s.")
+        return self._clipboard_result(t("secrets.twoFactorCodeCopiedIt", remaining=remaining))
 
     # ------------------------------------------------------- item actions
     def set_favorite(self, ref: dict[str, Any], value: bool) -> dict[str, Any]:
@@ -280,17 +280,17 @@ class SecretService:
                 session.set_favorite(ref["id"], bool(value))
         except VaultError as exc:
             raise ApiError("vault_error", str(exc)) from None
-        return {"message": "Added to favorites." if value else "Removed from favorites."}
+        return {"message": t("secrets.addedToFavorites") if value else t("secrets.removedFromFavorites")}
 
     def trash(self, ref: dict[str, Any]) -> dict[str, Any]:
         session, lease = self._session_and_lease()
         summary = next((s for s in session.item_service.all_metadata_summaries() if str(s.id) == ref["id"]), None)
         if summary is None:
-            raise ApiError("not_found", "This item no longer exists.")
-        name = _summary_title(summary) or "this item"
-        if not self._port.confirm("Move to trash?",
-                                  f"Move {name} to the trash? You can restore it from Trash later."):
-            raise ApiError("cancelled", "Cancelled.")
+            raise ApiError("not_found", t("share.thisItemNoLongerExists"))
+        name = _summary_title(summary) or t("secrets.thisItem")
+        if not self._port.confirm(t("secrets.moveToTrash"),
+                                  t("secrets.moveToTheTrashYou", name=name)):
+            raise ApiError("cancelled", t("error.cancelled"))
         self._require(lease)
         try:
             if ref["source"] == "typed":
@@ -300,24 +300,24 @@ class SecretService:
         except VaultError as exc:
             raise ApiError("vault_error", str(exc)) from None
         self._controller.touch()
-        return {"message": f"Moved {name} to Trash.", "undo": {"ids": [str(ref["id"])]}}
+        return {"message": t("secrets.movedToTrash", name=name), "undo": {"ids": [str(ref["id"])]}}
 
     def open_website(self, ref: dict[str, Any]) -> dict[str, Any]:
         session, lease = self._session_and_lease()
         detail = self._credential(session, ref)
         try:
             scope = detail.get("scope") if isinstance(detail.get("scope"), dict) else {}
-            origin = str(scope.get("origin") or "")
+            origin = web_page_address(scope)
         finally:
             detail.clear()
         if not origin:
-            raise ApiError("no_website", "This login has no website address.")
+            raise ApiError("no_website", t("secrets.thisLoginHasNoWebsite"))
         try:
             url = validate_bookmark_url(origin)
         except ValueError as exc:
             raise ApiError("invalid", str(exc)) from None
-        if not self._port.confirm("Open website?", OPEN_WEBSITE_TEXT.format(url=url)):
-            raise ApiError("cancelled", "Cancelled.")
+        if not self._port.confirm(t("secrets.openWebsite"), t(OPEN_WEBSITE_TEXT).format(url=url)):
+            raise ApiError("cancelled", t("error.cancelled"))
         self._require(lease)
         webbrowser.open(url)
         return {"message": ""}

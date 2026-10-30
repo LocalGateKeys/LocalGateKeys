@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "LocalGateKeys",
-  "version": "0.4.8",
-  "description": "Fill and save logins with the LocalGateKeys password manager for Windows. The extension talks only to the app on your own PC.",
+  "name": "__MSG_ext_name__",
+  "default_locale": "en",
+  "version": "0.4.10",
+  "description": "__MSG_ext_description__",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwulpm1yjzbqHYZsLqpuy4y4HxKnckl9PtXM12a/9zIq7AsZ0czEfhzzJoqTZeGPypDS0sCfYu7i2yfP/KqiQfOz9pB8WkeE5V9f9QqDXQdNNuaLkE/egswpqb4y1f3Qg0NCWyyzMw0XxM6H3xJ5VRU50o7gFPl91/c89j5agP6PJHUewFiv6XswIa4oGra7hHesAeJunVjVOOTS8Bit2hx/ZHGupvN9h+DIL3F4oTSoHgBAW6YBXjTXqc64SC414qdy/v0AonOn2l45354G/64W2Turv8AqaFv3S8vkqQLlOff8nCpuJHtiu9h/qY6oOMGA31Z9F7XAXwzFZ/oJ1rQIDAQAB",
   "permissions": [
     "nativeMessaging",

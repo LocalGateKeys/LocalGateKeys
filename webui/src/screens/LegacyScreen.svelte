@@ -1,5 +1,6 @@
 <script>
   /** Data from an earlier development version: import a copy or start fresh. Nothing loads until the user chooses. */
+  import { t } from '../lib/i18n.svelte.js';
   import Button from '../components/Button.svelte';
   import { call } from '../lib/api.js';
 
@@ -29,8 +30,8 @@
     <p class="muted">{vault.legacy.location}</p>
     {#if error}<p class="error pre" role="alert">{error}</p>{/if}
     <div class="actions">
-      <Button label="Start fresh" busy={busy === 'legacy_fresh'} busyLabel="Saving…" onclick={() => choose('legacy_fresh')} />
-      <Button label="Import legacy data" variant="primary" busy={busy === 'legacy_import'} busyLabel="Importing…" onclick={() => choose('legacy_import')} />
+      <Button label={t('legacy.startFresh')} busy={busy === 'legacy_fresh'} busyLabel={t('legacy.saving')} onclick={() => choose('legacy_fresh')} />
+      <Button label={t('legacy.import')} variant="primary" busy={busy === 'legacy_import'} busyLabel={t('legacy.importing')} onclick={() => choose('legacy_import')} />
     </div>
   </div>
 </section>

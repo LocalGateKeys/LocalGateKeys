@@ -1,6 +1,8 @@
 <script>
   /** The unlocked home screen: sidebar | list | detail, with sheets for editor, generator, palette, new item. */
+  import { t, formatNumber } from '../lib/i18n.svelte.js';
   import Chips from '../components/Chips.svelte';
+  import SortMenu from '../components/SortMenu.svelte';
   import DetailPane from '../components/DetailPane.svelte';
   import Generator from '../components/Generator.svelte';
   import CodesCard from '../components/CodesCard.svelte';
@@ -27,15 +29,20 @@
   import ProfilesPage from '../components/ProfilesPage.svelte';
   import BackupPasswordSheet from '../components/BackupPasswordSheet.svelte';
   import SyncPage from '../components/SyncPage.svelte';
+  import SyncStatusPage from '../components/SyncStatusPage.svelte';
+  import SyncPill from '../components/SyncPill.svelte';
   import ImportSheet from '../components/ImportSheet.svelte';
   import ExportSheet from '../components/ExportSheet.svelte';
   import TransferSheet from '../components/TransferSheet.svelte';
+  import ShareSheet from '../components/ShareSheet.svelte';
+  import IncomingSheet from '../components/IncomingSheet.svelte';
   import PhoneBackupSheet from '../components/PhoneBackupSheet.svelte';
   import ImportExportMenu from '../components/ImportExportMenu.svelte';
   import WorkspacePages from '../components/WorkspacePages.svelte';
   import OnboardingPage from '../components/OnboardingPage.svelte';
   import DesktopSheet from '../components/DesktopSheet.svelte';
   import QuickAccess from '../components/QuickAccess.svelte';
+  import ScanSheet from '../components/ScanSheet.svelte';
   import { call, on } from '../lib/api.js';
   import { notice, okOrToast, toast } from '../lib/toast.js';
 
@@ -51,7 +58,7 @@
   let overview = $state(null);
   let status = $state(null);
   let quick = $state(false);
-  let sheet = $state(null); // {kind: 'editor', ref} | {kind: 'generator'} | {kind: 'palette'} | {kind: 'new'}
+  let sheet = $state(null); // {kind: 'editor', ref, draft?} | {kind: 'scan'} | {kind: 'generator'} | {kind: 'palette'} | {kind: 'new'}
   let menu = $state(null);
   let searchInput = $state();
   let searchTimer = null;
@@ -69,8 +76,16 @@
   }
 
   async function refreshOverview() {
-    const result = await call('overview_get');
+    const [result, setup] = await Promise.all([call('overview_get'), call('onboarding_card')]);
     if (result.ok) overview = result;
+    setupCard = setup.ok && setup.card ? setup : null;
+  }
+
+  // "Finish setting up · 3 of 5": the setup steps left, until they are done or the card is hidden.
+  let setupCard = $state(null);
+  async function hideSetupCard() {
+    const result = await call('onboarding_hide');
+    if (okOrToast(result, t('home.cardNotHidden'))) setupCard = null;
   }
 
   async function refreshStatus() {
@@ -115,11 +130,19 @@
   function setFilter(token) { filter = token; chip = null; refresh(); }
   function setChip(value) { chip = value; refresh(); }
   function searched() { clearTimeout(searchTimer); searchTimer = setTimeout(refresh, 120); }
+  async function setSort(option, favoritesFirst) {
+    const result = await call('items_sort_set', option, favoritesFirst);
+    if (okOrToast(result, t('home.sortNotChanged'))) refresh();
+  }
+  async function dismissImportCard() {
+    const result = await call('import_card_dismiss');
+    if (okOrToast(result, t('home.cardNotHidden'))) refresh();
+  }
   function clearAll() { filter = null; chip = null; query = ''; refresh(); }
 
   function emptyAction(action) {
-    if (action === 'Clear filters') clearAll();
-    else if (action === 'New item') sheet = { kind: 'new' };
+    if (action === 'clear_filters') clearAll();
+    else if (action === 'new_item') sheet = { kind: 'new' };
   }
 
   function openItem(ref) {
@@ -128,12 +151,21 @@
     else if (ref.source === 'typed') sheet = { kind: 'typed', ref, itemKind: ref.kind };
   }
 
-  // Pages opened over the home screen stack: closing one returns to the page that opened it.
+  // Pages open in the content pane, right of the sidebar (which stays visible). Pages opened from a page stack:
+  // closing one returns to the page that opened it. A sidebar entry replaces the whole stack instead.
   let pages = $state([]);
   const page = $derived(pages.length ? pages[pages.length - 1] : null);
   let afterClose = [];
+  let forward = []; // pages popped with Back, for Ctrl+]
   let pageIds = 0;
+  let replacing = false;
   function push(next, refresh = null) {
+    forward = [];
+    if (replacing && !OVERLAYS.has(next.kind)) {
+      pages = [{ ...next, id: ++pageIds }];
+      afterClose = [refresh];
+      return;
+    }
     // Opening a page that is already open goes back to it instead of stacking a second copy.
     const existing = pages.findIndex((p) => p.kind === next.kind);
     if (existing !== -1) {
@@ -144,20 +176,44 @@
     afterClose.push(refresh);
     pages = [...pages, { ...next, id: ++pageIds }];
   }
-  // Lower pages stay mounted (they keep their place) but hidden; a small sheet shows over the page beneath it.
+  // Password prompts stay real dialogs over the window; every other page fills the content pane.
   const OVERLAYS = new Set(['master', 'backup-password']);
-  function shown(i) {
-    const last = pages.length - 1;
-    return i === last || (i === last - 1 && OVERLAYS.has(pages[last].kind));
-  }
+  const panePages = $derived(pages.filter((p) => !OVERLAYS.has(p.kind)));
+  const PAGE_OPEN = Symbol('page open'); // no filter entry is current while a page fills the pane
+  const panePage = $derived(panePages.length ? panePages[panePages.length - 1] : null);
   function pop() {
+    const gone = pages[pages.length - 1];
     pages = pages.slice(0, -1);
     const refresh = afterClose.pop();
+    if (gone && !OVERLAYS.has(gone.kind)) forward = [...forward, { page: gone, refresh }];
     if (refresh) refresh();
   }
+  function goForward() {
+    const next = forward[forward.length - 1];
+    if (!next) return;
+    forward = forward.slice(0, -1);
+    pages = [...pages, next.page];
+    afterClose.push(next.refresh);
+  }
+  function closePages() { pages = []; afterClose = []; forward = []; }
+  // Which sidebar action the open page belongs to, so its entry stays highlighted.
+  const PAGE_ACTIONS = { security: 'security_health_clicked', health: 'security_health_clicked', settings: 'settings_clicked',
+    licence: 'licence_clicked', connections: 'connections_clicked', sync: 'sync_clicked', 'import-menu': 'import_export_clicked',
+    import: 'import_clicked', export: 'export_clicked', 'sync-status': 'sync_clicked', transfer: 'transfer_clicked', onboarding: 'onboarding_clicked',
+    trash: 'trash_clicked', scan: 'scan_qr_clicked', 'phone-backup': 'import_export_clicked', incoming: 'import_export_clicked' };
+  const WORKSPACE_ACTIONS = { reminders: 'reminders_clicked', activity: 'activity_clicked', shortcuts: 'show_shortcuts_clicked',
+    collections: 'collections_clicked' };
+  const activeActions = $derived(panePages.map((p) => p.action ?? (p.kind === 'workspace' ? WORKSPACE_ACTIONS[p.which] : PAGE_ACTIONS[p.kind]))
+    .filter(Boolean));
+  function sidebarAction(action) {
+    const before = pageIds;
+    replacing = true;
+    try { navAction(action); } finally { replacing = false; }
+    if (pages.length && pages[0].id > before) pages[0].action = action;
+  }
+  function sidebarFilter(token) { closePages(); setFilter(token); }
   let update = $state(null);
-  const updateText = $derived(update ? 'A newer version is available.\n\nCurrent version: ' + update.current
-    + '\nLatest version: ' + update.latest + (update.note ? '\n\n' + update.note : '') : '');
+  const updateText = $derived(update ? t('home.updateText', { current: update.current, latest: update.latest }) + (update.note ? '\n\n' + update.note : '') : '');
 
   // After unlock: an old build suggests an update check (no network until the user says yes).
   let reminder = $state(null);
@@ -223,16 +279,21 @@
     else if (target === 'updates' || target === 'check-updates') checkUpdates();
     else if (target === 'backup_password') backupPassword(params, refresh);
     else if (target === 'sync') push({ kind: 'sync' }, refresh);
+    else if (target === 'sync-status') push({ kind: 'sync-status' }, refresh);
     else if (['reminders', 'activity', 'shortcuts', 'collections'].includes(target)) push({ kind: 'workspace', which: target }, refresh);
-    else if (target === 'onboarding') push({ kind: 'onboarding' }, refresh);
+    else if (target === 'onboarding') push({ kind: 'onboarding' }, () => { refreshOverview(); if (refresh) refresh(); });
     else if (target === 'desktop-bind') push({ kind: 'desktop', token: params.token ?? null }, refresh);
     else if (target === 'new-item') sheet = { kind: 'new' };
+    else if (target === 'scan-qr') push({ kind: 'scan' }, refresh);
     else if (target === 'quick-access') quick = true;
-    else if (target === 'import-menu') sheet = { kind: 'import-menu' };
+    else if (target === 'import-menu') push({ kind: 'import-menu' }, refresh);
+    else if (target === 'trash') push({ kind: 'trash' }, refresh);
     else if (target === 'import') push({ kind: 'import' }, refresh);
     else if (target === 'export') push({ kind: 'export' }, refresh);
     else if (target === 'transfer' || target === 'encrypted-transfer') push({ kind: 'transfer' }, refresh);
     else if (target === 'phone-backup') push({ kind: 'phone-backup' }, refresh);
+    else if (target === 'incoming' || target === 'receive-share') push({ kind: 'incoming' }, refresh);
+    else if (target === 'share-item') shareItem(params.ref ?? selected);
     else navAction(target);
   }
 
@@ -240,26 +301,33 @@
     connections_clicked: 'connections', sync_clicked: 'sync', import_export_clicked: 'import-menu',
     import_clicked: 'import', export_clicked: 'export', transfer_clicked: 'transfer', reminders_clicked: 'reminders',
     activity_clicked: 'activity', show_shortcuts_clicked: 'shortcuts', onboarding_clicked: 'onboarding',
-    quick_access_clicked: 'quick-access' };
+    quick_access_clicked: 'quick-access', scan_qr_clicked: 'scan-qr' };
 
   function navAction(action) {
-    if (action === 'trash_clicked') { sheet = { kind: 'trash' }; return; }
+    if (action === 'trash_clicked') { route('trash'); return; }
     if (NAV_ROUTES[action]) { route(NAV_ROUTES[action]); return; }
-    toast('Coming in a later update', 'This page is not in the new window yet. The classic window still has it.');
+    toast(t('home.comingTitle'), t('home.comingText'));
   }
 
   function navigate(target, params = {}) {
     if (['security', 'health', 'master', 'recovery', 'settings', 'licence', 'connections', 'profiles',
       'switch-profile', 'check-updates', 'updates', 'sync', 'import', 'export', 'encrypted-transfer', 'reminders',
-      'activity', 'onboarding', 'shortcuts', 'collections'].includes(target)) route(target, params);
+      'activity', 'onboarding', 'shortcuts', 'collections', 'sync-status'].includes(target)) route(target, params);
     else if (target === 'generator') sheet = { kind: 'generator' };
     else if (target === 'new-item') sheet = { kind: 'new' };
-    else if (target === 'trash') sheet = { kind: 'trash' };
+    else if (target === 'scan-qr') route('scan-qr');
+    else if (target === 'trash') route('trash');
     else if (target === 'quick-access') quick = true;
     else if (target === 'devices-sync') route('connections');
     else if (target === 'sync-settings') route('sync');
-    else if (target === 'error-log') call('errorlog_open').then((r) => okOrToast(r, 'Error log folder not opened'));
+    else if (target === 'share-item' || target === 'receive-share') route(target, params);
+    else if (target === 'error-log') call('errorlog_open').then((r) => okOrToast(r, t('home.errorLogNotOpened')));
     else navAction(target);
+  }
+
+  function shareItem(ref) {
+    if (!ref) { toast(t('home.selectFirst'), t('home.selectFirstText')); return; }
+    push({ kind: 'share', item: { source: ref.source, id: ref.id, kind: ref.kind } });
   }
 
   async function menuPick(action) {
@@ -268,20 +336,22 @@
     if (action === 'edit' || action === 'open') openItem(ref);
     else if (action.startsWith('copy-')) {
       const result = await call('item_copy', ref, action.slice(5));
-      if (okOrToast(result, 'Not copied')) notice(result);
-    } else if (action === 'open-website') okOrToast(await call('item_open_website', ref), 'Website not opened');
+      if (okOrToast(result, t('home.notCopied'))) notice(result);
+    } else if (action === 'open-website') okOrToast(await call('item_open_website', ref), t('home.websiteNotOpened'));
+    else if (action === 'share') shareItem(ref);
     else if (action === 'favorite') {
       const result = await call('item_favorite', ref, !item.favorite);
       if (okOrToast(result)) toast(result.message);
     } else if (action === 'trash') {
       const result = await call('item_trash', ref);
-      if (okOrToast(result, 'Not moved to trash')) notice(result);
+      if (okOrToast(result, t('home.notTrashed'))) notice(result);
     }
   }
 
   // Typed items need the current catalog: offer the update first, as the classic window does.
   async function chooseNewKind(kind) {
     if (kind === 'web') { sheet = { kind: 'editor', ref: null }; return; }
+    if (kind === 'scan-qr') { sheet = null; route('scan-qr'); return; }
     if (kind === 'desktop') { sheet = null; push({ kind: 'desktop' }); return; }
     const status = await call('catalog_status');
     if (!status.ok) { sheet = null; toast(status.error.message, '', 'error'); return; }
@@ -294,13 +364,13 @@
 
   async function trash(ref) {
     const result = await call('item_trash', ref);
-    if (okOrToast(result, 'Not moved to trash')) notice(result);
+    if (okOrToast(result, t('home.notTrashed'))) notice(result);
   }
 
   async function copyPassword(ref) {
     if (ref.source !== 'credential') return;
     const result = await call('item_copy', ref, 'password');
-    if (okOrToast(result, 'Not copied')) notice(result);
+    if (okOrToast(result, t('home.notCopied'))) notice(result);
   }
 
   function inTextField(target) {
@@ -323,7 +393,22 @@
     return itemList.key(event);
   }
 
+  // Esc goes back one page; Ctrl+[ and Ctrl+] go back and forward through the pages.
+  function pageKeys(event) {
+    if (sheet || update || offer || menu || quick || document.querySelector('.scrim')) return false;
+    const top = pages[pages.length - 1];
+    if (top && OVERLAYS.has(top.kind)) return false; // the dialog handles its own keys
+    if (event.key === 'Escape' && !event.ctrlKey && !event.altKey && panePage) {
+      if (event.defaultPrevented) return true;
+      event.preventDefault(); pop(); return true;
+    }
+    if (event.ctrlKey && !event.altKey && event.key === '[' && panePage) { event.preventDefault(); pop(); return true; }
+    if (event.ctrlKey && !event.altKey && event.key === ']' && forward.length) { event.preventDefault(); goForward(); return true; }
+    return false;
+  }
+
   function keys(event) {
+    if (pageKeys(event)) return;
     // F1 / ? open the shortcuts from the main screen only, never over a sheet, page or dialog.
     if ((event.key === 'F1' || (event.key === '?' && !inTextField(event.target))) && !event.ctrlKey && !event.altKey
         && !sheet && !pages.length && !update && !offer && !document.querySelector('.scrim')) {
@@ -343,58 +428,24 @@
 
 <svelte:window onkeydown={keys} />
 
-<div class="home">
-  <aside class="side"><Sidebar {nav} active={filter} onfilter={setFilter} onaction={navAction} /></aside>
-  <section class="center">
-    <TopBar bind:query bind:searchInput oninput={searched} onlock={() => call('vault_lock')}
-      onnew={() => (sheet = { kind: 'new' })} onpalette={() => (sheet = { kind: 'palette' })} />
-    {#if !filter && !query && !chip}<Overview {overview} ongenerator={() => (sheet = { kind: 'generator' })} />{/if}
-    {#if !filter && !query && !chip}<CodesCard />{/if}
-    <div class="list-head">
-      <h1>{list?.context.title ?? 'All items'}</h1>
-      <span class="count">{list ? `${list.count} item${list.count === 1 ? '' : 's'}` : ''}</span>
-    </div>
-    <Chips counts={list?.chips ?? {}} active={chip} onselect={setChip} />
-    <ItemList bind:this={itemList} items={list?.items ?? []} {selected} empty={list?.empty}
-      onselect={(ref) => (selected = ref)} onopen={openItem} onemptyaction={emptyAction}
-      onmenu={(item, at) => (menu = { item, at })} ontrash={trash} oncopy={copyPassword} />
-  </section>
-  <section class="right">
-    <DetailPane {selected} icon={list?.items?.find((i) => i.ref.id === selected?.id)?.icon ?? null} onedit={openItem} onchanged={refresh} />
-    {#if reminder}<Modal title={reminder.title} message={reminder.text} allowLabel="Check now" denyLabel="Not now" onanswer={reminderAnswer} />{/if}
-    {#if ratePrompt}<Modal title={ratePrompt.title} message={ratePrompt.text} allowLabel="Rate now" denyLabel="No thanks" onanswer={rateAnswer} />{/if}
-    {#if quick}<QuickAccess onclose={() => (quick = false)} onopen={(ref) => { quick = false; openItem(ref); }} />{/if}
-    {#if sheet?.kind === 'editor'}
-      <LoginEditor ref={sheet.ref} newPassword={!!sheet.newPassword} onclose={(saved) => { sheet = null; if (saved) { selected = saved; refresh(); } }}
-        onbinding={(entryId) => { sheet = null; push({ kind: 'desktop', entryId }); }} />
-    {:else if sheet?.kind === 'typed'}
-      <TypedEditor kind={sheet.itemKind} ref={sheet.ref} onclose={(saved) => { sheet = null; if (saved) { selected = saved; refresh(); } }} />
-    {:else if sheet?.kind === 'generator'}
-      <Generator onclose={() => (sheet = null)} />
-    {/if}
-  </section>
-  <div class="status-row"><StatusLine {status} /></div>
-</div>
+{#snippet itemSheets()}
+{#if sheet?.kind === 'editor'}
+    <LoginEditor ref={sheet.ref} draft={sheet.draft ?? null} newPassword={!!sheet.newPassword} onclose={(saved) => { sheet = null; if (saved) { selected = saved; refresh(); } }}
+      onbinding={(entryId) => { sheet = null; push({ kind: 'desktop', entryId }); }} />
+  {:else if sheet?.kind === 'typed'}
+    <TypedEditor kind={sheet.itemKind} ref={sheet.ref} onclose={(saved) => { sheet = null; if (saved) { selected = saved; refresh(); } }} />
+  {:else if sheet?.kind === 'generator'}
+    <Generator onclose={() => (sheet = null)} />
+  {/if}
+{/snippet}
 
-{#if sheet?.kind === 'palette'}
-  <Palette onclose={() => (sheet = null)} onopen={(ref) => { selected = ref; }} onnavigate={navigate} />
-{:else if sheet?.kind === 'new'}
-  <NewItem onclose={() => (sheet = null)} onchoose={chooseNewKind} />
-{:else if sheet?.kind === 'import-menu'}
-  <ImportExportMenu onclose={() => (sheet = null)} onpick={(target) => { sheet = null; route(target); }} />
-{:else if sheet?.kind === 'trash'}
-  <div class="trash-host"><TrashPage onclose={() => { sheet = null; refresh(); }} /></div>
-{/if}
-{#each pages as pg, i (pg.id)}
-  <div class="trash-host" hidden={!shown(i)}>
+{#snippet pageView(pg)}
     {#if pg.kind === 'security'}
       <SecurityPage onclose={pop} onroute={route} />
     {:else if pg.kind === 'health'}
       <HealthPage filter={pg.filter} scanAll={pg.scanAll} onclose={pop} onroute={route}
-        onopen={(id) => { pages = []; afterClose = []; openItem({ source: 'credential', id, kind: 'web' }); }}
+        onopen={(id) => { closePages(); openItem({ source: 'credential', id, kind: 'web' }); }}
         onchangepassword={(id) => { sheet = { kind: 'editor', ref: { source: 'credential', id, kind: 'web' }, newPassword: true }; }} />
-    {:else if pg.kind === 'master'}
-      <MasterSheet onclose={pop} />
     {:else if pg.kind === 'unlocking'}
       <UnlockingPage startHello={!!pg.startHello} onclose={pop} />
     {:else if pg.kind === 'recovery'}
@@ -419,20 +470,101 @@
       <ExportSheet onclose={pop} />
     {:else if pg.kind === 'transfer'}
       <TransferSheet onclose={() => { pop(); refresh(); }} />
+    {:else if pg.kind === 'share'}
+      <ShareSheet item={pg.item} onclose={pop} />
+    {:else if pg.kind === 'incoming'}
+      <IncomingSheet onclose={() => { pop(); refresh(); }} onchanged={refresh} />
     {:else if pg.kind === 'phone-backup'}
       <PhoneBackupSheet onclose={() => { pop(); refresh(); }} />
     {:else if pg.kind === 'sync'}
       <SyncPage onclose={pop} onlicence={() => push({ kind: 'licence' }, refresh)} />
-    {:else if pg.kind === 'backup-password'}
-      <BackupPasswordSheet onclose={pop} />
+    {:else if pg.kind === 'sync-status'}
+      <SyncStatusPage onclose={pop} onsettings={() => push({ kind: 'sync' })} />
+    {:else if pg.kind === 'trash'}
+      <TrashPage onclose={() => { pop(); refresh(); }} />
+    {:else if pg.kind === 'import-menu'}
+      <ImportExportMenu page onclose={pop} onpick={(target) => route(target)} />
+    {:else if pg.kind === 'scan'}
+      <ScanSheet onclose={pop} ondone={refresh}
+        onedit={(draft, ref) => { pop(); sheet = { kind: 'editor', ref, draft }; }} />
     {/if}
-  </div>
+{/snippet}
+
+<div class="home">
+  <aside class="side"><Sidebar {nav} active={panePage ? PAGE_OPEN : filter} activeActions={activeActions}
+    onfilter={sidebarFilter} onaction={sidebarAction} />
+    <SyncPill onopen={() => { replacing = true; push({ kind: 'sync-status' }); replacing = false; }} /></aside>
+  <section class="center" hidden={!!panePage}>
+    <TopBar bind:query bind:searchInput oninput={searched} onlock={() => call('vault_lock')}
+      onnew={() => (sheet = { kind: 'new' })} onpalette={() => (sheet = { kind: 'palette' })} />
+    {#if !filter && !query && !chip}<Overview {overview} ongenerator={() => (sheet = { kind: 'generator' })} />{/if}
+    {#if !filter && !query && !chip}<CodesCard />{/if}
+    {#if setupCard && !filter && !query && !chip}
+      <section class="import-card setup-card" aria-label={t('home.finishSetup')}>
+        <h2>{t('home.finishSetupProgress', { progress: setupCard.progress })}</h2>
+        <p>{t('home.finishSetupText')}</p>
+        <div class="import-card-actions">
+          <button type="button" class="primary" onclick={() => { replacing = true; push({ kind: 'onboarding', action: 'onboarding_clicked' }, refreshOverview); replacing = false; }}>{t('home.continueSetup')}</button>
+          <button type="button" onclick={hideSetupCard}>{t('home.hide')}</button>
+        </div>
+      </section>
+    {/if}
+    {#if list?.import_card && !filter && !query && !chip}
+      <section class="import-card" aria-label={t('home.importTitle')}>
+        <h2>{t('home.importTitle')}</h2>
+        <p>{t('home.importText')}</p>
+        <div class="import-card-actions">
+          <button type="button" class="primary" onclick={() => { replacing = true; push({ kind: 'import', action: 'import_clicked' }, refresh); replacing = false; }}>{t('home.import')}</button>
+          <button type="button" onclick={dismissImportCard}>{t('common.notNow')}</button>
+        </div>
+      </section>
+    {/if}
+    <div class="list-head">
+      <h1>{list?.context.title ?? t('home.allItems')}</h1>
+      <span class="count">{list ? t('home.itemCount', { count: list.count, number: formatNumber(list.count) }) : ''}</span>
+      <SortMenu sort={list?.sort ?? null} searching={!!query.trim()} onchange={setSort} />
+    </div>
+    <Chips counts={list?.chips ?? {}} active={chip} onselect={setChip} />
+    <ItemList bind:this={itemList} items={list?.items ?? []} {selected} empty={list?.empty}
+      onselect={(ref) => (selected = ref)} onopen={openItem} onemptyaction={emptyAction}
+      onmenu={(item, at) => (menu = { item, at })} ontrash={trash} oncopy={copyPassword} />
+  </section>
+  <section class="right" hidden={!!panePage}>
+    <DetailPane {selected} icon={list?.items?.find((i) => i.ref.id === selected?.id)?.icon ?? null} onedit={openItem} onchanged={refresh}
+      onshare={shareItem} />
+    {#if reminder}<Modal title={reminder.title} message={reminder.text} allowLabel={t('home.checkNow')} denyLabel={t('common.notNow')} onanswer={reminderAnswer} />{/if}
+    {#if ratePrompt}<Modal title={ratePrompt.title} message={ratePrompt.text} allowLabel={t('home.rateNow')} denyLabel={t('home.noThanks')} onanswer={rateAnswer} />{/if}
+    {#if quick}<QuickAccess onclose={() => (quick = false)} onopen={(ref) => { quick = false; openItem(ref); }} />{/if}
+    {#if !panePage}{@render itemSheets()}{/if}
+  </section>
+  {#if panePage}
+    <section class="pane" aria-label={t('home.page')}>
+      {#each panePages as pg (pg.id)}
+        <div class="page-slot" hidden={pg !== panePage}>{@render pageView(pg)}</div>
+      {/each}
+      {@render itemSheets()}
+    </section>
+  {/if}
+  <div class="status-row"><StatusLine {status} /></div>
+</div>
+
+{#if sheet?.kind === 'palette'}
+  <Palette onclose={() => (sheet = null)} onopen={(ref) => { selected = ref; }} onnavigate={navigate} />
+{:else if sheet?.kind === 'new'}
+  <NewItem onclose={() => (sheet = null)} onchoose={chooseNewKind} />
+{/if}
+{#each pages as pg (pg.id)}
+  {#if pg.kind === 'master'}
+    <div class="dialog-host"><MasterSheet onclose={pop} /></div>
+  {:else if pg.kind === 'backup-password'}
+    <div class="dialog-host"><BackupPasswordSheet onclose={pop} /></div>
+  {/if}
 {/each}
 {#if update}
-  <Modal title="Update available" message={updateText} allowLabel="Open release page" denyLabel="Close" onanswer={openRelease} />
+  <Modal title={t('home.updateTitle')} message={updateText} allowLabel={t('home.openRelease')} denyLabel={t('common.close')} onanswer={openRelease} />
 {/if}
 {#if offer}
-  <Modal title={offer.title} message={offer.text} allowLabel="Set up" denyLabel="Not now" onanswer={answerOffer} />
+  <Modal title={offer.title} message={offer.text} allowLabel={t('home.setUp')} denyLabel={t('common.notNow')} onanswer={answerOffer} />
 {/if}
 {#if menu}
   <ItemMenu item={menu.item} at={menu.at} onpick={menuPick} onclose={() => (menu = null)} />
@@ -447,15 +579,36 @@
     gap: 10px;
     padding: 10px 10px 0;
   }
-  .side, .center, .right {
+  .side, .center, .right, .pane {
     min-height: 0; display: flex; flex-direction: column; position: relative;
     background: var(--wash-base); border-radius: 14px; border: 1px solid var(--separator);
   }
   .side { background: transparent; border-color: transparent; }
+  .import-card {
+    margin: 4px 16px 8px; padding: 12px 14px; border-radius: 12px;
+    border: 1px solid var(--separator); background: var(--wash-raised, var(--wash-base));
+  }
+  .import-card h2 { margin: 0 0 4px; font: 600 15px var(--font-display); }
+  .import-card p { margin: 0 0 10px; color: var(--text-faint); font-size: 13px; }
+  .import-card-actions { display: flex; gap: 8px; }
+  .import-card-actions button {
+    height: 30px; padding: 0 14px; border-radius: 999px; cursor: pointer; font: inherit; font-size: 13px;
+    border: 1px solid var(--glass-border); background: var(--glass); color: var(--text);
+  }
+  .import-card-actions button:hover { background: var(--glass-hover); }
+  .import-card-actions button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+  .import-card-actions button.primary:hover { background: var(--accent-hover); }
   .list-head { display: flex; align-items: baseline; gap: 10px; padding: 4px 16px 6px; }
   h1 { margin: 0; font: 600 20px var(--font-display); }
   .count { color: var(--text-faint); font-size: 12.5px; }
   .center :global(.list) { flex: 1; }
   .status-row { grid-column: 1 / -1; }
-  .trash-host { position: fixed; inset: 0; z-index: 40; background: var(--scrim); }
+  .pane { grid-column: 2 / -1; grid-row: 1; }
+  .page-slot { position: absolute; inset: 0; }
+  .page-slot[hidden], .center[hidden], .right[hidden] { display: none; }
+  /* True dialogs (password prompts) are the only pages shown over the whole window. */
+  .dialog-host { position: fixed; inset: 0; z-index: 40; background: var(--scrim); }
+  @media (max-width: 720px) {
+    .home { grid-template-columns: 56px minmax(280px, 1fr) minmax(300px, 0.9fr); }
+  }
 </style>

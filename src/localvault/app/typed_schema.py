@@ -33,13 +33,25 @@ KIND_CODE_BY_LABEL = {label: kind for kind, label in KIND_LABELS.items()}
 PURCHASE_LIKE = {"purchase", "warranty", "subscription"}
 
 
+# Catalog keys; typed.py translates them when it builds the form.
 IDENTITY_LABELS = {
-    "name": "Full name", "given_name": "Given name", "middle_name": "Middle name",
-    "family_name": "Family name", "organization": "Organization", "company": "Company",
-    "job_title": "Job title", "email": "Email", "phone": "Phone", "address": "Address",
-    "address_line1": "Address line 1", "address_line2": "Address line 2", "city": "City",
-    "state": "State / province", "postal_code": "Postal code", "country": "Country",
-    "website": "Website",
+    "name": "typed.identity.name",
+    "given_name": "typed.identity.given_name",
+    "middle_name": "typed.identity.middle_name",
+    "family_name": "typed.identity.family_name",
+    "organization": "typed.identity.organization",
+    "company": "typed.identity.company",
+    "job_title": "typed.identity.job_title",
+    "email": "typed.identity.email",
+    "phone": "typed.identity.phone",
+    "address": "typed.identity.address",
+    "address_line1": "typed.identity.address_line1",
+    "address_line2": "typed.identity.address_line2",
+    "city": "typed.identity.city",
+    "state": "typed.identity.state",
+    "postal_code": "typed.identity.postal_code",
+    "country": "typed.identity.country",
+    "website": "typed.identity.website",
 }
 
 
@@ -49,46 +61,46 @@ IDENTITY_LABELS = {
 # ``PROTECTED_FIELDS_BY_KIND`` so the editor cannot drift from the schema.
 SECRET_KIND_FIELDS: dict[str, tuple[tuple[str, str, str], ...]] = {
     "card": (
-        ("cardholder", "Cardholder", "text"),
-        ("number", "Card number (Luhn-checked; brand is detected)", "text"),
-        ("expiry", "Expiry MM/YY", "text"),
-        ("cvv", "CVV", "text"),
-        ("pin", "PIN (desktop only; never filled into a browser)", "text"),
+        ("cardholder", "typed.field.card.cardholder", "text"),
+        ("number", "typed.field.card.number", "text"),
+        ("expiry", "typed.field.card.expiry", "text"),
+        ("cvv", "typed.field.card.cvv", "text"),
+        ("pin", "typed.field.card.pin", "text"),
     ),
     "bank_account": (
-        ("bank", "Bank", "text"),
-        ("account_holder", "Account holder", "text"),
-        ("account_number", "IBAN / account number (IBAN checksum is verified)", "text"),
-        ("routing", "Routing number / BIC", "text"),
-        ("pin", "PIN", "text"),
+        ("bank", "typed.field.bank_account.bank", "text"),
+        ("account_holder", "typed.field.bank_account.account_holder", "text"),
+        ("account_number", "typed.field.bank_account.account_number", "text"),
+        ("routing", "typed.field.bank_account.routing", "text"),
+        ("pin", "typed.field.bank_account.pin", "text"),
     ),
     "ssh_key": (
-        ("private_key", "Private key", "multiline"),
-        ("public_key", "Public key (OpenSSH line; fingerprint is computed)", "multiline"),
-        ("passphrase", "Passphrase", "text"),
-        ("fingerprint", "Fingerprint", "text"),
+        ("private_key", "typed.field.ssh_key.private_key", "multiline"),
+        ("public_key", "typed.field.ssh_key.public_key", "multiline"),
+        ("passphrase", "typed.field.ssh_key.passphrase", "text"),
+        ("fingerprint", "typed.field.ssh_key.fingerprint", "text"),
     ),
     "api_key": (
-        ("service", "Service", "text"),
-        ("key", "Key", "text"),
-        ("secret", "Secret", "text"),
-        ("expires", "Expires YYYY-MM-DD", "text"),
+        ("service", "typed.field.api_key.service", "text"),
+        ("key", "typed.field.api_key.key", "text"),
+        ("secret", "typed.field.api_key.secret", "text"),
+        ("expires", "typed.field.api_key.expires", "text"),
     ),
     "wifi": (
-        ("ssid", "Network name (SSID)", "text"),
-        ("password", "Password", "text"),
-        ("security", "Security type", "choice"),
-        ("hidden", "Hidden network", "bool"),
+        ("ssid", "typed.field.wifi.ssid", "text"),
+        ("password", "typed.field.wifi.password", "text"),
+        ("security", "typed.field.wifi.security", "choice"),
+        ("hidden", "typed.field.wifi.hidden", "bool"),
     ),
     "passkey": (
-        ("rp_name", "Site name", "text"),
-        ("relying_party_id", "Relying party id (hostname)", "text"),
-        ("user_name", "Account", "text"),
-        ("user_handle", "User handle (base64url)", "text"),
-        ("credential_id", "Credential id (base64url)", "text"),
-        ("private_key", "Private key", "multiline"),
-        ("algorithm", "Algorithm", "choice"),
-        ("created", "Created YYYY-MM-DD", "text"),
+        ("rp_name", "typed.field.passkey.rp_name", "text"),
+        ("relying_party_id", "typed.field.passkey.relying_party_id", "text"),
+        ("user_name", "typed.field.passkey.user_name", "text"),
+        ("user_handle", "typed.field.passkey.user_handle", "text"),
+        ("credential_id", "typed.field.passkey.credential_id", "text"),
+        ("private_key", "typed.field.passkey.private_key", "multiline"),
+        ("algorithm", "typed.field.passkey.algorithm", "choice"),
+        ("created", "typed.field.passkey.created", "text"),
     ),
 }
 
@@ -100,12 +112,12 @@ SECRET_KIND_CHOICES: dict[str, tuple[str, ...]] = {
 
 
 SECRET_KIND_NOTES: dict[str, str] = {
-    "card": "Card details are stored encrypted. Browser fill releases only approved fields and never the PIN.",
-    "bank_account": "An IBAN is normalized and checksum-verified; other account numbers are stored as entered.",
-    "ssh_key": "The key format is detected from the private key header. Nothing here signs or connects.",
-    "api_key": "Key and secret are protected fields; copy them deliberately from the item.",
-    "wifi": "The password is protected. Security type and hidden flag are plain metadata.",
-    "passkey": "Created by websites through the browser extension. The private key never leaves LocalGateKeys.",
+    "card": "typed.note.card",
+    "bank_account": "typed.note.bank_account",
+    "ssh_key": "typed.note.ssh_key",
+    "api_key": "typed.note.api_key",
+    "wifi": "typed.note.wifi",
+    "passkey": "typed.note.passkey",
 }
 
 
@@ -114,3 +126,10 @@ SECRET_KIND_NOTES: dict[str, str] = {
 SECRET_FORM_HIDDEN_FIELDS: dict[str, tuple[str, ...]] = {
     "passkey": ("user_display_name", "discoverable"),
 }
+
+
+def kind_title(kind: str) -> str:
+    """The shown name of an item kind, in the active language."""
+    from ..i18n import t
+
+    return t(f"kind.{kind}") if kind in KIND_LABELS else kind

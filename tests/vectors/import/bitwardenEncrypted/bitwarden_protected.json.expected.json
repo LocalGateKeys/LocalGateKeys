@@ -1,0 +1,152 @@
+{
+  "format": "bitwardenEncrypted",
+  "input": "tests/fixtures/imports/bitwarden_protected.json",
+  "password": "fixture export password",
+  "python_format": "bitwarden-encrypted-json",
+  "result": {
+    "diagnostics": [
+      "1 login(s) have passkeys; Bitwarden does not export passkeys in a form another manager can use, so only the password was imported."
+    ],
+    "records": [
+      {
+        "card": {},
+        "created": 1704164645,
+        "custom_fields": [
+          {
+            "hidden": true,
+            "name": "Recovery code",
+            "value": "rc-0000-1111"
+          },
+          {
+            "hidden": false,
+            "name": "Team",
+            "value": "Platform"
+          },
+          {
+            "hidden": false,
+            "name": "Remember me",
+            "value": "true"
+          }
+        ],
+        "favorite": true,
+        "folder": "Work",
+        "identity": {},
+        "kind": "login",
+        "modified": 1714557600,
+        "notes": "Work code hosting.",
+        "password": "bw-git-pass-3x",
+        "source_row": 1,
+        "tags": [],
+        "title": "Example Git",
+        "totp_uri": "otpauth://totp/Example%20Git?secret=JBSWY3DPEHPK3PXP",
+        "urls": [
+          "https://git.example.com/login",
+          "https://sso.example.com",
+          "androidapp://com.example.git"
+        ],
+        "username": "alex.example"
+      },
+      {
+        "card": {},
+        "created": 1714557600,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "note",
+        "modified": 1714557600,
+        "notes": "Admin page is on the sticker.",
+        "password": "",
+        "source_row": 2,
+        "tags": [],
+        "title": "Router admin",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {
+          "brand": "Mastercard",
+          "cardholder": "Alex Example",
+          "cvv": "321",
+          "expiry": "03/2029",
+          "number": "5555555555554444"
+        },
+        "created": 1714557600,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "Finance/Cards",
+        "identity": {},
+        "kind": "card",
+        "modified": 1714557600,
+        "notes": "Contactless limit raised.",
+        "password": "",
+        "source_row": 3,
+        "tags": [],
+        "title": "Everyday Mastercard",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": 1714557600,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Title",
+            "value": "Mx"
+          },
+          {
+            "hidden": false,
+            "name": "Username",
+            "value": "alexq"
+          },
+          {
+            "hidden": true,
+            "name": "SSN",
+            "value": "000-00-0000"
+          },
+          {
+            "hidden": true,
+            "name": "Passport number",
+            "value": "000000000"
+          },
+          {
+            "hidden": true,
+            "name": "Licence number",
+            "value": "EXAMP000000AQ9AA"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {
+          "address_line1": "1 Example Road",
+          "address_line2": "Flat 2",
+          "city": "Exampleton",
+          "company": "Example Ltd",
+          "country": "GB",
+          "email": "alex@example.com",
+          "family_name": "Example",
+          "given_name": "Alex",
+          "middle_name": "Q",
+          "name": "Alex Q Example",
+          "phone": "+44 20 7946 0000",
+          "postal_code": "EX1 2PL",
+          "state": "Exampleshire"
+        },
+        "kind": "identity",
+        "modified": 1714557600,
+        "notes": "Use for deliveries.",
+        "password": "",
+        "source_row": 4,
+        "tags": [],
+        "title": "Home identity",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      }
+    ],
+    "source_format": "bitwarden-encrypted-json"
+  }
+}

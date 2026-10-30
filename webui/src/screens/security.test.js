@@ -83,6 +83,18 @@ describe('HealthPage blocked by a setting', () => {
   });
 });
 
+describe('HealthPage breach state', () => {
+  it('marks a found breach by its state, not by the English text', async () => {
+    fakeApi({ health_report: vi.fn().mockResolvedValue({ ...REPORT, rows: [{ ...REPORT.rows[0], breach: 'In 3 Lecks gefunden', breach_state: 'found' }] }),
+      health_cancel: vi.fn().mockResolvedValue({ ok: true }) });
+    render(HealthPage, { onclose: vi.fn(), onopen: vi.fn(), onchangepassword: vi.fn() });
+    const text = await screen.findByText('In 3 Lecks gefunden');
+    expect(text.classList.contains('bad')).toBe(true);
+    await fireEvent.click(screen.getByText('Alpha'));
+    expect(screen.getByRole('button', { name: 'Change password' })).not.toBeDisabled();
+  });
+});
+
 describe('HealthPage shortcuts', () => {
   it('offers Show all on an empty filter and Change password for the picked login', async () => {
     const api = fakeApi({ health_report: vi.fn().mockResolvedValue({ ...REPORT, rows: [] }), health_cancel: vi.fn().mockResolvedValue({ ok: true }) });

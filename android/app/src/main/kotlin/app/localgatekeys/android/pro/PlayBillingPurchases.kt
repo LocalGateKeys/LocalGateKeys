@@ -57,6 +57,10 @@ object PlayBillingRules {
     fun toAcknowledge(purchases: List<PlayPurchase>): List<String> =
         mine(purchases).filter { it.state == PurchaseState.PURCHASED && !it.acknowledged }.map { it.token }
 
+    /** The claim token: a PURCHASED `pro_unlimited` that Play lists as acknowledged or whose acknowledgement just worked. */
+    fun claimToken(purchases: List<PlayPurchase>, acknowledgedNow: Set<String>): String? =
+        mine(purchases).firstOrNull { it.state == PurchaseState.PURCHASED && (it.acknowledged || it.token in acknowledgedNow) }?.token
+
     /** The purchase sheet's answer. Throws [ProPurchaseException.Unavailable] or [BillingException] for failures. */
     fun outcome(code: Int, purchases: List<PlayPurchase>?, debugMessage: String = ""): PurchaseOutcome = when (code) {
         BillingResponseCode.OK -> {
@@ -152,9 +156,25 @@ class PlayBillingPurchases(private val port: PlayBillingPort) : ProPurchasing {
         return lastKnown
     }
 
-    private suspend fun acknowledge(list: List<PlayPurchase>) {
+    /** Returns the tokens Play acknowledged now. */
+    private suspend fun acknowledge(list: List<PlayPurchase>): Set<String> {
         // Best effort: a failure leaves the purchase owned; the next read tries again.
-        for (token in PlayBillingRules.toAcknowledge(list)) port.acknowledge(token)
+        val done = HashSet<String>()
+        for (token in PlayBillingRules.toAcknowledge(list)) {
+            if (port.acknowledge(token) == BillingResponseCode.OK) done.add(token)
+        }
+        return done
+    }
+
+    override suspend fun purchaseToken(): String? = try {
+        ok(port.connect())
+        val answer = port.queryPurchases()
+        ok(answer)
+        PlayBillingRules.claimToken(answer.value, acknowledge(answer.value))
+    } catch (e: ProPurchaseException) {
+        null
+    } catch (e: BillingException) {
+        null
     }
 
     override suspend fun offer(): ProOffer {

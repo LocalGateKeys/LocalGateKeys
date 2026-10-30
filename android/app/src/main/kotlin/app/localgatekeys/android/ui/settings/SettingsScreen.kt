@@ -1,5 +1,6 @@
 package app.localgatekeys.android.ui.settings
 
+import app.localgatekeys.android.i18n.rememberTxt
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -52,6 +53,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -65,13 +67,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.localgatekeys.android.R
 import app.localgatekeys.android.backup.BackupText
+import app.localgatekeys.android.i18n.LanguageOptions
+import app.localgatekeys.android.importing.ImportText
 import app.localgatekeys.android.generator.GeneratorDefaults
 import app.localgatekeys.android.generator.GeneratorOptions
 import app.localgatekeys.android.generator.GeneratorStrength
 import app.localgatekeys.android.pro.ProModel
 import app.localgatekeys.android.settings.Acknowledgement
 import app.localgatekeys.android.settings.AppSettings
+import app.localgatekeys.android.settings.AppPasswordSeams
+import app.localgatekeys.android.settings.Onboarding
 import app.localgatekeys.android.settings.Appearance
 import app.localgatekeys.android.settings.AutoLockDelay
 import app.localgatekeys.android.settings.AutofillStatusModel
@@ -110,6 +117,10 @@ class SettingsSeams(
     val openUrl: (String) -> Unit,
     /** The fresh unlock before an export; true when the owner confirmed (and the vault is still unlocked). */
     val confirmOwner: suspend () -> Boolean,
+    /** Task 7: the optional app password; null hides the section (tests). */
+    val appPassword: AppPasswordSeams? = null,
+    /** Task 9: copies the licence key (through the secret clipboard). */
+    val copyKey: (String) -> Unit = {},
 ) {
     override fun toString(): String = "SettingsSeams(version=$version)"
 }
@@ -131,14 +142,23 @@ fun SettingsScreen(
     onRestore: () -> Unit,
     onOpenSync: () -> Unit,
     onClose: () -> Unit,
+    onImport: (() -> Unit)? = null,
+    /** UX workstream 9: Receive a shared item (a .lgkshare file or its QR). Null: no row. */
+    onReceiveShare: (() -> Unit)? = null,
+    onShowSetup: (() -> Unit)? = null,
 ) {
     val c = LgkTheme.colors
+    val txt = rememberTxt()
+    val backupText = BackupText(txt)
+    val settingsText = SettingsText(txt)
     val scope = rememberCoroutineScope()
     val initials = remember { InitialsField(settings) }
     var initialsText by remember { mutableStateOf(initials.text) }
     var ack by remember { mutableStateOf<Acknowledgement?>(null) }
     var showAcks by remember { mutableStateOf(false) }
     var eraseStep by remember { mutableIntStateOf(0) }
+    var appPasswordSetup by remember { mutableStateOf(false) }
+    var appPasswordRefresh by remember { mutableIntStateOf(0) }
     val close: () -> Unit = {
         initials.text = initialsText
         initials.submit()
@@ -156,18 +176,26 @@ fun SettingsScreen(
         LicenceText(opened) { ack = null }
         return
     }
+    val appPassword = seams.appPassword
+    if (appPasswordSetup && appPassword != null) {
+        AppPasswordSetup(appPassword, onDone = { appPasswordSetup = false; appPasswordRefresh++ })
+        return
+    }
     if (showAcks) {
         Acknowledgements(seams.acknowledgements(), onOpen = { ack = it }, onBack = { showAcks = false })
         return
     }
     BackHandler(onBack = close)
-    Page("Settings", "settings", onBack = close, doneLabel = "Done") {
+    Page(txt.s(R.string.settings_title), "settings", onBack = close, doneLabel = txt.s(R.string.common_done)) {
         LazyColumn(
             Modifier.fillMaxSize().testTag("settings-list"),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             item(key = "security") { Security(settings, seams, onLock = { close(); seams.lockNow() }) }
+            if (appPassword != null) {
+                item(key = "app-password") { AppPasswordSection(appPassword, appPasswordRefresh, onSetup = { appPasswordSetup = true }) }
+            }
             item(key = "autofill") { Autofill(settings, seams.autofill) }
             item(key = "appearance") {
                 Appearance(settings, seams, initialsText, onInitials = { initialsText = it }, onSubmit = {
@@ -178,17 +206,41 @@ fun SettingsScreen(
             }
             item(key = "generator") { Generator(settings) }
             item(key = "backup") {
-                Section(BackupText.SECTION, footer = BackupText.FOOTER, tag = "settings-backup") {
-                    RowButton(BackupText.EXPORT, "settings-export", divider = false, onClick = onExport)
-                    RowButton(BackupText.RESTORE, "settings-restore", onClick = onRestore)
+                Section(backupText.section, footer = backupText.footer, tag = "settings-backup") {
+                    RowButton(backupText.export, "settings-export", divider = false, onClick = onExport)
+                    RowButton(backupText.restore, "settings-restore", onClick = onRestore)
+                }
+            }
+            if (onImport != null) {
+                item(key = "import") {
+                    Section(txt.s(ImportText.SECTION), footer = txt.s(ImportText.FOOTER), tag = "settings-import") {
+                        RowButton(txt.s(ImportText.BUTTON), "settings-import-file", divider = false, onClick = onImport)
+                    }
+                }
+            }
+            if (onReceiveShare != null) {
+                item(key = "receive-share") {
+                    Section(
+                        txt.s(app.localgatekeys.android.share.ShareText.RECEIVE),
+                        footer = txt.s(app.localgatekeys.android.share.ShareText.RECEIVE_FOOTER), tag = "settings-receive-share",
+                    ) {
+                        RowButton(txt.s(app.localgatekeys.android.share.ShareText.RECEIVE), "settings-receive", divider = false, onClick = onReceiveShare)
+                    }
+                }
+            }
+            if (onShowSetup != null) {
+                item(key = "setup") {
+                    Section(null, tag = "settings-setup") {
+                        RowButton(stringResource(R.string.onboarding_show_again), "settings-show-setup", divider = false) { close(); onShowSetup() }
+                    }
                 }
             }
             item(key = "sync") { SyncRow(sync, onOpen = { close(); onOpenSync() }) }
-            if (pro != null) item(key = "pro") { ProSection(pro, onUpgrade) }
+            if (pro != null) item(key = "pro") { ProSection(pro, onUpgrade, seams.copyKey) }
             item(key = "about") { About(seams, onAcknowledgements = { showAcks = true }) }
             item(key = "erase") {
-                Section(null, footer = SettingsText.ERASE_FOOTER, tag = "settings-erase") {
-                    RowButton(SettingsText.ERASE_BUTTON, "settings-erase-button", destructive = true, divider = false) { eraseStep = 1 }
+                Section(null, footer = settingsText.eraseFooter, tag = "settings-erase") {
+                    RowButton(settingsText.eraseButton, "settings-erase-button", destructive = true, divider = false) { eraseStep = 1 }
                 }
             }
         }
@@ -196,7 +248,7 @@ fun SettingsScreen(
     if (eraseStep != 0) {
         AlertDialog(
             onDismissRequest = { eraseStep = 0 },
-            text = { Text(if (eraseStep == 1) VaultEraser.CONFIRM_TEXT_1 else VaultEraser.CONFIRM_TEXT_2) },
+            text = { Text(if (eraseStep == 1) txt.s(VaultEraser.CONFIRM_TEXT_1) else txt.s(VaultEraser.CONFIRM_TEXT_2)) },
             confirmButton = {
                 TextButton({
                     if (eraseStep == 1) {
@@ -208,10 +260,10 @@ fun SettingsScreen(
                         seams.erase()
                     }
                 }, modifier = Modifier.testTag("erase-confirm")) {
-                    Text(if (eraseStep == 1) "Erase" else SettingsText.ERASE_BUTTON, color = c.danger)
+                    Text(if (eraseStep == 1) stringResource(R.string.settings_erase_confirm) else settingsText.eraseButton, color = c.danger)
                 }
             },
-            dismissButton = { TextButton({ eraseStep = 0 }) { Text("Cancel", color = c.accentText) } },
+            dismissButton = { TextButton({ eraseStep = 0 }) { Text(stringResource(R.string.common_cancel), color = c.accentText) } },
         )
     }
 }
@@ -219,37 +271,43 @@ fun SettingsScreen(
 @Composable
 private fun Security(settings: AppSettings, seams: SettingsSeams, onLock: () -> Unit) {
     var autoLock by remember { mutableStateOf(settings.autoLockDelay) }
+    val txt = rememberTxt()
     var idle by remember { mutableStateOf(settings.idleLock) }
     var clipboard by remember { mutableStateOf(settings.clipboardExpiry) }
     var conceal by remember { mutableStateOf(settings.concealSecretsInDetail) }
     var codes by remember { mutableStateOf(settings.showCodesRow) }
-    Section("Security", tag = "settings-security") {
-        Picker("Auto-lock after leaving the app", AutoLockDelay.entries, autoLock, { it.label }, divider = false) {
+    Section(stringResource(R.string.settings_section_security), tag = "settings-security") {
+        Picker(stringResource(R.string.settings_autolock_picker), AutoLockDelay.entries, autoLock, { it.label(txt) }, divider = false) {
             settings.autoLockDelay = it; autoLock = it
         }
-        Picker("Lock when idle", IdleLock.entries, idle, { it.label }) {
+        Picker(stringResource(R.string.settings_idle_picker), IdleLock.entries, idle, { it.label(txt) }) {
             settings.idleLock = it; idle = it
             seams.noteActivity() // restart the timer with the new time
         }
-        Picker("Clear clipboard after", ClipboardExpiry.entries, clipboard, { it.label }) { settings.clipboardExpiry = it; clipboard = it }
-        Toggle("Hide passwords until tapped", conceal) { settings.concealSecretsInDetail = it; conceal = it }
-        Toggle("Show 2FA codes in the Codes row", codes) { settings.showCodesRow = it; codes = it }
-        RowButton("Lock now", "settings-lock-now", onClick = onLock)
+        Picker(stringResource(R.string.settings_clipboard_picker), ClipboardExpiry.entries, clipboard, { it.label(txt) }) { settings.clipboardExpiry = it; clipboard = it }
+        Toggle(stringResource(R.string.settings_conceal), conceal) { settings.concealSecretsInDetail = it; conceal = it }
+        Toggle(stringResource(R.string.settings_show_codes), codes) { settings.showCodesRow = it; codes = it }
+        RowButton(stringResource(R.string.settings_lock_now), "settings-lock-now", onClick = onLock)
     }
 }
 
 @Composable
 private fun Autofill(settings: AppSettings, model: AutofillStatusModel) {
     val scope = rememberCoroutineScope()
+    val txt = rememberTxt()
     val enabled by model.enabled.collectAsStateWithLifecycle()
     val error by model.openError.collectAsStateWithLifecycle()
     var copyCode by remember { mutableStateOf(settings.copyCodeOnFill) }
+    var suggestions by remember { mutableStateOf(settings.autofillSuggestions) }
+    var passkeys by remember { mutableStateOf(settings.passkeyProvider) }
     LaunchedEffect(model) { model.refresh() }
-    Section("Autofill", tag = "settings-autofill") {
-        Value("Autofill service", AutofillStatusModel.statusText(enabled), divider = false)
-        RowButton("Open Autofill settings", "settings-open-autofill") { scope.launch { model.openSettings() } }
+    Section(stringResource(R.string.settings_section_autofill), tag = "settings-autofill") {
+        Value(stringResource(R.string.settings_autofill_service), model.statusText(enabled), divider = false)
+        RowButton(stringResource(R.string.settings_open_autofill), "settings-open-autofill") { scope.launch { model.openSettings() } }
         error?.let { Text(it, color = LgkTheme.colors.danger, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp)) }
-        Toggle("Copy 2FA code when filling", copyCode) { settings.copyCodeOnFill = it; copyCode = it }
+        Toggle(stringResource(R.string.settings_copy_code_on_fill), copyCode) { settings.copyCodeOnFill = it; copyCode = it }
+        Toggle(stringResource(R.string.settings_show_logins), suggestions) { settings.autofillSuggestions = it; suggestions = it }
+        Toggle(stringResource(R.string.settings_offer_passkeys), passkeys) { settings.passkeyProvider = it; passkeys = it }
     }
 }
 
@@ -264,7 +322,8 @@ private fun Appearance(
     val c = LgkTheme.colors
     val monitor = LocalActivityMonitor.current
     var appearance by remember { mutableStateOf(settings.appearance) }
-    Section("Appearance", tag = "settings-appearance") {
+    val initialsLabel = stringResource(R.string.settings_initials)
+    Section(stringResource(R.string.settings_section_appearance), tag = "settings-appearance") {
         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
             Appearance.entries.forEachIndexed { i, a ->
                 SegmentedButton(
@@ -272,9 +331,18 @@ private fun Appearance(
                     onClick = { settings.appearance = a; appearance = a; seams.appearance(a) },
                     shape = SegmentedButtonDefaults.itemShape(i, Appearance.entries.size),
                     modifier = Modifier.testTag("appearance-${a.raw}"),
-                ) { Text(a.label) }
+                ) { Text(a.label(rememberTxt())) }
             }
         }
+        // Per-app language: AppCompat stores it and recreates the activity, so the screen reopens in the new language.
+        var language by remember { mutableStateOf(LanguageOptions.currentTag(LanguageOptions.applied())) }
+        val systemLabel = stringResource(R.string.settings_language_system)
+        Picker(
+            label = stringResource(R.string.settings_language),
+            choices = LanguageOptions.all.map { it.tag },
+            selected = language,
+            text = { tag -> LanguageOptions.all.first { it.tag == tag }.nativeName ?: systemLabel },
+        ) { tag -> language = tag; LanguageOptions.apply(tag) }
         HorizontalDivider(thickness = 0.5.dp, color = c.separator)
         // Typed freely; normalised to at most two letters only on Done (or when Settings closes).
         BasicTextField(
@@ -285,10 +353,10 @@ private fun Appearance(
             singleLine = true,
             keyboardOptions = KeyboardOptions(KeyboardCapitalization.Words, autoCorrectEnabled = false, imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { onSubmit() }),
-            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).testTag("settings-initials").semantics { contentDescription = "Your initials" },
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).testTag("settings-initials").semantics { contentDescription = initialsLabel },
             decorationBox = { inner ->
                 Box {
-                    if (initials.isEmpty()) Text("Your initials", color = c.secondaryText, style = MaterialTheme.typography.bodyLarge)
+                    if (initials.isEmpty()) Text(stringResource(R.string.settings_initials), color = c.secondaryText, style = MaterialTheme.typography.bodyLarge)
                     inner()
                 }
             },
@@ -298,19 +366,20 @@ private fun Appearance(
 
 @Composable
 private fun Generator(settings: AppSettings) {
+    val txt = rememberTxt()
     var options by remember { mutableStateOf(GeneratorDefaults(settings).load()) }
     // The passphrase list's size is read off the main thread (normally already cached by LgkApp's warm-up).
     var level by remember { mutableStateOf<GeneratorStrength.Level?>(null) }
     LaunchedEffect(options) { level = withContext(Dispatchers.IO) { GeneratorStrength.level(options) } }
-    Section("Password generator", footer = SettingsText.GENERATOR_FOOTER, tag = "settings-generator") {
+    Section(stringResource(R.string.settings_section_generator), footer = SettingsText(rememberTxt()).generatorFooter, tag = "settings-generator") {
         Column(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("New passwords", color = LgkTheme.colors.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                Text(options.summary, color = LgkTheme.colors.secondaryText, style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.settings_new_passwords), color = LgkTheme.colors.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                Text(options.summary(txt), color = LgkTheme.colors.secondaryText, style = MaterialTheme.typography.bodyLarge)
             }
             level?.let { StrengthMeter(it, Modifier.padding(top = 6.dp)) }
         }
-        RowButton("Reset to defaults", "settings-generator-reset") {
+        RowButton(stringResource(R.string.settings_reset_defaults), "settings-generator-reset") {
             GeneratorDefaults(settings).reset()
             options = GeneratorOptions()
         }
@@ -320,17 +389,18 @@ private fun Generator(settings: AppSettings) {
 @Composable
 private fun SyncRow(sync: SyncCoordinator?, onOpen: () -> Unit) {
     val c = LgkTheme.colors
+    val settingsText = SettingsText(rememberTxt())
     val membership = sync?.membership?.collectAsStateWithLifecycle()?.value
     val last = sync?.lastSyncedAt?.collectAsStateWithLifecycle()?.value
     val time = remember { DateFormat.getTimeInstance(DateFormat.SHORT) }
-    Section("Sync", tag = "settings-sync") {
+    Section(stringResource(R.string.tab_sync), tag = "settings-sync") {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onOpen).testTag("settings-sync-row"),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Sync", color = c.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.tab_sync), color = c.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
             Text(
-                SettingsText.syncStatus(membership?.joined == true, last) { time.format(Date(it * 1000)) },
+                settingsText.syncStatus(membership?.joined == true, last) { time.format(Date(it * 1000)) },
                 color = c.secondaryText, style = MaterialTheme.typography.bodyLarge,
             )
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = c.secondaryText)
@@ -339,30 +409,37 @@ private fun SyncRow(sync: SyncCoordinator?, onOpen: () -> Unit) {
 }
 
 @Composable
-private fun ProSection(pro: ProModel, onUpgrade: () -> Unit) {
+private fun ProSection(pro: ProModel, onUpgrade: () -> Unit, copyKey: (String) -> Unit) {
     val state by pro.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
-    Section("Pro", footer = state.message, tag = "settings-pro") {
-        Value("Status", SettingsText.proStatus(state.isPro), divider = false)
-        if (!state.isPro) RowButton("Upgrade", "settings-upgrade", onClick = onUpgrade)
-        RowButton("Restore purchases", "settings-restore-purchases", enabled = !state.busy) { scope.launch { pro.restore() } }
+    val settingsText = SettingsText(rememberTxt())
+    Section(stringResource(R.string.settings_section_pro), footer = state.note?.let { stringResource(it.res) }, tag = "settings-pro") {
+        Value(stringResource(R.string.settings_status), settingsText.proStatus(state.isPro), divider = false)
+        if (!state.isPro) RowButton(stringResource(R.string.settings_upgrade), "settings-upgrade", onClick = onUpgrade)
+        val key = state.licenceKey
+        if (state.license != null && key != null) {
+            Value(settingsText.alsoUnlocksWindows, "")
+            RowButton(settingsText.copyKey, "settings-copy-key") { copyKey(key) }
+        }
+        RowButton(stringResource(R.string.settings_restore_purchases), "settings-restore-purchases", enabled = !state.busy) { scope.launch { pro.restore() } }
     }
 }
 
 @Composable
 private fun About(seams: SettingsSeams, onAcknowledgements: () -> Unit) {
-    Section("About", footer = SettingsText.DATA_NOT_COLLECTED, tag = "settings-about") {
-        Value("Version", seams.version, divider = false)
-        RowButton("Acknowledgements", "settings-acknowledgements", onClick = onAcknowledgements)
-        RowButton("Privacy Policy", "settings-privacy") { seams.openUrl(SettingsText.PRIVACY_POLICY_URL) }
-        RowButton("Licence Agreement", "settings-licence") { seams.openUrl(SettingsText.LICENCE_AGREEMENT_URL) }
+    val settingsText = SettingsText(rememberTxt())
+    Section(stringResource(R.string.settings_section_about), footer = settingsText.dataNotCollected, tag = "settings-about") {
+        Value(stringResource(R.string.settings_version), seams.version, divider = false)
+        RowButton(stringResource(R.string.settings_acknowledgements), "settings-acknowledgements", onClick = onAcknowledgements)
+        RowButton(stringResource(R.string.settings_privacy_policy), "settings-privacy") { seams.openUrl(SettingsText.PRIVACY_POLICY_URL) }
+        RowButton(stringResource(R.string.settings_licence_agreement), "settings-licence") { seams.openUrl(SettingsText.LICENCE_AGREEMENT_URL) }
     }
 }
 
 @Composable
 private fun Acknowledgements(list: List<Acknowledgement>, onOpen: (Acknowledgement) -> Unit, onBack: () -> Unit) {
     BackHandler(onBack = onBack)
-    Page("Acknowledgements", "acknowledgements", onBack = onBack, doneLabel = "Back") {
+    Page(stringResource(R.string.settings_acknowledgements), "acknowledgements", onBack = onBack, doneLabel = stringResource(R.string.common_back)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
             Section(null) {
                 list.forEachIndexed { i, a ->
@@ -383,7 +460,7 @@ private fun Acknowledgements(list: List<Acknowledgement>, onOpen: (Acknowledgeme
 @Composable
 private fun LicenceText(a: Acknowledgement, onBack: () -> Unit) {
     BackHandler(onBack = onBack)
-    Page(a.name, "licence-text", onBack = onBack, doneLabel = "Back") {
+    Page(a.name, "licence-text", onBack = onBack, doneLabel = stringResource(R.string.common_back)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
             // Verbatim: the licence's URLs stay plain text, never links.
             Text(
@@ -396,7 +473,7 @@ private fun LicenceText(a: Acknowledgement, onBack: () -> Unit) {
 
 /** A full-screen page over the tabs: aurora, a title bar with [doneLabel], and [content]. Takes every touch. */
 @Composable
-private fun Page(title: String, tag: String, onBack: () -> Unit, doneLabel: String, content: @Composable () -> Unit) {
+internal fun Page(title: String, tag: String, onBack: () -> Unit, doneLabel: String, content: @Composable () -> Unit) {
     val c = LgkTheme.colors
     Box(Modifier.fillMaxSize().pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } }.testTag(tag)) {
         GlassBackdropHost(Modifier.fillMaxSize()) { AuroraBackground() }
@@ -417,7 +494,7 @@ private fun Page(title: String, tag: String, onBack: () -> Unit, doneLabel: Stri
 }
 
 @Composable
-private fun Section(title: String?, footer: String? = null, tag: String? = null, content: @Composable ColumnScope.() -> Unit) {
+internal fun Section(title: String?, footer: String? = null, tag: String? = null, content: @Composable ColumnScope.() -> Unit) {
     val c = LgkTheme.colors
     Column(Modifier.fillMaxWidth().then(if (tag != null) Modifier.testTag(tag) else Modifier)) {
         if (title != null) {
@@ -444,7 +521,7 @@ private fun Value(label: String, value: String, divider: Boolean = true) {
 }
 
 @Composable
-private fun Toggle(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+internal fun Toggle(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     val c = LgkTheme.colors
     HorizontalDivider(thickness = 0.5.dp, color = c.separator)
     Row(
@@ -460,11 +537,12 @@ private fun Toggle(label: String, checked: Boolean, onChange: (Boolean) -> Unit)
 private fun <T> Picker(label: String, choices: List<T>, selected: T, text: (T) -> String, divider: Boolean = true, onPick: (T) -> Unit) {
     val c = LgkTheme.colors
     var open by remember { mutableStateOf(false) }
+    val description = stringResource(R.string.common_label_value, label, text(selected))
     if (divider) HorizontalDivider(thickness = 0.5.dp, color = c.separator)
     Box {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.DropdownList) { open = true }
-                .semantics { contentDescription = "$label: ${text(selected)}" },
+                .semantics { contentDescription = description },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(label, color = c.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))

@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from ..api.result import ApiError
+from ..i18n import t
 from ..secret_text import SecretText, as_secret, secrets_match
 from ..startup import set_start_with_windows
 from ..vault import VaultError
@@ -21,15 +22,10 @@ SCHEDULE_SETTINGS = frozenset({
     "scheduled_backup_frequency", "scheduled_backup_time",
     "scheduled_backup_weekday", "scheduled_backup_keep", "backup_mirror_dir",
 })
-FILL_SIGN_IN_TEXT = ("After your explicit fill action, supported login forms will be submitted without another click. "
-                     "This can sign you into the selected account immediately. CAPTCHA/MFA are not bypassed. "
-                     "Continue?")
 # Switches the WebView page adds itself (the shared builders and settings_ui
-# do not know them): key -> (title, description), shown after ``after``.
+# do not know them): key -> (title key, description key), shown after ``after``.
 WEBVIEW_SWITCHES = {
-    "website_icons": ("Show website icons",
-                      "Shows each site's logo. Downloading it tells that site you have an account there "
-                      "(nothing else is sent). Needs strict offline mode off."),
+    "website_icons": ("settings.websiteIcons.title", "settings.websiteIcons.desc"),
 }
 WEBVIEW_SWITCH_AFTER = {"strict_offline_mode": "website_icons"}
 # Classic Tk command -> WebView page route.
@@ -72,12 +68,12 @@ class _Adapter:
     def _settings_face_state(self) -> dict[str, str]:
         session = self.session
         if session is None:
-            return {"label": "Set up", "status": "Unavailable (session locked)"}
+            return {"label": t("settings.btn.setUp"), "status": t("settings.face.lockedStatus")}
         try:
             configured = bool(session.face_binding())
         except Exception:  # noqa: BLE001
-            return {"label": "Set up", "status": "Unavailable (error)"}
-        return {"label": "Manage" if configured else "Set up", "status": "Configured" if configured else "Not set up"}
+            return {"label": t("settings.btn.setUp"), "status": t("settings.face.errorStatus")}
+        return {"label": t("settings.btn.manage") if configured else t("settings.btn.setUp"), "status": t("settings.face.configured") if configured else t("settings.notSetUp")}
 
     def _settings_backup_state(self) -> dict[str, Any]:
         return self._service.backup_state()
@@ -105,7 +101,7 @@ class _Recorder:
                           "value": bool(getattr(self.settings, key, False))})
         extra = WEBVIEW_SWITCH_AFTER.get(key)
         if extra is not None and hasattr(self.settings, extra):
-            self.switch(extra, *WEBVIEW_SWITCHES[extra])
+            self.switch(extra, *(t(text) for text in WEBVIEW_SWITCHES[extra]))
 
     def choice(self, key: str, title: str, description: str = "") -> None:
         self.rows.append({"type": "choice", "key": key, "title": title, "description": description,
@@ -156,7 +152,7 @@ class SettingsService:
     def _lease(self) -> Any:
         controller = self._controller
         if not controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile first.")
+            raise ApiError("locked", t("error.lockedProfile"))
         lease = controller.guard.lease()
         controller.require_lease(lease)
         return lease
@@ -173,12 +169,12 @@ class SettingsService:
             try:
                 section.build(form)
             except Exception:  # noqa: BLE001 - one broken card must not hide the others
-                out.append({"key": section.key, "title": section.title, "column": section.column,
-                            "rows": [], "error": "This section could not be shown."})
+                out.append({"key": section.key, "title": section.title_text, "column": section.column,
+                            "rows": [], "error": t("settings.sectionError")})
                 continue
-            out.append({"key": section.key, "title": section.title, "column": section.column,
-                        "subtitle": section.subtitle, "keywords": list(section.keywords), "rows": form.rows})
-        return {"sections": out, "saved_text": "Changes save as you make them"}
+            out.append({"key": section.key, "title": section.title_text, "column": section.column,
+                        "subtitle": section.subtitle_text, "keywords": list(section.keywords), "rows": form.rows})
+        return {"sections": out, "saved_text": t("settings.savedText")}
 
     # ------------------------------------------------------------ apply
     def apply(self, key: str, value: Any) -> dict[str, Any]:
@@ -190,18 +186,18 @@ class SettingsService:
         try:
             if key in WEBVIEW_SWITCHES:
                 if type(value) is not bool:
-                    raise ValueError(f"Invalid switch value for {key}.")
+                    raise ValueError(t("settings.error.invalidSwitch", setting=key))
                 candidate = replace(settings_candidate(previous, {}), **{key: value})
             else:
                 candidate = settings_candidate(previous, {key: value})
         except ValueError as exc:
-            raise ApiError("invalid", str(exc) or "That value cannot be used.") from None
+            raise ApiError("invalid", str(exc) or t("settings.error.invalidValue")) from None
         changed = {name for name, old in asdict(previous).items() if getattr(candidate, name) != old}
         if not changed:
-            return {"message": "Settings saved.", "value": _jsonable(getattr(candidate, key, None))}
+            return {"message": t("settings.saved"), "value": _jsonable(getattr(candidate, key, None))}
         if candidate.fill_and_sign_in and not previous.fill_and_sign_in:
-            if not self._port.confirm("Enable Fill & sign in?", FILL_SIGN_IN_TEXT):
-                raise ApiError("cancelled", "Cancelled.")
+            if not self._port.confirm(t("settings.fillSignIn.confirmTitle"), t("settings.fillSignIn.confirmText")):
+                raise ApiError("cancelled", t("error.cancelled"))
             controller.require_lease(lease)
         session = controller.session
         try:
@@ -211,12 +207,12 @@ class SettingsService:
                 session.set_fill_and_sign_in_enabled(candidate.fill_and_sign_in)
         except (OSError, VaultError, ValueError) as exc:
             self._undo_side_effects(session, previous, changed - {"fill_and_sign_in"})
-            raise ApiError("invalid", str(exc) or "The setting could not be saved.") from None
+            raise ApiError("invalid", str(exc) or t("settings.error.notSaved")) from None
         try:
             candidate.save()
         except OSError:
             self._undo_side_effects(session, previous, changed)
-            raise ApiError("invalid", "The setting could not be saved.") from None
+            raise ApiError("invalid", t("settings.error.notSaved")) from None
         controller.settings = candidate
         session.trash_retention_days = candidate.trash_retention_days
         session.trash_auto_purge = candidate.trash_auto_purge
@@ -224,6 +220,11 @@ class SettingsService:
             controller.guard.set_max_seconds(candidate.max_session_seconds)
         if "clipboard_clear_seconds" in changed:
             controller.clipboard.timeout_seconds = candidate.clipboard_clear_seconds
+        if "language" in changed:
+            from .. import i18n
+
+            i18n.set_language(i18n.resolve(candidate.language, i18n.os_locale()))
+            self._bus.emit("language_changed", {"lang": i18n.current()})
         if "appearance" in changed:
             self._bus.emit("appearance", {"appearance": candidate.appearance})
         if changed & SCHEDULE_SETTINGS and self._schedule is not None:
@@ -236,7 +237,7 @@ class SettingsService:
                 listener(key)
             except Exception:  # noqa: BLE001, S110 - a listener never blocks a saved setting
                 pass
-        return {"message": "Settings saved.", "value": _jsonable(getattr(candidate, key, None))}
+        return {"message": t("settings.saved"), "value": _jsonable(getattr(candidate, key, None))}
 
     @staticmethod
     def _undo_side_effects(session: Any, previous: Any, changed: set[str]) -> None:
@@ -254,13 +255,13 @@ class SettingsService:
 
     def choose_folder(self, key: str) -> dict[str, Any]:
         if key != "backup_mirror_dir":
-            raise ApiError("invalid", "Unknown preference in Settings.")
+            raise ApiError("invalid", t("settings.error.unknownPreference"))
         self._lease()
         if self._dialogs is None:
-            raise ApiError("unavailable", "File dialogs are not available here.")
-        folder = self._dialogs.choose_folder("Choose a folder for backup copies")
+            raise ApiError("unavailable", t("error.dialogsUnavailable"))
+        folder = self._dialogs.choose_folder(t("settings.chooseFolder.title"))
         if not folder:
-            raise ApiError("cancelled", "No folder was chosen.")
+            raise ApiError("cancelled", t("error.noFolderChosen"))
         return self.apply(key, str(Path(folder)))
 
     # ------------------------------------------------- backup password
@@ -277,17 +278,17 @@ class SettingsService:
 
         controller = self._controller
         if controller.settings.scheduled_backup_frequency == "off":
-            return "Scheduled backups are off."
+            return t("settings.status.off")
         if not controller.is_unlocked():
-            return "Scheduled backups run only while the vault is unlocked."
+            return t("settings.status.unlockedOnly")
         if not has_password:
-            return "Scheduled backups are off: set a backup password first."
+            return t("settings.status.noPassword")
         profile = controller.profiles.active_profile()
         try:
             last = read_last_success(controller.profiles.backups_dir(profile.id) / SCHEDULED_DIR_NAME)
         except Exception:  # noqa: BLE001
             last = None
-        return ("Last scheduled backup: " + last.strftime("%Y-%m-%d %H:%M")) if last else "No scheduled backup yet."
+        return t("settings.status.last", when=last.strftime("%Y-%m-%d %H:%M")) if last else t("settings.status.none")
 
     def backup_password(self, first: str | SecretText, second: str | SecretText) -> dict[str, Any]:
         """Store the scheduled-backup password. ``SecretText`` stays the caller's (the bridge wipes it);
@@ -295,11 +296,11 @@ class SettingsService:
         lease = self._lease()
         try:
             if not secrets_match(first, second):
-                raise ApiError("invalid", "The backup passwords do not match.")
+                raise ApiError("invalid", t("settings.backupPassword.mismatch"))
             secret, owned = as_secret(first)
             try:
                 if secret.char_count < 12:
-                    raise ApiError("invalid", "The backup password must contain at least 12 characters.")
+                    raise ApiError("invalid", t("settings.backupPassword.tooShort"))
                 value = secret.buffer.decode("utf-8")
             finally:
                 if owned:
@@ -315,15 +316,14 @@ class SettingsService:
             self._schedule.settings_changed()
             self._controller._scheduler.call_later(1, self._schedule._safe_check)
         self._controller.touch()
-        return {"message": "Backup password saved inside the encrypted vault."}
+        return {"message": t("settings.backupPassword.saved")}
 
     def clear_backup_password(self) -> dict[str, Any]:
         lease = self._lease()
-        if not self._port.confirm("Clear backup password?",
-                                  "Scheduled backups stop until you set a backup password again. Existing backup "
-                                  "files keep the password they were made with."):
-            raise ApiError("cancelled", "Cancelled.")
+        if not self._port.confirm(t("settings.backupPasswordClear.confirmTitle"),
+                                  t("settings.backupPasswordClear.confirmText")):
+            raise ApiError("cancelled", t("error.cancelled"))
         self._controller.require_lease(lease)
         self._controller.session.set_scheduled_backup_password(None)
         self._controller.touch()
-        return {"message": "Backup password cleared. Scheduled backups are off."}
+        return {"message": t("settings.backupPasswordClear.done")}

@@ -8,6 +8,7 @@ import app.localgatekeys.core.records.SyncMeta
 import app.localgatekeys.core.sync.ItemStore
 import app.localgatekeys.core.sync.StoreChange
 import app.localgatekeys.core.sync.StoreSnapshot
+import app.localgatekeys.core.sync.AttachmentVault
 
 /**
  * The device id a phone backup is written and restored under (desktop `phone_restore.desktop_device_id`): the sync
@@ -29,6 +30,10 @@ object BackupDevice {
  * an edit made after the backup always gets a newer vector than the backup's copy. Through the sync coordinator's
  * gated store, a lock refuses that commit (and the export) and nothing is written. Blocking: call it off the main thread.
  * [kdf] null: the production Argon2id costs (4 / 128 MiB / 4); tests pass cheaper ones.
+ *
+ * Format 2 (2026-10-29): with [attachments], the sealed blobs of the live documents go into the file (state-id order,
+ * up to 160 MiB and 500 files); a document whose file is missing here or does not fit stays in the backup without its
+ * file and is counted in [BackupExport.filesLeftOut]. No file included: a format-1 file, as before.
  */
 class BackupExporter(
     private val store: ItemStore,
@@ -39,16 +44,36 @@ class BackupExporter(
     /** `pro_hint` (informational only: a store purchase is restored from the store). */
     private val isPro: () -> Boolean = { false },
     private val kdf: Map<String, Int>? = null,
+    /** The attachment store the document files are read from (sealed blobs, as folder and Wi-Fi sync send them). */
+    private val attachments: AttachmentVault? = null,
 ) {
-    fun export(password: String): ByteArray {
+    fun export(password: String): ByteArray = exportWithFiles(password).bytes
+
+    fun exportWithFiles(password: String): BackupExport {
         val snap = store.load()
         val now = clock.now
         val device = BackupDevice.id(snap, installId)
         val view = SyncMeta.localView(snap.records, snap.meta, device, now)
         if (view.meta != snap.meta) store.commit(StoreChange(snap.revision, snap.records, view.meta, snap.sync))
-        return PhoneBackupFormat.write(
-            view.states.values.toList(), password, device, PLATFORM, appVersion, now, isPro(), random, kdf,
+        val states = view.states.values.toList()
+        val vault = attachments
+        val selected = if (vault == null) {
+            null
+        } else {
+            PhoneBackupFormat.selectFiles(states, { ref ->
+                try {
+                    vault.blob(ref)
+                } catch (e: InterruptedException) {
+                    throw e
+                } catch (e: Exception) {
+                    null
+                }
+            })
+        }
+        val bytes = PhoneBackupFormat.write(
+            states, password, device, PLATFORM, appVersion, now, isPro(), random, kdf, files = selected?.files ?: emptyMap(),
         )
+        return BackupExport(bytes, selected?.files?.size ?: 0, selected?.leftOut?.size ?: 0)
     }
 
     override fun toString(): String = "BackupExporter(appVersion=$appVersion)"
@@ -56,4 +81,9 @@ class BackupExporter(
     companion object {
         const val PLATFORM = "android"
     }
+}
+
+/** An exported backup file and how many document files it carries / left out. toString never shows the bytes. */
+class BackupExport(val bytes: ByteArray, val filesIncluded: Int = 0, val filesLeftOut: Int = 0) {
+    override fun toString(): String = "BackupExport(size=${bytes.size}, filesIncluded=$filesIncluded, filesLeftOut=$filesLeftOut)"
 }

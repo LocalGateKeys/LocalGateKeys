@@ -1,4 +1,5 @@
 <script>
+  import { t } from './lib/i18n.svelte.js';
   import Modal from './components/Modal.svelte';
   import Toast from './components/Toast.svelte';
   import { call, on } from './lib/api.js';
@@ -108,11 +109,11 @@
     {:else if modal.kind === 'choose' || modal.kind === 'confirm_remember'}
       <ChoiceModal request={modal} onanswer={(value) => answer(modal.id, value)} />
     {:else if modal.kind === 'notice'}
-      <Modal title={modal.title} message={modal.message} allowLabel="OK" denyLabel=""
+      <Modal title={modal.title} message={modal.message} allowLabel={t('common.ok')} denyLabel=""
         onanswer={() => (modals = modals.filter((m) => m.id !== modal.id))} />
     {:else if modal.kind === 'upgrade'}
-      <Modal title="LocalGateKeys Pro" message={modal.message} allowLabel="Enter licence" denyLabel="Not now"
-        extraLabel={modal.purchase_url ? 'Buy Pro' : ''} onextra={() => buyPro(modal.id, modal.purchase_url)}
+      <Modal title="LocalGateKeys Pro" message={modal.message} allowLabel={t('app.enterLicence')} denyLabel={t('common.notNow')}
+        extraLabel={modal.purchase_url ? t('app.buyPro') : ''} onextra={() => buyPro(modal.id, modal.purchase_url)}
         onanswer={(yes) => upgradeAnswer(modal.id, yes)} />
     {:else}
       <Modal title={modal.title} message={modal.message} onanswer={(value) => answer(modal.id, value)} />

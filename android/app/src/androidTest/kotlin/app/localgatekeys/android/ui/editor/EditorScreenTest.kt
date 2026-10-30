@@ -1,5 +1,6 @@
 package app.localgatekeys.android.ui.editor
 
+import app.localgatekeys.android.i18n.appTxt
 import android.os.Build
 import android.text.InputType
 import android.view.View
@@ -102,7 +103,7 @@ class EditorScreenTest {
     private val toast = CopyToast(CopyToast.showsOwnMessage(Build.VERSION.SDK_INT))
 
     private fun show(store: Store, captureView: ((View) -> Unit)? = null) {
-        val model = VaultListModel(store)
+        val model = VaultListModel(store, appTxt())
         val seams = VaultSeams(clipboard = Copier { _, _ -> }, clock = clock)
         val editor = EditorSeams(store, Counting())
         rule.setContent {

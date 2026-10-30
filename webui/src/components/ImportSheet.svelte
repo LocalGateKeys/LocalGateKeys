@@ -1,5 +1,6 @@
 <script>
   /** Import from another password manager: file (Python dialog) → password → columns → review → apply. */
+  import { t } from '../lib/i18n.svelte.js';
   import { call, on } from '../lib/api.js';
   import { toast } from '../lib/toast.js';
   import Button from './Button.svelte';
@@ -26,7 +27,7 @@
     const r = await call('import_open');
     if (!r.ok) { if (r.error.code !== 'cancelled') error = r.error.message; return; }
     opened = r;
-    mapping = Object.fromEntries((r.mapping?.targets ?? []).map((t) => [t.key, t.value]));
+    mapping = Object.fromEntries((r.mapping?.targets ?? []).map((target) => [target.key, target.value]));
     step = r.needs_password ? 'password' : r.mapping ? 'mapping' : 'build';
     if (step === 'build') build();
   }
@@ -61,7 +62,7 @@
     const r = await call('import_apply', opened.handle);
     busy = false; progress = '';
     if (r.ok) { toast(r.title, r.message); opened = null; onclose(); return; }
-    if (r.error.code === 'cancelled' && r.error.message.startsWith('Import cancelled')) { toast(r.error.message); opened = null; onclose(); return; }
+    if (r.error.code === 'import_cancelled') { toast(r.error.message); opened = null; onclose(); return; }
     if (r.error.code !== 'cancelled') error = r.error.message;
   }
 
@@ -69,27 +70,27 @@
   function cancel() { if (busy && step === 'review') call('import_cancel', opened.handle); else onclose(); }
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label="Import">
+<div class="sheet glass" role="dialog" aria-label={t('importSheet.dialog')}>
   <header>
-    <h2>{step === 'review' ? 'Import review' : step === 'mapping' ? 'Choose columns' : 'Import passwords and items'}</h2>
-    <button class="close" aria-label="Close" onclick={onclose}>✕</button>
+    <h2>{step === 'review' ? t('importSheet.titleReview') : step === 'mapping' ? t('importSheet.titleColumns') : t('importSheet.titleStart')}</h2>
+    <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
   {#if step === 'start'}
-    <p class="muted">Choose an export from another password manager (KeePass, 1Password, Bitwarden, browsers, CSV). Nothing is written until you review and choose Import.</p>
-    <footer><Button label="Choose file…" variant="primary" onclick={start} /></footer>
+    <p class="muted">{t('importSheet.intro')}</p>
+    <footer><Button label={t('common.chooseFile')} variant="primary" onclick={start} /></footer>
   {:else if step === 'password'}
     <form onsubmit={next}>
       <p class="muted pre">{opened.password_text}</p>
-      <div class="group"><Field label="Import password" type="password" bind:value={password} autofocus /></div>
-      <footer><Button label="Cancel" onclick={onclose} /><Button type="submit" variant="primary" label="Continue" busy={busy} busyLabel="Opening…" disabled={!password} /></footer>
+      <div class="group"><Field label={t('importSheet.password')} type="password" bind:value={password} autofocus /></div>
+      <footer><Button label={t('common.cancel')} onclick={onclose} /><Button type="submit" variant="primary" label={t('common.continue')} busy={busy} busyLabel={t('importSheet.opening')} disabled={!password} /></footer>
     </form>
   {:else if step === 'mapping'}
     <form onsubmit={next}>
       <p class="muted">{opened.mapping.subtitle}</p>
       <div class="group">
-        {#each opened.mapping.targets as t (t.key)}
-          <label class="map"><span>{t.label}</span>
-            <select aria-label={t.label} bind:value={mapping[t.key]}>
+        {#each opened.mapping.targets as target (target.key)}
+          <label class="map"><span>{target.label}</span>
+            <select aria-label={target.label} bind:value={mapping[target.key]}>
               <option value="">{opened.mapping.none}</option>
               {#each opened.mapping.columns as c (c)}<option value={c}>{c}</option>{/each}
             </select>
@@ -97,37 +98,37 @@
         {/each}
       </div>
       <p class="muted">{opened.mapping.unmapped}</p>
-      <footer><Button label="Cancel" onclick={onclose} /><Button type="submit" variant="primary" label="Continue" busy={busy} busyLabel="Reading…" /></footer>
+      <footer><Button label={t('common.cancel')} onclick={onclose} /><Button type="submit" variant="primary" label={t('common.continue')} busy={busy} busyLabel={t('importSheet.reading')} /></footer>
     </form>
   {:else if step === 'review' && review}
     <p class="muted">{review.subtitle}</p>
     <p class="summary">{review.summary}</p>
-    <div class="group table" role="table" aria-label="Import rows">
-      <div class="tr head" role="row"><span></span><span>Name</span><span>Website</span><span>Username</span><span>Kind</span><span>Status</span><span>Decision</span></div>
+    <div class="group table" role="table" aria-label={t('importSheet.rows')}>
+      <div class="tr head" role="row"><span></span><span>{t('importSheet.colName')}</span><span>{t('importSheet.colWebsite')}</span><span>{t('importSheet.colUsername')}</span><span>{t('importSheet.colKind')}</span><span>{t('importSheet.colStatus')}</span><span>{t('importSheet.colDecision')}</span></div>
       {#each review.rows as r (r.row)}
         <div class="tr" role="row">
-          <input type="checkbox" aria-label={`Select ${r.name}`} checked={picked.includes(r.row)} onchange={() => toggle(r.row)} />
+          <input type="checkbox" aria-label={t('importSheet.select', { name: r.name })} checked={picked.includes(r.row)} onchange={() => toggle(r.row)} />
           <span>{r.name}</span><span>{r.website}</span><span>{r.username}</span><span>{r.kind}</span><span>{r.status}</span><span>{r.decision}</span>
         </div>
       {/each}
     </div>
     <div class="bar">
-      <Button label="Skip selected" disabled={!picked.length} onclick={() => decide('skip')} />
-      <Button label="Add / replace selected" disabled={!picked.length} onclick={() => decide('apply')} />
-      <Button label="Merge selected" disabled={!picked.length} onclick={() => decide('merge')} />
-      <Button label="Keep both selected" disabled={!picked.length} onclick={() => decide('keep_both')} />
+      <Button label={t('importSheet.skipSelected')} disabled={!picked.length} onclick={() => decide('skip')} />
+      <Button label={t('importSheet.applySelected')} disabled={!picked.length} onclick={() => decide('apply')} />
+      <Button label={t('importSheet.mergeSelected')} disabled={!picked.length} onclick={() => decide('merge')} />
+      <Button label={t('importSheet.keepBothSelected')} disabled={!picked.length} onclick={() => decide('keep_both')} />
     </div>
     <div class="bar">
-      <Button label="Add all new" onclick={() => decideAll('add-new')} />
-      <Button label="Replace all conflicts" onclick={() => decideAll('replace-conflicts')} />
-      <Button label="Skip everything" onclick={() => decideAll('skip-all')} />
+      <Button label={t('importSheet.addAllNew')} onclick={() => decideAll('add-new')} />
+      <Button label={t('importSheet.replaceConflicts')} onclick={() => decideAll('replace-conflicts')} />
+      <Button label={t('importSheet.skipAll')} onclick={() => decideAll('skip-all')} />
     </div>
     {#if review.diagnostics.length}
-      <div class="section-label">Diagnostics</div>
+      <div class="section-label">{t('importSheet.diagnostics')}</div>
       <pre class="group diag">{review.diagnostics.join('\n')}</pre>
     {/if}
     {#if progress}<p class="muted" role="status">{progress}</p>{/if}
-    <footer><Button label="Cancel" onclick={cancel} /><Button label="Import" variant="primary" busy={busy} busyLabel="Importing…" onclick={apply} /></footer>
+    <footer><Button label={t('common.cancel')} onclick={cancel} /><Button label={t('importSheet.import')} variant="primary" busy={busy} busyLabel={t('importSheet.importing')} onclick={apply} /></footer>
   {/if}
   {#if error}<p class="error pre" role="alert">{error}</p>{/if}
 </div>

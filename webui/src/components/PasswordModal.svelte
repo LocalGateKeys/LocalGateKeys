@@ -1,5 +1,6 @@
 <script>
   /** Master-password re-authentication asked by Python (modal kind "password"). */
+  import { t } from '../lib/i18n.svelte.js';
   import Button from './Button.svelte';
 
   let { title, message = '', onanswer } = $props();
@@ -27,11 +28,11 @@
     <h2>{title}</h2>
     {#if message}<p class="message">{message}</p>{/if}
     <div class="group">
-      <input bind:this={input} type="password" bind:value aria-label="Master password" autocomplete="current-password" />
+      <input bind:this={input} type="password" bind:value aria-label={t('passwordModal.label')} autocomplete="current-password" />
     </div>
     <div class="actions">
-      <Button label="Cancel" onclick={cancel} />
-      <Button label="Confirm" variant="primary" type="submit" />
+      <Button label={t('common.cancel')} onclick={cancel} />
+      <Button label={t('common.confirm')} variant="primary" type="submit" />
     </div>
   </form>
 </div>

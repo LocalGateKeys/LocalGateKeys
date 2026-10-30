@@ -32,16 +32,13 @@ const PROBE_PER_ORIGIN = 10;
 const PROBE_TOTAL = 30;
 const PROBE_RESERVE = 3;
 const PROBE_HARD = 120;
-const RATE_LIMITED = "Too many login checks from this site. Wait a minute and try again.";
 const DOCUMENT_KEY = /^[0-9a-f]{32}$/;
 const MAX_FRAME_DEPTH = 32;
-const FULL_NOTICE = "Your free vault is full. Upgrade in LocalGateKeys to save more.";
-const SAVED_NOTICE = "Saved. It will appear in LocalGateKeys next time you open it.";
 const SAVE_ERRORS = {
-  full: FULL_NOTICE,
-  inbox_full: "Too many logins are waiting. Open LocalGateKeys to import them, then sign in again to save it.",
-  invalid: "This login could not be saved.",
-  unavailable: "Open LocalGateKeys and unlock it once to turn on saving from Safari, then sign in again to save it.",
+  get full() { return tr("bg_full_notice"); },
+  get inbox_full() { return tr("bg_save_inbox_full"); },
+  get invalid() { return tr("bg_save_invalid"); },
+  get unavailable() { return tr("bg_save_unavailable"); },
 };
 // The app's classify answers only "new", "exists", "full" or "unavailable":
 // it never tells the extension (or the page) whether a password matches the
@@ -160,9 +157,9 @@ async function classify(origin, username, password) {
   return typeof status === "string" && PROMPT_STATUSES.has(status) ? status : "unavailable";
 }
 async function save(origin, username, password, status) {
-  if (status === "full") return { ok: false, error: "full", message: FULL_NOTICE };
+  if (status === "full") return { ok: false, error: "full", message: tr("bg_full_notice") };
   const r = await native({ action: "save", origin, username, password, status });
-  if (r?.stored === true) return { ok: true, notice: SAVED_NOTICE };
+  if (r?.stored === true) return { ok: true, notice: tr("bg_saved_notice") };
   const error = typeof r?.error === "string" && SAVE_ERRORS[r.error] ? r.error : "unavailable";
   return { ok: false, error, message: SAVE_ERRORS[error] };
 }
@@ -219,11 +216,11 @@ async function handle(request, sender) {
         if (status === "unavailable") return { ok: false, error: "unavailable", message: SAVE_ERRORS.unavailable };
         return save(origin, username, password, status);
       }
-      if (!probeAllowed(origin, now)) return { ok: false, error: "rate_limited", message: RATE_LIMITED };
+      if (!probeAllowed(origin, now)) return { ok: false, error: "rate_limited", message: tr("bg_rate_limited") };
       const status = await classify(origin, username, password);
       if (request.type === "check_browser") {
         const reply = { ok: true, status, match: false, prompt: PROMPT_STATUSES.has(status) };
-        if (status === "full") reply.notice = FULL_NOTICE;
+        if (status === "full") reply.notice = tr("bg_full_notice");
         return reply;
       }
       if (!PROMPT_STATUSES.has(status)) return { ok: true, stored: false };
@@ -241,7 +238,7 @@ async function handle(request, sender) {
       // never its username: nothing proves the browser came here from there.
       if (entry.origin !== origin) { reply.origin = entry.origin; reply.handoff = true; }
       else reply.username = entry.username;
-      if (entry.status === "full") reply.notice = FULL_NOTICE;
+      if (entry.status === "full") reply.notice = tr("bg_full_notice");
       return reply;
     }
     case "save_pending_browser": {
@@ -250,7 +247,7 @@ async function handle(request, sender) {
       if (refused) return { ok: false, error: refused };
       const found = await findPending(tabId, origin, doc, now);
       if (!found || found.entry.token !== request.pending_token || pending.get(found.key) !== found.entry) {
-        return { ok: false, error: "not_found", message: "This login is no longer waiting to be saved." };
+        return { ok: false, error: "not_found", message: tr("bg_not_waiting") };
       }
       // One attempt per capture: the password leaves memory whatever the outcome.
       // It is saved for the site it was typed on, not the page it landed on.

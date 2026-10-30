@@ -18,10 +18,39 @@ public enum VaultSlot: String, CaseIterable, Sendable {
     case safariIndexKey = "safari-index-key"
     /// Safari save: AES-256-GCM key of the inbox the Safari extension writes (32 random bytes).
     case safariInboxKey = "safari-inbox-key"
+    /// Mac scheduled backups: the folder and the mirror folder (security-scoped bookmarks), and the folder the last
+    /// manual full backup went to.
+    case scheduledBackupFolder = "scheduled-backup-folder"
+    case scheduledBackupMirror = "scheduled-backup-mirror"
+    case manualBackupFolder = "manual-backup-folder"
 
     /// Slots only the main app reads (sync). They live in the app-only Keychain access group, never the
     /// group shared with the AutoFill extension.
+    /// On the Mac the hello counters join them: the Mac's AutoFill extension never syncs, so nothing outside
+    /// the app needs them; so do the scheduled-backup folders (no `.userPresence`, as backups run unattended while
+    /// unlocked). The scheduled-backup password and keys are not in the Keychain: they are sealed under the local key.
+    #if os(macOS)
+    public static let appOnly: Set<VaultSlot> = [.pairedPeer, .installID, .folderBookmark, .helloCounter, .peerCounters,
+                                                 .scheduledBackupFolder, .scheduledBackupMirror,
+                                                 .manualBackupFolder]
+    #else
     public static let appOnly: Set<VaultSlot> = [.pairedPeer, .installID, .folderBookmark]
+    #endif
+
+    /// The access-control flags a new item of this slot gets (always `WhenUnlockedThisDeviceOnly`).
+    /// `deviceUnlocked` slots never get `.userPresence`; on the Mac the sync slots don't either, because the
+    /// master password or Touch ID unlock already authenticated and counter writes must never prompt (ruling).
+    public var accessFlags: SecAccessControlCreateFlags {
+        if Self.deviceUnlocked.contains(self) { return [] }
+        #if os(macOS)
+        if Self.appOnly.contains(self) { return [] }
+        #else
+        // Task 7: with the app password on, the local key is not in the Keychain at all and the other slots
+        // (sync state, no vault secrets) are readable while the iPhone is unlocked, so no passcode prompt appears.
+        if self != .localKey && AppPasswordMode.isOn { return [] }
+        #endif
+        return .userPresence
+    }
 
     /// Slots the Safari extension reads without Face ID: `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`
     /// with no `.userPresence`, in their own Safari group (`SafariKeychainVault`; audit 2026-10-24 L-8), which
@@ -168,9 +197,8 @@ public final class SystemKeychainVault: KeychainVault, @unchecked Sendable {
         let st = SecItemUpdate(base(slot) as CFDictionary, [kSecValueData as String: Data(bytes)] as CFDictionary)
         if st == errSecSuccess { return }
         guard st == errSecItemNotFound else { throw KeychainVaultError.status(st) }
-        let flags: SecAccessControlCreateFlags = VaultSlot.deviceUnlocked.contains(slot) ? [] : .userPresence
         guard let ac = SecAccessControlCreateWithFlags(nil, kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
-                                                       flags, nil) else { throw KeychainVaultError.accessControl }
+                                                       slot.accessFlags, nil) else { throw KeychainVaultError.accessControl }
         var q = base(slot)
         q[kSecValueData as String] = Data(bytes)
         q[kSecAttrAccessControl as String] = ac
@@ -181,6 +209,19 @@ public final class SystemKeychainVault: KeychainVault, @unchecked Sendable {
     public func delete(_ slot: VaultSlot) throws {
         let st = SecItemDelete(base(slot) as CFDictionary)
         guard st == errSecSuccess || st == errSecItemNotFound else { throw KeychainVaultError.status(st) }
+    }
+
+    /// Task 7, turning the app password off: adds the local key with `.userPresence` explicitly (not through
+    /// `accessFlags`, which still sees the password file at that moment). Replaces an item left by a crash.
+    public func addPasscodeProtected(_ slot: VaultSlot, _ bytes: [UInt8]) throws {
+        try delete(slot)
+        guard let ac = SecAccessControlCreateWithFlags(nil, kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+                                                       .userPresence, nil) else { throw KeychainVaultError.accessControl }
+        var q = base(slot)
+        q[kSecValueData as String] = Data(bytes)
+        q[kSecAttrAccessControl as String] = ac
+        let added = SecItemAdd(q as CFDictionary, nil)
+        guard added == errSecSuccess else { throw KeychainVaultError.status(added) }
     }
 }
 
@@ -275,6 +316,12 @@ public final class AppKeychainVault: KeychainVault, @unchecked Sendable {
         guard VaultSlot.appOnly.contains(slot) else { return try shared.read(slot) }
         return try lock.withLock {
             if let b = try appOnly.read(slot) {
+                // Two copies of a hello counter: keep the larger value(s), so a counter never goes back.
+                if let other = try? shared.read(slot), let merged = Self.mergedCounters(slot, b, other), merged != b {
+                    try appOnly.write(slot, merged)
+                    try? shared.delete(slot)
+                    return merged
+                }
                 try? shared.delete(slot)   // best effort: a leftover copy from an interrupted move
                 return b
             }
@@ -282,6 +329,30 @@ public final class AppKeychainVault: KeychainVault, @unchecked Sendable {
             try appOnly.write(slot, old)  // copy first, so a crash never loses the item
             try? shared.delete(slot)      // best effort; the next read retries the cleanup
             return old
+        }
+    }
+
+    /// For `helloCounter` (the larger 8-byte value) and `peerCounters` (the larger counter per peer): the
+    /// merge of two copies; nil for other slots, or when either copy is malformed (the app-only copy is kept).
+    public static func mergedCounters(_ slot: VaultSlot, _ mine: [UInt8], _ other: [UInt8]) -> [UInt8]? {
+        switch slot {
+        case .helloCounter:
+            guard mine.count == 8, other.count == 8 else { return nil }
+            let a = mine.reduce(Int64(0)) { ($0 << 8) | Int64($1) }, b = other.reduce(Int64(0)) { ($0 << 8) | Int64($1) }
+            return a >= b ? mine : other
+        case .peerCounters:
+            guard case .object(let a)? = try? CanonicalJSON.parse(mine),
+                  case .object(let b)? = try? CanonicalJSON.parse(other) else { return nil }
+            var out = a
+            for (peer, value) in b {
+                guard case .int(let n) = value else { return nil }
+                if case .int(let m)? = out[peer], m >= n { continue }
+                out[peer] = .int(n)
+            }
+            if out == a { return mine }
+            return try? CanonicalJSON.encode(.object(out), dialect: .utf8)
+        default:
+            return nil
         }
     }
 

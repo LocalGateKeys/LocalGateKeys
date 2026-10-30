@@ -1,5 +1,8 @@
 package app.localgatekeys.android.generator
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.Txt
+import androidx.annotation.StringRes
 import app.localgatekeys.android.settings.AppSettings
 import app.localgatekeys.core.json.CanonicalJson
 import app.localgatekeys.core.json.Dialect
@@ -30,8 +33,9 @@ data class GeneratorOptions(
     enum class Mode(val raw: String) { PASSWORD("password"), PASSPHRASE("passphrase") }
 
     /** The Settings row ("New passwords"): `SettingsView.summary`. */
-    val summary: String
-        get() = if (mode == Mode.PASSWORD) "Password, $length characters" else "Passphrase, $words words"
+    fun summary(t: Txt): String =
+        if (mode == Mode.PASSWORD) t.plural(R.plurals.generator_summary_password, length, length)
+        else t.plural(R.plurals.generator_summary_passphrase, words, words)
 
     /** The iPhone's JSONEncoder keys and values (sorted keys, no spaces). */
     fun toJson(): String {
@@ -84,11 +88,33 @@ class GeneratorDefaults(private val settings: AppSettings) {
     fun reset() { settings.generatorOptions = null }
 }
 
-/** Desktop wording. */
+/** Desktop wording in [message] (for logs and tests); [text] is what the person reads. */
 sealed class GeneratorError(override val message: String) : Exception(message) {
-    data object NoGroups : GeneratorError("Select at least one character group")
-    class EmptyGroup(val name: String) : GeneratorError("No usable $name remain after exclusions")
-    data object BadSeparator : GeneratorError("Separator must be one of: dash, space, dot, underscore or none")
+    /** The character groups a password can ask for. [english] is only for [message]. */
+    enum class Group(val english: String) {
+        LOWERCASE("lowercase letters"), UPPERCASE("uppercase letters"), DIGITS("digits"), SYMBOLS("symbols"),
+    }
+
+    abstract fun text(t: Txt): String
+
+    data object NoGroups : GeneratorError("Select at least one character group") {
+        override fun text(t: Txt): String = t.s(R.string.generator_error_no_group)
+    }
+
+    class EmptyGroup(val group: Group) : GeneratorError("No usable ${group.english} remain after exclusions") {
+        override fun text(t: Txt): String = t.s(
+            when (group) {
+                Group.LOWERCASE -> R.string.generator_empty_lowercase
+                Group.UPPERCASE -> R.string.generator_empty_uppercase
+                Group.DIGITS -> R.string.generator_empty_digits
+                Group.SYMBOLS -> R.string.generator_empty_symbols
+            },
+        )
+    }
+
+    data object BadSeparator : GeneratorError("Separator must be one of: dash, space, dot, underscore or none") {
+        override fun text(t: Txt): String = t.s(R.string.generator_error_separator)
+    }
 }
 
 /**
@@ -152,10 +178,10 @@ class PasswordGenerator(
         val excluded = o.exclude.codePoints().toArray().toMutableSet()
         if (o.avoidAmbiguous) excluded.addAll(AMBIGUOUS)
         val requested = buildList {
-            if (o.lowercase) add(Triple("lowercase letters", LOWERCASE, 1))
-            if (o.uppercase) add(Triple("uppercase letters", UPPERCASE, 1))
-            if (o.digits) add(Triple("digits", DIGITS, maxOf(1, o.minDigits)))
-            if (o.symbols) add(Triple("symbols", o.symbolSet, maxOf(1, o.minSymbols)))
+            if (o.lowercase) add(Triple(GeneratorError.Group.LOWERCASE, LOWERCASE, 1))
+            if (o.uppercase) add(Triple(GeneratorError.Group.UPPERCASE, UPPERCASE, 1))
+            if (o.digits) add(Triple(GeneratorError.Group.DIGITS, DIGITS, maxOf(1, o.minDigits)))
+            if (o.symbols) add(Triple(GeneratorError.Group.SYMBOLS, o.symbolSet, maxOf(1, o.minSymbols)))
         }
         if (requested.isEmpty()) throw GeneratorError.NoGroups
         val groups = requested.map { (name, alphabet, minimum) ->

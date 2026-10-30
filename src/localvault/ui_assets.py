@@ -11,8 +11,7 @@ BRAND_DESCRIPTOR = "PRIVATE  |  SECURE  |  YOURS"
 BADGE_CAPTION = "Secrets stay in the encrypted vault on this PC."
 
 ASSET_DIR = Path(__file__).resolve().parent / "assets"
-WORDMARK_ASSET = "localgatekeys_wordmark.png"
-MARK_ASSET = "localgatekeys_mark.png"
+MARK_ASSET = "localgatekeys_icon.svg"
 BADGE_ASSET = "local_encrypted_badge.png"
 
 

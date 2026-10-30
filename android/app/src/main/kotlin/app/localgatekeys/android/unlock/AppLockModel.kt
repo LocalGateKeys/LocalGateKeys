@@ -1,9 +1,18 @@
 package app.localgatekeys.android.unlock
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.Txt
+import androidx.annotation.StringRes
 import androidx.biometric.BiometricPrompt
 import app.localgatekeys.android.settings.AppSettings
 import app.localgatekeys.android.settings.AutoLockDelay
+import app.localgatekeys.android.vault.AppPasswordRequiredException
+import app.localgatekeys.android.vault.AppPasswordWaitException
+import app.localgatekeys.android.vault.BiometricChangedException
 import app.localgatekeys.android.vault.LocalStoreException
+import app.localgatekeys.core.crypto.AppPasswordException
+import app.localgatekeys.core.crypto.AppPasswordRecord
+import app.localgatekeys.core.crypto.RecoveryPhraseException
 import app.localgatekeys.android.vault.VaultKeyException
 import app.localgatekeys.core.primitives.UnixClock
 import app.localgatekeys.core.sync.ItemStore
@@ -39,6 +48,11 @@ class AppLockModel(
     private val screenOff: ScreenOffWatching = ScreenOffWatching.NONE,
     /** Time that keeps counting in deep sleep, in ms (the app: `SystemClock.elapsedRealtime`); tests follow [clock]. */
     private val elapsedMillis: () -> Long = { clock.now * 1000 },
+    /** Task 7: the app password is on (`app-password.bin` exists). Off: today's unlock, unchanged. */
+    private val passwordOn: () -> Boolean = { false },
+    /** Task 7: the biometric-only shortcut is set up. */
+    private val biometricShortcut: () -> Boolean = { false },
+    private val t: Txt,
 ) {
     enum class State { LOCKED, UNLOCKING, UNLOCKED }
 
@@ -52,6 +66,10 @@ class AppLockModel(
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+    private val _needsPassword = MutableStateFlow(false)
+    /** Task 7: the unlock screen shows the app password field (and "Forgot app password?"). */
+    val needsPassword: StateFlow<Boolean> = _needsPassword.asStateFlow()
 
     private val _offersStartFresh = MutableStateFlow(false)
     /** The unlock screen shows "Start fresh anyway" (`eraseFailed || vaultUnreadable`). */
@@ -89,18 +107,46 @@ class AppLockModel(
             _state.value = State.LOCKED
             if (settings.erasePending || eraseFailed) return
         }
+        if (passwordOn()) {
+            _needsPassword.value = true
+            // No shortcut: no prompt at all, the password field is the only way in (never the screen lock).
+            if (!biometricShortcut()) return
+        } else {
+            _needsPassword.value = false
+        }
+        attempt(UnlockCredential.System)
+    }
+
+    /** Task 7: unlock with the typed app password. */
+    suspend fun unlockWithPassword(password: String) {
+        if (_state.value != State.LOCKED || isErasing || settings.erasePending || eraseFailed) return
+        attempt(UnlockCredential.Password(AppPasswordRecord.passwordBytes(password)))
+    }
+
+    /** Task 7: "Forgot app password?": the 24 words and a new app password (already strength-checked by the screen). */
+    suspend fun recover(phrase: String, newPassword: String) {
+        if (_state.value != State.LOCKED || isErasing || settings.erasePending || eraseFailed) return
+        attempt(UnlockCredential.Recovery(phrase, AppPasswordRecord.passwordBytes(newPassword)))
+    }
+
+    private suspend fun attempt(credential: UnlockCredential) {
         _state.value = State.UNLOCKING; _errorMessage.value = null; vaultUnreadable = false
         val started = generation
         val opened = try {
-            unlocker.unlock(UNLOCK_REASON)
+            if (credential == UnlockCredential.System) unlocker.unlock(t.s(R.string.unlock_reason)) else unlocker.unlock(t.s(R.string.unlock_reason), credential)
         } catch (e: CancellationException) {
             if (generation == started && _state.value == State.UNLOCKING) _state.value = State.LOCKED
             throw e
         } catch (e: Exception) {
             if (generation != started) return
             _state.value = State.LOCKED; _vault.value = null
-            _errorMessage.value = message(e)
+            _errorMessage.value = message(e, t)
             vaultUnreadable = isVaultWithoutKey(e)
+            if (e is AppPasswordRequiredException || e is BiometricChangedException || e is AppPasswordException ||
+                e is AppPasswordWaitException || e is RecoveryPhraseException || passwordOn()
+            ) {
+                _needsPassword.value = true
+            }
             return
         }
         if (generation != started || _state.value != State.UNLOCKING) { // a lock won: shut only this late vault
@@ -109,6 +155,7 @@ class AppLockModel(
         }
         _vault.value = opened
         _state.value = State.UNLOCKED
+        _needsPassword.value = false
         noteActivity()
     }
 
@@ -158,7 +205,7 @@ class AppLockModel(
         settings.erasePending = true
         true
     } catch (e: Exception) {
-        _errorMessage.value = ERASE_NOT_STARTED_MESSAGE
+        _errorMessage.value = t.s(ERASE_NOT_STARTED_MESSAGE)
         false
     }
 
@@ -170,7 +217,7 @@ class AppLockModel(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            _errorMessage.value = (e as? VaultEraseFailure)?.message ?: ERASE_FAILED_MESSAGE
+            _errorMessage.value = (e as? VaultEraseFailure)?.text(t) ?: t.s(ERASE_FAILED_MESSAGE)
             eraseFailed = true
         }
     }
@@ -213,7 +260,7 @@ class AppLockModel(
                 settings.erasePending = false
                 _errorMessage.value = null; eraseFailed = false; vaultUnreadable = false
             } catch (e: Exception) {
-                _errorMessage.value = ERASE_FAILED_MESSAGE; eraseFailed = true
+                _errorMessage.value = t.s(ERASE_FAILED_MESSAGE); eraseFailed = true
             }
             _state.value = State.LOCKED
         } finally {
@@ -341,63 +388,85 @@ class AppLockModel(
     }
 
     companion object {
-        const val UNLOCK_REASON = "Unlock your vault"
-
         /** Ruling 21: how long a system screen the app opened (the folder picker) may stay on top before the vault locks. */
         const val SYSTEM_SCREEN_LIMIT_SECONDS = 120L
 
-        const val VAULT_WITHOUT_KEY_MESSAGE =
-            "This phone has vault files but not their key (for example after restoring a backup), so they cannot be opened. " +
-                "Start fresh to erase them and set up an empty vault, then sync with your PC to get your items back."
-
-        const val BIOMETRY_LOCKOUT_MESSAGE =
-            "Your fingerprint, face or screen lock is locked after too many attempts. Lock and unlock your phone with its screen lock, then try again."
-
-        const val START_FRESH_CONFIRM_1 =
-            "Start fresh anyway?\n\nLocalGateKeys deletes everything it can from this phone and opens a new, empty vault. " +
-                "Anything it could not delete stays on this phone but is no longer used. Your PC and the sync folder are not changed."
-
-        const val START_FRESH_CONFIRM_2 = "Are you sure? This cannot be undone. Start fresh now?"
+        @StringRes val VAULT_WITHOUT_KEY_MESSAGE = R.string.unlock_vault_without_key
+        @StringRes val BIOMETRY_LOCKOUT_MESSAGE = R.string.unlock_biometry_lockout
+        @StringRes val START_FRESH_CONFIRM_1 = R.string.unlock_start_fresh_1
+        @StringRes val START_FRESH_CONFIRM_2 = R.string.unlock_start_fresh_2
 
         /** The erase flag could not be saved, so nothing was deleted (Android only: durable preference writes can fail). */
-        const val ERASE_NOT_STARTED_MESSAGE = "The vault was not erased (a setting could not be saved). Try again."
+        @StringRes val ERASE_NOT_STARTED_MESSAGE = R.string.unlock_erase_not_started
+        @StringRes val ERASE_FAILED_MESSAGE = R.string.unlock_erase_failed
+        @StringRes val WRONG_PASSWORD_MESSAGE = R.string.unlock_wrong_password
 
-        const val ERASE_FAILED_MESSAGE =
-            "The vault was not fully erased. Tap Unlock to try erasing again, or Start fresh anyway."
+        /** The recovery phrase opens the same damaged file, so it cannot help here. */
+        @StringRes val MALFORMED_MESSAGE = R.string.unlock_password_file_damaged
+        @StringRes val WRONG_PHRASE_MESSAGE = R.string.unlock_wrong_phrase
+        @StringRes val BIOMETRIC_CHANGED_MESSAGE = R.string.unlock_biometric_changed
 
-        private const val PASSCODE_NOT_SET = "Set a screen lock in Settings to use LocalGateKeys."
-        private const val GENERIC = "Could not unlock. Try again."
+        fun waitMessage(seconds: Long, t: Txt): String =
+            if (seconds >= 120) {
+                val minutes = ((seconds + 59) / 60).toInt()
+                t.plural(R.plurals.unlock_wait_minutes, minutes, minutes)
+            } else {
+                t.plural(R.plurals.unlock_wait_seconds, seconds.toInt(), seconds)
+            }
+
+        @StringRes private val PASSCODE_NOT_SET = R.string.unlock_no_screen_lock
+        @StringRes private val GENERIC = R.string.unlock_generic
 
         /** The vault's files cannot be opened with any key this phone still has: offer Start fresh. */
         fun isVaultWithoutKey(e: Throwable): Boolean = when (e) {
             is LocalStoreException -> e.kind == LocalStoreException.Kind.VAULT_WITHOUT_KEY
             is VaultKeyException -> e.kind == VaultKeyException.Kind.INVALIDATED || e.kind == VaultKeyException.Kind.MISSING
+            // A damaged app password file: neither the password nor the phrase can open it.
+            is AppPasswordException -> e.kind == AppPasswordException.Kind.MALFORMED
             else -> false
         }
 
         /** What the unlock screen says after a failed unlock; null when the person cancelled (the Unlock button stays). */
-        fun message(e: Throwable): String? = when (e) {
+        fun message(e: Throwable, t: Txt): String? = when (e) {
+            is AppPasswordRequiredException -> null
+            is BiometricChangedException -> t.s(BIOMETRIC_CHANGED_MESSAGE)
+            is AppPasswordWaitException -> waitMessage(e.seconds, t)
+            is AppPasswordException -> when (e.kind) {
+                AppPasswordException.Kind.WRONG_PASSWORD -> t.s(WRONG_PASSWORD_MESSAGE)
+                AppPasswordException.Kind.WRONG_PHRASE -> t.s(WRONG_PHRASE_MESSAGE)
+                AppPasswordException.Kind.MALFORMED -> t.s(MALFORMED_MESSAGE)
+            }
+            is RecoveryPhraseException -> t.s(
+                when (e.reason) {
+                    RecoveryPhraseException.Reason.WORD_LIST_MISSING -> R.string.recovery_word_list_missing
+                    RecoveryPhraseException.Reason.WORD_LIST_DAMAGED -> R.string.recovery_word_list_damaged
+                    RecoveryPhraseException.Reason.BAD_ENTROPY -> R.string.recovery_bad_entropy
+                    RecoveryPhraseException.Reason.MALFORMED -> R.string.recovery_malformed
+                    RecoveryPhraseException.Reason.WRONG_WORD_COUNT -> R.string.recovery_wrong_word_count
+                    RecoveryPhraseException.Reason.UNKNOWN_WORD -> R.string.recovery_unknown_word
+                    RecoveryPhraseException.Reason.CHECKSUM -> R.string.recovery_checksum
+                },
+            )
             is AuthenticationException -> when (e.code) {
                 BiometricPrompt.ERROR_USER_CANCELED, BiometricPrompt.ERROR_NEGATIVE_BUTTON, BiometricPrompt.ERROR_CANCELED -> null
-                BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL -> PASSCODE_NOT_SET
-                BiometricPrompt.ERROR_LOCKOUT, BiometricPrompt.ERROR_LOCKOUT_PERMANENT -> BIOMETRY_LOCKOUT_MESSAGE
-                else -> "Could not unlock (authentication error ${e.code}). Try again."
+                BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL -> t.s(PASSCODE_NOT_SET)
+                BiometricPrompt.ERROR_LOCKOUT, BiometricPrompt.ERROR_LOCKOUT_PERMANENT -> t.s(BIOMETRY_LOCKOUT_MESSAGE)
+                else -> t.s(R.string.unlock_auth_error, e.code)
             }
             is VaultKeyException -> when (e.kind) {
-                VaultKeyException.Kind.NO_SCREEN_LOCK -> PASSCODE_NOT_SET
-                VaultKeyException.Kind.INVALIDATED, VaultKeyException.Kind.MISSING -> VAULT_WITHOUT_KEY_MESSAGE
-                VaultKeyException.Kind.AUTH_REQUIRED, VaultKeyException.Kind.FAILED ->
-                    "Could not read the vault key from this phone's secure storage. Try again."
+                VaultKeyException.Kind.NO_SCREEN_LOCK -> t.s(PASSCODE_NOT_SET)
+                VaultKeyException.Kind.INVALIDATED, VaultKeyException.Kind.MISSING -> t.s(VAULT_WITHOUT_KEY_MESSAGE)
+                VaultKeyException.Kind.AUTH_REQUIRED, VaultKeyException.Kind.FAILED -> t.s(R.string.unlock_key_read_failed)
             }
             is LocalStoreException -> when (e.kind) {
-                LocalStoreException.Kind.NO_LOCAL_KEY -> "The vault key is missing from this phone's secure storage."
-                LocalStoreException.Kind.BAD_LOCAL_KEY -> "The vault key in this phone's secure storage is damaged."
-                LocalStoreException.Kind.VAULT_WITHOUT_KEY -> VAULT_WITHOUT_KEY_MESSAGE
-                LocalStoreException.Kind.CORRUPT -> "The vault on this phone could not be read (damaged)."
-                LocalStoreException.Kind.IO -> "The vault's files on this phone could not be read or written. Try again."
-                LocalStoreException.Kind.STALE -> GENERIC
+                LocalStoreException.Kind.NO_LOCAL_KEY -> t.s(R.string.unlock_local_key_missing)
+                LocalStoreException.Kind.BAD_LOCAL_KEY -> t.s(R.string.unlock_local_key_damaged)
+                LocalStoreException.Kind.VAULT_WITHOUT_KEY -> t.s(VAULT_WITHOUT_KEY_MESSAGE)
+                LocalStoreException.Kind.CORRUPT -> t.s(R.string.unlock_vault_damaged)
+                LocalStoreException.Kind.IO -> t.s(R.string.unlock_vault_io)
+                LocalStoreException.Kind.STALE -> t.s(GENERIC)
             }
-            else -> GENERIC
+            else -> t.s(GENERIC)
         }
     }
 }

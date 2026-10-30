@@ -11,10 +11,11 @@ from datetime import datetime
 from typing import Any, Callable
 
 from .setting_links import open_settings
+from ..i18n import t
 
-SKIPPED = "Scheduled backup skipped: set a backup password first."
+SKIPPED = "schedule.scheduledBackupSkippedSetA"
 SKIPPED_ACTION = open_settings("backups")
-FAILED = "Scheduled backup failed; the previous backup was kept. See the error log."
+FAILED = "schedule.scheduledBackupFailedThePrevious"
 INTERVAL = 60
 AFTER_UNLOCK = 3
 
@@ -106,7 +107,7 @@ class ScheduleRunner:
         if not password:
             if not self._warned:
                 self._warned = True
-                self._toast(SKIPPED, "warning", SKIPPED_ACTION)
+                self._toast(t(SKIPPED), "warning", SKIPPED_ACTION)
             return False
         self._running = True
         job = {"profile_dir": controller.profiles.profile_dir(profile.id), "profile_name": profile.name,
@@ -145,12 +146,12 @@ class ScheduleRunner:
         self._running = False
         if result is None:
             self._failed_at = self._now()
-            self._toast(FAILED, "error")
+            self._toast(t(FAILED), "error")
             return
         self._failed_at = None
         if result.mirror_warning:
-            self._toast(f"Scheduled backup saved. Mirror copy failed: {result.mirror_warning}", "warning")
+            self._toast(t("schedule.scheduledBackupSavedMirrorCopy", mirror_warning=result.mirror_warning), "warning")
         elif result.mirrored is not None:
-            self._toast("Scheduled backup saved and copied to the mirror folder.")
+            self._toast(t("schedule.scheduledBackupSavedAndCopied"))
         else:
-            self._toast("Scheduled backup saved.")
+            self._toast(t("schedule.scheduledBackupSaved"))

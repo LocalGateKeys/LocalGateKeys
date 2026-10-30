@@ -9,6 +9,7 @@ from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from ..i18n import t
 
 from . import (
     MAX_JSON_BYTES,
@@ -193,7 +194,7 @@ def item_to_record(item: Mapping[str, Any], vault_name: str, *, source_row: int 
 def records_from_export(document: Mapping[str, Any]) -> ImportResult:
     accounts = document.get("accounts")
     if not isinstance(accounts, list):
-        raise OnePasswordError("export.data has no 'accounts' list")
+        raise OnePasswordError(t("onepassword.exportDataHasNoAccounts"))
     result = ImportResult("1pux")
     trashed = 0
     index = 0
@@ -209,7 +210,7 @@ def records_from_export(document: Mapping[str, Any]) -> ImportResult:
                 index += 1
                 check_record_count(index)
                 if not isinstance(item, dict):
-                    result.diagnostics.append(f"Item {index}: not an object; skipped.")
+                    result.diagnostics.append(t("bitwarden.itemNotAnObjectSkipped", index=index))
                     continue
                 if item.get("trashed") or str(item.get("state") or "").casefold() == "trashed":
                     trashed += 1
@@ -218,7 +219,7 @@ def records_from_export(document: Mapping[str, Any]) -> ImportResult:
                 if record is not None:
                     result.records.append(record)
     if trashed:
-        result.diagnostics.append(f"{trashed} items in the 1Password trash were not imported.")
+        result.diagnostics.append(t("onepassword.itemsInThe1passwordTrash", trashed=trashed))
     result.records = enforce_record_limit(result.records)
     return result
 
@@ -232,13 +233,13 @@ def read_export_data(source: Path | str | bytes) -> dict[str, Any]:
                 names = {info.filename: info for info in archive.infolist()}
                 info = names.get("export.data")
                 if info is None:
-                    raise OnePasswordError("1PUX archive does not contain export.data")
+                    raise OnePasswordError(t("onepassword.t1puxArchiveDoesNotContain"))
                 if info.file_size > MAX_EXPORT_DATA_BYTES:
-                    raise OnePasswordError("export.data is too large")
+                    raise OnePasswordError(t("onepassword.exportDataIsTooLarge"))
                 if info.flag_bits & 0x1:
-                    raise OnePasswordError("export.data is encrypted inside the 1PUX archive; export again from 1Password")
+                    raise OnePasswordError(t("onepassword.exportDataIsEncryptedInside"))
                 if info.compress_type not in _SUPPORTED_ZIP_METHODS:
-                    raise OnePasswordError("export.data uses an unsupported ZIP compression method")
+                    raise OnePasswordError(t("onepassword.exportDataUsesAnUnsupported"))
                 with archive.open(info) as handle:
                     raw = read_bounded(handle, MAX_EXPORT_DATA_BYTES)
         except OnePasswordError:
@@ -248,17 +249,17 @@ def read_export_data(source: Path | str | bytes) -> dict[str, Any]:
             # zipfile signals encrypted members (RuntimeError), unknown methods
             # (NotImplementedError) and truncated/corrupt streams through many
             # exception types; all are a malformed export, not a crash.
-            raise OnePasswordError("1PUX archive is corrupted or unsupported") from exc
+            raise OnePasswordError(t("onepassword.t1puxArchiveIsCorruptedOr")) from exc
     else:
         raw = data
     if len(raw) > MAX_EXPORT_DATA_BYTES:
-        raise OnePasswordError("export.data is too large")
+        raise OnePasswordError(t("onepassword.exportDataIsTooLarge"))
     try:
         document = json.loads(decode_text(raw))
     except (ValueError, RecursionError) as exc:
-        raise OnePasswordError("export.data is not valid JSON") from exc
+        raise OnePasswordError(t("onepassword.exportDataIsNotValid")) from exc
     if not isinstance(document, dict):
-        raise OnePasswordError("export.data is not a 1Password export object")
+        raise OnePasswordError(t("onepassword.exportDataIsNotA"))
     return document
 
 

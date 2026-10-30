@@ -1,7 +1,11 @@
 import Foundation
 import Observation
 import StoreKit
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 /// `unverified`: StoreKit returned a transaction whose JWS failed verification; it is not finished.
 enum PurchaseOutcome: Equatable, Sendable { case purchased, pending, cancelled, unverified }
@@ -37,6 +41,13 @@ protocol ProPurchasing: AnyObject {
     func restore() async throws -> Bool
     /// Fires when a transaction arrives outside a purchase call (Ask to Buy, another device, refund).
     func entitlementChanges() -> AsyncStream<Void>
+    /// The JWS of the current verified, unrevoked `pro_unlimited` transaction (for the licence claim); nil without one.
+    func currentTransactionJWS() async -> String?
+}
+
+extension ProPurchasing {
+    /// Fakes without a transaction: nothing to claim.
+    func currentTransactionJWS() async -> String? { nil }
 }
 
 @MainActor
@@ -58,6 +69,15 @@ final class StoreKitPurchases: ProPurchasing {
             if case .verified(let t) = result, t.productID == Self.productID, t.revocationDate == nil { return true }
         }
         return false
+    }
+
+    func currentTransactionJWS() async -> String? {
+        for await result in Transaction.currentEntitlements {
+            if case .verified(let t) = result, t.productID == Self.productID, t.revocationDate == nil {
+                return result.jwsRepresentation
+            }
+        }
+        return nil
     }
 
     func offer() async -> ProOffer {
@@ -104,6 +124,9 @@ final class StoreKitPurchases: ProPurchasing {
 }
 
 /// Pro on this phone: the `pro_unlimited` entitlement or a valid synced desktop licence.
+/// After a purchase, a restore or a launch with the entitlement, and while the vault is unlocked and holds no
+/// valid licence, the purchase is claimed once (per launch) from the licence Worker (`LicenceClaim.swift`) and
+/// stored as a licence state, so pairing carries it to a PC. Pro here never depends on the claim.
 @MainActor
 @Observable
 final class ProModel {
@@ -111,21 +134,59 @@ final class ProModel {
     private(set) var license: LicenseInfo?
     private(set) var price: String?
     private(set) var busy = false
-    private(set) var message: String?
+    /// What the Pro screen says (compared by id, shown translated).
+    enum Notice: Equatable {
+        case unavailable, pending, unverified, purchaseFailed, nothingRestored, restoreFailed
+        var text: String {
+            switch self {
+            case .unavailable: ProModel.unavailableMessage
+            case .pending: String(localized: "The purchase is waiting for approval.")
+            case .unverified: String(localized: "The App Store could not verify this purchase. Try Restore purchases or try again later.")
+            case .purchaseFailed: String(localized: "The purchase could not be completed. Try again later.")
+            case .nothingRestored: String(localized: "No purchase was found for this Apple Account.")
+            case .restoreFailed: String(localized: "Purchases could not be restored. Try again later.")
+            }
+        }
+    }
+    private(set) var notice: Notice?
+    var message: String? { notice?.text }
     /// False once the App Store has said there is no `pro_unlimited` product: Buy is disabled.
     private(set) var canBuy = true
+    /// The `LGK1-` key of the licence shown (Settings › Pro "Copy key"); nil without a licence.
+    private(set) var licenceKey: String?
 
-    var isPro: Bool { purchased || license != nil }
+    var isPro: Bool {
+        #if DEBUG
+        // Debug builds only: `LGK_DEBUG_PRO=1` acts as Pro (manual checks without a store purchase).
+        if Self.debugPro { return true }
+        #endif
+        return purchased || license != nil
+    }
 
-    static let unavailableMessage = "Pro isn't available yet"
+    #if DEBUG
+    static let debugPro = ProcessInfo.processInfo.environment["LGK_DEBUG_PRO"] == "1"
+    #endif
+
+    nonisolated static var unavailableMessage: String { String(localized: "Pro isn't available yet") }
 
     @ObservationIgnored private let purchases: any ProPurchasing
     @ObservationIgnored private let licenseKeys: [String: [UInt8]]
     @ObservationIgnored private var observer: Task<Void, Never>?
+    /// nil: no claims (tests and previews that do not test them).
+    @ObservationIgnored private let claimer: (any LicenceClaiming)?
+    @ObservationIgnored private let claimFlags: LicenceClaimFlags
+    /// The unlocked vault the claimed licence goes into; nil while locked.
+    @ObservationIgnored private var claimStore: (any ItemStore)?
+    /// Bumped by every lock: a claim answered after the vault locked writes nothing.
+    @ObservationIgnored private var claimGeneration = 0
+    /// One claim per launch; an offline or failed one is tried again at the next launch.
+    @ObservationIgnored private var claimTried = false
 
     /// `purchased` starts as the last known entitlement (tests pass `true` for a Pro phone); `refresh()` re-reads it.
-    init(purchases: any ProPurchasing, licenseKeys: [String: [UInt8]] = LicenseKeys.production, purchased: Bool = false) {
+    init(purchases: any ProPurchasing, licenseKeys: [String: [UInt8]] = LicenseKeys.production, purchased: Bool = false,
+         claimer: (any LicenceClaiming)? = nil, claimFlags: LicenceClaimFlags = LicenceClaimFlags(defaults: nil)) {
         self.purchases = purchases; self.licenseKeys = licenseKeys; self.purchased = purchased
+        self.claimer = claimer; self.claimFlags = claimFlags
     }
 
     /// The entitlement only (`Transaction.currentEntitlements`, local and offline). Runs at launch, so it must
@@ -136,6 +197,7 @@ final class ProModel {
         let entitled = await purchases.isEntitled()
         guard !Task.isCancelled else { return }
         purchased = entitled
+        claimInBackground()
     }
 
     /// The product price, loaded only when the upgrade sheet is shown.
@@ -144,13 +206,13 @@ final class ProModel {
         switch await purchases.offer() {
         case .available(let p):
             price = p; canBuy = true
-            if message == Self.unavailableMessage { message = nil }   // an earlier lookup found none
+            if notice == .unavailable { notice = nil }   // an earlier lookup found none
         case .unavailable: markUnavailable()
         case .unknown: break
         }
     }
 
-    private func markUnavailable() { canBuy = false; message = Self.unavailableMessage }
+    private func markUnavailable() { canBuy = false; notice = .unavailable }
 
     func startObserving() {
         guard observer == nil else { return }
@@ -163,39 +225,96 @@ final class ProModel {
     /// Re-reads the synced licence states.
     func update(from snapshot: StoreSnapshot) {
         license = ItemLimit.validLicense(in: snapshot, keys: licenseKeys)
+        licenceKey = license.flatMap { info in
+            guard case .object(let w)? = snapshot.records[License.stateID(licenseID: info.licenseID)],
+                  let bundle = w["record"] else { return nil }
+            return try? LicenceText.encodePaste(bundle)
+        }
+    }
+
+    // MARK: licence claim
+
+    /// The vault was unlocked: a pending claim may run now.
+    func vaultUnlocked(store: any ItemStore) {
+        claimStore = store
+        claimInBackground()
+    }
+
+    /// The vault locked: nothing is written until the next unlock.
+    func vaultLocked() {
+        claimStore = nil
+        claimGeneration += 1
+    }
+
+    private func claimInBackground() {
+        guard claimer != nil, purchased, license == nil, !claimTried, let store = claimStore else { return }
+        let generation = claimGeneration
+        Task { [weak self] in
+            guard let self, self.claimGeneration == generation else { return }   // locked before it started
+            await self.claimIfNeeded(store: store)
+        }
+    }
+
+    /// Claims the App Store purchase from the licence Worker when this device has the entitlement, the vault
+    /// holds no valid licence and no claim ran this launch (and none was refused). A returned licence is verified
+    /// with the production keys before it is stored; any failure is silent.
+    func claimIfNeeded(store: any ItemStore) async {
+        guard let claimer, purchased, !claimTried, !claimFlags.refused else { return }
+        guard let snapshot = try? store.load() else { return }
+        update(from: snapshot)
+        guard license == nil else { return }
+        claimTried = true
+        let mine = claimGeneration
+        guard let jws = await purchases.currentTransactionJWS() else { claimTried = false; return }
+        let result = await claimer.claim(jws: jws)
+        guard mine == claimGeneration else { claimTried = false; return }   // locked meanwhile: next unlock
+        switch result {
+        case .licence(let text): install(text, into: store)
+        case .retryLater: break
+        case .refused: claimFlags.refused = true
+        }
+    }
+
+    /// Writes the claimed licence only when it verifies with this build's keys.
+    private func install(_ text: String, into store: any ItemStore) {
+        guard let bundle = try? LicenceText.parse(text),
+              let info = try? License.verify(bundle: bundle, keys: licenseKeys) else { return }
+        guard (try? LicenceStateWriter.write(bundle: bundle, licenseID: info.licenseID, to: store)) != nil else { return }
+        if let snapshot = try? store.load() { update(from: snapshot) }
     }
 
     func buy() async {
-        guard canBuy else { message = Self.unavailableMessage; return }
-        busy = true; message = nil
+        guard canBuy else { notice = .unavailable; return }
+        busy = true; notice = nil
         defer { busy = false }
         do {
             switch try await purchases.purchase() {
-            case .purchased: purchased = await purchases.isEntitled()
-            case .pending: message = "The purchase is waiting for approval."
+            case .purchased: purchased = await purchases.isEntitled(); claimInBackground()
+            case .pending: notice = .pending
             case .cancelled: break
-            case .unverified: message = "The App Store could not verify this purchase. Try Restore purchases or try again later."
+            case .unverified: notice = .unverified
             }
         } catch ProPurchaseError.unavailable {
             markUnavailable()
         } catch where ProPurchaseError.isCancellation(error) {
             // Cancelled by the user: nothing to say.
         } catch {
-            message = "The purchase could not be completed. Try again later."
+            notice = .purchaseFailed
         }
     }
 
     func restore() async {
-        busy = true; message = nil
+        busy = true; notice = nil
         defer { busy = false }
         do {
             purchased = try await purchases.restore()
-            if !purchased { message = "No purchase was found for this Apple Account." }
+            if !purchased { notice = .nothingRestored }
+            claimInBackground()
         } catch where ProPurchaseError.isCancellation(error) {
             // The sign-in was cancelled: silent.
-            if !canBuy { message = Self.unavailableMessage }
+            if !canBuy { notice = .unavailable }
         } catch {
-            message = "Purchases could not be restored. Try again later."
+            notice = .restoreFailed
         }
     }
 }

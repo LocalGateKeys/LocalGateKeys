@@ -1,5 +1,6 @@
 package app.localgatekeys.android.unlock
 
+import app.localgatekeys.android.R
 import android.os.Build
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
@@ -10,6 +11,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import app.localgatekeys.android.settings.AppSettings
+import app.localgatekeys.android.vault.AppPasswordLock
 import app.localgatekeys.android.vault.VaultKey
 import app.localgatekeys.core.primitives.RandomSource
 import javax.crypto.Cipher
@@ -27,10 +29,17 @@ import kotlinx.coroutines.withContext
  * [activity] returns the activity to show the prompt in (the app keeps the current one; null when none is started).
  */
 class SystemUnlocker private constructor(inner: VaultUnlocker) : Unlocker by inner {
-    constructor(activity: () -> FragmentActivity?, vaultKey: VaultKey, dirs: VaultDirs, random: RandomSource, settings: AppSettings?) :
+    constructor(
+        activity: () -> FragmentActivity?,
+        vaultKey: VaultKey,
+        dirs: VaultDirs,
+        random: RandomSource,
+        settings: AppSettings?,
+        appPassword: AppPasswordLock? = null,
+    ) :
         this(
             VaultUnlocker(
-                VaultOpener(dirs, vaultKey, random, settings, cryptoBound = Build.VERSION.SDK_INT >= 30),
+                VaultOpener(dirs, vaultKey, random, settings, cryptoBound = Build.VERSION.SDK_INT >= 30, appPassword = appPassword),
                 BiometricAuthenticator(activity),
             ),
         )
@@ -45,7 +54,12 @@ class SystemUnlocker private constructor(inner: VaultUnlocker) : Unlocker by inn
 class BiometricAuthenticator(private val activity: () -> FragmentActivity?) : Authenticator {
     private var prompt: BiometricPrompt? = null
 
-    override suspend fun authenticate(reason: String, cipher: Cipher?): Cipher? = withContext(Dispatchers.Main.immediate) {
+    override suspend fun authenticate(reason: String, cipher: Cipher?): Cipher? = prompt(reason, cipher, biometricOnly = false)
+
+    /** Task 7: `BIOMETRIC_STRONG` only, with a CryptoObject; no screen-lock route, the cancel button is "Use app password". */
+    override suspend fun authenticateBiometric(reason: String, cipher: Cipher): Cipher? = prompt(reason, cipher, biometricOnly = true)
+
+    private suspend fun prompt(reason: String, cipher: Cipher?, biometricOnly: Boolean): Cipher? = withContext(Dispatchers.Main.immediate) {
         val act = activity()?.takeIf { it.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) }
             ?: throw AuthenticationException(BiometricPrompt.ERROR_CANCELED, "no started activity to prompt in")
         suspendCancellableCoroutine { cont ->
@@ -75,10 +89,18 @@ class BiometricAuthenticator(private val activity: () -> FragmentActivity?) : Au
                 }
             }.also { act.lifecycle.addObserver(it) }
             prompt = p
-            val info = BiometricPrompt.PromptInfo.Builder()
-                .setTitle(reason)
-                .setAllowedAuthenticators(AUTHENTICATORS)
-                .build()
+            val info = if (biometricOnly) {
+                BiometricPrompt.PromptInfo.Builder()
+                    .setTitle(reason)
+                    .setAllowedAuthenticators(BIOMETRIC_STRONG)
+                    .setNegativeButtonText(act.getString(R.string.unlock_use_app_password))
+                    .build()
+            } else {
+                BiometricPrompt.PromptInfo.Builder()
+                    .setTitle(reason)
+                    .setAllowedAuthenticators(AUTHENTICATORS)
+                    .build()
+            }
             if (cipher != null) p.authenticate(info, BiometricPrompt.CryptoObject(cipher)) else p.authenticate(info)
             cont.invokeOnCancellation { executor.execute { p.cancelAuthentication() } }
         }

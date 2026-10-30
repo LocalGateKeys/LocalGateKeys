@@ -1,4 +1,5 @@
 import SwiftUI
+import LocalAuthentication
 import AppShared
 
 /// Sync: Wi-Fi card (pair by QR), Cloud folder card (join or attach), status, issues with the desktop's
@@ -10,8 +11,8 @@ struct SyncScreen: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
-    private enum Sheet: String, Identifiable { case scanner, paste, picker, password; var id: String { rawValue } }
-    private enum Confirm: Equatable { case leave1, leave2, reset1, reset2 }
+    private enum Sheet: String, Identifiable { case scanner, paste, picker, password, findAgain; var id: String { rawValue } }
+    private enum Confirm: Equatable { case leave1, leave2, reset1, reset2, rollback }
 
     @State private var sheet: Sheet?
     @State private var confirm: Confirm?
@@ -63,7 +64,7 @@ struct SyncScreen: View {
             }
             .id(Self.statusID)
             if coordinator.conflictCopies > 0 {
-                Text("\(coordinator.conflictCopies) conflict \(coordinator.conflictCopies == 1 ? "copy" : "copies") made since you unlocked.")
+                Text("\(coordinator.conflictCopies) conflict copies made since you unlocked.")
                     .font(.footnote).foregroundStyle(Palette.secondaryText)
             }
             if coordinator.connecting != nil {
@@ -99,15 +100,15 @@ struct SyncScreen: View {
 
     private var statusText: String {
         switch coordinator.phase {
-        case .syncing: return "Syncing…"
+        case .syncing: return String(localized: "Syncing…")
         case .joining:
-            if let ep = coordinator.connecting { return "Connecting to \(SyncWording.hostPort(ep))…" }
-            if coordinator.verificationCode != nil { return "Waiting for Accept on the other device…" }
-            return "Joining…"
+            if let ep = coordinator.connecting { return String(localized: "Connecting to \(SyncWording.hostPort(ep))…") }
+            if coordinator.verificationCode != nil { return String(localized: "Waiting for Accept on the other device…") }
+            return String(localized: "Joining…")
         case .idle:
-            guard coordinator.membership.joined else { return "Sync is not set up on this iPhone." }
-            guard let at = coordinator.lastSyncedAt else { return "Not synced since you unlocked." }
-            return "Last synced \(Date(timeIntervalSince1970: TimeInterval(at)).formatted(date: .omitted, time: .shortened))."
+            guard coordinator.membership.joined else { return String(localized: "Sync is not set up on this iPhone.") }
+            guard let at = coordinator.lastSyncedAt else { return String(localized: "Not synced since you unlocked.") }
+            return String(localized: "Last synced \(Date(timeIntervalSince1970: TimeInterval(at)).formatted(date: .omitted, time: .shortened)).")
         }
     }
 
@@ -118,6 +119,12 @@ struct SyncScreen: View {
                 if let ep = peer.endpoint { Text("\(ep.host) port \(ep.port)").font(.footnote).foregroundStyle(Palette.secondaryText) }
                 Text("Syncs when both are on the same Wi-Fi and LocalGateKeys is unlocked on the other device.")
                     .font(.footnote).foregroundStyle(Palette.secondaryText)
+                if coordinator.hostNotFound {
+                    Text(SyncWording.hostNotFoundTitle).foregroundStyle(Palette.warning)
+                    Text(SyncWording.findAgainHint).font(.footnote).foregroundStyle(Palette.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button(SyncWording.findAgainAction) { sheet = .findAgain }.disabled(coordinator.isBusy)
+                }
             } else if !coordinator.membership.joined {
                 Text("On your PC choose Show QR code on the Wi-Fi card, then scan it here within 120 seconds.")
                     .font(.footnote).foregroundStyle(Palette.secondaryText)
@@ -134,15 +141,15 @@ struct SyncScreen: View {
         Section("Cloud folder") {
             let m = coordinator.membership
             if m.hasFolder {
-                Text(m.hasBookmark ? "Syncing through the cloud folder." : "Choose the sync folder again on this iPhone.")
+                Text(m.hasBookmark ? String(localized: "Syncing through the cloud folder.") : String(localized: "Choose the sync folder again on this iPhone."))
                     .foregroundStyle(m.hasBookmark ? Palette.text : Palette.warning)
                 Button("Choose the folder again…") { sheet = .picker }.disabled(coordinator.isBusy)
             } else if m.joined {
-                Text(SyncWording.onPhone("To sync through a cloud folder too, use the folder another device in this group already added. Your Wi-Fi pairings stay as they are."))
+                Text("To sync through a cloud folder too, use the folder another device in this group already added. Your Wi-Fi pairings stay as they are.")
                     .font(.footnote).foregroundStyle(Palette.secondaryText)
                 Button("Use this group's cloud folder…") { sheet = .picker }.disabled(coordinator.isBusy)
             } else {
-                Text("Choose the folder your cloud app syncs (iCloud Drive, OneDrive, Dropbox, Google Drive), the one that holds LocalGateKeys Sync, and enter the sync password.")
+                Text("Choose the folder your cloud app syncs, the one that holds LocalGateKeys Sync, and enter the sync password. If your cloud app is greyed out, it doesn't let other apps open its folders on iPhone: sync over Wi-Fi or through iCloud Drive instead.")
                     .font(.footnote).foregroundStyle(Palette.secondaryText)
                 Button("Join a folder…") { sheet = .picker }.disabled(coordinator.isBusy)
             }
@@ -154,8 +161,19 @@ struct SyncScreen: View {
         Section("Messages") {
             ForEach(coordinator.issues) { issue in
                 VStack(alignment: .leading, spacing: 6) {
+                    if issue.kind == "vault-rollback" {
+                        Text(SyncWording.rollbackTitle).font(.headline).foregroundStyle(color(issue.severity))
+                    }
                     Label(issue.text, systemImage: icon(issue.severity))
                         .foregroundStyle(color(issue.severity))
+                    if issue.kind == "vault-rollback" {
+                        Button(SyncWording.rollbackAction) { confirm = .rollback }.disabled(coordinator.isBusy)
+                    }
+                    if issue.kind == "peer-vault-rollback", !issue.detail.isEmpty {
+                        Button(SyncWording.peerRollbackDismiss) {
+                            Task { await coordinator.dismissPeerRollback(issue.detail) }
+                        }.disabled(coordinator.isBusy)
+                    }
                     if issue.resetOffered {
                         Button("Reset sync on this iPhone…") { confirm = .reset1 }
                     }
@@ -185,17 +203,19 @@ struct SyncScreen: View {
 
     private var confirmTitle: String {
         switch confirm {
-        case .leave1, .leave2: "Leave sync"
-        default: "Reset sync on this iPhone"
+        case .leave1, .leave2: String(localized: "Leave sync")
+        case .rollback: SyncWording.rollbackConfirmTitle
+        default: String(localized: "Reset sync on this iPhone")
         }
     }
 
     private var confirmMessage: String {
         switch confirm {
-        case .leave1: SyncWording.onPhone(coordinator.membership.hasFolder ? SyncWording.leaveText : SyncWording.leaveWifiText)
-        case .leave2: SyncWording.onPhone(SyncWording.leaveText2)
-        case .reset1: SyncWording.onPhone(SyncWording.resetText1)
-        case .reset2: SyncWording.onPhone(SyncWording.resetText2)
+        case .leave1: coordinator.membership.hasFolder ? SyncWording.leaveText : SyncWording.leaveWifiText
+        case .leave2: SyncWording.leaveText2
+        case .reset1: SyncWording.resetText1
+        case .reset2: SyncWording.resetText2
+        case .rollback: SyncWording.rollbackConfirmText
         case nil: ""
         }
     }
@@ -206,9 +226,22 @@ struct SyncScreen: View {
         case .leave2: Button("Leave sync", role: .destructive) { confirm = nil; Task { await coordinator.leave() } }
         case .reset1: Button("Continue", role: .destructive) { next(.reset2) }
         case .reset2: Button("Reset", role: .destructive) { confirm = nil; Task { await coordinator.reset() } }
+        case .rollback:
+            Button("Keep this copy") {
+                confirm = nil
+                Task { await coordinator.acknowledgeRollback(reauthenticate: { await Self.confirmOwner() }) }
+            }
         case nil: EmptyView()
         }
         Button("Cancel", role: .cancel) { confirm = nil }
+    }
+
+    /// Face ID / Touch ID or the device passcode, asked again for this step (no reuse of the unlock).
+    @MainActor static func confirmOwner() async -> Bool {
+        let ctx = LAContext()
+        ctx.touchIDAuthenticationAllowableReuseDuration = 0
+        return (try? await ctx.evaluatePolicy(.deviceOwnerAuthentication,
+                                              localizedReason: String(localized: "Confirm that you restored this vault"))) ?? false
     }
 
     private func next(_ step: Confirm) {
@@ -224,9 +257,18 @@ struct SyncScreen: View {
         case .scanner:
             NavigationStack {
                 QRScanner(onCode: { code in sheet = nil; localError = nil; Task { await coordinator.joinByQR(code) } },
-                          onUnavailable: { sheet = nil; localError = "The camera is not available. Use Paste code text instead." })
+                          onUnavailable: { sheet = nil; localError = String(localized: "The camera is not available. Use Paste code text instead.") })
                     .ignoresSafeArea()
                     .navigationTitle("Scan QR code")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { sheet = nil } } }
+            }
+        case .findAgain:
+            NavigationStack {
+                QRScanner(onCode: { code in sheet = nil; localError = nil; Task { await coordinator.findAgain(code) } },
+                          onUnavailable: { sheet = nil; localError = String(localized: "The camera is not available.") })
+                    .ignoresSafeArea()
+                    .navigationTitle(SyncWording.findAgainAction)
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { sheet = nil } } }
             }

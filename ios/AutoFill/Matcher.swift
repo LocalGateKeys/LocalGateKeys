@@ -1,6 +1,10 @@
 import Foundation
 import AuthenticationServices
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 /// A web login the extension can fill.
 struct AutoFillLogin: Equatable, Sendable {

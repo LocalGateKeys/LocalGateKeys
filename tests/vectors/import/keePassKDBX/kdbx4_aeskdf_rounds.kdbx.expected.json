@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "AES-KDF round count is outside the supported range",
+    "type": "format"
+  },
+  "format": "keePassKDBX",
+  "input": "tests/vectors/import/_inputs/kdbx4_aeskdf_rounds.kdbx",
+  "password": "kdbx fixture password",
+  "python_format": "kdbx"
+}

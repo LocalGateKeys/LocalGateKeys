@@ -8,7 +8,7 @@ windows are filled through UI Automation metadata only. Optional unlock routes:
 Windows Hello and a local webcam check. Nothing is uploaded, no account exists,
 and the application never installs a keyboard hook or reads what you type.
 
-App version **0.4.5**. History: [CHANGELOG.md](CHANGELOG.md). Website and
+App version **0.4.9**. History: [CHANGELOG.md](CHANGELOG.md). Website and
 downloads: <https://localgatekeys.app>.
 
 ## Source-available, for review
@@ -41,12 +41,13 @@ Owner notes: [docs/LICENSING.md](docs/LICENSING.md).
 
 ## Device sync
 
-Optional, part of Pro. Keep logins and notes in step across your PCs either over
-your home Wi-Fi (pair with a one-use QR code) or through encrypted files in a
-cloud-drive folder you choose. There is no LocalGateKeys server or account; the
+Optional, part of Pro. Keep logins and notes in step across your PCs and
+phones over your home Wi-Fi (pair with a one-use QR code), through encrypted
+files in a cloud-drive folder you choose, or both. Start with either: a Wi-Fi
+group can add a cloud folder later without pairing again, and a cloud-folder
+group can turn on Wi-Fi sync. There is no LocalGateKeys server or account; the
 cloud provider sees only ciphertext and file metadata, plus the device names
-in the key file. Starting with Wi-Fi
-locks out adding a cloud folder later. Setup, the sync password, lost devices,
+in the key file. Setup, the sync password, lost devices,
 conflict copies, warnings and known limitations: [docs/SYNC.md](docs/SYNC.md).
 Design notes: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#10-device-sync).
 
@@ -60,17 +61,21 @@ Honest summary, October 2026:
   this the only copy of important credentials; keep encrypted backups.
 - **Unsigned.** The build script supports Authenticode signing, but no release
   has been signed yet; SmartScreen and browsers will warn.
-- **Windows only** for the desktop app, native host, Windows Hello, camera route
-  and UI Automation. The vault, backup, transfer, TOTP and protocol modules are
+- **Platforms.** The Windows desktop app is the main app; the native host,
+  Windows Hello, camera route and UI Automation fill are Windows only. The
+  iPhone app is in public beta on TestFlight, the Android app is built but not
+  on Google Play yet, and a Mac app is in the repository (`ios/Mac`) with its
+  manual release checks still open. The vault, backup, transfer, TOTP and protocol modules are
   portable and tested on Linux CI-style runs.
 - **Implemented:** encrypted vault with typed items and attachments, backup v1/v2
   and transfer packages, Windows Hello and DPAPI-protected camera unlock,
-  activity history, reminders, OCR search (environment-gated), opt-in LAN sync,
-  manual update checks (feed URL not yet published).
+  activity history, reminders, OCR search (environment-gated), device sync over
+  Wi-Fi and a cloud folder, passkeys in the browser extension, opt-in breach
+  checks, manual update checks (feed URL not yet published).
 - **Environment-gated / not fully validated:** live two-peer sync, real browser
   end-to-end on a clean VM, repeated-build reproducibility, offline wheelhouse
   install.
-- **Code health:** ~470 Python tests plus Node extension tests and seeded parser
+- **Code health:** ~2,900 Python tests plus Node extension tests and seeded parser
   fuzzing run in CI; `ruff` is enabled with real rules and still reports a
   backlog of mostly stylistic findings; `mypy` is advisory until the strict
   modules are clean. One parser robustness bug found by fuzzing is recorded in
@@ -195,7 +200,8 @@ with good intentions.
 | Steam/launcher native sign-in window | Windows UI Automation metadata (`Edit` controls and `IsPassword`) | Explicit bind, credential entered in LocalGateKeys, then fill by hotkey; never reads the current password value |
 | Steam/launcher embedded Chromium/WebView | UI Automation only if accessible edit controls are exposed | The app/window/control can be checked, but not the embedded page origin; warns at bind time and requires confirmation on every fill, otherwise fails closed |
 | Custom-rendered game UI / anti-cheat protected UI | No safe generic credential interface | Unsupported; no keylogging, screen scraping, DLL injection, or input interception |
-| Passkeys, QR sign-in, OAuth device codes, MFA | Provider-specific flow | Not stored or automated (TOTP codes for saved logins are supported) |
+| Passkeys | Browser extension WebAuthn bridge, keys stored in the vault | Created and used in Chrome/Edge with consent; iPhone imports passkeys from Apple Passwords (P-256 only) |
+| QR sign-in, OAuth device codes, push MFA | Provider-specific flow | Not stored or automated (TOTP codes for saved logins are supported) |
 
 ## Architecture
 
@@ -305,6 +311,7 @@ directory is only detected and offered for explicit import on first start.
   compatibility for safety; app updates require rebinding.
 - The camera route is a convenience check, not certified presentation-attack
   detection; prefer Windows Hello.
-- Public sharing and breach monitoring are out of scope. The iPhone app is in
-  public beta (TestFlight); collections, documents and attachments do not sync
-  (see docs/SYNC.md).
+- Public sharing and background breach monitoring are out of scope; breach
+  checks run only when you turn them on and press the check button (a
+  5-character hash prefix goes to Have I Been Pwned). Collections, documents
+  and attachments do not sync (see docs/SYNC.md).

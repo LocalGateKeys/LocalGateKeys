@@ -1,0 +1,111 @@
+{
+  "format": "protonPass",
+  "input": "tests/fixtures/imports/protonpass.csv",
+  "python_format": "protonpass-csv",
+  "result": {
+    "diagnostics": [
+      "Row 5: Proton Pass CSV does not include creditcard details; use the JSON export to import cards and identities fully."
+    ],
+    "records": [
+      {
+        "card": {},
+        "created": 1700000000,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Email",
+            "value": "alex@example.com"
+          }
+        ],
+        "favorite": false,
+        "folder": "Personal",
+        "identity": {},
+        "kind": "login",
+        "modified": 1700100000,
+        "notes": "Personal profile.",
+        "password": "proton-csv-pass-1",
+        "source_row": 2,
+        "tags": [],
+        "title": "Example Social",
+        "totp_uri": "otpauth://totp/Social:alex?secret=JBSWY3DPEHPK3PXP&issuer=Social",
+        "urls": [
+          "https://social.example.com/login",
+          "https://m.social.example.com"
+        ],
+        "username": "alex_example"
+      },
+      {
+        "card": {},
+        "created": 1700000000,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "Personal",
+        "identity": {},
+        "kind": "note",
+        "modified": 1700000000,
+        "notes": "12-34-56",
+        "password": "",
+        "source_row": 3,
+        "tags": [],
+        "title": "Locker combination",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": 1700000000,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Proton Pass item type",
+            "value": "Email alias"
+          },
+          {
+            "hidden": false,
+            "name": "Email",
+            "value": "news.fixture@passmail.example"
+          }
+        ],
+        "favorite": false,
+        "folder": "Personal",
+        "identity": {},
+        "kind": "note",
+        "modified": 1700000000,
+        "notes": "",
+        "password": "",
+        "source_row": 4,
+        "tags": [],
+        "title": "Newsletter alias",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": 1700000000,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Proton Pass item type",
+            "value": "creditcard"
+          }
+        ],
+        "favorite": false,
+        "folder": "Personal",
+        "identity": {},
+        "kind": "note",
+        "modified": 1700000000,
+        "notes": "Online purchases only.",
+        "password": "",
+        "source_row": 5,
+        "tags": [],
+        "title": "Shopping Visa",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      }
+    ],
+    "source_format": "protonpass-csv"
+  }
+}

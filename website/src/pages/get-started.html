@@ -1,108 +1,108 @@
 ---
-title: Get started
-description: How to install LocalGateKeys on Windows, set up your vault, add the browser extension for Edge or Chrome, and what to expect for iPhone and Android.
+title: [[t:get_started.title]]
+description: [[t:get_started.description]]
 ---
 <div class="wrap page-head">
-  <h1>Get started</h1>
-  <p class="lead">Install the Windows app, create your vault, then add the browser extension. It takes about five minutes, and you never need an account.</p>
-  <nav class="toc" aria-label="On this page">
-    <a href="#install">1. Install the app</a>
-    <a href="#vault">2. Create your vault</a>
-    <a href="#extension">3. Add the browser extension</a>
-    <a href="#import">4. Bring your passwords</a>
-    <a href="#apps">5. Fill Windows apps</a>
-    <a href="#pro">6. Turn on Pro</a>
-    <a href="#phones">iPhone and Android</a>
+  <h1>[[t:get_started.get-started.1]]</h1>
+  <p class="lead">[[t:get_started.get-started.2]]</p>
+  <nav class="toc" aria-label="[[t:get_started.get-started.3]]">
+    <a href="#install">[[t:get_started.get-started.4]]</a>
+    <a href="#vault">[[t:get_started.get-started.5]]</a>
+    <a href="#extension">[[t:get_started.get-started.6]]</a>
+    <a href="#import">[[t:get_started.get-started.7]]</a>
+    <a href="#apps">[[t:get_started.get-started.8]]</a>
+    <a href="#pro">[[t:get_started.get-started.9]]</a>
+    <a href="#phones">[[t:get_started.get-started.10]]</a>
   </nav>
 </div>
 
 <div class="wrap page-body guide">
 
   <section class="step" id="install">
-    <h2><span class="step-no">1</span> Install the Windows app</h2>
+    <h2>[[t:get_started.1-install-the-windows.1]]</h2>
     <div class="prose">
-      <p>LocalGateKeys runs on Windows 10 and Windows 11, 64-bit. Pick one way to install it:</p>
+      <p>[[t:get_started.1-install-the-windows.2]]</p>
       <ul>
-        <li><strong>Microsoft Store</strong> (recommended). The Store installs it and keeps it up to date.<!-- if:MS_STORE_LIVE --> <a href="{{MS_STORE_URL}}">Open LocalGateKeys in the Microsoft Store</a>, choose <strong>Get</strong>, then <strong>Open</strong>.<!-- /if --></li>
-        <li><strong>Installer.</strong> Download it from the <a href="[[root]]download.html">download page</a>, check its SHA-256 as shown there, and run it. Windows SmartScreen may warn you because the installer is not code-signed yet: if the fingerprint matches, choose <strong>More info</strong>, then <strong>Run anyway</strong>.</li>
+        <li>[[t:get_started.1-install-the-windows.3]]</li>
+        <li>[[t:get_started.1-install-the-windows.4]]</li>
       </ul>
-      <p>Use only one of the two on a PC.</p>
+      <p>[[t:get_started.1-install-the-windows.5]]</p>
     </div>
-    <!-- if:MS_STORE_LIVE --><p class="actions"><a class="button primary store-button" href="{{MS_STORE_URL}}"><svg class="ms-logo" viewBox="0 0 23 23" width="20" height="20" aria-hidden="true" focusable="false"><path fill="#f25022" d="M1 1h10v10H1z"/><path fill="#7fba00" d="M12 1h10v10H12z"/><path fill="#00a4ef" d="M1 12h10v10H1z"/><path fill="#ffb900" d="M12 12h10v10H12z"/></svg><span>Get it from the Microsoft Store</span></a> <a class="button" href="[[root]]download.html">Other downloads</a></p><!-- /if -->
+    <!-- if:MS_STORE_LIVE --><p class="actions"><a class="button primary store-button" href="{{MS_STORE_URL}}"><svg class="ms-logo" viewBox="0 0 23 23" width="20" height="20" aria-hidden="true" focusable="false"><path fill="#f25022" d="M1 1h10v10H1z"/><path fill="#7fba00" d="M12 1h10v10H12z"/><path fill="#00a4ef" d="M1 12h10v10H1z"/><path fill="#ffb900" d="M12 12h10v10H12z"/></svg><span>[[t:get_started.1-install-the-windows.6]]</span></a> <a class="button" href="[[home]]download.html">[[t:get_started.1-install-the-windows.7]]</a></p><!-- /if -->
   </section>
 
   <section class="step" id="vault">
-    <h2><span class="step-no">2</span> Create your vault</h2>
+    <h2>[[t:get_started.2-create-your-vault.1]]</h2>
     <div class="prose">
       <ol>
-        <li>Open LocalGateKeys. On first start it asks you to create a vault.</li>
-        <li>Choose a <strong>master password</strong> of at least 12 characters. Write it down and keep it somewhere safe. We never have it, so nobody can reset it for you.</li>
-        <li>Open <strong>Security center</strong> in the sidebar and set up a <strong>recovery phrase</strong>. Keep it offline, for example on paper. It opens the vault if you forget the master password.</li>
-        <li>In the same place, turn on <strong>Windows Hello</strong> if your PC has a fingerprint reader, a Hello camera or a PIN, so day-to-day unlocking is quick.</li>
-        <li>Turn on <strong>scheduled backups</strong> in Settings and choose where the encrypted backup files go, such as a USB drive or a folder you already back up.</li>
+        <li>[[t:get_started.2-create-your-vault.2]]</li>
+        <li>[[t:get_started.2-create-your-vault.3]]</li>
+        <li>[[t:get_started.2-create-your-vault.4]]</li>
+        <li>[[t:get_started.2-create-your-vault.5]]</li>
+        <li>[[t:get_started.2-create-your-vault.6]]</li>
       </ol>
     </div>
     <figure class="shot">
       <picture>
         <source srcset="[[root]]screenshots/security-center-light.webp" media="(prefers-color-scheme: light)">
-        <img src="[[root]]screenshots/security-center-dark.webp" width="2880" height="1800" alt="The Security center with the password health score, items to fix, and the unlock and backup settings: master password, Windows Hello, recovery phrase, auto-lock and backups." loading="lazy" decoding="async">
+        <img src="[[root]]screenshots/security-center-dark.webp" width="2880" height="1800" alt="[[t:get_started.2-create-your-vault.7]]" loading="lazy" decoding="async">
       </picture>
-      <figcaption>The Security center keeps unlock methods, the recovery phrase and backups in one place.</figcaption>
+      <figcaption>[[t:get_started.2-create-your-vault.8]]</figcaption>
     </figure>
   </section>
 
   <section class="step" id="extension">
-    <h2><span class="step-no">3</span> Add the browser extension</h2>
+    <h2>[[t:get_started.3-add-the-browser.1]]</h2>
     <div class="prose">
-      <p>The extension fills sign-ins in your browser. It talks only to the LocalGateKeys app on the same PC, so install the app first.</p>
+      <p>[[t:get_started.3-add-the-browser.2]]</p>
       <ol>
-        <li>Add the extension:
+        <li>[[t:get_started.3-add-the-browser.3]]
           <ul>
-            <li><strong>Microsoft Edge:</strong> <!-- if:EDGE_ADDONS_URL --><a href="{{EDGE_ADDONS_URL}}">open it in Edge Add-ons</a> and choose <strong>Get</strong>.<!-- else -->coming soon.<!-- /if --></li>
-            <li><strong>Google Chrome:</strong> <!-- if:CHROME_STORE_URL --><a href="{{CHROME_STORE_URL}}">open it in the Chrome Web Store</a> and choose <strong>Add to Chrome</strong>.<!-- else -->coming soon to the Chrome Web Store.<!-- /if --></li>
+            <li>[[t:get_started.3-add-the-browser.4]]</li>
+            <li>[[t:get_started.3-add-the-browser.5]]</li>
           </ul>
         </li>
-        <li>Pin it: open the browser's extensions menu (the puzzle-piece icon) and pin LocalGateKeys to the toolbar.</li>
-        <li>Keep the app running and unlocked. Go to a sign-in page you have a login saved for: the extension offers only the logins saved for that exact site. Nothing fills until you click.</li>
-        <li>Sign in somewhere new and the extension offers to save the login.</li>
+        <li>[[t:get_started.3-add-the-browser.6]]</li>
+        <li>[[t:get_started.3-add-the-browser.7]]</li>
+        <li>[[t:get_started.3-add-the-browser.8]]</li>
       </ol>
-      <p><strong>Extension says it cannot reach the app?</strong> In the app, open <strong>Devices &amp; connections</strong> and choose <strong>Repair bridge</strong>, then restart the browser.</p>
+      <p>[[t:get_started.3-add-the-browser.9]]</p>
     </div>
-    <figure class="shot shot-small"><img src="[[root]]screenshots/browser-fill.webp" width="480" height="540" alt="A sign-in page with the LocalGateKeys browser extension offering two saved accounts for that site." loading="lazy" decoding="async"><figcaption>The extension offers only the logins saved for the site you are on.</figcaption></figure>
+    <figure class="shot shot-small"><img src="[[root]]screenshots/browser-fill.webp" width="480" height="540" alt="[[t:get_started.3-add-the-browser.10]]" loading="lazy" decoding="async"><figcaption>[[t:get_started.3-add-the-browser.11]]</figcaption></figure>
   </section>
 
   <section class="step" id="import">
-    <h2><span class="step-no">4</span> Bring your passwords</h2>
+    <h2>[[t:get_started.4-bring-your-passwords.1]]</h2>
     <div class="prose">
-      <p>Choose <strong>Import &amp; export</strong> in the sidebar and pick an export file from 1Password, Bitwarden, LastPass, Dashlane, Proton Pass, KeePass or KeePassXC, Chrome, Edge, Brave, Firefox or Safari, or any CSV. You review every item before anything is saved, and nothing goes online. Delete the export file afterwards, because most exports hold passwords in plain text.</p>
-      <p>The free edition holds up to 4 items. <a href="[[root]]pricing.html">Pro</a> removes the limit.</p>
+      <p>[[t:get_started.4-bring-your-passwords.2]]</p>
+      <p>[[t:get_started.4-bring-your-passwords.3]]</p>
     </div>
   </section>
 
   <section class="step" id="apps">
-    <h2><span class="step-no">5</span> Fill Windows apps</h2>
+    <h2>[[t:get_started.5-fill-windows-apps.1]]</h2>
     <div class="prose">
-      <p>For programs such as game launchers, open a desktop login in the app and choose <strong>App binding…</strong> to bind it to the program's sign-in window once. After that, a fill button appears beside the password field, or you can use the hotkey. LocalGateKeys refuses to fill if the program or window has changed since you bound it.</p>
+      <p>[[t:get_started.5-fill-windows-apps.2]]</p>
     </div>
   </section>
 
   <section class="step" id="pro">
-    <h2><span class="step-no">6</span> Turn on Pro</h2>
+    <h2>[[t:get_started.6-turn-on-pro.1]]</h2>
     <div class="prose">
-      <p>Pro is a single payment that adds unlimited items, sync between your devices, two-factor codes and documents. After you buy it, paste your licence key in <strong>Tools &gt; Licence</strong> in the app. See <a href="[[root]]licence.html">your Pro licence</a>.</p>
+      <p>[[t:get_started.6-turn-on-pro.2]]</p>
     </div>
   </section>
 
   <section class="step" id="phones">
-    <h2>iPhone and Android</h2>
+    <h2>[[t:get_started.iphone-and-android.1]]</h2>
     <div class="prose">
-      <p><strong>iPhone:</strong> <!-- if:IPHONE_BETA_URL -->the iPhone app is in public beta. Install Apple's TestFlight app from the App Store, then open <a href="{{IPHONE_BETA_URL}}">the LocalGateKeys beta link</a> on your iPhone and choose <strong>Accept</strong>, then <strong>Install</strong>. It syncs with your Windows PC.<!-- else -->an iPhone app that syncs with your Windows PC is in development. It is not available yet.<!-- /if --></p>
-      <p><strong>Android:</strong> an Android app is planned. It is not available yet.</p>
-      <p>Setup steps for <!-- if:IPHONE_BETA_URL -->Android<!-- else -->both<!-- /if --> will appear on this page when <!-- if:IPHONE_BETA_URL -->the app is<!-- else -->each app is<!-- /if --> released. Until then, your vault stays on your PC, and you can sync between Windows PCs with Pro.</p>
+      <p>[[t:get_started.iphone-and-android.2]]</p>
+      <p>[[t:get_started.iphone-and-android.3]]</p>
+      <p>[[t:get_started.iphone-and-android.4]]</p>
     </div>
   </section>
 
   <div class="prose">
-    <p>Stuck? See <a href="[[root]]support.html">Support and FAQ</a> or email <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>.</p>
+    <p>[[t:get_started.iphone-and-android.5]]</p>
   </div>
 </div>

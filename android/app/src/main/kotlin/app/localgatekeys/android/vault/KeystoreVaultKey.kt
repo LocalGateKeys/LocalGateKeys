@@ -24,6 +24,8 @@ class KeystoreVaultKey private constructor(
     private val requireUserAuth: Boolean,
     private val strongBoxFeature: Boolean,
     private val deviceSecure: () -> Boolean,
+    /** Task 7: the app-password shortcut key. A strong biometric only (no screen lock), per use, invalidated by enrolment. */
+    private val biometricOnly: Boolean = false,
 ) : VaultKey {
 
     private fun store(): KeyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
@@ -54,7 +56,17 @@ class KeystoreVaultKey private constructor(
             .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
             .setKeySize(256)
             .setRandomizedEncryptionRequired(true)
-        if (requireUserAuth) {
+        if (requireUserAuth && biometricOnly) {
+            b.setUserAuthenticationRequired(true)
+            if (Build.VERSION.SDK_INT >= 30) {
+                b.setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG)
+            } else {
+                // -1: every use needs a biometric CryptoObject (no time window, no screen lock).
+                @Suppress("DEPRECATION")
+                b.setUserAuthenticationValidityDurationSeconds(-1)
+            }
+            b.setInvalidatedByBiometricEnrollment(true)
+        } else if (requireUserAuth) {
             b.setUserAuthenticationRequired(true)
             if (Build.VERSION.SDK_INT >= 30) {
                 b.setUserAuthenticationParameters(
@@ -145,12 +157,29 @@ class KeystoreVaultKey private constructor(
             )
         }
 
+        const val BIOMETRIC_ALIAS = "lgk.vault.bio"
+
+        /**
+         * The app-password shortcut (Task 7): a strong biometric only, never the screen lock, so the phone passcode
+         * cannot use it; a new fingerprint or face invalidates it (the app then asks for the app password).
+         */
+        fun biometricOnly(context: Context): KeystoreVaultKey {
+            val app = context.applicationContext ?: context
+            return KeystoreVaultKey(
+                BIOMETRIC_ALIAS,
+                requireUserAuth = true,
+                strongBoxFeature = app.packageManager.hasSystemFeature(PackageManager.FEATURE_STRONGBOX_KEYSTORE),
+                deviceSecure = { (app.getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager)?.isDeviceSecure == true },
+                biometricOnly = true,
+            )
+        }
+
         /**
          * Device tests only: a key under its own alias that needs no user authentication. Refused unless the app
          * is debuggable, so a release build can never make an unauthenticated vault key.
          */
         internal fun forTestingWithoutUserAuth(context: Context, alias: String): KeystoreVaultKey {
-            require(alias != ALIAS) { "tests must not touch the production alias" }
+            require(alias != ALIAS && alias != BIOMETRIC_ALIAS) { "tests must not touch the production alias" }
             check(isDebuggable(context.applicationInfo.flags)) { "the no-auth vault key is for debuggable builds only" }
             return KeystoreVaultKey(alias, requireUserAuth = false, strongBoxFeature = false, deviceSecure = { true })
         }

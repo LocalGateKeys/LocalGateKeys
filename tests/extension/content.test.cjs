@@ -498,3 +498,24 @@ test("item limit: without a host message the panel builds the text from the repo
   await p.tick(8);
   assert.ok(p.panelText().includes("Your free LocalGateKeys holds 9 items. Upgrade to Pro for unlimited."), p.panelText());
 });
+
+async function loadedPage(options) { const p = createPage(options); p.load(); await p.tick(); return p; }
+test("identity icons: post titles, chat boxes and lone guessed fields get none; real address forms still do", async () => {
+  const none = [
+    `<form><textarea name="title" placeholder="Title"></textarea><textarea placeholder="Body text (optional)"></textarea></form>`,
+    `<form><input type="text" name="title" placeholder="Title*"></form>`,
+    `<div><textarea placeholder="Reply to the assistant..."></textarea></div>`,
+    `<form><input type="text" name="site" placeholder="Search site"></form>`,
+    `<div role="search"><input type="text" name="city" placeholder="City"><input type="text" name="country"></div>`,
+  ];
+  for (const html of none) {
+    const p = await loadedPage({ html });
+    assert.equal(p.identityIcons().length, 0, html);
+  }
+  const p = await loadedPage({ html: `<form><input type="text" name="first_name"><input type="text" name="last_name"><input type="text" name="city"></form>` });
+  assert.equal(p.identityIcons().length, 3);
+  const q = await loadedPage({ html: `<form><input type="text" name="job_title" placeholder="Job title"><input type="text" name="company"></form>` });
+  assert.equal(q.identityIcons().length, 2);
+  const r = await loadedPage({ html: `<form><input type="email" name="contact"></form>` });
+  assert.equal(r.identityIcons().length, 1, "explicit type=email still counts on its own");
+});

@@ -1,20 +1,27 @@
 import Foundation
 import AuthenticationServices
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 /// One credential identity as data: `ASPasswordCredentialIdentity` (username and domain) or
 /// `ASPasskeyCredentialIdentity` (relying party, user name, credential id, user handle). Never a secret.
 enum IdentityEntry: Equatable, Sendable {
     case password(domain: String, username: String, recordID: String)
     case passkey(rpID: String, userName: String, credentialID: Data, userHandle: Data, recordID: String)
+    /// A login's two-factor code (`ASOneTimeCodeCredentialIdentity`, iOS 18 / macOS 15): published by the
+    /// Mac app only; `label` is the login's title.
+    case oneTimeCode(domain: String, label: String, recordID: String)
 
     init(domain: String, username: String, recordID: String) {
         self = .password(domain: domain, username: username, recordID: recordID)
     }
 
     /// The system identity published for it; its `recordIdentifier` is the store item id that
-    /// `prepareInterfaceToProvideCredential` looks up.
-    var systemIdentity: any ASCredentialIdentity {
+    /// `prepareInterfaceToProvideCredential` looks up. Nil for a one-time code on a system without them.
+    var systemIdentity: (any ASCredentialIdentity)? {
         switch self {
         case let .password(domain, username, recordID):
             ASPasswordCredentialIdentity(serviceIdentifier: ASCredentialServiceIdentifier(identifier: domain, type: .domain),
@@ -22,12 +29,19 @@ enum IdentityEntry: Equatable, Sendable {
         case let .passkey(rpID, userName, credentialID, userHandle, recordID):
             ASPasskeyCredentialIdentity(relyingPartyIdentifier: rpID, userName: userName,
                                         credentialID: credentialID, userHandle: userHandle, recordIdentifier: recordID)
+        case let .oneTimeCode(domain, label, recordID):
+            if #available(iOS 18.0, macOS 15.0, *) {
+                ASOneTimeCodeCredentialIdentity(serviceIdentifier: ASCredentialServiceIdentifier(identifier: domain, type: .domain),
+                                                label: label, recordIdentifier: recordID)
+            } else {
+                nil
+            }
         }
     }
 
     var recordID: String {
         switch self {
-        case .password(_, _, let id), .passkey(_, _, _, _, let id): id
+        case .password(_, _, let id), .passkey(_, _, _, _, let id), .oneTimeCode(_, _, let id): id
         }
     }
 }
@@ -43,7 +57,7 @@ struct SystemCredentialIdentityStore: CredentialIdentityStoring {
     func isEnabled() async -> Bool { await ASCredentialIdentityStore.shared.state().isEnabled }
 
     func replace(_ identities: [IdentityEntry]) async throws {
-        let list: [any ASCredentialIdentity] = identities.map(\.systemIdentity)
+        let list: [any ASCredentialIdentity] = identities.compactMap(\.systemIdentity)
         try await ASCredentialIdentityStore.shared.replaceCredentialIdentities(list)
     }
 
@@ -58,10 +72,14 @@ struct IdentityStoreSync: Sendable {
     /// "Show logins in the QuickType bar": when off, nothing is published and existing identities are removed.
     /// "Include exact-site logins" widens `domains` to exact-origin and host rows.
     let settings: AppSettings
+    /// Also publish a one-time-code identity per TOTP login and domain (the Mac app on macOS 15 and later).
+    let oneTimeCodes: Bool
 
     init(identityStore: any CredentialIdentityStoring = SystemCredentialIdentityStore(),
-         matcher: URLMatcher = AutoFillMatcher.bundled().matcher, settings: AppSettings = .shared) {
+         matcher: URLMatcher = AutoFillMatcher.bundled().matcher, settings: AppSettings = .shared,
+         oneTimeCodes: Bool = false) {
         self.identityStore = identityStore; self.matcher = matcher; self.settings = settings
+        self.oneTimeCodes = oneTimeCodes
     }
 
     /// The domains QuickType may offer a row under. `base_domain` rows get their host and registrable
@@ -87,7 +105,24 @@ struct IdentityStoreSync: Sendable {
     /// Username + domain for every live web login (`domains` per row), deduplicated by code points,
     /// ordered by item id then row.
     func identities(_ snapshot: StoreSnapshot) -> [IdentityEntry] {
-        var out: [IdentityEntry] = []
+        loginDomains(snapshot).flatMap { login, domains in
+            domains.map { IdentityEntry(domain: $0, username: login.username, recordID: login.id) }
+        }
+    }
+
+    /// One-time-code identities: every live web login with a TOTP secret, under the same domains as its
+    /// password identities (labelled with its title, or its username). Empty unless `oneTimeCodes`.
+    func oneTimeCodeIdentities(_ snapshot: StoreSnapshot) -> [IdentityEntry] {
+        guard oneTimeCodes else { return [] }
+        return loginDomains(snapshot).flatMap { login, domains -> [IdentityEntry] in
+            guard login.totp != nil else { return [] }
+            let label = login.title.isEmpty ? login.username : login.title
+            return domains.map { .oneTimeCode(domain: $0, label: label, recordID: login.id) }
+        }
+    }
+
+    private func loginDomains(_ snapshot: StoreSnapshot) -> [(AutoFillLogin, [String])] {
+        var out: [(AutoFillLogin, [String])] = []
         for (record, login) in AutoFillMatcher.logins(snapshot) {
             var found: [String] = []
             func add(_ d: String?) {
@@ -95,7 +130,7 @@ struct IdentityStoreSync: Sendable {
                 found.append(d)
             }
             for row in URLMatcher.entryURLs(record) { domains(row).forEach { add($0) } }
-            out += found.map { IdentityEntry(domain: $0, username: login.username, recordID: login.id) }
+            out.append((login, found))
         }
         return out
     }
@@ -122,7 +157,7 @@ struct IdentityStoreSync: Sendable {
         }
         guard settings.showInQuickType else { return await removeAll() }
         guard await identityStore.isEnabled() else { return }
-        let all = identities(snapshot) + passkeyIdentities(snapshot)
+        let all = identities(snapshot) + passkeyIdentities(snapshot) + oneTimeCodeIdentities(snapshot)
         do { try await identityStore.replace(all) }
         catch {
             AutoFillTrace.log("identities.replace failed error=\(error: error)")

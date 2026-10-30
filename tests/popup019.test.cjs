@@ -9,6 +9,7 @@ function harness({url='https://example.test/login',diagnostics={ok:true,version:
  const nodes=new Map(),runtimeRequests=[],injections=[],messages=[],storageWrites=[],timers=[];let closed=false;
  const node=id=>{if(!nodes.has(id)){const listeners={};const item={id,dataset:{},attributes:{},listeners,disabled:false,hidden:false,textContent:'',focusCount:0,focus(){this.focusCount++;},addEventListener:(name,listener)=>{listeners[name]=listener;}};item.setAttribute=(name,value)=>{item.attributes[name]=value;};item.getAttribute=name=>item.attributes[name]??null;nodes.set(id,item);}return nodes.get(id);};
  const chrome={
+  i18n:{getMessage:require('./extension/i18n-stub.cjs').getMessage},
   tabs:{query:async()=>url?[{id:17,url}]:[],sendMessage:async(...args)=>{messages.push(args);if(actionDelay)await new Promise(resolve=>setTimeout(resolve,actionDelay));return actionResponse;}},
   runtime:{sendMessage:async request=>{runtimeRequests.push(request);return diagnostics;}},
   storage:{local:{get:async defaults=>({automatic_save_blocked_origins:origins}),set:async value=>{storageWrites.push(value);origins=value.automatic_save_blocked_origins;}}},

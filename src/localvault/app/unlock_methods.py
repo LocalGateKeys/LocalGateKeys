@@ -18,51 +18,30 @@ from .. import face_unlock, hello_unlock
 from ..api.result import ApiError
 from ..unlock_policy import master_unlock_required
 from ..vault import InvalidMasterPassword, VaultError
+from ..i18n import t
 
-NO_WINDOW = "A visible LocalGateKeys window is required for Windows Hello."
+NO_WINDOW = "hello.error.windowRequired"
 HELLO_TIMEOUT = 65
-HELLO_ENABLED = "Enabled for this profile."
-HELLO_INCOMPLETE = "Previous setup is incomplete. Remove it, then enroll again. Your master password still works."
-HELLO_OFF = "Not enabled. Password entry remains the default; Windows Hello never starts automatically."
-HELLO_UNSUPPORTED = "Windows Hello requires Windows. Master-password unlocking is unchanged."
+HELLO_ENABLED = "unlockMethods.enabledForThisProfile"
+HELLO_INCOMPLETE = "unlockMethods.previousSetupIsIncompleteRemove"
+HELLO_OFF = "unlockMethods.notEnabledPasswordEntryRemains"
+HELLO_UNSUPPORTED = "unlockMethods.windowsHelloRequiresWindowsMaster"
 HELLO_GUIDANCE = (
-    "Windows Hello uses the methods enabled for your Windows account: face, fingerprint, or PIN. It is not "
-    "face-only access.\n\nLocalGateKeys keeps an encrypted unlock key for this profile. It does not store your "
-    "Windows password or biometric data. Keep your master password for recovery and sensitive changes.\n\n"
-    "Setup asks you to confirm your master password, then Windows Security verifies enrollment. Face "
-    "verification requires a compatible infrared camera.")
-HELLO_CONFIRM = ("Anyone who can verify with this Windows account's Hello face, fingerprint or PIN will be able to "
-                 "unlock this profile. No biometric data is sent by LocalGateKeys. Your master password remains "
-                 "available. Enable this optional method?")
-HELLO_OFFER_TITLE = "Unlock faster next time?"
-HELLO_OFFER_TEXT = ("Use Windows Hello (face, fingerprint or PIN) to unlock LocalGateKeys, including when the browser "
-                    "asks to save or fill a login.\n\nYour master password keeps working, and you can turn this off "
-                    "in Settings › Unlocking.")
-FACE_SETUP_MISSING = ("Camera verification is not set up for this profile, or its setup is damaged. Unlock with your "
-                      "master password; Unlocking settings open next so you can set it up again.")
-FACE_ENABLED = "Enabled for this profile. Master-password entry remains the default unlock method."
-FACE_DAMAGED = ("The encrypted vault still authorizes camera verification, but its device-local sidecar is missing "
-                "or damaged. Remove it and enroll again; the master password still works.")
-FACE_OFF = "Not enabled. The camera starts only after you explicitly choose setup or Use camera."
-FACE_UNSUPPORTED = "This compatibility route currently requires the Windows desktop app."
-FACE_CONFIRM = ("This is a convenience unlock method, not hardware-backed authentication. It uses local face "
-                "matching and a passive liveness check. While it is on, this vault is only as strong as your "
-                "Windows account password: anyone who can sign in to this Windows account, or who has its password "
-                "and a copy of this PC's user files, can open the vault without your master password. Keep your "
-                "master password and do not enable it on an untrusted shared Windows account. Continue?")
-FACE_DISABLE_CONFIRM = ("This revokes camera unlocking for this profile. Your master password and "
-                        "Windows Hello, if configured, are unchanged.")
-FACE_DISABLE_ROTATE_CONFIRM = ("This revokes camera unlocking for this profile and re-encrypts the vault under a new "
-                               "key, so no earlier copy of the camera setup can open it. Your master password is "
-                               "unchanged. Windows Hello, if configured, must be set up again.")
-FACE_DISABLE_NEW_PHRASE_CONFIRM = ("This revokes camera unlocking for this profile and re-encrypts the vault under a "
-                                   "new key, so no earlier copy of the camera setup can open it. Your recovery "
-                                   "phrase is replaced: the old phrase stops working and a new one is shown once. "
-                                   "Your master password is unchanged. Windows Hello, if configured, must be set up "
-                                   "again.")
-FACE_DISABLE_NEW_PHRASE_NOTE = "Your old recovery phrase no longer works. Write down the new one shown below."
-MASTER_REQUIRED = ("Use your master password this time. Windows Hello and camera verification stay off until a "
-                   "master-password unlock.")
+    "unlockMethods.windowsHelloUsesTheMethods")
+HELLO_CONFIRM = ("unlockMethods.anyoneWhoCanVerifyWith")
+HELLO_OFFER_TITLE = "unlockMethods.unlockFasterNextTime"
+HELLO_OFFER_TEXT = ("unlockMethods.useWindowsHelloFaceFingerprint")
+FACE_SETUP_MISSING = ("unlockMethods.cameraVerificationIsNotSet")
+FACE_ENABLED = "unlockMethods.enabledForThisProfileMaster"
+FACE_DAMAGED = ("unlockMethods.theEncryptedVaultStillAuthorizes")
+FACE_OFF = "unlockMethods.notEnabledTheCameraStarts"
+FACE_UNSUPPORTED = "unlockMethods.thisCompatibilityRouteCurrentlyRequires"
+FACE_CONFIRM = ("unlockMethods.thisIsAConvenienceUnlock")
+FACE_DISABLE_CONFIRM = ("unlockMethods.thisRevokesCameraUnlockingFor")
+FACE_DISABLE_ROTATE_CONFIRM = ("unlockMethods.thisRevokesCameraUnlockingFor2")
+FACE_DISABLE_NEW_PHRASE_CONFIRM = ("unlockMethods.thisRevokesCameraUnlockingFor3")
+FACE_DISABLE_NEW_PHRASE_NOTE = "unlockMethods.yourOldRecoveryPhraseNo"
+MASTER_REQUIRED = ("unlockMethods.useYourMasterPasswordThis")
 
 
 def hello_supported() -> bool:
@@ -134,7 +113,7 @@ class _Methods:
     def _profile(self) -> Any:
         profile = self._controller.profiles.active_profile()
         if profile is None:
-            raise ApiError("no_profile", "Choose a profile first.")
+            raise ApiError("no_profile", t("recovery.chooseAProfileFirst"))
         return profile
 
     def _path(self, profile: Any) -> Path:
@@ -142,7 +121,7 @@ class _Methods:
 
     def _session_lease(self) -> tuple[Any, Any]:
         if not self._controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile first.")
+            raise ApiError("locked", t("error.lockedProfile"))
         lease = self._controller.guard.lease()
         self._controller.require_lease(lease)
         return self._controller.session, lease
@@ -166,7 +145,7 @@ class HelloService(_Methods):
     def _window(self) -> int:
         handle = self._hwnd()
         if not handle:
-            raise ApiError("no_window", NO_WINDOW)
+            raise ApiError("no_window", t(NO_WINDOW))
         return int(handle)
 
     def offered(self) -> bool:
@@ -180,69 +159,67 @@ class HelloService(_Methods):
 
     def status(self) -> dict[str, Any]:
         if not hello_supported():
-            return {"supported": False, "enabled": False, "status": HELLO_UNSUPPORTED, "tone": "neutral",
-                    "guidance": HELLO_GUIDANCE}
+            return {"supported": False, "enabled": False, "status": t(HELLO_UNSUPPORTED), "tone": "neutral",
+                    "guidance": t(HELLO_GUIDANCE)}
         session, _lease = self._session_lease()
         profile = self._profile()
         bound = bool(session.hello_binding())
         envelope = bool(hello_unlock.has_envelope(self._path(profile), profile.id))
         if bound and envelope:
-            status, tone = HELLO_ENABLED, "success"
+            status, tone = t(HELLO_ENABLED), "success"
         elif bound or envelope:
-            status, tone = HELLO_INCOMPLETE, "danger"
+            status, tone = t(HELLO_INCOMPLETE), "danger"
         else:
-            status, tone = HELLO_OFF, "neutral"
+            status, tone = t(HELLO_OFF), "neutral"
         return {"supported": True, "enabled": bound and envelope, "incomplete": bound != envelope,
-                "status": status, "tone": tone, "guidance": HELLO_GUIDANCE,
+                "status": status, "tone": tone, "guidance": t(HELLO_GUIDANCE),
                 "auto_start": bool(self._controller.settings.hello_auto_start)}
 
     def enable(self) -> dict[str, Any]:
         if not hello_supported():
-            raise ApiError("unsupported", HELLO_UNSUPPORTED)
+            raise ApiError("unsupported", t(HELLO_UNSUPPORTED))
         session, lease = self._session_lease()
-        self._auth.reauthenticate("Authorize Windows Hello setup", lease)
-        if not self._port.confirm("Enable local Windows Hello?", HELLO_CONFIRM):
-            raise ApiError("cancelled", "Setup cancelled. Your master-password access has not changed.")
+        self._auth.reauthenticate(t("unlockMethods.authorizeWindowsHelloSetup"), lease)
+        if not self._port.confirm(t("unlockMethods.enableLocalWindowsHello"), t(HELLO_CONFIRM)):
+            raise ApiError("cancelled_notice", t("unlockMethods.setupCancelledYourMasterPassword"))
         hwnd = self._window()
         profile = self._profile()
         context = session.unlock_context()
         if not self._busy.acquire(blocking=False):
-            raise ApiError("busy", "Windows Hello is already open. Finish or cancel that prompt first.")
+            raise ApiError("busy", t("unlockMethods.windowsHelloIsAlreadyOpen"))
         try:
             prepared = run_with_timeout(
                 lambda cancelled: hello_unlock.prepare_enrollment(profile.id, context, hwnd, cancelled),
                 lambda late: late.discard(), self._timeout, finished=self._busy.release)
         except TimeoutError:
-            raise ApiError("timeout", "Setup timed out. Cancel any Windows Security prompt before retrying. "
-                                      "No unlock key was saved by this attempt.") from None
+            raise ApiError("timeout", t("unlockMethods.setupTimedOutCancelAny")) from None
         except Exception as exc:  # noqa: BLE001 - HelloError, VaultError: shown as-is
             from ..windows_hello import HelloCancelled
 
             if isinstance(exc, HelloCancelled):
-                raise ApiError("cancelled", "Setup cancelled. Your master-password access has not changed.") from None
-            raise ApiError("hello_failed", str(exc) or "Windows Hello setup failed.") from None
+                raise ApiError("cancelled_notice", t("unlockMethods.setupCancelledYourMasterPassword")) from None
+            raise ApiError("hello_failed", str(exc) or t("unlockMethods.windowsHelloSetupFailed")) from None
         try:
             self._controller.require_lease(lease)
             hello_unlock.commit_enrollment(session, prepared)
         except Exception as exc:
             prepared.discard()
-            raise ApiError("hello_failed", str(exc) or "Windows Hello setup failed.") from None
+            raise ApiError("hello_failed", str(exc) or t("unlockMethods.windowsHelloSetupFailed")) from None
         self._controller.touch()
         self._controller._extras_cache = None
-        return {"message": "Windows Hello is enabled. Lock the vault and choose Windows Hello to test it. "
-                           "Typing the master password is still the default."}
+        return {"message": t("unlockMethods.windowsHelloIsEnabledLock")}
 
     def disable(self) -> dict[str, Any]:
         session, lease = self._session_lease()
-        self._auth.reauthenticate("Remove Windows Hello from this profile", lease)
+        self._auth.reauthenticate(t("unlockMethods.removeWindowsHelloFromThis"), lease)
         self._controller.require_lease(lease)
         try:
             hello_unlock.disable_enrollment(session)
         except Exception as exc:  # noqa: BLE001
-            raise ApiError("hello_failed", str(exc) or "Windows Hello could not be removed.") from None
+            raise ApiError("hello_failed", str(exc) or t("unlockMethods.windowsHelloCouldNotBe")) from None
         self._controller.touch()
         self._controller._extras_cache = None
-        return {"message": "Removed for this profile. Your Windows Hello enrollment was not changed."}
+        return {"message": t("unlockMethods.removedForThisProfileYour")}
 
     def set_auto_start(self, value: bool) -> dict[str, Any]:
         self._session_lease()
@@ -254,7 +231,7 @@ class HelloService(_Methods):
     def _verify(self, path: Path, profile_id: str, **kwargs: Any) -> Any:
         hwnd = self._window()
         if not self._busy.acquire(blocking=False):
-            raise ApiError("busy", "Windows Hello is already open. Finish or cancel that prompt first.")
+            raise ApiError("busy", t("unlockMethods.windowsHelloIsAlreadyOpen"))
         return run_with_timeout(
             lambda cancelled: hello_unlock.unlock_with_hello(path, profile_id, hwnd, cancelled, **kwargs),
             lambda late: late.lock(), self._timeout, finished=self._busy.release)
@@ -264,7 +241,7 @@ class HelloService(_Methods):
 
         profile = self._profile()
         if not self._alternatives_allowed(profile):
-            raise ApiError("master_required", MASTER_REQUIRED)
+            raise ApiError("master_required", t(MASTER_REQUIRED))
         controller = self._controller
 
         def build(path: Path, backup_dir: Path, backup_count: int) -> Any:
@@ -273,15 +250,14 @@ class HelloService(_Methods):
             except ApiError:
                 raise
             except TimeoutError:
-                raise ApiError("timeout", "The request timed out. Cancel any Windows Security prompt and use your "
-                                          "master password.") from None
+                raise ApiError("timeout", t("unlockMethods.theRequestTimedOutCancel")) from None
             except HelloCancelled:
-                raise ApiError("cancelled", "Unlock cancelled. Try again or use your master password.") from None
+                raise ApiError("cancelled", t("unlockMethods.unlockCancelledTryAgainOr")) from None
             except Exception as exc:  # noqa: BLE001
                 text = str(exc)
                 if not text:
-                    raise ApiError("cancelled", "Unlock cancelled. Try again or use your master password.") from None
-                raise ApiError("hello_failed", f"{text} You can retry or use your master password.") from None
+                    raise ApiError("cancelled", t("unlockMethods.unlockCancelledTryAgainOr")) from None
+                raise ApiError("hello_failed", t("unlockMethods.youCanRetryOrUse", text=text)) from None
 
         return controller.unlock_alternative(build)
 
@@ -312,7 +288,7 @@ class HelloService(_Methods):
         profile = self._profile()
         if hello_unlock.has_envelope(self._path(profile), profile.id):
             return {"offer": False}
-        return {"offer": True, "title": HELLO_OFFER_TITLE, "text": HELLO_OFFER_TEXT}
+        return {"offer": True, "title": t(HELLO_OFFER_TITLE), "text": t(HELLO_OFFER_TEXT)}
 
     def answer_offer(self, accepted: bool) -> dict[str, Any]:
         settings = self._controller.settings
@@ -349,23 +325,23 @@ class FaceService(_Methods):
 
     def status(self) -> dict[str, Any]:
         if not face_supported():
-            return {"supported": False, "enabled": False, "status": FACE_UNSUPPORTED, "tone": "neutral"}
+            return {"supported": False, "enabled": False, "status": t(FACE_UNSUPPORTED), "tone": "neutral"}
         session, _lease = self._session_lease()
         profile = self._profile()
         bound = bool(session.face_binding())
         envelope = bool(face_unlock.has_envelope(self._path(profile), profile.id))
         if bound and envelope:
-            status, tone = FACE_ENABLED, "success"
+            status, tone = t(FACE_ENABLED), "success"
         elif bound:
-            status, tone = FACE_DAMAGED, "danger"
+            status, tone = t(FACE_DAMAGED), "danger"
         else:
-            status, tone = FACE_OFF, "neutral"
+            status, tone = t(FACE_OFF), "neutral"
         return {"supported": True, "enabled": bound and envelope, "incomplete": bound and not envelope,
                 "status": status, "tone": tone}
 
     def _capture(self, mode: str, **kwargs: Any) -> Any:
         if not self._busy.acquire(blocking=False):
-            raise ApiError("busy", "The camera is already in use. Finish or cancel that check first.")
+            raise ApiError("busy", t("unlockMethods.theCameraIsAlreadyIn"))
         try:
             with self._cancel_lock:
                 self._cancel_requested = False
@@ -396,11 +372,11 @@ class FaceService(_Methods):
 
     def enable(self) -> dict[str, Any]:
         if not face_supported():
-            raise ApiError("unsupported", FACE_UNSUPPORTED)
+            raise ApiError("unsupported", t(FACE_UNSUPPORTED))
         session, lease = self._session_lease()
-        self._auth.reauthenticate("Authorize camera verification setup", lease)
-        if not self._port.confirm("Enable ordinary-webcam verification?", FACE_CONFIRM):
-            raise ApiError("cancelled", "Cancelled.")
+        self._auth.reauthenticate(t("unlockMethods.authorizeCameraVerificationSetup"), lease)
+        if not self._port.confirm(t("unlockMethods.enableOrdinaryWebcamVerification"), t(FACE_CONFIRM)):
+            raise ApiError("cancelled", t("error.cancelled"))
         profile = self._profile()
         samples: list[list[float]] = []
         try:
@@ -411,17 +387,17 @@ class FaceService(_Methods):
         except ApiError:
             raise
         except face_unlock.FaceError as exc:
-            raise ApiError("cancelled" if isinstance(exc, face_unlock.FaceCancelled) else "face_failed",
+            raise ApiError("cancelled_notice" if isinstance(exc, face_unlock.FaceCancelled) else "face_failed",
                            str(exc)) from None
         except Exception as exc:  # noqa: BLE001
-            raise ApiError("face_failed", str(exc) or "Camera verification could not be set up.") from None
+            raise ApiError("face_failed", str(exc) or t("unlockMethods.cameraVerificationCouldNotBe")) from None
         finally:
             for sample in samples or []:
                 for index in range(len(sample)):
                     sample[index] = 0.0
         self._controller.touch()
         self._controller._extras_cache = None
-        return {"message": "Camera verification enabled. Lock the vault and test it before relying on it."}
+        return {"message": t("unlockMethods.cameraVerificationEnabledLockThe")}
 
     def disable(self) -> dict[str, Any]:
         """Revoke camera unlock and, when it was set up, rotate the data key.
@@ -436,30 +412,30 @@ class FaceService(_Methods):
         profile = self._profile()
         # The port hands over a SecretText this method owns: it is wiped however this ends.
         password = self._port.ask_password(
-            "Remove camera verification", f"Profile: {profile.name}\nEnter the master password again:")
+            t("unlockMethods.removeCameraVerification"), t("unlockMethods.profileEnterTheMasterPassword", name=profile.name))
         try:
             self._controller.require_lease(lease)
             if password is None:
-                raise ApiError("cancelled", "Cancelled.")
+                raise ApiError("cancelled", t("error.cancelled"))
             try:
                 session.verify_master_password(password)
             except (InvalidMasterPassword, VaultError):
-                self._port.notify("error", "Not authorized", "Master password did not match, or the vault changed.")
-                raise ApiError("not_authorized", "Master password did not match, or the vault changed.") from None
+                self._port.notify("error", t("unlockMethods.notAuthorized"), t("unlockMethods.masterPasswordDidNotMatch"))
+                raise ApiError("not_authorized", t("unlockMethods.masterPasswordDidNotMatch")) from None
             self._controller.touch()
             # Rotating with a recovery phrase replaces the phrase too (L-4): the old phrase stops working.
             rotate = face_unlock.rotation_on_disable(session)
             new_phrase = rotate and session.has_recovery_phrase()
             hello_record = session.hello_binding() if rotate else ""
-            text = (FACE_DISABLE_NEW_PHRASE_CONFIRM if new_phrase else
-                    FACE_DISABLE_ROTATE_CONFIRM if rotate else FACE_DISABLE_CONFIRM)
-            if not self._port.confirm("Remove camera verification?", text):
-                raise ApiError("cancelled", "Cancelled.")
+            text = (t(FACE_DISABLE_NEW_PHRASE_CONFIRM) if new_phrase else
+                    t(FACE_DISABLE_ROTATE_CONFIRM) if rotate else t(FACE_DISABLE_CONFIRM))
+            if not self._port.confirm(t("unlockMethods.removeCameraVerification2"), text):
+                raise ApiError("cancelled", t("error.cancelled"))
             self._controller.require_lease(lease)
             try:
                 result = face_unlock.disable_enrollment(session, password if rotate else None)
             except Exception as exc:  # noqa: BLE001
-                raise ApiError("face_failed", str(exc) or "Camera verification could not be removed.") from None
+                raise ApiError("face_failed", str(exc) or t("unlockMethods.cameraVerificationCouldNotBe2")) from None
         finally:
             if password is not None:
                 password.wipe()
@@ -471,7 +447,7 @@ class FaceService(_Methods):
             if phrase:
                 from .recovery_center import recovery_phrase_change_warnings
 
-                notes.append(FACE_DISABLE_NEW_PHRASE_NOTE)
+                notes.append(t(FACE_DISABLE_NEW_PHRASE_NOTE))
                 phrase_notes = recovery_phrase_change_warnings(result)
             if hello_record:
                 # The rotation revoked Windows Hello too; its OS key only wraps the retired data key.
@@ -479,10 +455,10 @@ class FaceService(_Methods):
                     hello_unlock.cleanup_after_password_change(session.path, hello_record)
                 except Exception:  # noqa: BLE001, S110 - the revocation is committed; cleanup is best effort
                     pass
-                notes.append("Set up Windows Hello again if you use it.")
+                notes.append(t("unlockMethods.setUpWindowsHelloAgain"))
         self._controller.touch()
         self._controller._extras_cache = None
-        response: dict[str, Any] = {"message": " ".join(["Camera verification removed.", *notes])}
+        response: dict[str, Any] = {"message": " ".join([t("unlockMethods.cameraVerificationRemoved"), *notes])}
         if phrase:
             # Shown once by the page's recovery-phrase card (the bridge turns it into a card); never stored.
             response["new_recovery_phrase"] = phrase
@@ -492,15 +468,15 @@ class FaceService(_Methods):
     def unlock(self) -> dict[str, Any]:
         profile = self._profile()
         if not self._alternatives_allowed(profile):
-            raise ApiError("master_required", MASTER_REQUIRED)
+            raise ApiError("master_required", t(MASTER_REQUIRED))
         if self._busy.locked():
-            raise ApiError("busy", "The camera is already in use. Finish or cancel that check first.")
+            raise ApiError("busy", t("unlockMethods.theCameraIsAlreadyIn"))
 
         def build(path: Path, backup_dir: Path, backup_count: int) -> Any:
             try:
                 material = face_unlock.load_face_material(path, profile.id)
             except face_unlock.FaceError:
-                raise ApiError("face_setup", FACE_SETUP_MISSING) from None
+                raise ApiError("face_setup", t(FACE_SETUP_MISSING)) from None
             try:
                 try:
                     self._capture("verify", templates=material.templates, threshold=material.threshold)
@@ -511,8 +487,7 @@ class FaceService(_Methods):
                     raise ApiError("face_unavailable", str(exc)) from None
                 except face_unlock.FaceError as exc:
                     face_unlock.record_failure(material.record_id)
-                    raise ApiError("face_failed", str(exc) or "Camera verification was not accepted. Use your "
-                                                              "master password.") from None
+                    raise ApiError("face_failed", str(exc) or t("unlock.cameraRejected")) from None
                 return face_unlock.unlock_verified_face(material, backup_dir=backup_dir, backup_count=backup_count)
             finally:
                 material.discard()

@@ -74,7 +74,7 @@ def test_list_both_sources_and_retention_text(env):
 def test_restore_both(env):
     service, controller, _port, login, note = env
     result = service.restore([login, note])
-    assert result == {"message": "Restored 2 item(s).", "failed": []}
+    assert result == {"message": "Restored 2 items.", "failed": []}
     assert service.list()["rows"] == []
 
 
@@ -82,7 +82,7 @@ def test_restore_stops_at_the_item_limit(env):
     service, controller, port, login, note = env
     controller.session.item_limit = 0
     result = service.restore([login, note])
-    assert port.upgrades == [0] and "Restored 0 item(s)." in result["message"]
+    assert port.upgrades == [0] and "Restored 0 items." in result["message"]
     assert len(service.list()["rows"]) == 2
 
 
@@ -95,7 +95,7 @@ def test_purge_confirm_texts_and_cancel(env):
     assert port.asked[-1] == ("Permanently delete?",
                               "Permanently delete 'Alpha'? This cannot be undone. Previous backups can still contain it.")
     port.answers = [True]
-    assert service.purge([login, note]) == {"message": "Permanently deleted 2 item(s)."}
+    assert service.purge([login, note]) == {"message": "Permanently deleted 2 items."}
     assert port.asked[-1][1] == ("Permanently delete 2 items? This cannot be undone. Previous backups can still "
                                  "contain them.")
     assert service.list()["rows"] == []
@@ -104,9 +104,9 @@ def test_purge_confirm_texts_and_cancel(env):
 def test_empty_trash(env):
     service, _controller, port, _login, _note = env
     port.answers = [True]
-    assert service.empty() == {"message": "Permanently deleted 2 item(s)."}
+    assert service.empty() == {"message": "Permanently deleted 2 items."}
 
 
 def test_unknown_ids_are_ignored(env):
     service, _controller, _port, _login, _note = env
-    assert service.restore(["nope"])["message"] == "Restored 0 item(s)."
+    assert service.restore(["nope"])["message"] == "Restored 0 items."

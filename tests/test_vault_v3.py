@@ -904,3 +904,23 @@ def test_restore_unlocks_with_one_converted_buffer(tmp_path: Path, monkeypatch) 
     restore_verified_backup(backup, vault_file=tmp_path / "new" / "vault.json", settings_file=None,
                             backup_password="independent backup password", vault_password=MASTER)
     assert len(seen) >= 3 and all(buffer is seen[0] for buffer in seen)
+
+
+def test_generation_grows_with_every_save_and_floor_applies_on_next_save(tmp_path: Path) -> None:
+    session = create_vault(tmp_path / "vault.json", MASTER, kdf_overrides=TEST_KDF)
+    first = session.generation
+    session.upsert_web(origin="https://a.example.com", username="me", password="pw-123456", label="a")
+    assert session.generation == first + 1
+    session.raise_generation_floor(first + 50)
+    assert session.generation == first + 1  # only the next save applies it
+    session.upsert_web(origin="https://b.example.com", username="me", password="pw-123456", label="b")
+    assert session.generation == first + 50
+    session.raise_generation_floor(3)  # never lowers
+    session.upsert_web(origin="https://c.example.com", username="me", password="pw-123456", label="c")
+    assert session.generation == first + 51
+    session.lock()
+    reopened = unlock_vault(tmp_path / "vault.json", MASTER)
+    assert reopened.generation == first + 51
+    for bad in (-1, 2**63, True, 1.0):
+        with pytest.raises(VaultError):
+            reopened.raise_generation_floor(bad)

@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ..winpaths import system32, windows_powershell
+from ..i18n import t
 
 RULE_NAME = "LocalGateKeys Wi-Fi sync"
 ERROR_CANCELLED = 1223  # the user said No at the UAC prompt
@@ -112,9 +113,9 @@ def parse_status(document: str, *, program: str, port: int, interface: str = "")
     try:
         data = json.loads(document or "{}")
     except ValueError:
-        return FirewallStatus(supported=False, detail="The firewall status could not be read.")
+        return FirewallStatus(supported=False, detail=t("firewall.theFirewallStatusCouldNot"))
     if not isinstance(data, dict):
-        return FirewallStatus(supported=False, detail="The firewall status could not be read.")
+        return FirewallStatus(supported=False, detail=t("firewall.theFirewallStatusCouldNot"))
     rules = data.get("rules") or []
     profiles = data.get("profiles") or []
     rules = [rules] if isinstance(rules, dict) else [r for r in rules if isinstance(r, dict)]
@@ -171,7 +172,7 @@ def firewall_status(port: int, *, interface: str = "", platform: str = sys.platf
     program = program or program_path()
     document = run(_STATUS_SCRIPT, {"LGK_PROGRAM": program, "LGK_RULE": RULE_NAME})
     if document is None:
-        return FirewallStatus(supported=False, detail="The firewall status could not be read.")
+        return FirewallStatus(supported=False, detail=t("firewall.theFirewallStatusCouldNot"))
     return parse_status(document, program=program, port=port, interface=interface)
 
 
@@ -248,12 +249,12 @@ def allow_inbound(port: int, *, status: FirewallStatus | None = None, program: s
                   elevate: Callable[[str, str], int] = _shell_execute_elevated) -> AllowResult:
     """Add (or update) our rule through an elevated ``netsh``. Only call it from the user's button."""
     if platform != "win32":
-        return AllowResult(False, message="Windows Firewall settings are only available on Windows.")
+        return AllowResult(False, message=t("sync.windowsFirewallSettingsAreOnly"))
     program = program or program_path()
     args = rule_arguments(program, port, replace=bool(status and status.rule_present))
     code = elevate(system32("netsh.exe"), " ".join(args))
     if code == ERROR_CANCELLED:
-        return AllowResult(False, cancelled=True, message="Windows Firewall was not changed.")
+        return AllowResult(False, cancelled=True, message=t("firewall.windowsFirewallWasNotChanged"))
     if code != 0:
-        return AllowResult(False, message=f"Windows Firewall could not be changed (netsh exit code {code}).")
-    return AllowResult(True, message="LocalGateKeys may now receive Wi-Fi sync connections on Private networks.")
+        return AllowResult(False, message=t("firewall.couldNotBeChanged", code=code))
+    return AllowResult(True, message=t("firewall.localgatekeysMayNowReceiveWi"))

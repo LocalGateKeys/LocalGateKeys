@@ -1,5 +1,6 @@
 package app.localgatekeys.android.editor
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.unlock.CountingRandom
 import app.localgatekeys.android.unlock.TestClock
 import app.localgatekeys.android.vault.VaultItem
@@ -43,7 +44,7 @@ fun editor(
     kind: EditorKind = EditorKind.NOTE,
     isPro: () -> Boolean = { false },
     clock: TestClock = clock(),
-): EditorModel = EditorModel(store, item, kind, isPro, clock, CountingRandom())
+): EditorModel = EditorModel(store, item, kind, isPro, clock, CountingRandom(), EnglishTxt())
 
 /** Swift `numberedNotes`. */
 fun numberedNotes(n: Int): List<Obj> = (0 until n).map { k ->

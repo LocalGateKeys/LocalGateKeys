@@ -1,5 +1,6 @@
 package app.localgatekeys.android.settings
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -31,11 +32,11 @@ class AppSettingsTest {
         assertEquals(listOf(30L, 60L, 120L, 300L), ClipboardExpiry.entries.map { it.seconds })
         assertEquals(
             listOf("Immediately", "After 1 minute", "After 5 minutes", "After 15 minutes", "After 1 hour"),
-            AutoLockDelay.entries.map { it.label },
+            AutoLockDelay.entries.map { it.label(EnglishTxt()) },
         )
-        assertEquals(listOf("1 minute", "5 minutes", "15 minutes", "30 minutes", "Never"), IdleLock.entries.map { it.label })
-        assertEquals(listOf("30 seconds", "60 seconds", "2 minutes", "5 minutes"), ClipboardExpiry.entries.map { it.label })
-        assertEquals(listOf("System", "Light", "Dark"), Appearance.entries.map { it.label })
+        assertEquals(listOf("1 minute", "5 minutes", "15 minutes", "30 minutes", "Never"), IdleLock.entries.map { it.label(EnglishTxt()) })
+        assertEquals(listOf("30 seconds", "60 seconds", "2 minutes", "5 minutes"), ClipboardExpiry.entries.map { it.label(EnglishTxt()) })
+        assertEquals(listOf("System", "Light", "Dark"), Appearance.entries.map { it.label(EnglishTxt()) })
     }
 
     @Test fun round_trip_through_the_store() {
@@ -79,12 +80,26 @@ class AppSettingsTest {
         assertEquals(AutoLockDelay.IMMEDIATELY, s.autoLockDelay); assertTrue(s.showCodesRow)
     }
 
+    @Test fun import_card_not_now_is_remembered() {
+        val d = MemoryStore()
+        assertFalse(AppSettings(d).importCardDismissed)
+        AppSettings(d).importCardDismissed = true
+        assertTrue(AppSettings(d).importCardDismissed)
+    }
+
     @Test fun keys_match_the_iphone_names_and_omit_ios_only_ones() {
         assertEquals(
             listOf(
                 "autoLockDelaySeconds", "settings.idleLockSeconds", "settings.clipboardExpirySeconds",
                 "settings.concealFieldsInDetail", "settings.showCodesRow", "settings.copyCodeOnFill", "settings.appearance",
                 "settings.generatorOptions", "settings.erasePending", "settings.initials", "settings.planFullRevision",
+                "settings.listSort", "settings.listFavoritesFirst", "settings.importCardDismissed",
+                "settings.unlockFailures", "settings.unlockFailureAt",
+                "settings.unlockFailureUptime", "settings.unlockFailureBoot",
+                // Workstream 4 setup progress (the iPhone's names once it gains onboarding).
+                "settings.setupDone", "settings.setupSeen", "settings.setupCardHidden",
+                // Part C autofill and passkey switches.
+                "settings.autofillSuggestions", "settings.passkeyProvider",
             ),
             AppSettings.Key.all,
         )

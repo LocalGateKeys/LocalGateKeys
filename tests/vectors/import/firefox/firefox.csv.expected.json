@@ -1,0 +1,71 @@
+{
+  "format": "firefox",
+  "input": "tests/fixtures/imports/firefox.csv",
+  "python_format": "firefox-csv",
+  "result": {
+    "diagnostics": [],
+    "records": [
+      {
+        "card": {},
+        "created": 1700000000,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": 1700400000,
+        "notes": "",
+        "password": "ff-pass-1",
+        "source_row": 2,
+        "tags": [],
+        "title": "login.example.com",
+        "totp_uri": "",
+        "urls": [
+          "https://login.example.com"
+        ],
+        "username": "alex@example.com"
+      },
+      {
+        "card": {},
+        "created": 1690000000,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": 1690000000,
+        "notes": "",
+        "password": "ff-pass-2",
+        "source_row": 3,
+        "tags": [],
+        "title": "media.example.com",
+        "totp_uri": "",
+        "urls": [
+          "https://media.example.com"
+        ],
+        "username": "alex"
+      },
+      {
+        "card": {},
+        "created": 1690000000,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": 1690000000,
+        "notes": "",
+        "password": "ff-pass-3",
+        "source_row": 4,
+        "tags": [],
+        "title": "proxy.example.net",
+        "totp_uri": "",
+        "urls": [
+          "https://proxy.example.net"
+        ],
+        "username": "proxyuser"
+      }
+    ],
+    "source_format": "firefox-csv"
+  }
+}

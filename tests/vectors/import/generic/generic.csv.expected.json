@@ -1,0 +1,139 @@
+{
+  "format": "generic",
+  "input": "tests/vectors/import/_inputs/generic.csv",
+  "mapping": {
+    "notes": "Comments",
+    "password": "Pwd",
+    "title": "Label",
+    "totp": "TOTP Secret",
+    "url": "Address",
+    "username": "Email"
+  },
+  "python_format": "csv",
+  "result": {
+    "diagnostics": [
+      "Row 9: empty row; skipped."
+    ],
+    "records": [
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "hello",
+        "password": "pw1",
+        "source_row": 2,
+        "tags": [],
+        "title": "My site",
+        "totp_uri": "otpauth://totp/My%20site?secret=JBSWY3DPEHPK3PXP",
+        "urls": [
+          "https://my.example.com/login"
+        ],
+        "username": "me@example.com"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "pw2",
+        "source_row": 3,
+        "tags": [],
+        "title": "host.example.com",
+        "totp_uri": "",
+        "urls": [
+          "https://User:x@Host.Example.COM:8443/p"
+        ],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "a note body",
+        "password": "",
+        "source_row": 4,
+        "tags": [],
+        "title": "Only notes",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "pw3",
+        "source_row": 6,
+        "tags": [],
+        "title": "Bare",
+        "totp_uri": "",
+        "urls": [
+          "example.org/path"
+        ],
+        "username": "bob"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "pw4",
+        "source_row": 7,
+        "tags": [],
+        "title": "IPv6",
+        "totp_uri": "",
+        "urls": [
+          "http://[::1]:80/x"
+        ],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "pw5",
+        "source_row": 8,
+        "tags": [],
+        "title": "Bad v6",
+        "totp_uri": "",
+        "urls": [
+          "http://[::1/x"
+        ],
+        "username": ""
+      }
+    ],
+    "source_format": "csv"
+  }
+}

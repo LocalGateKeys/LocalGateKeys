@@ -1,24 +1,37 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 /// The "Glass skin" palette (spec Part 2), stored as named colours with light and dark appearances in
 /// `AppShared/Colors.xcassets`. Shared by the app and the AutoFill extension.
 public enum Palette {
     public enum Token: String, CaseIterable, Sendable {
         case background, groupSurface, innerTile, separator, text, secondaryText
-        case accent, accentText, glassFill, glassBorder, success, warning, danger
+        case accent, accentText, onAccent, glassFill, glassBorder, success, warning, danger
         case glowBlue, glowOrange, identityTint
     }
 
     private final class Marker {}
     public static let bundle = Bundle(for: Marker.self)
 
+#if canImport(UIKit)
     public static func uiColor(_ token: Token) -> UIColor {
         guard let c = UIColor(named: token.rawValue, in: bundle, compatibleWith: nil) else {
             preconditionFailure("Colors.xcassets is missing \(token.rawValue)")
         }
         return c
     }
+#elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
+    public static func nsColor(_ token: Token) -> NSColor {
+        guard let c = NSColor(named: token.rawValue, bundle: bundle) else {
+            preconditionFailure("Colors.xcassets is missing \(token.rawValue)")
+        }
+        return c
+    }
+#endif
 
     public static func color(_ token: Token) -> Color { Color(token.rawValue, bundle: bundle) }
 
@@ -34,6 +47,8 @@ public enum Palette {
     /// Fills and the selected tab. Never plain text on glass: use `accentText`.
     public static var accent: Color { color(.accent) }
     public static var accentText: Color { color(.accentText) }
+    /// Text and icons on an accent fill: white in light mode, dark ink on the brighter dark-mode accent (4.5:1).
+    public static var onAccent: Color { color(.onAccent) }
     /// Glass under Reduce Transparency.
     public static var glassFill: Color { color(.glassFill) }
     public static var glassBorder: Color { color(.glassBorder) }

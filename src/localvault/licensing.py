@@ -25,6 +25,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 from . import config
 from .updates import UpdateCheckError, _parse_published, _unique_object, canonical_json
 from .version import APP_VERSION, BUILD_DATE
+from .i18n import t
 
 _log = logging.getLogger(__name__)
 
@@ -102,24 +103,22 @@ class LicenseStatus:
 
 
 _DAMAGED_TEXT = (
-    "The licence key looks incomplete or damaged. Copy the whole key from your "
-    "purchase email or page and try again."
+    "licensing.theLicenceKeyLooksIncomplete"
 )
 _REASON_TEXT = {
     "bad-encoding": _DAMAGED_TEXT,
     "not-json": _DAMAGED_TEXT,
     "license-shape": _DAMAGED_TEXT,
     "duplicate-field": _DAMAGED_TEXT,
-    "unknown-key": "This licence was issued for a newer LocalGateKeys version. "
-    "Update the app, then enter it again.",
-    "bad-signature": "This licence key is not valid.",
+    "unknown-key": "licensing.thisLicenceWasIssuedFor",
+    "bad-signature": "licensing.thisLicenceKeyIsNot",
 }
-_FALLBACK_TEXT = "The licence could not be verified."
+_FALLBACK_TEXT = "licensing.theLicenceCouldNotBe"
 
 
 def reason_text(reason: str) -> str:
     """User-facing text for a ``LicenseError.reason``."""
-    return _REASON_TEXT.get(reason, _FALLBACK_TEXT)
+    return t(_REASON_TEXT.get(reason, _FALLBACK_TEXT))
 
 
 def _fail(reason: str, message: str | None = None) -> LicenseError:
@@ -311,28 +310,27 @@ def status(
 ) -> LicenseStatus:
     active_keys = LICENSE_KEYS if keys is None else keys
     if not active_keys:
-        return LicenseStatus("unconfigured", None, "Licensing is not configured in this build.")
+        return LicenseStatus("unconfigured", None, t("licensing.licensingIsNotConfiguredIn"))
     try:
         path = license_path()
         if not path.exists():
-            return LicenseStatus("free", None, "No Pro licence is installed.")
+            return LicenseStatus("free", None, t("licensing.noProLicenceIsInstalled"))
         lic = verify_bundle(parse_license_text(path.read_text(encoding="utf-8")), active_keys)
     except LicenseError as exc:
-        return LicenseStatus("invalid", None, f"The installed licence is not usable. {reason_text(exc.reason)}")
+        return LicenseStatus("invalid", None, t("licensing.theInstalledLicenceIsNot", v1=reason_text(exc.reason)))
     except (OSError, ValueError):
-        return LicenseStatus("invalid", None, "The installed licence could not be read.")
+        return LicenseStatus("invalid", None, t("licensing.theInstalledLicenceCouldNot"))
     revoked_ids = _cached_revoked_ids() if revoked is None else REVOKED_LICENSE_IDS | frozenset(revoked)
     if lic.license_id in revoked_ids:
-        return LicenseStatus("revoked", lic, "This licence has been revoked.")
+        return LicenseStatus("revoked", lic, t("licenceView.thisLicenceHasBeenRevoked"))
     built = dt.date.fromisoformat(BUILD_DATE) if build_date is None else build_date
     if not covers(built, lic):
         return LicenseStatus(
             "expired_for_this_build",
             lic,
-            f"Your licence covers versions released until {lic.updates_until.isoformat()}. "
-            "Get a current licence to use Pro on this version, or reinstall a covered version.",
+            t("licensing.yourLicenceCoversVersionsReleased", v1=lic.updates_until.isoformat()),
         )
-    return LicenseStatus("pro", lic, f"Pro licence for {lic.name}.")
+    return LicenseStatus("pro", lic, t("licensing.proLicenceFor", name=lic.name))
 
 
 def update_coverage_note(published_iso: str, st: LicenseStatus | None = None) -> str | None:
@@ -347,8 +345,7 @@ def update_coverage_note(published_iso: str, st: LicenseStatus | None = None) ->
     if covers(published, current.license):
         return None
     return (
-        f"This update isn't covered by your licence: the free plan would apply ({FREE_ITEM_LIMIT} items, no device sync). "
-        f"Get a current licence, or stay on {APP_VERSION}."
+        t("licensing.thisUpdateIsnTCovered", FREE_ITEM_LIMIT=FREE_ITEM_LIMIT, APP_VERSION=APP_VERSION)
     )
 
 

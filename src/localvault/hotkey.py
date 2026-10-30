@@ -233,6 +233,18 @@ def is_text_widget(widget: object) -> bool:
         return False
 
 
+_SHORTCUT_DESCRIPTION_KEYS = {
+    "Search everything: items, actions and settings.": "shortcuts.desc.searchAll",
+    "Jump to the search box.": "shortcuts.desc.search",
+    "Choose what to add: login, card, note, key and more.": "shortcuts.desc.newItem",
+    "Copy the selected login's username.": "shortcuts.desc.copyUsername",
+    "Copy the selected login's current two-factor code.": "shortcuts.desc.copyTotp",
+    "Open Settings.": "shortcuts.desc.settings",
+    "Lock the vault.": "shortcuts.desc.lock",
+    "Show this list of shortcuts.": "shortcuts.desc.shortcuts",
+}
+
+
 def shortcut_settings_rows() -> list[tuple[str, str, str]]:
     """(title, description, keys) rows for the Settings > Keyboard shortcuts card."""
     return [(shortcut.label, shortcut.description, shortcut.keys) for shortcut in MAIN_WINDOW_SHORTCUTS]
@@ -244,17 +256,22 @@ def shortcut_cheat_sheet_rows(quick_access_hotkey: str = "Ctrl+Alt+K") -> list[t
         quick = normalize_hotkey(quick_access_hotkey)
     except ValueError:
         quick = "Ctrl+Alt+K"
+    from .i18n import t
+
+    main, items, anywhere = t("shortcuts.group.main"), t("shortcuts.group.items"), t("shortcuts.group.anywhere")
     rows: list[tuple[str, str, str]] = [
-        ("Main window", shortcut.keys, shortcut.description) for shortcut in MAIN_WINDOW_SHORTCUTS
+        (main, t("shortcuts.keys.f1") if shortcut.keys == "F1 or ?" else shortcut.keys,
+         t(_SHORTCUT_DESCRIPTION_KEYS[shortcut.description]))
+        for shortcut in MAIN_WINDOW_SHORTCUTS
     ]
     rows.extend([
-        ("Saved items", "Enter, Space or F2", "Open the selected item."),
-        ("Saved items", "Double-click", "Open the item under the pointer."),
-        ("Saved items", "Ctrl+C", "Copy the selected login's password (asks for confirmation)."),
-        ("Saved items", "Delete", "Move the selected item to Recently deleted."),
-        ("Saved items", "Down arrow (from search)", "Move into the results list."),
-        ("Anywhere in Windows", "Ctrl+Alt+L", "Emergency lock: lock the vault and cancel pending fills."),
-        ("Anywhere in Windows", quick, "Quick access: search this profile from any window."),
-        ("Anywhere in Windows", "Ctrl+Shift+Space", "Fill a previously bound desktop app."),
+        (items, t("shortcuts.keys.openItem"), t("shortcuts.desc.openSelected")),
+        (items, t("shortcuts.keys.doubleClick"), t("shortcuts.desc.openPointer")),
+        (items, "Ctrl+C", t("shortcuts.desc.copyPassword")),
+        (items, "Delete", t("shortcuts.desc.delete")),
+        (items, t("shortcuts.keys.downArrow"), t("shortcuts.desc.moveIntoResults")),
+        (anywhere, "Ctrl+Alt+L", t("shortcuts.desc.emergencyLock")),
+        (anywhere, quick, t("shortcuts.desc.quickAccess")),
+        (anywhere, "Ctrl+Shift+Space", t("shortcuts.desc.fillBound")),
     ])
     return rows

@@ -11,7 +11,7 @@ final class AutoFillStatusModel {
     private(set) var enabled: Bool?
     private(set) var openError: String?
 
-    static let openFailedMessage = "AutoFill settings could not be opened. Open the Settings app › General › AutoFill & Passwords and turn on LocalGateKeys."
+    static let openFailedMessage = String(localized: "AutoFill settings could not be opened. Open the Settings app › General › AutoFill & Passwords and turn on LocalGateKeys.")
 
     @ObservationIgnored private let isEnabled: @MainActor () async -> Bool
     @ObservationIgnored private let open: @MainActor () async throws -> Void

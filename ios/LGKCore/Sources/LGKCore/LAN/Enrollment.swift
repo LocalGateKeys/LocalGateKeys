@@ -140,6 +140,11 @@ public enum Enrollment {
     /// Inviter side (`_decrypt_enrollment_request` + `_verify_enrollment_body`): decrypt with the
     /// inviter's exchange key, then check the body, MAC and signature.
     public static func openRequest(offer: PairingOffer, inviter: DeviceIdentity, raw: [UInt8]) throws -> Request {
+        try verifyRequestBody(offer: offer, plain: try decryptRequest(offer: offer, inviter: inviter, raw: raw))
+    }
+
+    /// `_decrypt_enrollment_request`: size, magic, JSON shape, offer id and AES-GCM (never an attempt).
+    static func decryptRequest(offer: PairingOffer, inviter: DeviceIdentity, raw: [UInt8]) throws -> [UInt8] {
         guard raw.count <= maxBytes, raw.starts(with: requestMagic) else { throw PairingError.malformed("Enrollment request is malformed") }
         guard case .object(let outer) = try Pairing.strictJSON(Array(raw[requestMagic.count...])),
               Set(outer.keys) == ["offer_id", "eph", "nonce", "ct"] else { throw PairingError.malformed("Enrollment request is malformed") }
@@ -155,6 +160,11 @@ public enum Enrollment {
         guard let plain = try? CryptoBox.openGCM(key: key, nonce: nonce, ciphertext: ct, aad: aad) else {
             throw PairingError.authentication("Enrollment request authentication failed")
         }
+        return plain
+    }
+
+    /// `_verify_enrollment_body`: the checks after a successful decrypt (they count as attempts).
+    static func verifyRequestBody(offer: PairingOffer, plain: [UInt8]) throws -> Request {
         guard case .object(let body) = try Pairing.strictJSON(plain) else { throw PairingError.malformed("Enrollment request is malformed") }
         if case .int(let v)? = body["version"], v < version, body["offer_id"] == .string(offer.offerID) {
             // Desktop `EnrollmentOutdated`: the inviter answers `update-needed`.
@@ -178,7 +188,7 @@ public enum Enrollment {
         let transcript = try transcript(offer: offer, deviceID: deviceID, signingPublic: signing, exchangePublic: exchange,
                                         endpoint: endpoint, name: name)
         let mac = try Pairing.b64(body["mac"], length: 32, "enrollment mac")
-        guard mac == self.mac(offer, transcript) else { throw PairingError.authentication("Enrollment does not prove the pairing secret") }
+        guard Keyring.constantTimeEqual(mac, self.mac(offer, transcript)) else { throw PairingError.authentication("Enrollment does not prove the pairing secret") }
         let sig = try Pairing.b64(body["signature"], length: 64, "enrollment signature")
         guard DeviceIdentity.verify(signature: sig, message: sigLabel + transcript, publicKey: signing) else {
             throw PairingError.authentication("Enrollment signature is invalid")

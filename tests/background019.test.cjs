@@ -9,7 +9,7 @@ function harness({afterNative=null,response={ok:true},framePatch={},tabPatch={},
  const frames={0:frame};
  const tab={active:true,discarded:false,...tabPatch};
  // Promise-only mocks: the extension never passes callbacks (Firefox browser.* has none).
- const chrome={runtime:{id,getManifest:()=>({version:'0.3.0',permissions:['favicon']}),getURL:p=>`chrome-extension://${id}/${p}`,
+ const chrome={i18n:{getMessage:require('./extension/i18n-stub.cjs').getMessage},runtime:{id,getManifest:()=>({version:'0.3.0',permissions:['favicon']}),getURL:p=>`chrome-extension://${id}/${p}`,
  onMessage:{addListener:f=>listener=f},sendNativeMessage:(host,req)=>{calls.push({host,req});if(afterNative)afterNative(frame,tab);return nativeError?Promise.reject(nativeError):Promise.resolve({...response});}},
  webNavigation:{getFrame:async({frameId})=>frames[frameId],onDOMContentLoaded:{addListener:f=>navListeners.dom=f},onCompleted:{addListener:f=>navListeners.completed=f},onHistoryStateUpdated:{addListener:f=>navListeners.history=f}},tabs:{get:async()=>tab,sendMessage:(tabId,message,options)=>{nudges.push({tabId,message,options});return Promise.resolve();}}};
  const context=vm.createContext({chrome,URL,Set,Promise,setTimeout,clearTimeout,fetch:async()=>({ok:false})});

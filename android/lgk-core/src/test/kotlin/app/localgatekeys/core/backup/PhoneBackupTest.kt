@@ -365,7 +365,7 @@ class PhoneBackupTest {
         )
         val forged = edits.map { (n, e) -> n to withKdf(e) }
         val notObject = withHeader { it["kdf"] = str("argon2id") }
-        val v2 = withHeader { it["version"] = int(2) }
+        val v2 = withHeader { it["version"] = int(3) }
         val vBig = withHeader { it["version"] = int(1L shl 40) }
         withoutArgon {
             assertEquals("unsupported-version", reasonOf(v2))
@@ -570,7 +570,7 @@ class PhoneBackupTest {
     fun cheap_rejected_vectors_never_call_argon() {
         val dir = File(Vectors.backup("backup.lgkm").parentFile, "rejected")
         val expect = mapOf(
-            "version_2.lgkm" to "unsupported-version",
+            "version_3.lgkm" to "unsupported-version",
             "kdf_time_11.lgkm" to "bad-kdf",
             "extra_header_key.lgkm" to "not-a-backup",
             "truncated.lgkm" to "not-a-backup",
@@ -630,11 +630,101 @@ class PhoneBackupTest {
     }
 
     @Test
-    fun version_2_wins_over_a_bad_kdf() {
+    fun version_3_wins_over_a_bad_kdf() {
         val data = withHeader { h ->
-            h["version"] = int(2)
+            h["version"] = int(3)
             h["kdf"] = str("junk")
         }
         withoutArgon { assertEquals("unsupported-version", reasonOf(data)) }
+    }
+
+    // ---- format 2 (document files) ----
+
+    private fun f2Expected(): Map<String, JsonValue> = Vectors.json(Vectors.backup("format2/expected.json")).obj().fields
+
+    private fun f2States(): List<ItemState> = f2Expected()["states"]!!.arr().map { s ->
+        val f = s.obj().fields
+        ItemState(
+            f["id"]!!.str(),
+            f["vv"]!!.obj().fields.mapValues { it.value.long() },
+            (f["deleted"] as JsonValue.Bool).v,
+            (f["deleted_at"] as? JsonValue.Int)?.v,
+            f["item"]!!.takeIf { it != JsonValue.Null },
+        )
+    }
+
+    @Test
+    fun format2_vector_opens_with_its_file_and_writes_back_byte_for_byte() {
+        val e = f2Expected()
+        val raw = Vectors.backup("format2/backup.lgkm").readBytes()
+        assertEquals(e["file_sha256"]!!.str(), Vectors.hexString(java.security.MessageDigest.getInstance("SHA-256").digest(raw)))
+        val password = e["password"]!!.str()
+        val backup = PhoneBackupFormat.read(raw, password)
+        assertEquals(2, backup.header.version)
+        assertEquals(backup.header, PhoneBackupFormat.inspect(raw))
+        assertEquals(f2States(), backup.states)
+        assertEquals(e["device_id"]!!.str(), backup.deviceId)
+        val files = e["files"]!!.arr().map { it.obj().fields }
+        assertEquals(files.map { it["blob"]!!.str() }, backup.files.keys.toList())
+        for (f in files) {
+            val data = backup.files.getValue(f["blob"]!!.str())
+            assertEquals(f["blob_size"]!!.long(), data.size.toLong())
+            assertEquals(f["blob_sha256"]!!.str(), AttachmentSyncBlobId(data))
+        }
+        val envelope = CanonicalJson.parse(raw).obj().fields
+        assertEquals(e["header"], envelope["header"])
+        assertEquals(e["aad_hex"]!!.str(), Vectors.hexString(enc(envelope["header"]!!)))
+        val v1 = expected()
+        val h = backup.header
+        fun write(list: List<ItemState>, files: Map<String, ByteArray>) = PhoneBackupFormat.write(
+            list, password, backup.deviceId, h.platform, backup.appVersion, h.createdAt, backup.proHint,
+            QueueRandom(listOf(h.salt, h.nonce)), files = files,
+        )
+        assertEquals(v1["app_version"]!!.str(), backup.appVersion)
+        assertContentEquals(raw, write(f2States(), backup.files))
+        assertContentEquals(raw, write(f2States().reversed(), backup.files))
+        // The same states without files are a version-1 file.
+        val noFiles = write(f2States(), emptyMap())
+        assertEquals(1, PhoneBackupFormat.inspect(noFiles).version)
+    }
+
+    private fun AttachmentSyncBlobId(b: ByteArray): String = app.localgatekeys.core.sync.AttachmentSync.blobId(b)
+
+    @Test
+    fun format2_rejected_vectors_give_their_reason() {
+        val e = f2Expected()
+        val rejected = e["rejected"]!!.obj().fields
+        val dir = File(Vectors.backup("format2/backup.lgkm").parentFile, "rejected")
+        val onDisk = dir.listFiles { f -> f.name.endsWith(".lgkm") }!!.map { it.name }.sorted()
+        assertEquals(rejected.keys.sorted(), onDisk)
+        assertEquals(6, rejected.size)
+        for ((name, entry) in rejected) {
+            val f = entry.obj().fields
+            assertEquals(f["reason"]!!.str(), reasonOf(File(dir, name).readBytes(), f["password"]!!.str()), name)
+        }
+    }
+
+    @Test
+    fun writer_refuses_files_no_document_names_and_select_files_keeps_the_budget() {
+        val backup = PhoneBackupFormat.read(Vectors.backup("format2/backup.lgkm").readBytes(), f2Expected()["password"]!!.str())
+        val h = backup.header
+        val withoutDoc = backup.states.filter { !app.localgatekeys.core.sync.Documents.isDocumentState(it) }
+        val reason = assertFailsWith<PhoneBackupException> {
+            PhoneBackupFormat.write(
+                withoutDoc, "pw", backup.deviceId, h.platform, backup.appVersion, h.createdAt, false,
+                QueueRandom(listOf(h.salt, h.nonce)), kdf = mapOf("time_cost" to 1, "memory_cost_kib" to 8192, "parallelism" to 1),
+                files = backup.files,
+            )
+        }.reason
+        assertEquals("bad-payload", reason)
+        val blob = backup.files.values.single()
+        val all = PhoneBackupFormat.selectFiles(backup.states, { blob })
+        assertEquals(backup.files.keys, all.files.keys)
+        assertTrue(all.leftOut.isEmpty())
+        val tight = PhoneBackupFormat.selectFiles(backup.states, { blob }, budget = blob.size - 1L)
+        assertTrue(tight.files.isEmpty())
+        assertEquals(1, tight.leftOut.size)
+        val missing = PhoneBackupFormat.selectFiles(backup.states, { null })
+        assertEquals(1, missing.leftOut.size)
     }
 }

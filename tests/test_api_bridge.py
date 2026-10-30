@@ -15,7 +15,7 @@ KDF = {"time_cost": 1, "memory_cost_kib": 8192, "parallelism": 1, "hash_len": 32
 PUBLIC = {
     "app_info", "vault_state", "profiles_list", "profiles_select", "vault_unlock", "vault_create",
     "vault_lock", "modal_answer", "window_minimize", "window_toggle_maximize", "window_close",
-    "system_open_url",
+    "system_open_url", "i18n_bundle",
     "security_center", "security_set", "health_report", "health_scan", "health_cancel", "master_info",
     "master_change", "backup_status", "backup_create", "backup_verify", "backup_restore", "backup_test",
     "backup_verify_trial", "backup_kit", "backup_cancel_trial", "phrase_create", "phrase_confirm", "phrase_close",
@@ -23,28 +23,34 @@ PUBLIC = {
     "hello_status", "hello_enable", "hello_disable", "hello_auto_start", "hello_offer", "hello_offer_answer",
     "vault_unlock_hello", "face_status", "face_enable", "face_disable", "face_cancel", "face_switch_camera",
     "vault_unlock_face", "window_theme_sync",
-    "sync_view", "sync_refresh", "sync_now", "sync_acknowledge_members", "sync_choose_folder", "sync_password_check", "sync_create", "sync_join",
+    "sync_view", "sync_refresh", "sync_now", "sync_acknowledge_members", "sync_acknowledge_rollback",
+    "sync_dismiss_peer_rollback", "sync_choose_folder", "sync_password_check", "sync_create", "sync_join",
     "sync_setup_text", "sync_folder_setup", "sync_rotation_text", "sync_change_password", "sync_remove_info",
     "sync_remove_device", "sync_orphans", "sync_remove_orphans", "sync_leave", "sync_reset", "sync_qr_show",
-    "sync_qr_poll", "sync_qr_copy", "sync_qr_close", "sync_join_qr", "sync_wifi_suggest", "sync_wifi_enable",
+    "sync_qr_poll", "sync_qr_copy", "sync_qr_close", "sync_join_qr", "sync_find_again_qr", "sync_wifi_suggest", "sync_wifi_enable",
     "sync_wifi_disable", "sync_firewall_status", "sync_firewall_allow",
     "import_open", "import_plan", "import_review", "import_decide", "import_decide_all", "import_apply", "import_cancel",
     "import_close", "export_formats", "export_run", "transfer_info", "transfer_choose", "transfer_inspect",
     "transfer_preview", "transfer_commit", "transfer_cancel", "legacy_import", "legacy_fresh",
+    "share_start", "share_save_file", "share_qr", "share_cancel", "share_receive_file", "share_receive_text",
+    "share_receive_qr_image", "share_incoming",
+    "share_preview", "share_save", "share_reject",
     "phone_backup_choose", "phone_backup_preview", "phone_backup_commit", "phone_backup_cancel",
     "reminders_list", "reminders_complete", "reminders_snooze", "activity_list", "shortcuts_list", "collections_list",
     "collections_create", "collections_rename", "collections_archive", "catalog_status", "catalog_update",
     "onboarding_state", "onboarding_perform", "onboarding_skip", "onboarding_test_connection",
+    "onboarding_card", "history_restore", "sync_status", "onboarding_skip_all", "onboarding_hide", "onboarding_show",
     "desktop_bind_scan", "desktop_bind_form", "desktop_bind_save", "desktop_fill",
     "desktop_signin_scan", "desktop_signin_save", "desktop_web_warning_reset",
     "qr_scan_image", "qr_scan_camera", "qr_cancel", "qr_switch_camera",
+    "qr_sheet_scan_image", "qr_sheet_scan_camera", "qr_sheet_open", "qr_sheet_add", "qr_sheet_discard",
     "settings_page", "settings_set", "settings_choose_folder", "backup_password_set", "backup_password_clear",
     "licence_view", "licence_install", "licence_install_file", "licence_remove", "updates_check",
     "updates_open_release", "updates_reminder", "updates_snooze", "rating_prompt", "rating_answer", "rating_open",
     "profiles_manage", "profiles_create",
     "profiles_update", "profiles_photo", "profiles_remove_photo", "profiles_delete", "connections_view",
     "connections_repair", "connections_export", "errorlog_open",
-    "nav_get", "items_list", "quick_search", "overview_get", "codes_list", "status_get",
+    "nav_get", "items_list", "items_sort_set", "import_card_dismiss", "quick_search", "overview_get", "codes_list", "status_get",
     "item_detail", "item_reveal", "item_copy", "item_totp", "item_favorite", "item_trash", "item_open_website",
     "login_new", "login_open", "login_update", "login_regenerate", "login_save", "login_close",
     "generator_get", "generator_generate", "generator_username", "generator_copy",
@@ -262,7 +268,7 @@ def test_stage3_groups_happy_path(api):
     session = api._controller.session
     session.item_service.delete_item(saved["ref"]["id"])
     assert api.trash_list()["rows"][0]["id"] == saved["ref"]["id"]
-    assert api.trash_restore([saved["ref"]["id"]])["message"] == "Restored 1 item(s)."
+    assert api.trash_restore([saved["ref"]["id"]])["message"] == "Restored 1 item."
     assert api.trash_restore("not-a-list")["error"]["code"] == "invalid"
     assert api.doc_create("x", "")["error"]["code"] in {"unavailable", "cancelled"}
     entry = session.create_web_login(urls=[{"url": "https://a.test", "match": "exact_origin"}], username="u",
@@ -292,3 +298,11 @@ def test_vault_calls_wait_for_the_vault_lock_but_answers_do_not(api):
     assert not blocked.wait(0.3)
     lock.release()
     assert blocked.wait(2)
+
+
+def test_i18n_bundle_returns_current_language_and_catalog(api):
+    from localvault import i18n
+    r = api.i18n_bundle()
+    assert r["ok"] is True
+    assert r["lang"] == i18n.current()
+    assert r["messages"] == i18n.catalog()

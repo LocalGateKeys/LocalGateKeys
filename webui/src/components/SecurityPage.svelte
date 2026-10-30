@@ -1,6 +1,7 @@
 <script>
   /** Security center: score, what to fix first, unlock / backup / moving data / privacy panels. */
   import { call } from '../lib/api.js';
+  import { t } from '../lib/i18n.svelte.js';
   import { okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
 
@@ -9,14 +10,14 @@
 
   async function load() {
     const result = await call('security_center');
-    if (okOrToast(result, 'Could not open the Security center')) data = result;
+    if (okOrToast(result, t('securityPage.openFailed'))) data = result;
   }
   $effect(() => { load(); });
 
   async function run(action) {
     if (action.route === 'set') {
       const result = await call('security_set', action.params.key, action.params.value);
-      if (okOrToast(result, 'Not saved')) toast(result.message);
+      if (okOrToast(result, t('securityPage.notSaved'))) toast(result.message);
       load();
       return;
     }
@@ -24,24 +25,24 @@
   }
 
   async function emergency() {
-    okOrToast(await call('lock_emergency'), 'Not locked');
+    okOrToast(await call('lock_emergency'), t('securityPage.notLocked'));
   }
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label="Security center">
+<div class="sheet glass" role="dialog" aria-label={t('securityPage.title')}>
   <header>
-    <h2>Security center</h2>
-    <Button label="Check all for breaches" onclick={() => onroute('health', { scan_all: true })} />
-    <Button label="Emergency lock · Ctrl+Alt+L" variant="danger" onclick={emergency} />
-    <button class="close" aria-label="Close" onclick={onclose}>✕</button>
+    <h2>{t('securityPage.title')}</h2>
+    <Button label={t('securityPage.checkAll')} onclick={() => onroute('health', { scan_all: true })} />
+    <Button label={t('securityPage.emergencyLock')} variant="danger" onclick={emergency} />
+    <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
   {#if data}
     <div class="body">
       <section class="score group">
-        <div class="ring" aria-label={`Score ${data.score ?? 'not available'}`}>{data.score ?? '–'}</div>
+        <div class="ring" aria-label={data.score == null ? t('securityPage.scoreNone') : t('securityPage.score', { score: data.score })}>{data.score ?? '–'}</div>
         <div><div class="label">{data.label}</div><p class="headline">{data.headline}</p></div>
       </section>
-      <div class="section-label">Fix these first</div>
+      <div class="section-label">{t('securityPage.fixFirst')}</div>
       {#if data.issues.length}
         <div class="group">
           {#each data.issues as issue (issue.key)}
@@ -53,7 +54,7 @@
           {/each}
         </div>
       {:else}
-        <p class="meta">Nothing to fix right now.</p>
+        <p class="meta">{t('securityPage.nothingToFix')}</p>
       {/if}
       {#each data.panels as panel (panel.title)}
         <div class="section-label">{panel.title}</div>

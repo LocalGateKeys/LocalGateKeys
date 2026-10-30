@@ -2,19 +2,22 @@
   /** Approval dialog for a Python modal.request. Escape and Deny answer false.
    * An optional extra button (extraLabel/onextra) sits between the two, e.g. "Buy Pro".
    * guardMs > 0 (the popup): Deny takes the focus and the other buttons ignore input until guardMs passed. */
+  import { t } from '../lib/i18n.svelte.js';
   import Button from './Button.svelte';
 
   let {
     title,
     message = '',
-    allowLabel = 'Allow',
-    denyLabel = 'Deny',
+    allowLabel = undefined,
+    denyLabel = undefined,
     extraLabel = '',
     onextra = undefined,
     onanswer,
     guardMs = 0,
   } = $props();
 
+  const allow = $derived(allowLabel ?? t('modal.allow'));
+  const deny = $derived(denyLabel ?? t('modal.deny'));
   const titleId = `m-${Math.random().toString(36).slice(2, 9)}`;
   let allowButton = $state();
   let denyButton = $state();
@@ -49,13 +52,13 @@
     <h2 id={titleId}>{title}</h2>
     {#if message}<p class="message">{message}</p>{/if}
     <div class="actions">
-      {#if denyLabel}<span bind:this={denyButton}><Button label={denyLabel} onclick={() => onanswer(false)} /></span>{/if}
+      {#if deny}<span bind:this={denyButton}><Button label={deny} onclick={() => onanswer(false)} /></span>{/if}
       {#if extraLabel}
-        <Button label={allowLabel} disabled={!ready} onclick={() => { if (ready) onanswer(true); }} />
+        <Button label={allow} disabled={!ready} onclick={() => { if (ready) onanswer(true); }} />
         <span bind:this={allowButton}><Button label={extraLabel} variant="primary" disabled={!ready}
           onclick={() => { if (ready) onextra?.(); }} /></span>
       {:else}
-        <span bind:this={allowButton}><Button label={allowLabel} variant="primary" disabled={!ready}
+        <span bind:this={allowButton}><Button label={allow} variant="primary" disabled={!ready}
           onclick={() => { if (ready) onanswer(true); }} /></span>
       {/if}
     </div>

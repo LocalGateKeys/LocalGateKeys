@@ -19,6 +19,7 @@ from .importers import ImportedRecord, cap_diagnostics
 from .importers import ImporterError as ImportError  # noqa: A001 - historic public name
 from .importers.detect import load_records
 from .vault import ItemLimitReached
+from .i18n import t
 
 __all__ = ["ImportError", "ImportRow", "apply_import", "classify", "load_import"]
 
@@ -48,7 +49,7 @@ def load_import(path: Path, *, password: str | None = None) -> tuple[list[Import
         results: list[ImportRow] = []
         for row in rows:
             if row.kind != "login":
-                issues.append(f"Row {row.row}: not a website login ({row.kind}); use the full importer.")
+                issues.append(t("importPreview.rowNotAWebsiteLogin", row=row.row, kind=row.kind))
             elif not row.in_import_duplicate:
                 results.append(ImportRow(row.row, row.label, row.origin, row.username, row.password))
         return results, issues
@@ -78,16 +79,16 @@ def apply_import(session: Any, rows: list[ImportRow]) -> int:
     for row in rows:
         item = by_row.get(row.row)
         if item is None:
-            raise ImportError(f"Row {row.row}: unsupported URL or invalid fields")
+            raise ImportError(t("importPreview.rowUnsupportedUrlOrInvalid", row=row.row))
         if row.selected == "skip":
             plan.set_decision(item, "skip")
         elif row.selected == "add":
             if item.status != "new":
-                raise ImportError("Vault changed after preview; review the import again")
+                raise ImportError(t("importPreview.vaultChangedAfterPreviewReview"))
             plan.set_decision(item, "add")
         else:
             if item.status == "new" or item.target_id != row.target_id:
-                raise ImportError("Conflict target changed; review the import again")
+                raise ImportError(t("importPreview.conflictTargetChangedReviewThe"))
             plan.set_decision(item, "replace", fields={"label": "import", "password": "import"})
     if any(item.limited for item in plan.rows):
         # This historic contract writes every selected row or nothing.

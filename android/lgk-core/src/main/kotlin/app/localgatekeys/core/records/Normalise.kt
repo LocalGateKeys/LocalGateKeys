@@ -145,7 +145,7 @@ object Normalise {
             scalarDict(totp, "TOTP")
             checkTOTP(totp)
         }
-        val history = list(rec["password_history"] ?: JsonValue.Arr(emptyList()), 5, "Password history is malformed")
+        val history = list(rec["password_history"] ?: JsonValue.Arr(emptyList()), PasswordHistory.LIMIT, "Password history is malformed")
         val canonicalHistory = ArrayList<JsonValue>()
         for (row in history) {
             val r = (row as? JsonValue.Obj)?.fields

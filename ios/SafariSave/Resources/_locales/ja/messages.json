@@ -1,0 +1,754 @@
+{
+  "bg_err_agent_access_denied": {
+    "message": "Windowsがブリッジへのアクセスを拒否しました。ブラウザーとLocalGateKeysを、管理者モードにせず同じWindowsユーザーで実行してから、現在のユーザーのブリッジを修復してください。"
+  },
+  "bg_err_agent_busy": {
+    "message": "ブリッジはビジー状態です。開いているLocalGateKeysのダイアログを完了してから、もう一度お試しください。"
+  },
+  "bg_err_agent_connection_changed": {
+    "message": "接続先が別のアプリのインスタンスになっています。ブリッジの修復に使ったリポジトリから、LocalGateKeysを再起動してください。"
+  },
+  "bg_err_agent_connection_lost": {
+    "message": "返信の前にローカルブリッジが切断されました。これが繰り返される場合は、ブリッジを修復してください。自動での再試行は行われていません。"
+  },
+  "bg_err_agent_offline": {
+    "message": "古いネイティブホストがアプリに接続できませんでした。LocalGateKeysがすでに開いている場合は、デスクトップアプリを更新し、ブリッジを修復してから再起動してください。"
+  },
+  "bg_err_agent_state_invalid": {
+    "message": "保存されているブリッジ接続が無効か、古くなっています。トレイを含めてLocalGateKeysを完全に終了し、リポジトリのコピーを再起動してください。"
+  },
+  "bg_err_agent_state_missing": {
+    "message": "実行中の接続が見つかりませんでした。LocalGateKeysでプロファイルの選択を完了してください。メインウィンドウがすでに開いている場合は、ブリッジと同じリポジトリからアプリを再起動してください。"
+  },
+  "bg_err_agent_unavailable": {
+    "message": "アプリの接続がリクエストを受け付けていません。トレイを含めてLocalGateKeysを完全に終了し、ブリッジの修復に使ったリポジトリから再起動してください。"
+  },
+  "bg_err_bridge_dependencies_missing": {
+    "message": "ネイティブホストに、必要なPythonパッケージがありません。リポジトリの環境を更新してから、scripts/repair_browser_bridge.ps1を実行してください。"
+  },
+  "bg_err_bridge_internal_error": {
+    "message": "ネイティブブリッジでエラーが発生しました。scripts/test_browser_bridge.ps1を実行し、サニタイズされたレポートを共有してください。"
+  },
+  "bg_err_bridge_protocol_error": {
+    "message": "ローカルブリッジが無効な応答を返しました。ブリッジのすべてのファイルをまとめて更新し、LocalGateKeysを再起動してください。"
+  },
+  "bg_err_busy": {
+    "message": "先に、開いているLocalGateKeysのプロンプトを完了してください。"
+  },
+  "bg_err_caller_not_browser": {
+    "message": "LocalGateKeysは、署名されたブラウザーが起動したネイティブホストからのリクエストのみを受け付けます。ブラウザーを再起動してください。繰り返される場合は、LocalGateKeysの「接続」からブリッジを修復してください。"
+  },
+  "bg_err_card_not_found": {
+    "message": "このプロファイルには、支払いカードが保存されていません。"
+  },
+  "bg_err_client_not_allowed": {
+    "message": "LocalGateKeysが、ネイティブホストの識別情報を拒否しました。アプリを終了し、リポジトリからscripts/repair_browser_bridge.ps1を実行してから、LocalGateKeysを再起動してください。"
+  },
+  "bg_err_destination_changed": {
+    "message": "ページまたはアクティブなタブが変わりました。目的のログインフォームで、もう一度アイコンをクリックしてください。"
+  },
+  "bg_err_gesture_nonce_invalid": {
+    "message": "クリックの有効期限が切れたか、別のページのものです。もう一度クリックしてください。"
+  },
+  "bg_err_gesture_nonce_required": {
+    "message": "ブラウザー拡張機能を更新してください。この操作には、新しいジェスチャーのノンスが必要です。"
+  },
+  "bg_err_identity_not_found": {
+    "message": "このプロファイルには、利用できる個人情報のプロファイルがありません。"
+  },
+  "bg_err_integration_disabled": {
+    "message": "ブラウザー連携は、LocalGateKeysで一時停止されています。"
+  },
+  "bg_err_invalid_approval": {
+    "message": "個人情報の承認が無効か、期限切れです。最初からやり直してください。"
+  },
+  "bg_err_invalid_card_fields": {
+    "message": "確認済みのカードのフィールドだけを選んでください。"
+  },
+  "bg_err_invalid_identity_fields": {
+    "message": "確認済みの連絡先または住所のフィールドだけを選んでください。"
+  },
+  "bg_err_invalid_request": {
+    "message": "ページの状態が変わったため、個人情報のリクエストは拒否されました。"
+  },
+  "bg_err_not_found": {
+    "message": "このWebサイトそのものに対して許可された保存済みのログインがありません。ログインを保存するか、その入力ポリシーを確認してください。"
+  },
+  "bg_err_origin_mismatch": {
+    "message": "ページのオリジンが変わりました。目的のページで、もう一度個人情報の入力を始めてください。"
+  },
+  "bg_err_rate_limited": {
+    "message": "このサイトからのパスワード確認が短時間に多すぎます。1分待ってから、もう一度お試しください。"
+  },
+  "bg_err_session_changed": {
+    "message": "保管庫がロックされたか、プロファイルが変わったか、このリクエストの期限が切れました。もう一度アイコンをクリックしてください。"
+  },
+  "bg_err_totp_not_found": {
+    "message": "このサイトそのものの保存済みログインに、2FAのセットアップキーがありません。"
+  },
+  "bg_err_unauthorized": {
+    "message": "ブリッジのトークンが、アプリのものと一致しなくなりました。LocalGateKeysを完全に終了し、リポジトリのコピーを再起動してから、このページを再読み込みしてください。"
+  },
+  "bg_err_unsupported_request": {
+    "message": "この拡張機能の操作は、現在のブリッジでは対応していません。"
+  },
+  "bg_err_user_cancelled": {
+    "message": "フィールドが渡される前に、個人情報の入力がキャンセルされました。"
+  },
+  "bg_err_user_gesture_required": {
+    "message": "この操作は、拡張機能またはページ内のLocalGateKeysのボタンから始めてください。"
+  },
+  "bg_err_version_mismatch": {
+    "message": "拡張機能を更新または再読み込みし、LocalGateKeysを再起動してください。両者のバージョンが一致していません。"
+  },
+  "bg_full_notice": {
+    "message": "無料の保管庫がいっぱいです。さらに保存するには、LocalGateKeysでアップグレードしてください。"
+  },
+  "bg_host_exited": {
+    "message": "ネイティブホストが予期せず停止しました。診断のため、LocalGateKeysの「接続」を開いてください。"
+  },
+  "bg_host_failed": {
+    "message": "ブラウザーとの接続に失敗しました。LocalGateKeysの「接続」を開いてください。"
+  },
+  "bg_host_forbidden": {
+    "message": "拡張機能のIDが、ネイティブホストの登録で許可されていません。ブリッジを修復してください。"
+  },
+  "bg_host_not_registered": {
+    "message": "ネイティブホストが登録されていません。LocalGateKeysからブラウザーの接続を修復してください。"
+  },
+  "bg_not_waiting": {
+    "message": "このログインは、もう保存待ちではありません。"
+  },
+  "bg_rate_limited": {
+    "message": "このサイトからのログイン確認が多すぎます。1分待ってから、もう一度お試しください。"
+  },
+  "bg_save_inbox_full": {
+    "message": "保存待ちのログインが多すぎます。LocalGateKeysを開いてインポートしてから、もう一度サインインして保存してください。"
+  },
+  "bg_save_invalid": {
+    "message": "このログインを保存できませんでした。"
+  },
+  "bg_save_unavailable": {
+    "message": "Safariからの保存をオンにするには、LocalGateKeysを開いて一度ロック解除してから、もう一度サインインして保存してください。"
+  },
+  "bg_saved_notice": {
+    "message": "保存しました。次回LocalGateKeysを開いたときに表示されます。"
+  },
+  "bg_timeout": {
+    "message": "LocalGateKeysのブリッジが応答しませんでした。古いデスクトップのプロンプトを閉じてから、もう一度お試しください。"
+  },
+  "content_autosignin_skipped": {
+    "message": "入力しました。このフォームは未対応か、判別できないため、自動サインインはスキップしました。手動でサインインしてください。"
+  },
+  "content_cancel": {
+    "message": "キャンセル"
+  },
+  "content_card": {
+    "message": "カード"
+  },
+  "content_card_approval_invalid": {
+    "message": "カードの承認が無効でした。"
+  },
+  "content_card_brand": {
+    "message": "カードブランド"
+  },
+  "content_card_cvv": {
+    "message": "セキュリティコード (CVV)"
+  },
+  "content_card_expiry": {
+    "message": "有効期限"
+  },
+  "content_card_expiry_month": {
+    "message": "有効期限(月)"
+  },
+  "content_card_expiry_year": {
+    "message": "有効期限(年)"
+  },
+  "content_card_name": {
+    "message": "カード名義人"
+  },
+  "content_card_no_fields": {
+    "message": "このカードには、この支払いフォームのフィールドに該当する項目がありません。"
+  },
+  "content_card_number": {
+    "message": "カード番号"
+  },
+  "content_card_origin": {
+    "message": "カード: $CARD$\nオリジン: $ORIGIN$",
+    "placeholders": {
+      "card": {
+        "content": "$1"
+      },
+      "origin": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_choose_account": {
+    "message": "アカウントを選択"
+  },
+  "content_choose_card": {
+    "message": "カードを選択"
+  },
+  "content_choose_card_fields": {
+    "message": "カードのフィールドを選択"
+  },
+  "content_choose_identity": {
+    "message": "個人情報を選択"
+  },
+  "content_choose_identity_fields": {
+    "message": "個人情報のフィールドを選択"
+  },
+  "content_close": {
+    "message": "閉じる"
+  },
+  "content_confirm_in_app": {
+    "message": "変更はデスクトップアプリで確認されます。"
+  },
+  "content_cvv_note": {
+    "message": "セキュリティコードは既定ではチェックされていません。この支払いに必要な場合のみチェックしてください。"
+  },
+  "content_err_card_not_found": {
+    "message": "このプロファイルには、支払いカードが保存されていません。"
+  },
+  "content_err_fill_disabled": {
+    "message": "このログインでは入力が無効になっています。"
+  },
+  "content_err_generic": {
+    "message": "このリクエストを完了できませんでした。LocalGateKeysの「接続」を開いてください。"
+  },
+  "content_err_gesture_required": {
+    "message": "この操作は、拡張機能またはページ内のLocalGateKeysのボタンから始めてください。"
+  },
+  "content_err_invalid_approval": {
+    "message": "承認が無効か、期限切れです。最初からやり直してください。"
+  },
+  "content_err_invalid_card_fields": {
+    "message": "確認済みのカードのフィールドだけを選んでください。"
+  },
+  "content_err_nonce_invalid": {
+    "message": "クリックの有効期限が切れたか、別のページのものです。もう一度クリックしてください。"
+  },
+  "content_err_nonce_required": {
+    "message": "ブラウザー拡張機能を更新して、このページを再読み込みしてください。"
+  },
+  "content_err_not_found": {
+    "message": "このサイトの保存済みログインがありません。"
+  },
+  "content_err_session_changed": {
+    "message": "保管庫またはプロファイルが変わりました。もう一度アイコンをクリックしてください。"
+  },
+  "content_err_totp_not_found": {
+    "message": "このサイトそのものの保存済みログインに、2FAのセットアップキーがありません。"
+  },
+  "content_err_user_cancelled": {
+    "message": "ロック解除または確認がキャンセルされました。"
+  },
+  "content_fill_card_title": {
+    "message": "LocalGateKeysでカードを入力"
+  },
+  "content_fill_identity_title": {
+    "message": "LocalGateKeysで個人情報を入力"
+  },
+  "content_fill_otp_title": {
+    "message": "LocalGateKeysで2FAコードを入力"
+  },
+  "content_fill_title": {
+    "message": "LocalGateKeysで入力"
+  },
+  "content_item_limit": {
+    "message": "無料のLocalGateKeysで保存できる項目は$LIMIT$件までです。項目数無制限のProにアップグレードしてください。",
+    "placeholders": {
+      "limit": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_login_typed_on": {
+    "message": "$ORIGIN$で入力されたログイン",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_match_domain": {
+    "message": "ドメインに一致"
+  },
+  "content_match_host": {
+    "message": "ホストに一致"
+  },
+  "content_match_prefix": {
+    "message": "URLの先頭に一致"
+  },
+  "content_never_site": {
+    "message": "このサイトでは保存しない"
+  },
+  "content_no_new_password": {
+    "message": "判別できる新しいパスワード欄が見つかりませんでした。"
+  },
+  "content_no_username": {
+    "message": "ユーザー名なし"
+  },
+  "content_not_now": {
+    "message": "今はしない"
+  },
+  "content_page_changed_click_again": {
+    "message": "ページが変わりました。もう一度クリックしてください。"
+  },
+  "content_profile": {
+    "message": "プロファイル: $PROFILE$",
+    "placeholders": {
+      "profile": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_profile_origin": {
+    "message": "プロファイル: $PROFILE$\nオリジン: $ORIGIN$",
+    "placeholders": {
+      "profile": {
+        "content": "$1"
+      },
+      "origin": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_pw_generated": {
+    "message": "パスワードを生成しました"
+  },
+  "content_pw_generated_body": {
+    "message": "新しいパスワード欄に入力しました。ページを離れる前に、このパスワードを保存してください。"
+  },
+  "content_reload_extension_and_page": {
+    "message": "拡張機能とこのページを再読み込みしてください。"
+  },
+  "content_reload_page": {
+    "message": "拡張機能を更新した後、このページを再読み込みしてください。"
+  },
+  "content_review_approve": {
+    "message": "確認して承認"
+  },
+  "content_save": {
+    "message": "保存"
+  },
+  "content_save_deferred": {
+    "message": "LocalGateKeysがロック中にログインが取得されました。保存済みのログインと一致するか確認するには、デスクトップアプリをロック解除してください。"
+  },
+  "content_save_exists": {
+    "message": "このアカウントは、すでにLocalGateKeysにあります。このサインインをアプリに送りますか? 保存前に、変更があったかどうかが表示されます。"
+  },
+  "content_save_in_vault": {
+    "message": "保管庫に保存"
+  },
+  "content_save_login": {
+    "message": "ログインを保存"
+  },
+  "content_save_new": {
+    "message": "ログインが完了しました。ローカルの暗号化された保管庫に保存しますか?"
+  },
+  "content_save_title": {
+    "message": "このログインを保存しますか?"
+  },
+  "content_save_uncertain": {
+    "message": "LocalGateKeysはログインの試行を取得しましたが、サイト側の成功状態を確認できませんでした。サインインに成功した場合のみ保存してください。"
+  },
+  "content_save_update": {
+    "message": "保存 / 更新"
+  },
+  "content_save_update_title": {
+    "message": "LocalGateKeysで保存 / 更新しますか?"
+  },
+  "content_signin_question": {
+    "message": "今サインインしましたか?"
+  },
+  "content_tampered": {
+    "message": "このページがLocalGateKeysのボタンを隠した、動かした、または覆ったため、クリックを無視しました。"
+  },
+  "content_totp_waiting": {
+    "message": "新しい2FAコードをしばらく待っています…"
+  },
+  "content_unlock_in_desktop": {
+    "message": "LocalGateKeysのデスクトップウィンドウでロック解除してください。このWebサイトでマスターパスワードを求められることはありません。"
+  },
+  "content_unlock_review": {
+    "message": "ロック解除して確認"
+  },
+  "content_unlock_review_title": {
+    "message": "ロック解除して、このログインを確認"
+  },
+  "content_waiting_title": {
+    "message": "LocalGateKeysを待っています…"
+  },
+  "content_which_totp": {
+    "message": "どのアカウントの2FAコードですか?"
+  },
+  "err_card_ambiguous": {
+    "message": "ページのカード欄が不足しているか、判別できません。"
+  },
+  "err_card_approved_changed": {
+    "message": "承認したカードのフィールドが変わりました。"
+  },
+  "err_card_field_gone": {
+    "message": "承認したカードのフィールドが、表示されなくなりました。"
+  },
+  "err_card_field_hidden": {
+    "message": "カード欄が隠れている、覆われている、または支払いフォームの一部ではなくなっています。"
+  },
+  "err_card_form_changed": {
+    "message": "入力前に、支払いフォームが変わりました。"
+  },
+  "err_card_form_changed_filling": {
+    "message": "入力中に、支払いフォームが変わりました。"
+  },
+  "err_card_unapproved": {
+    "message": "カードの受け渡しに、承認されていないフィールドが含まれていました。"
+  },
+  "err_code_boxes": {
+    "message": "このコード欄のボックスの数が想定と異なります。"
+  },
+  "err_code_field_hidden": {
+    "message": "コード欄が隠れている、覆われている、または2FAの欄ではなくなっています。"
+  },
+  "err_form_other_origin": {
+    "message": "このフォームは別のオリジンを指しています。LocalGateKeysは入力しません。"
+  },
+  "err_form_other_origin_short": {
+    "message": "このフォームは別のオリジンを指しています。"
+  },
+  "err_identity_ambiguous": {
+    "message": "ページの個人情報の欄が不足しているか、判別できません。"
+  },
+  "err_identity_approved_changed": {
+    "message": "承認した個人情報のフィールドが変わりました。"
+  },
+  "err_identity_field_gone": {
+    "message": "承認した個人情報のフィールドが、表示されなくなりました。"
+  },
+  "err_identity_field_hidden": {
+    "message": "個人情報の欄が、隠れている、覆われている、または未対応です。"
+  },
+  "err_identity_form_changed": {
+    "message": "入力前に、個人情報のフォームが変わりました。"
+  },
+  "err_login_form_changed": {
+    "message": "入力中に、ログインフォームが変わりました。"
+  },
+  "err_request_cancelled": {
+    "message": "入力前に、リクエストがキャンセルされました。"
+  },
+  "err_review_required": {
+    "message": "サインインする前に、必須のフィールドを確認してください。"
+  },
+  "err_signin_cancelled_changed": {
+    "message": "サインインをキャンセルしました: 保管庫、プロファイル、またはページが変わりました。"
+  },
+  "err_signin_cancelled_form": {
+    "message": "フォームが変わったため、サインインをキャンセルしました。"
+  },
+  "err_target_field_hidden": {
+    "message": "対象の欄が隠れている、覆われている、またはログイン欄ではなくなっています。"
+  },
+  "ext_description": {
+    "message": "Windows用パスワードマネージャーLocalGateKeysで、ログインの入力と保存を行います。この拡張機能は、お使いのPC上のアプリとのみ通信します。"
+  },
+  "ext_description_ios": {
+    "message": "Safariでサインインしたログインを、このiPhoneのLocalGateKeysに保存するよう提案します。"
+  },
+  "ext_description_macos": {
+    "message": "Safariでサインインしたログインを、このMacのLocalGateKeysに保存するよう提案します。"
+  },
+  "ext_name": {
+    "message": "LocalGateKeys"
+  },
+  "popup_actions_unavailable": {
+    "message": "フィールドの操作を利用できません。LocalGateKeysを開いてブラウザーの接続を修復してから、更新してください。"
+  },
+  "popup_auto_need_page": {
+    "message": "自動保存を変更する前に、httpまたはhttpsのページを開いてください。"
+  },
+  "popup_auto_now_off": {
+    "message": "このサイトでは自動保存がオフです。"
+  },
+  "popup_auto_now_on": {
+    "message": "自動保存がオンです。ログインを保存する前に確認されます。"
+  },
+  "popup_auto_off_hint": {
+    "message": "オフ: このサイトでは保存の提案をしません"
+  },
+  "popup_auto_on_hint": {
+    "message": "オン: ここでサインインに成功すると確認されます"
+  },
+  "popup_auto_read_failed": {
+    "message": "このサイトの自動保存の設定を読み取れませんでした。もう一度お試しください。"
+  },
+  "popup_auto_turn_off": {
+    "message": "このサイトでの保存の確認をオフにする"
+  },
+  "popup_auto_turn_on": {
+    "message": "このサイトでの保存の確認をオンにする"
+  },
+  "popup_auto_update_failed": {
+    "message": "このサイトの自動保存を更新できませんでした。もう一度お試しください。"
+  },
+  "popup_checking_connection": {
+    "message": "接続を確認しています…"
+  },
+  "popup_checking_connection_desc": {
+    "message": "保管庫をロック解除せずに、LocalGateKeysに接続しています。"
+  },
+  "popup_checking_page": {
+    "message": "このページを確認しています…"
+  },
+  "popup_cmd_busy": {
+    "message": "開いているLocalGateKeysのプロンプトを完了してから、もう一度お試しください。"
+  },
+  "popup_cmd_cancelled": {
+    "message": "フィールドが渡される前に、入力がキャンセルされました。"
+  },
+  "popup_cmd_card_form_not_found": {
+    "message": "このページに支払いフォームが見つかりませんでした。カード番号欄のあるチェックアウトフォームを開いて、もう一度お試しください。"
+  },
+  "popup_cmd_card_not_found": {
+    "message": "このプロファイルには、支払いカードが保存されていません。先にLocalGateKeysでカードを追加してください。"
+  },
+  "popup_cmd_destination_changed": {
+    "message": "このページが変わりました。目的のログインフォームで、もう一度ポップアップを開いてください。"
+  },
+  "popup_cmd_identity_not_found": {
+    "message": "このページに個人情報の欄が見つかりませんでした。連絡先または住所のフォームを開いて、もう一度お試しください。"
+  },
+  "popup_cmd_invalid_card": {
+    "message": "ページが未対応のカードのフィールドを要求しました。カードのフィールドだけを選んでください。"
+  },
+  "popup_cmd_invalid_identity": {
+    "message": "ページが未対応の個人情報のフィールドを要求しました。連絡先または住所のフィールドだけを選んでください。"
+  },
+  "popup_cmd_nonce_invalid": {
+    "message": "クリックの有効期限が切れたか、別のページのものです。もう一度操作を選んでください。"
+  },
+  "popup_cmd_nonce_required": {
+    "message": "拡張機能を更新して再読み込みしてください。この操作には、新しいジェスチャーのノンスが必要です。"
+  },
+  "popup_cmd_not_found": {
+    "message": "このサイトの保存済みログインが見つかりませんでした。先にログインを保存するか、その入力ポリシーを確認してください。"
+  },
+  "popup_cmd_offline": {
+    "message": "LocalGateKeysはオフラインです。デスクトップアプリを開いて、ブラウザーの接続を修復してください。"
+  },
+  "popup_cmd_origin_mismatch": {
+    "message": "このページのオリジンが変わりました。目的のページで、もう一度拡張機能を開いてください。"
+  },
+  "popup_cmd_session_changed": {
+    "message": "保管庫がロックされているか、プロファイルが変わりました。続けるには、もう一度「ログインを入力」をクリックしてください。"
+  },
+  "popup_cmd_version_mismatch": {
+    "message": "個人情報のフィールドを入力する前に、拡張機能とLocalGateKeysを更新して再読み込みしてください。"
+  },
+  "popup_connection_unavailable": {
+    "message": "接続を利用できません。$DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_current_site": {
+    "message": "現在のサイト"
+  },
+  "popup_diag_agent_offline": {
+    "message": "LocalGateKeysを開き、ブラウザーの接続を修復してから、もう一度お試しください。"
+  },
+  "popup_diag_connection_lost": {
+    "message": "ブリッジが切断されました。ブラウザーの接続を修復して、もう一度お試しください。"
+  },
+  "popup_diag_default": {
+    "message": "LocalGateKeysを開き、ブラウザーの接続を修復してから、もう一度お試しください。"
+  },
+  "popup_diag_native_host": {
+    "message": "ネイティブホストに接続できませんでした。LocalGateKeysでブラウザーの接続を修復してください。"
+  },
+  "popup_diag_state_invalid": {
+    "message": "LocalGateKeysを再起動して、ブラウザーの接続を修復してください。"
+  },
+  "popup_diag_state_missing": {
+    "message": "LocalGateKeysでプロファイルの選択を完了してから、もう一度お試しください。"
+  },
+  "popup_diag_timeout": {
+    "message": "ブリッジの応答に時間がかかりすぎました。デスクトップのプロンプトを閉じてから、もう一度お試しください。"
+  },
+  "popup_diag_unavailable": {
+    "message": "LocalGateKeysを再起動してから、接続を更新してください。"
+  },
+  "popup_diag_version_mismatch": {
+    "message": "拡張機能とLocalGateKeysを更新し、両方を再起動してください。"
+  },
+  "popup_fb_generate": {
+    "message": "判別できる新しいパスワード欄が見つかりませんでした。登録フォームまたはパスワード変更フォームを開いて、もう一度お試しください。"
+  },
+  "popup_fb_identity": {
+    "message": "対応している連絡先または住所の欄が見つかりませんでした。個人情報のフォームを開いて、もう一度お試しください。"
+  },
+  "popup_fb_login": {
+    "message": "対応しているログイン欄が見つかりませんでした。サインインフォームを開いて、もう一度お試しください。"
+  },
+  "popup_fb_save": {
+    "message": "現在のログイン欄が見つかりませんでした。ログインを入力してから、もう一度お試しください。"
+  },
+  "popup_fill_card": {
+    "message": "カードを入力…"
+  },
+  "popup_fill_card_desc": {
+    "message": "カードを選び、フィールドをチェックして、アプリで確認します"
+  },
+  "popup_fill_card_label": {
+    "message": "カードを入力"
+  },
+  "popup_fill_identity": {
+    "message": "個人情報を入力"
+  },
+  "popup_fill_identity_desc": {
+    "message": "入力前に連絡先のフィールドを確認します"
+  },
+  "popup_fill_login": {
+    "message": "ログインを入力"
+  },
+  "popup_fill_login_desc": {
+    "message": "このページ用の保存済みログインを選びます"
+  },
+  "popup_finish_setup_refresh": {
+    "message": "LocalGateKeysのセットアップを完了してから、フィールドの操作を使う前に接続を更新してください。"
+  },
+  "popup_footer": {
+    "message": "このデバイス上で暗号化"
+  },
+  "popup_generate_password": {
+    "message": "パスワードを生成"
+  },
+  "popup_generate_password_desc": {
+    "message": "登録用のパスワードを作成します"
+  },
+  "popup_guidance_checking": {
+    "message": "このページの操作を有効にする前に、LocalGateKeysを確認しています。"
+  },
+  "popup_guidance_connected": {
+    "message": "確認されるのはこのサイトのオリジンだけです。操作を選ぶまで、何も入力されません。"
+  },
+  "popup_guidance_locked": {
+    "message": "操作を選ぶとロック解除を要求します。自動では何も入力されません。"
+  },
+  "popup_guidance_offline": {
+    "message": "このサイトの操作を使うには、LocalGateKeysに再接続してください。"
+  },
+  "popup_guidance_setup": {
+    "message": "このサイトの操作を使う前に、LocalGateKeysのセットアップを完了してください。"
+  },
+  "popup_integration_disabled": {
+    "message": "ブラウザー連携は一時停止中です。LocalGateKeysの設定で再び有効にしてください。"
+  },
+  "popup_local_vault": {
+    "message": "ローカルの保管庫"
+  },
+  "popup_locked_desc": {
+    "message": "続けるには操作を選んでください。ロック解除の前に、デスクトップアプリが確認します。"
+  },
+  "popup_looking": {
+    "message": "$ACTION$: 対応しているフィールドを探しています…",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_manual_by_design": {
+    "message": "設計上、手動操作のみ"
+  },
+  "popup_need_login_page": {
+    "message": "先に、ログインフォームのあるhttpまたはhttpsのページを開いてください。"
+  },
+  "popup_page_unavailable": {
+    "message": "このページはLocalGateKeysで利用できません。"
+  },
+  "popup_page_unavailable_hint": {
+    "message": "これらの操作を使うには、標準的なhttpまたはhttpsのログインページを開いてください。"
+  },
+  "popup_page_unreachable": {
+    "message": "このページに接続できませんでした。ページを再読み込みして、もう一度お試しください。"
+  },
+  "popup_quick_actions": {
+    "message": "クイック操作"
+  },
+  "popup_ready_version": {
+    "message": "LocalGateKeysの準備ができました$VERSION$。操作を選ぶまで、何もロック解除されません。",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_refresh_connection": {
+    "message": "接続状態を更新"
+  },
+  "popup_refreshed_locked": {
+    "message": "接続を更新しました。ロック解除は、操作を選んだ後にのみ行われます。"
+  },
+  "popup_refreshed_ready": {
+    "message": "接続を更新しました。LocalGateKeysの準備ができました。"
+  },
+  "popup_refreshed_setup": {
+    "message": "接続を更新しました。LocalGateKeysのセットアップを完了してから、更新してください。"
+  },
+  "popup_save_login": {
+    "message": "ログインを保存"
+  },
+  "popup_save_login_desc": {
+    "message": "これらのログイン欄を保存します"
+  },
+  "popup_setup_desc": {
+    "message": "LocalGateKeysから、準備ができたブラウザープロファイルが報告されませんでした。セットアップを完了してから、更新してください。"
+  },
+  "popup_site_hint": {
+    "message": "操作はこのページ内にとどまり、あなたの選択が必要です。"
+  },
+  "popup_started": {
+    "message": "$ACTION$をこのページで開始しました。",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_state_connected": {
+    "message": "接続済み"
+  },
+  "popup_state_locked": {
+    "message": "ロック中"
+  },
+  "popup_state_offline": {
+    "message": "オフライン"
+  },
+  "popup_state_setup": {
+    "message": "セットアップが必要"
+  },
+  "popup_tagline": {
+    "message": "あなたの鍵、あなたの管理。"
+  },
+  "popup_this_page": {
+    "message": "このページ"
+  },
+  "popup_unlock_on_action": {
+    "message": "ロック解除は、フィールドの操作を選んだ後にのみ要求されます。"
+  },
+  "popup_version_suffix": {
+    "message": " (LocalGateKeys $VERSION$)",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_wait_checking": {
+    "message": "LocalGateKeysを確認中です。接続状態が表示されるまでお待ちいただき、その後もう一度お試しください。"
+  }
+}

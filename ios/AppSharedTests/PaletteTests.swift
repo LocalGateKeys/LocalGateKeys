@@ -13,6 +13,7 @@ final class PaletteTests: XCTestCase {
         (.secondaryText, 0x5B6678, 0xA9B3C5),
         (.accent, 0x2B6FE0, 0x5AA0FF),
         (.accentText, 0x1F57B8, 0x7FB2FF),
+        (.onAccent, 0xFFFFFF, 0x0F1727),
         (.glassFill, 0xFFFFFF, 0x242C3B),
         (.glassBorder, 0xD7E1EE, 0x3F4552),
         (.success, 0x1F7A4A, 0x7EE0A8),

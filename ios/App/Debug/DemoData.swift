@@ -1,6 +1,10 @@
 #if DEBUG
 import Foundation
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 /// DEBUG builds only: fake items for looking at the UI with a full vault. Launch with `-LGKDemoData YES`
 /// or use Settings › Developer › Load demo data. Records go through `Normalise` and `Wrapper` like the
@@ -11,9 +15,10 @@ enum DemoData {
 
     private static func id(_ n: Int) -> String { String(format: "de000000-0000-4000-8000-%012d", n) }
 
-    private static func web(_ n: Int, _ origin: String, _ user: String, totp: String? = nil, favorite: Bool = false) -> (Namespace, JSONValue) {
+    private static func web(_ n: Int, _ origin: String, _ user: String, totp: String? = nil, favorite: Bool = false,
+                            password: String? = nil) -> (Namespace, JSONValue) {
         var r: [String: JSONValue] = ["id": .string(id(n)), "kind": .string("web"), "label": .string(origin),
-                                      "username": .string(user), "password": .string("demo-Pass-\(n)-orbit"),
+                                      "username": .string(user), "password": .string(password ?? "demo-Pass-\(n)-orbit"),
                                       "scope": .object(["origin": .string("https://\(origin)")]),
                                       "favorite": .bool(favorite), "tags": .array([])]
         if let totp {
@@ -32,9 +37,9 @@ enum DemoData {
         web(2, "proton.me", "alex.demo", totp: "GEZDGNBVGY3TQOJQ"),
         web(3, "bank.example", "alex.p"),
         web(4, "google.com", "alex.demo@example.com", totp: "MFRGGZDFMZTWQ2LK"),
-        web(5, "amazon.com", "alex@example.com"),
-        web(6, "netflix.com", "family@example.com"),
-        web(7, "dropbox.com", "alex@example.com"),
+        web(5, "amazon.com", "alex@example.com", password: "demo-Shared-orbit-77"),
+        web(6, "netflix.com", "family@example.com", password: "netflix1"),
+        web(7, "dropbox.com", "alex@example.com", password: "demo-Shared-orbit-77"),
         web(8, "github.com", "alex-work@example.com"),
         item(9, "card", "Visa", ["brand": .string("visa"), "cardholder": .string("Alex Example"),
                                  "number": .string("4000000000026411"), "expiry": .string("08/29"), "cvv": .string("123")]),

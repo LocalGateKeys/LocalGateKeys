@@ -1,5 +1,9 @@
 package app.localgatekeys.android.ui.detail
+import androidx.compose.ui.res.pluralStringResource
+import app.localgatekeys.android.R
+import androidx.compose.ui.res.stringResource
 
+import app.localgatekeys.android.i18n.rememberTxt
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -17,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -29,7 +34,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -72,6 +82,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.localgatekeys.android.detail.DetailField
 import app.localgatekeys.android.detail.ItemDetailModel
+import app.localgatekeys.android.detail.PasswordHistoryModel
 import app.localgatekeys.android.detail.SecretClipboard
 import app.localgatekeys.android.editor.EditorModel
 import app.localgatekeys.android.editor.EditorScreenText
@@ -102,11 +113,35 @@ class DetailSeams(
      * reloads the list when it changed. Null: no Delete button.
      */
     val onDelete: (suspend (VaultItem) -> SaveResult)? = null,
+    /**
+     * Marks or unmarks the item as a favorite through the store (`VaultListModel.setFavorite`), off the main thread,
+     * and reloads the list when it changed. Null: no star.
+     */
+    val onSetFavorite: (suspend (VaultItem, Boolean) -> SaveResult)? = null,
+    /**
+     * "Restore this password" on a login's history entry (`VaultListModel.restorePassword`), off the main thread, and
+     * reloads the list when it changed. Null: no Restore button.
+     */
+    val onRestorePassword: (suspend (VaultItem, Int) -> SaveResult)? = null,
+    /** The owner's fingerprint, face or screen lock before past passwords are shown. Null: they cannot be revealed. */
+    val confirmOwner: (suspend () -> Boolean)? = null,
+    /** Task 12: the File section of a document (preview, save, share, rename). Null: not shown. */
+    val documents: DocumentSeams? = null,
+    /** UX workstream 9: opens the Share sheet for an item that can be shared. Null: no Share button. */
+    val onShare: ((VaultItem) -> Unit)? = null,
 ) {
-    fun copy(onEdit: ((VaultItem) -> Unit)? = this.onEdit, onDelete: (suspend (VaultItem) -> SaveResult)? = this.onDelete) =
-        DetailSeams(clipboard, toast, onEdit, onDelete)
+    fun copy(
+        onEdit: ((VaultItem) -> Unit)? = this.onEdit,
+        onDelete: (suspend (VaultItem) -> SaveResult)? = this.onDelete,
+        onSetFavorite: (suspend (VaultItem, Boolean) -> SaveResult)? = this.onSetFavorite,
+        onRestorePassword: (suspend (VaultItem, Int) -> SaveResult)? = this.onRestorePassword,
+        documents: DocumentSeams? = this.documents,
+        onShare: ((VaultItem) -> Unit)? = this.onShare,
+    ) = DetailSeams(clipboard, toast, onEdit, onDelete, onSetFavorite, onRestorePassword, confirmOwner, documents, onShare)
 
-    override fun toString(): String = "DetailSeams(edit=${onEdit != null}, delete=${onDelete != null})"
+    override fun toString(): String =
+        "DetailSeams(edit=${onEdit != null}, delete=${onDelete != null}, favorite=${onSetFavorite != null}, " +
+            "restore=${onRestorePassword != null})"
 }
 
 /** Which action the detail toolbar offers for a kind. */
@@ -138,7 +173,9 @@ fun ItemDetailScreen(
     seams: DetailSeams,
     onBack: () -> Unit,
 ) {
-    val model = remember(item, seams.clipboard, clock) { ItemDetailModel(item, clock, seams.clipboard, concealSecrets) }
+    val txt = rememberTxt()
+    val backLabel = txt.s(R.string.common_back)
+    val model = remember(item, seams.clipboard, clock) { ItemDetailModel(item, clock, seams.clipboard, txt, concealSecrets) }
     val tick = rememberSecondTick(clock)
     LaunchedEffect(tick, model) { model.tick() }
     val totp by model.totp.collectAsStateWithLifecycle()
@@ -146,11 +183,18 @@ fun ItemDetailScreen(
     val lastCopied by model.lastCopied.collectAsStateWithLifecycle()
     val c = LgkTheme.colors
     val uriHandler = LocalUriHandler.current
-    val title = item.title.ifEmpty { item.kindLabel }
+    val title = item.title.ifEmpty { item.kindLabel(txt) }
     val scope = rememberCoroutineScope()
     var confirmDelete by remember { mutableStateOf(false) }
     var deleteResult by remember { mutableStateOf<SaveResult?>(null) }
     var deleting by remember { mutableStateOf(false) }
+    // Shown at once; the reloaded item confirms it (a failed write puts the star back).
+    var favorite by remember(item) { mutableStateOf(item.favorite) }
+    val history = remember(item, seams.clipboard) { PasswordHistoryModel(item, seams.clipboard, seams.confirmOwner) }
+    val historyRevealed by history.revealed.collectAsStateWithLifecycle()
+    var historyOpen by remember { mutableStateOf(false) }
+    var restoreIndex by remember(item) { mutableStateOf<Int?>(null) }
+    var restoreFailed by remember { mutableStateOf(false) }
     BackHandler(onBack = onBack)
 
     Box(Modifier.fillMaxSize().testTag("item-detail")) {
@@ -166,7 +210,7 @@ fun ItemDetailScreen(
                         .lgkGlass(CircleShape)
                         .clip(CircleShape)
                         .clickable(role = Role.Button, onClick = onBack)
-                        .semantics { contentDescription = "Back" },
+                        .semantics { contentDescription = backLabel },
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = c.text) }
                 Text(
@@ -176,12 +220,33 @@ fun ItemDetailScreen(
                 )
                 val edit = seams.onEdit
                 val delete = seams.onDelete
+                seams.onSetFavorite?.let { setFavorite ->
+                    IconButton(
+                        onClick = {
+                            val want = !favorite
+                            favorite = want
+                            scope.launch { if (setFavorite(item, want) == SaveResult.FAILED) favorite = !want }
+                        },
+                        modifier = Modifier.testTag("detail-favorite"),
+                    ) {
+                        Icon(
+                            if (favorite) Icons.Filled.Star else Icons.Filled.StarBorder,
+                            stringResource(if (favorite) R.string.detail_favorite_remove else R.string.detail_favorite_add),
+                            tint = if (favorite) c.warning else c.text,
+                        )
+                    }
+                }
+                seams.onShare?.takeIf { app.localgatekeys.android.share.ItemSharing.canShare(item) }?.let { share ->
+                    IconButton({ share(item) }, Modifier.testTag("detail-share")) {
+                        Icon(Icons.Filled.Share, txt.s(app.localgatekeys.android.share.ShareText.SHARE), tint = c.text)
+                    }
+                }
                 when {
                     DetailAction.of(item.kind) == DetailAction.EDIT && edit != null ->
-                        TextButton({ edit(item) }) { Text("Edit", color = c.accentText, fontWeight = FontWeight.SemiBold) }
+                        TextButton({ edit(item) }) { Text(stringResource(R.string.common_edit), color = c.accentText, fontWeight = FontWeight.SemiBold) }
                     DetailAction.of(item.kind) == DetailAction.DELETE && delete != null ->
                         TextButton({ confirmDelete = true }, enabled = !deleting) {
-                            Text("Delete", color = c.danger, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.common_delete), color = c.danger, fontWeight = FontWeight.SemiBold)
                         }
                     else -> Spacer(Modifier.width(48.dp))
                 }
@@ -201,7 +266,7 @@ fun ItemDetailScreen(
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            if (item.isLogin) item.target.ifEmpty { item.kindLabel } else item.kindLabel,
+                            if (item.isLogin) item.target.ifEmpty { item.kindLabel(txt) } else item.kindLabel(txt),
                             color = c.secondaryText, style = MaterialTheme.typography.bodyMedium, maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -216,15 +281,19 @@ fun ItemDetailScreen(
                             ) {
                                 Icon(Icons.Filled.OpenInBrowser, null, Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Open website")
+                                Text(stringResource(R.string.detail_open_website))
                             }
                         }
                     }
                 }
+                val docs = seams.documents
+                if (item.kind == "document" && docs != null) {
+                    item(key = "document") { DocumentSection(item, docs) }
+                }
                 totp?.let { t ->
                     item(key = "totp") {
                         Column {
-                            SectionTitle("One-time code")
+                            SectionTitle(stringResource(R.string.detail_one_time_code))
                             Row(
                                 Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.groupSurface)
                                     .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -236,7 +305,7 @@ fun ItemDetailScreen(
                                     t.code, color = c.text, fontFamily = FontFamily.Monospace, fontSize = 28.sp,
                                     modifier = Modifier.weight(1f).testTag("detail-code"),
                                 )
-                                CopyButton("Copy code") { if (model.copyTotp()) seams.toast.show("Code copied") }
+                                CopyButton(stringResource(R.string.detail_copy_code)) { if (model.copyTotp()) seams.toast.show(txt.s(R.string.detail_code_copied)) }
                             }
                         }
                     }
@@ -249,7 +318,7 @@ fun ItemDetailScreen(
                                     field, if (field.isSecret && field.id !in revealed) ItemDetailModel.MASK else field.value,
                                     field.id in revealed,
                                     onToggle = { model.toggleReveal(field) },
-                                    onCopy = { model.copy(field); seams.toast.show("${field.label} copied") },
+                                    onCopy = { model.copy(field); seams.toast.show(txt.s(R.string.detail_field_copied, field.label)) },
                                 )
                                 if (index != model.fields.lastIndex) {
                                     Box(Modifier.padding(start = 16.dp).fillMaxWidth().height(1.dp).background(c.separator))
@@ -258,10 +327,21 @@ fun ItemDetailScreen(
                         }
                     }
                 }
+                if (history.entries.isNotEmpty()) {
+                    item(key = "history") {
+                        PasswordHistorySection(
+                            history, historyOpen, historyRevealed,
+                            onOpen = { historyOpen = !historyOpen },
+                            onReveal = { scope.launch { history.toggleReveal() } },
+                            onCopy = { i -> history.copy(i); seams.toast.show(txt.s(R.string.detail_password_copied)) },
+                            onRestore = if (seams.onRestorePassword != null) { i -> restoreIndex = i } else null,
+                        )
+                    }
+                }
                 lastCopied?.let { copied ->
                     item(key = "footnote") {
                         Text(
-                            "$copied copied. It clears from the clipboard in ${clipboardExpiry.label}.",
+                            txt.s(R.string.detail_copied_footnote, copied, clipboardExpiry.label(txt)),
                             color = c.secondaryText, style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(horizontal = 4.dp).testTag("copy-footnote"),
                         )
@@ -284,11 +364,33 @@ fun ItemDetailScreen(
                         deleting = false
                         if (r == SaveResult.SAVED) onBack() else deleteResult = r
                     }
-                }, Modifier.testTag("confirm-delete")) { Text("Delete", color = c.danger) }
+                }, Modifier.testTag("confirm-delete")) { Text(stringResource(R.string.common_delete), color = c.danger) }
             },
-            dismissButton = { TextButton({ confirmDelete = false }) { Text("Cancel") } },
-            title = { Text(EditorScreenText.DELETE_TITLE) },
-            text = { Text(EditorScreenText.DELETE_ONLY_MESSAGE) },
+            dismissButton = { TextButton({ confirmDelete = false }) { Text(stringResource(R.string.common_cancel)) } },
+            title = { Text(txt.s(EditorScreenText.DELETE_TITLE)) },
+            text = { Text(txt.s(EditorScreenText.DELETE_ONLY_MESSAGE)) },
+        )
+    }
+    restoreIndex?.let { index ->
+        AlertDialog(
+            onDismissRequest = { restoreIndex = null },
+            confirmButton = {
+                TextButton({
+                    restoreIndex = null
+                    val restore = seams.onRestorePassword ?: return@TextButton
+                    scope.launch { if (restore(item, index) == SaveResult.FAILED) restoreFailed = true }
+                }, Modifier.testTag("confirm-restore")) { Text(stringResource(R.string.common_restore), color = c.accentText) }
+            },
+            dismissButton = { TextButton({ restoreIndex = null }) { Text(stringResource(R.string.common_cancel)) } },
+            title = { Text(txt.s(PasswordHistoryModel.RESTORE_TITLE)) },
+            text = { Text(txt.s(PasswordHistoryModel.RESTORE_TEXT)) },
+        )
+    }
+    if (restoreFailed) {
+        AlertDialog(
+            onDismissRequest = { restoreFailed = false },
+            confirmButton = { TextButton({ restoreFailed = false }) { Text(stringResource(R.string.common_ok)) } },
+            title = { Text(txt.s(PasswordHistoryModel.RESTORE_FAILED)) },
         )
     }
     deleteResult?.let { r ->
@@ -298,16 +400,16 @@ fun ItemDetailScreen(
         }
         AlertDialog(
             onDismissRequest = close,
-            confirmButton = { TextButton(close) { Text("OK") } },
+            confirmButton = { TextButton(close) { Text(stringResource(R.string.common_ok)) } },
             title = {
-                Text(if (r == SaveResult.UNCHANGED) EditorModel.ALREADY_REMOVED_MESSAGE else EditorScreenText.DELETE_FAILED)
+                Text(if (r == SaveResult.UNCHANGED) txt.s(EditorScreenText.ALREADY_REMOVED) else txt.s(EditorScreenText.DELETE_FAILED))
             },
         )
     }
 }
 
 @Composable
-private fun SectionTitle(text: String) {
+internal fun SectionTitle(text: String) {
     Text(
         text, color = LgkTheme.colors.secondaryText, style = MaterialTheme.typography.titleSmall,
         modifier = Modifier.padding(start = 4.dp, bottom = 6.dp).semantics { heading() },
@@ -335,11 +437,67 @@ private fun FieldRow(field: DetailField, shown: String, revealed: Boolean, onTog
             }
         }
         if (field.isSecret) {
-            IconButton(onToggle, Modifier.semantics { contentDescription = if (revealed) "Hide" else "Reveal" }) {
+            val toggleLabel = stringResource(if (revealed) R.string.common_hide else R.string.common_reveal)
+            IconButton(onToggle, Modifier.semantics { contentDescription = toggleLabel }) {
                 Icon(if (revealed) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, null, tint = c.accentText)
             }
         }
-        CopyButton("Copy ${field.label}", onCopy)
+        CopyButton(stringResource(R.string.detail_copy_field, field.label), onCopy)
+    }
+}
+
+/** "Password history (n)": a row that opens the past passwords (masked; Reveal asks the owner), with Copy and Restore. */
+@Composable
+private fun PasswordHistorySection(
+    model: PasswordHistoryModel,
+    open: Boolean,
+    revealed: Boolean,
+    onOpen: () -> Unit,
+    onReveal: () -> Unit,
+    onCopy: (Int) -> Unit,
+    onRestore: ((Int) -> Unit)?,
+) {
+    val txt = rememberTxt()
+    val c = LgkTheme.colors
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.groupSurface).testTag("password-history")) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onOpen)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                PasswordHistoryModel.rowLabel(model.entries.size, txt), color = c.text, style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                stringResource(if (open) R.string.detail_history_hide else R.string.detail_history_show), tint = c.secondaryText,
+            )
+        }
+        if (!open) return@Column
+        if (model.canReveal) {
+            TextButton(onReveal, Modifier.padding(start = 4.dp).testTag("history-reveal")) {
+                Text(stringResource(if (revealed) R.string.detail_history_hide_passwords else R.string.detail_history_reveal_passwords), color = c.accentText)
+            }
+        }
+        model.entries.forEachIndexed { i, e ->
+            Box(Modifier.padding(start = 16.dp).fillMaxWidth().height(1.dp).background(c.separator))
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp).testTag("history-$i"),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(model.display(i), color = c.text, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodyLarge)
+                    Text(PasswordHistoryModel.changedText(e.changedAt, txt), color = c.secondaryText, style = MaterialTheme.typography.bodySmall)
+                    if (onRestore != null) {
+                        TextButton({ onRestore(i) }, Modifier.testTag("history-restore-$i")) {
+                            Text(txt.s(PasswordHistoryModel.RESTORE), color = c.accentText)
+                        }
+                    }
+                }
+                CopyButton(stringResource(R.string.detail_copy_past_password, i + 1)) { onCopy(i) }
+            }
+        }
     }
 }
 
@@ -361,8 +519,9 @@ fun TotpRing(fraction: Float, seconds: Int) {
     val f by animateFloatAsState(target, spec, label = "ring")
     val tint: Color = if (CodeTileModel.isUrgent(seconds)) c.glowOrange else c.accent
     val track = c.separator
+    val secondsLeft = pluralStringResource(R.plurals.detail_seconds_left, seconds, seconds)
     Box(
-        Modifier.size(36.dp).clearAndSetSemantics { contentDescription = "$seconds seconds left" },
+        Modifier.size(36.dp).clearAndSetSemantics { contentDescription = secondsLeft },
         contentAlignment = Alignment.Center,
     ) {
         Canvas(Modifier.size(36.dp)) {

@@ -1,0 +1,3542 @@
+[
+ {
+  "password": "password",
+  "score": 0,
+  "guesses_log10": 0.30103
+ },
+ {
+  "password": "abc123",
+  "score": 0,
+  "guesses_log10": 1.041393
+ },
+ {
+  "password": "Summer2024!",
+  "score": 2,
+  "guesses_log10": 7.521269
+ },
+ {
+  "password": "Tr0ub4dor&3",
+  "score": 4,
+  "guesses_log10": 11.0
+ },
+ {
+  "password": "correct horse battery staple",
+  "score": 4,
+  "guesses_log10": 21.180516
+ },
+ {
+  "password": "5unsh1n3",
+  "score": 0,
+  "guesses_log10": 2.20412
+ },
+ {
+  "password": "dr4g0n",
+  "score": 0,
+  "guesses_log10": 1.880814
+ },
+ {
+  "password": "m0nk3y",
+  "score": 0,
+  "guesses_log10": 1.982271
+ },
+ {
+  "password": "l3tm31n",
+  "score": 0,
+  "guesses_log10": 2.245513
+ },
+ {
+  "password": "pr1nc3ss",
+  "score": 0,
+  "guesses_log10": 1.924279
+ },
+ {
+  "password": "$h@d0w",
+  "score": 0,
+  "guesses_log10": 2.546543
+ },
+ {
+  "password": "f00tb@ll",
+  "score": 0,
+  "guesses_log10": 2.447158
+ },
+ {
+  "password": "b@seb@ll",
+  "score": 0,
+  "guesses_log10": 2.158362
+ },
+ {
+  "password": "7r0ub4d0r",
+  "score": 3,
+  "guesses_log10": 9.0
+ },
+ {
+  "password": "nimda",
+  "score": 0,
+  "guesses_log10": 1.80618
+ },
+ {
+  "password": "nogard",
+  "score": 0,
+  "guesses_log10": 1.579784
+ },
+ {
+  "password": "yeknom",
+  "score": 0,
+  "guesses_log10": 1.681241
+ },
+ {
+  "password": "enihsnus",
+  "score": 0,
+  "guesses_log10": 1.60206
+ },
+ {
+  "password": "321drowssap",
+  "score": 0,
+  "guesses_log10": 1.792392
+ },
+ {
+  "password": "4dm1n",
+  "score": 0,
+  "guesses_log10": 2.10721
+ },
+ {
+  "password": "ch33s3",
+  "score": 0,
+  "guesses_log10": 2.811575
+ },
+ {
+  "password": "p|ne",
+  "score": 1,
+  "guesses_log10": 4.0
+ },
+ {
+  "password": "!ce",
+  "score": 0,
+  "guesses_log10": 3.0
+ },
+ {
+  "password": "+1g3r",
+  "score": 1,
+  "guesses_log10": 3.527372
+ },
+ {
+  "password": "|1|1|1",
+  "score": 0,
+  "guesses_log10": 2.477121
+ },
+ {
+  "password": "@@@@",
+  "score": 0,
+  "guesses_log10": 1.60206
+ },
+ {
+  "password": "4444aaaa",
+  "score": 1,
+  "guesses_log10": 3.957703
+ },
+ {
+  "password": "c0rr3ct h0rs3",
+  "score": 4,
+  "guesses_log10": 10.384953
+ },
+ {
+  "password": "h0rs3b@tt3ry",
+  "score": 3,
+  "guesses_log10": 8.906044
+ },
+ {
+  "password": "elppa",
+  "score": 0,
+  "guesses_log10": 2.922206
+ },
+ {
+  "password": "RETTUB",
+  "score": 1,
+  "guesses_log10": 4.302504
+ },
+ {
+  "password": "Retsam",
+  "score": 0,
+  "guesses_log10": 2.170262
+ },
+ {
+  "password": "qwe",
+  "score": 0,
+  "guesses_log10": 2.635886
+ },
+ {
+  "password": "ewq",
+  "score": 0,
+  "guesses_log10": 2.635886
+ },
+ {
+  "password": "asdf",
+  "score": 0,
+  "guesses_log10": 2.811977
+ },
+ {
+  "password": "fdsa",
+  "score": 0,
+  "guesses_log10": 2.811977
+ },
+ {
+  "password": "zxcv",
+  "score": 0,
+  "guesses_log10": 2.811977
+ },
+ {
+  "password": "1qa",
+  "score": 0,
+  "guesses_log10": 3.0
+ },
+ {
+  "password": "qaz",
+  "score": 0,
+  "guesses_log10": 2.635886
+ },
+ {
+  "password": "wsxedc",
+  "score": 1,
+  "guesses_log10": 5.161095
+ },
+ {
+  "password": "rfvtgb",
+  "score": 1,
+  "guesses_log10": 5.584263
+ },
+ {
+  "password": "yhnujm",
+  "score": 1,
+  "guesses_log10": 5.584263
+ },
+ {
+  "password": "QAZWSXEDC",
+  "score": 1,
+  "guesses_log10": 4.551255
+ },
+ {
+  "password": "!@#$%^",
+  "score": 1,
+  "guesses_log10": 3.334856
+ },
+ {
+  "password": "~!@#",
+  "score": 1,
+  "guesses_log10": 3.113007
+ },
+ {
+  "password": "qwertyuiop[]\\",
+  "score": 1,
+  "guesses_log10": 3.414037
+ },
+ {
+  "password": "asdfghjkl;'",
+  "score": 1,
+  "guesses_log10": 3.334856
+ },
+ {
+  "password": "zxcvbnm,./",
+  "score": 1,
+  "guesses_log10": 3.289098
+ },
+ {
+  "password": "1234qwer",
+  "score": 0,
+  "guesses_log10": 2.053078
+ },
+ {
+  "password": "qwer1234",
+  "score": 1,
+  "guesses_log10": 4.87425
+ },
+ {
+  "password": "q1w2e3r4",
+  "score": 2,
+  "guesses_log10": 7.523973
+ },
+ {
+  "password": "poiuytrewqasdfghjkl",
+  "score": 1,
+  "guesses_log10": 4.193125
+ },
+ {
+  "password": "/.,mnbvcxz",
+  "score": 1,
+  "guesses_log10": 3.289098
+ },
+ {
+  "password": "-=[];'",
+  "score": 1,
+  "guesses_log10": 6.0
+ },
+ {
+  "password": "QWErty",
+  "score": 0,
+  "guesses_log10": 2.457882
+ },
+ {
+  "password": "qWeRtY",
+  "score": 0,
+  "guesses_log10": 2.457882
+ },
+ {
+  "password": "01011990",
+  "score": 1,
+  "guesses_log10": 4.118595
+ },
+ {
+  "password": "31121999",
+  "score": 1,
+  "guesses_log10": 3.993657
+ },
+ {
+  "password": "1/2/03",
+  "score": 1,
+  "guesses_log10": 4.562293
+ },
+ {
+  "password": "12-25-2025",
+  "score": 1,
+  "guesses_log10": 4.465383
+ },
+ {
+  "password": "25.12.2025",
+  "score": 1,
+  "guesses_log10": 4.465383
+ },
+ {
+  "password": "2025.12.25",
+  "score": 1,
+  "guesses_log10": 4.465383
+ },
+ {
+  "password": "07/04/1776",
+  "score": 3,
+  "guesses_log10": 10.0
+ },
+ {
+  "password": "3-3-33",
+  "score": 1,
+  "guesses_log10": 4.477121
+ },
+ {
+  "password": "19700101",
+  "score": 1,
+  "guesses_log10": 4.310481
+ },
+ {
+  "password": "20000229",
+  "score": 1,
+  "guesses_log10": 3.977266
+ },
+ {
+  "password": "0229",
+  "score": 1,
+  "guesses_log10": 3.863323
+ },
+ {
+  "password": "1225",
+  "score": 1,
+  "guesses_log10": 3.863323
+ },
+ {
+  "password": "311299",
+  "score": 1,
+  "guesses_log10": 3.993657
+ },
+ {
+  "password": "010203",
+  "score": 1,
+  "guesses_log10": 3.924021
+ },
+ {
+  "password": "2026-10-25",
+  "score": 1,
+  "guesses_log10": 4.465383
+ },
+ {
+  "password": "1990 05 17",
+  "score": 1,
+  "guesses_log10": 4.720655
+ },
+ {
+  "password": "05 17 1990",
+  "score": 1,
+  "guesses_log10": 4.720655
+ },
+ {
+  "password": "1\\2\\2003",
+  "score": 1,
+  "guesses_log10": 4.526081
+ },
+ {
+  "password": "12_12_12",
+  "score": 1,
+  "guesses_log10": 4.465383
+ },
+ {
+  "password": "99999999",
+  "score": 0,
+  "guesses_log10": 1.90309
+ },
+ {
+  "password": "123412341234",
+  "score": 0,
+  "guesses_log10": 1.556303
+ },
+ {
+  "password": "1985198519851985",
+  "score": 1,
+  "guesses_log10": 4.465383
+ },
+ {
+  "password": "abababab",
+  "score": 0,
+  "guesses_log10": 2.60206
+ },
+ {
+  "password": "aaaaab",
+  "score": 1,
+  "guesses_log10": 4.041393
+ },
+ {
+  "password": "baaaaa",
+  "score": 1,
+  "guesses_log10": 4.041393
+ },
+ {
+  "password": "1111111111",
+  "score": 0,
+  "guesses_log10": 2.0
+ },
+ {
+  "password": "121212",
+  "score": 0,
+  "guesses_log10": 2.342423
+ },
+ {
+  "password": "abcabcab",
+  "score": 1,
+  "guesses_log10": 4.30103
+ },
+ {
+  "password": "zzz",
+  "score": 0,
+  "guesses_log10": 1.477121
+ },
+ {
+  "password": "aAaAaA",
+  "score": 0,
+  "guesses_log10": 2.477121
+ },
+ {
+  "password": "xyzxyz",
+  "score": 0,
+  "guesses_log10": 2.193125
+ },
+ {
+  "password": "abcd",
+  "score": 0,
+  "guesses_log10": 1.20412
+ },
+ {
+  "password": "dcba",
+  "score": 0,
+  "guesses_log10": 2.318063
+ },
+ {
+  "password": "wxyz",
+  "score": 0,
+  "guesses_log10": 2.017033
+ },
+ {
+  "password": "WXYZ",
+  "score": 0,
+  "guesses_log10": 2.017033
+ },
+ {
+  "password": "6789",
+  "score": 0,
+  "guesses_log10": 1.60206
+ },
+ {
+  "password": "9876",
+  "score": 0,
+  "guesses_log10": 1.50515
+ },
+ {
+  "password": "0123",
+  "score": 0,
+  "guesses_log10": 1.20412
+ },
+ {
+  "password": "acegik",
+  "score": 1,
+  "guesses_log10": 6.0
+ },
+ {
+  "password": "ΑΒΓΔ",
+  "score": 0,
+  "guesses_log10": 2.017033
+ },
+ {
+  "password": "ابتث",
+  "score": 1,
+  "guesses_log10": 4.0
+ },
+ {
+  "password": "ぁあぃい",
+  "score": 1,
+  "guesses_log10": 4.0
+ },
+ {
+  "password": "Ωmega2026",
+  "score": 3,
+  "guesses_log10": 9.0
+ },
+ {
+  "password": "naïve-café",
+  "score": 3,
+  "guesses_log10": 10.0
+ },
+ {
+  "password": "Straße123",
+  "score": 3,
+  "guesses_log10": 8.000043
+ },
+ {
+  "password": "ÆØÅæøå",
+  "score": 1,
+  "guesses_log10": 6.0
+ },
+ {
+  "password": "çàèìòù",
+  "score": 1,
+  "guesses_log10": 6.0
+ },
+ {
+  "password": "ǈǋǲ",
+  "score": 0,
+  "guesses_log10": 3.0
+ },
+ {
+  "password": "𝔭𝔞𝔰𝔰𝔴𝔬𝔯𝔡",
+  "score": 2,
+  "guesses_log10": 8.0
+ },
+ {
+  "password": "ｐａｓｓｗｏｒｄ",
+  "score": 2,
+  "guesses_log10": 8.0
+ },
+ {
+  "password": "Kelvin",
+  "score": 1,
+  "guesses_log10": 6.0
+ },
+ {
+  "password": "ééé",
+  "score": 0,
+  "guesses_log10": 2.477121
+ },
+ {
+  "password": "👨‍👩‍👧‍👦family",
+  "score": 3,
+  "guesses_log10": 9.75128
+ },
+ {
+  "password": "🇬🇧🇬🇷",
+  "score": 1,
+  "guesses_log10": 4.0
+ },
+ {
+  "password": "ⅠⅡⅢⅣ",
+  "score": 0,
+  "guesses_log10": 2.017033
+ },
+ {
+  "password": "₁₂₃₄",
+  "score": 0,
+  "guesses_log10": 1.60206
+ },
+ {
+  "password": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "score": 0,
+  "guesses_log10": 2.995635
+ },
+ {
+  "password": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+  "score": 0,
+  "guesses_log10": 3.0
+ },
+ {
+  "password": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+  "score": 1,
+  "guesses_log10": 4.0
+ },
+ {
+  "password": "Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!",
+  "score": 1,
+  "guesses_log10": 5.39794
+ },
+ {
+  "password": "Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Ab1!Q",
+  "score": 2,
+  "guesses_log10": 6.39794
+ },
+ {
+  "password": "correct horse correct horse correct horse correct horse correct horse correct horse correct horse correct horse correct horse correct horse ",
+  "score": 4,
+  "guesses_log10": 54.147602
+ },
+ {
+  "password": "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+  "score": 4,
+  "guesses_log10": 53.0
+ },
+ {
+  "password": "ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひびぴふぶぷへべぺほぼぽまみむめもゃやゅゆょよらりるれろゎわゐ",
+  "score": 4,
+  "guesses_log10": 80.0
+ },
+ {
+  "password": "",
+  "score": 0,
+  "guesses_log10": 0.0
+ },
+ {
+  "password": "a",
+  "score": 0,
+  "guesses_log10": 1.0
+ },
+ {
+  "password": "ab",
+  "score": 0,
+  "guesses_log10": 2.0
+ },
+ {
+  "password": "Z9",
+  "score": 0,
+  "guesses_log10": 2.0
+ },
+ {
+  "password": "x7Q",
+  "score": 0,
+  "guesses_log10": 3.0
+ },
+ {
+  "password": "aB3$",
+  "score": 1,
+  "guesses_log10": 4.0
+ },
+ {
+  "password": "zK9#mQ2!",
+  "score": 2,
+  "guesses_log10": 8.0
+ },
+ {
+  "password": "qwxzvbnmlkjh",
+  "score": 4,
+  "guesses_log10": 10.1959
+ },
+ {
+  "password": "Xk8#vQ2!mZ7@pL4&",
+  "score": 4,
+  "guesses_log10": 16.0
+ },
+ {
+  "password": "kd8Fj3Ls0Pq2",
+  "score": 4,
+  "guesses_log10": 12.0
+ },
+ {
+  "password": "9fj2K!a0Q#xZ",
+  "score": 4,
+  "guesses_log10": 12.0
+ },
+ {
+  "password": "uY7%tR4^eW1&qA",
+  "score": 4,
+  "guesses_log10": 14.0
+ },
+ {
+  "password": "Password123!",
+  "score": 1,
+  "guesses_log10": 4.050766
+ },
+ {
+  "password": "P@ssw0rd2026",
+  "score": 1,
+  "guesses_log10": 5.869232
+ },
+ {
+  "password": "Qwerty123456!",
+  "score": 1,
+  "guesses_log10": 5.92737
+ },
+ {
+  "password": "Password1",
+  "score": 0,
+  "guesses_log10": 1.414973
+ },
+ {
+  "password": "Welcome1",
+  "score": 0,
+  "guesses_log10": 2.595496
+ },
+ {
+  "password": "Admin123",
+  "score": 0,
+  "guesses_log10": 2.599883
+ },
+ {
+  "password": "PASSWORD",
+  "score": 0,
+  "guesses_log10": 0.60206
+ },
+ {
+  "password": "Password",
+  "score": 0,
+  "guesses_log10": 0.60206
+ },
+ {
+  "password": "pAssWord",
+  "score": 0,
+  "guesses_log10": 1.857332
+ },
+ {
+  "password": "p@ssw0rd",
+  "score": 0,
+  "guesses_log10": 0.90309
+ },
+ {
+  "password": "P4$$w0rd",
+  "score": 0,
+  "guesses_log10": 1.80618
+ },
+ {
+  "password": "drowssap",
+  "score": 0,
+  "guesses_log10": 0.60206
+ },
+ {
+  "password": "DROWSSAP",
+  "score": 0,
+  "guesses_log10": 0.90309
+ },
+ {
+  "password": "dr0wss@p",
+  "score": 0,
+  "guesses_log10": 1.20412
+ },
+ {
+  "password": "123456",
+  "score": 0,
+  "guesses_log10": 0.0
+ },
+ {
+  "password": "iloveyou",
+  "score": 0,
+  "guesses_log10": 1.146128
+ },
+ {
+  "password": "1L0V3Y0U",
+  "score": 0,
+  "guesses_log10": 2.651278
+ },
+ {
+  "password": "trustno1",
+  "score": 0,
+  "guesses_log10": 1.623249
+ },
+ {
+  "password": "letmein",
+  "score": 0,
+  "guesses_log10": 1.342423
+ },
+ {
+  "password": "monkey",
+  "score": 0,
+  "guesses_log10": 1.380211
+ },
+ {
+  "password": "dragon",
+  "score": 0,
+  "guesses_log10": 1.278754
+ },
+ {
+  "password": "sunshine1",
+  "score": 0,
+  "guesses_log10": 2.462398
+ },
+ {
+  "password": "superman",
+  "score": 0,
+  "guesses_log10": 1.462398
+ },
+ {
+  "password": "green day",
+  "score": 0,
+  "guesses_log10": 2.733999
+ },
+ {
+  "password": "number one",
+  "score": 0,
+  "guesses_log10": 2.744293
+ },
+ {
+  "password": "trustno1trustno1",
+  "score": 0,
+  "guesses_log10": 1.924279
+ },
+ {
+  "password": "correcthorsebatterystaple",
+  "score": 4,
+  "guesses_log10": 16.182016
+ },
+ {
+  "password": "CorrectHorseBatteryStaple",
+  "score": 4,
+  "guesses_log10": 17.386109
+ },
+ {
+  "password": "correct horse battery staple 42",
+  "score": 4,
+  "guesses_log10": 24.95867
+ },
+ {
+  "password": "horse",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "battery",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "maple orbit",
+  "score": 3,
+  "guesses_log10": 9.206884
+ },
+ {
+  "password": "Maple-Orbit-7731",
+  "score": 4,
+  "guesses_log10": 15.302504
+ },
+ {
+  "password": "acorn-actor-amber-anchor",
+  "score": 4,
+  "guesses_log10": 21.179039
+ },
+ {
+  "password": "zephyr zinc zipper zone",
+  "score": 4,
+  "guesses_log10": 19.781099
+ },
+ {
+  "password": "elephantgiraffe",
+  "score": 2,
+  "guesses_log10": 7.702004
+ },
+ {
+  "password": "tigerlionbear",
+  "score": 3,
+  "guesses_log10": 8.741078
+ },
+ {
+  "password": "abc",
+  "score": 0,
+  "guesses_log10": 1.079181
+ },
+ {
+  "password": "abcdef",
+  "score": 0,
+  "guesses_log10": 1.380211
+ },
+ {
+  "password": "abcdefghijklmnop",
+  "score": 0,
+  "guesses_log10": 1.80618
+ },
+ {
+  "password": "zyxwvu",
+  "score": 0,
+  "guesses_log10": 1.681241
+ },
+ {
+  "password": "ZYXWVU",
+  "score": 0,
+  "guesses_log10": 1.681241
+ },
+ {
+  "password": "123456789",
+  "score": 0,
+  "guesses_log10": 0.477121
+ },
+ {
+  "password": "987654321",
+  "score": 0,
+  "guesses_log10": 0.778151
+ },
+ {
+  "password": "13579",
+  "score": 1,
+  "guesses_log10": 4.234391
+ },
+ {
+  "password": "abcXYZ123",
+  "score": 3,
+  "guesses_log10": 8.000043
+ },
+ {
+  "password": "ABCDEFG",
+  "score": 0,
+  "guesses_log10": 1.447158
+ },
+ {
+  "password": "0123456789abcdef",
+  "score": 1,
+  "guesses_log10": 4.176091
+ },
+ {
+  "password": "mnopqr12",
+  "score": 1,
+  "guesses_log10": 4.614897
+ },
+ {
+  "password": "fedcba!!",
+  "score": 1,
+  "guesses_log10": 4.614897
+ },
+ {
+  "password": "αβγδε",
+  "score": 0,
+  "guesses_log10": 2.113943
+ },
+ {
+  "password": "абвгде",
+  "score": 0,
+  "guesses_log10": 2.193125
+ },
+ {
+  "password": "aaa",
+  "score": 0,
+  "guesses_log10": 1.477121
+ },
+ {
+  "password": "aaaaaaaaaaaa",
+  "score": 0,
+  "guesses_log10": 2.079181
+ },
+ {
+  "password": "abcabcabc",
+  "score": 0,
+  "guesses_log10": 1.556303
+ },
+ {
+  "password": "abcabcabcabc",
+  "score": 0,
+  "guesses_log10": 1.681241
+ },
+ {
+  "password": "xyxyxyxyxy",
+  "score": 0,
+  "guesses_log10": 2.69897
+ },
+ {
+  "password": "123123123",
+  "score": 0,
+  "guesses_log10": 1.556303
+ },
+ {
+  "password": "hellohello",
+  "score": 0,
+  "guesses_log10": 1.880814
+ },
+ {
+  "password": "Passw0rdPassw0rd",
+  "score": 0,
+  "guesses_log10": 1.20412
+ },
+ {
+  "password": "!!!!!!!!",
+  "score": 0,
+  "guesses_log10": 1.90309
+ },
+ {
+  "password": "zzzzzzzzzzzzzzzzzzzz",
+  "score": 0,
+  "guesses_log10": 2.30103
+ },
+ {
+  "password": "ab\nab\nab\n",
+  "score": 3,
+  "guesses_log10": 9.0
+ },
+ {
+  "password": "a\na\na",
+  "score": 1,
+  "guesses_log10": 5.0
+ },
+ {
+  "password": "qwerqwerqwerqwer",
+  "score": 1,
+  "guesses_log10": 3.414037
+ },
+ {
+  "password": "qwerty",
+  "score": 0,
+  "guesses_log10": 0.845098
+ },
+ {
+  "password": "qwertyuiop",
+  "score": 0,
+  "guesses_log10": 1.447158
+ },
+ {
+  "password": "asdfghjkl",
+  "score": 0,
+  "guesses_log10": 1.477121
+ },
+ {
+  "password": "zxcvbnm",
+  "score": 0,
+  "guesses_log10": 2.39794
+ },
+ {
+  "password": "qazwsx",
+  "score": 0,
+  "guesses_log10": 1.612784
+ },
+ {
+  "password": "1qaz2wsx",
+  "score": 0,
+  "guesses_log10": 1.414973
+ },
+ {
+  "password": "QWERTY",
+  "score": 0,
+  "guesses_log10": 1.146128
+ },
+ {
+  "password": "!QAZ@WSX",
+  "score": 2,
+  "guesses_log10": 8.0
+ },
+ {
+  "password": "poiuytrewq",
+  "score": 0,
+  "guesses_log10": 1.748188
+ },
+ {
+  "password": "zaq12wsx",
+  "score": 0,
+  "guesses_log10": 1.255273
+ },
+ {
+  "password": "plmokn",
+  "score": 1,
+  "guesses_log10": 6.0
+ },
+ {
+  "password": "1q2w3e4r5t",
+  "score": 0,
+  "guesses_log10": 2.322219
+ },
+ {
+  "password": "asdfjkl;",
+  "score": 1,
+  "guesses_log10": 5.930115
+ },
+ {
+  "password": "~!@#$%^&*()_+",
+  "score": 1,
+  "guesses_log10": 3.715067
+ },
+ {
+  "password": "`1234567890-=",
+  "score": 1,
+  "guesses_log10": 3.414037
+ },
+ {
+  "password": "qwertyuiopasdfghjkl",
+  "score": 1,
+  "guesses_log10": 4.176091
+ },
+ {
+  "password": "mju7ygv",
+  "score": 2,
+  "guesses_log10": 6.687637
+ },
+ {
+  "password": "QweRtyUio",
+  "score": 1,
+  "guesses_log10": 5.348535
+ },
+ {
+  "password": "1987",
+  "score": 1,
+  "guesses_log10": 3.863323
+ },
+ {
+  "password": "2026",
+  "score": 1,
+  "guesses_log10": 3.863323
+ },
+ {
+  "password": "1900",
+  "score": 1,
+  "guesses_log10": 3.977266
+ },
+ {
+  "password": "2050",
+  "score": 1,
+  "guesses_log10": 3.942504
+ },
+ {
+  "password": "1899",
+  "score": 1,
+  "guesses_log10": 3.863323
+ },
+ {
+  "password": "2051",
+  "score": 1,
+  "guesses_log10": 3.863323
+ },
+ {
+  "password": "13101987",
+  "score": 1,
+  "guesses_log10": 4.153357
+ },
+ {
+  "password": "19871013",
+  "score": 1,
+  "guesses_log10": 4.153357
+ },
+ {
+  "password": "10/13/1987",
+  "score": 1,
+  "guesses_log10": 4.755417
+ },
+ {
+  "password": "13.10.87",
+  "score": 1,
+  "guesses_log10": 4.755417
+ },
+ {
+  "password": "1987-10-13",
+  "score": 1,
+  "guesses_log10": 4.755417
+ },
+ {
+  "password": "31-12-1999",
+  "score": 1,
+  "guesses_log10": 4.595717
+ },
+ {
+  "password": "4/7/76",
+  "score": 1,
+  "guesses_log10": 4.863323
+ },
+ {
+  "password": "2001_02_03",
+  "score": 1,
+  "guesses_log10": 4.562293
+ },
+ {
+  "password": "8/31/2026",
+  "score": 1,
+  "guesses_log10": 4.465383
+ },
+ {
+  "password": "120887",
+  "score": 1,
+  "guesses_log10": 4.153357
+ },
+ {
+  "password": "091185",
+  "score": 1,
+  "guesses_log10": 4.175077
+ },
+ {
+  "password": "11223344",
+  "score": 1,
+  "guesses_log10": 4.209515
+ },
+ {
+  "password": "born1991",
+  "score": 2,
+  "guesses_log10": 8.0
+ },
+ {
+  "password": "march1987",
+  "score": 2,
+  "guesses_log10": 6.646776
+ },
+ {
+  "password": "1234 5678",
+  "score": 2,
+  "guesses_log10": 7.000434
+ },
+ {
+  "password": "0000",
+  "score": 0,
+  "guesses_log10": 1.60206
+ },
+ {
+  "password": "9999",
+  "score": 0,
+  "guesses_log10": 1.60206
+ },
+ {
+  "password": "2024-02-30",
+  "score": 1,
+  "guesses_log10": 4.465383
+ },
+ {
+  "password": "1/1/1",
+  "score": 1,
+  "guesses_log10": 4.146128
+ },
+ {
+  "password": "99.99.99",
+  "score": 1,
+  "guesses_log10": 5.322219
+ },
+ {
+  "password": "summer2026!",
+  "score": 2,
+  "guesses_log10": 7.22037
+ },
+ {
+  "password": "Summer2026!",
+  "score": 2,
+  "guesses_log10": 7.521269
+ },
+ {
+  "password": "Winter2025",
+  "score": 2,
+  "guesses_log10": 6.931275
+ },
+ {
+  "password": "football1990",
+  "score": 1,
+  "guesses_log10": 5.974051
+ },
+ {
+  "password": "michael1985",
+  "score": 1,
+  "guesses_log10": 5.869232
+ },
+ {
+  "password": "jordan23",
+  "score": 0,
+  "guesses_log10": 2.741152
+ },
+ {
+  "password": "qwerty2026",
+  "score": 1,
+  "guesses_log10": 5.869232
+ },
+ {
+  "password": "admin@2026",
+  "score": 2,
+  "guesses_log10": 7.000434
+ },
+ {
+  "password": "letmein123!",
+  "score": 1,
+  "guesses_log10": 4.295347
+ },
+ {
+  "password": "ilovepizza",
+  "score": 2,
+  "guesses_log10": 7.91598
+ },
+ {
+  "password": "MyDogIsCute",
+  "score": 4,
+  "guesses_log10": 11.0
+ },
+ {
+  "password": "monkey123monkey123",
+  "score": 1,
+  "guesses_log10": 4.477121
+ },
+ {
+  "password": "batman!batman!",
+  "score": 1,
+  "guesses_log10": 4.343999
+ },
+ {
+  "password": "sunshine-rainbow-unicorn",
+  "score": 4,
+  "guesses_log10": 14.119586
+ },
+ {
+  "password": "Tr4ilT0wer!",
+  "score": 4,
+  "guesses_log10": 10.384953
+ },
+ {
+  "password": "hunter2",
+  "score": 1,
+  "guesses_log10": 4.041393
+ },
+ {
+  "password": "correct-horse",
+  "score": 3,
+  "guesses_log10": 9.206884
+ },
+ {
+  "password": "abc123abc123",
+  "score": 0,
+  "guesses_log10": 1.342423
+ },
+ {
+  "password": "pass1234word",
+  "score": 3,
+  "guesses_log10": 8.32814
+ },
+ {
+  "password": "pässwörd",
+  "score": 2,
+  "guesses_log10": 8.0
+ },
+ {
+  "password": "Ünïcödé-Pässwört-2026",
+  "score": 4,
+  "guesses_log10": 21.0
+ },
+ {
+  "password": "日本語のパスワード",
+  "score": 3,
+  "guesses_log10": 9.0
+ },
+ {
+  "password": "пароль",
+  "score": 1,
+  "guesses_log10": 6.0
+ },
+ {
+  "password": "Пароль123",
+  "score": 3,
+  "guesses_log10": 8.000043
+ },
+ {
+  "password": "contraseña",
+  "score": 3,
+  "guesses_log10": 10.0
+ },
+ {
+  "password": "密码123456",
+  "score": 1,
+  "guesses_log10": 4.30103
+ },
+ {
+  "password": "😀😀😀😀",
+  "score": 0,
+  "guesses_log10": 1.60206
+ },
+ {
+  "password": "🔑🔒🗝️🔐 keys",
+  "score": 3,
+  "guesses_log10": 10.0
+ },
+ {
+  "password": "ǅungla",
+  "score": 1,
+  "guesses_log10": 6.0
+ },
+ {
+  "password": "İstanbul1923",
+  "score": 4,
+  "guesses_log10": 12.0
+ },
+ {
+  "password": "ΣΊΣΥΦΟΣ",
+  "score": 2,
+  "guesses_log10": 7.0
+ },
+ {
+  "password": "ß",
+  "score": 0,
+  "guesses_log10": 1.0
+ },
+ {
+  "password": "ﬀﬁﬂ",
+  "score": 0,
+  "guesses_log10": 1.892095
+ },
+ {
+  "password": "①②③④",
+  "score": 0,
+  "guesses_log10": 1.60206
+ },
+ {
+  "password": "²³¹",
+  "score": 0,
+  "guesses_log10": 3.0
+ },
+ {
+  "password": "١٢٣٤٥٦",
+  "score": 0,
+  "guesses_log10": 1.778151
+ },
+ {
+  "password": "١٩٨٧",
+  "score": 1,
+  "guesses_log10": 3.863323
+ },
+ {
+  "password": "  spaces  ",
+  "score": 3,
+  "guesses_log10": 9.205502
+ },
+ {
+  "password": "tab\tseparated",
+  "score": 4,
+  "guesses_log10": 13.0
+ },
+ {
+  "password": "١٣/١٠/١٩٨٧",
+  "score": 1,
+  "guesses_log10": 4.755417
+ },
+ {
+  "password": "١٩٨٧-١٠-١٣",
+  "score": 1,
+  "guesses_log10": 4.755417
+ },
+ {
+  "password": "１３-１０-１９８７",
+  "score": 1,
+  "guesses_log10": 4.755417
+ },
+ {
+  "password": "１９８７/１０/１３",
+  "score": 1,
+  "guesses_log10": 4.755417
+ },
+ {
+  "password": "১৩/১০/১৯৮৭",
+  "score": 1,
+  "guesses_log10": 4.755417
+ },
+ {
+  "password": "১৯৮৭_১০_১৩",
+  "score": 1,
+  "guesses_log10": 4.755417
+ },
+ {
+  "password": "13 10 1987",
+  "score": 1,
+  "guesses_log10": 4.755417
+ },
+ {
+  "password": "13　10　1987",
+  "score": 1,
+  "guesses_log10": 4.755417
+ },
+ {
+  "password": "13 10 1987",
+  "score": 1,
+  "guesses_log10": 4.755417
+ },
+ {
+  "password": "1987　 10　13",
+  "score": 4,
+  "guesses_log10": 10.478566
+ },
+ {
+  "password": "13\u001c10\u001c1987",
+  "score": 1,
+  "guesses_log10": 4.755417
+ },
+ {
+  "password": "pass١٣/١٠/١٩٨٧word",
+  "score": 4,
+  "guesses_log10": 11.109412
+ },
+ {
+  "password": "１２３４５６７８",
+  "score": 0,
+  "guesses_log10": 1.90309
+ },
+ {
+  "password": "abc\nabc\nabc",
+  "score": 3,
+  "guesses_log10": 9.20412
+ },
+ {
+  "password": "x\nx\nx\nx",
+  "score": 2,
+  "guesses_log10": 7.0
+ },
+ {
+  "password": "ab\nab",
+  "score": 1,
+  "guesses_log10": 5.0
+ },
+ {
+  "password": "\n\n\n\n",
+  "score": 1,
+  "guesses_log10": 4.0
+ },
+ {
+  "password": "hello\nhello\nhello\nhello",
+  "score": 4,
+  "guesses_log10": 16.060698
+ },
+ {
+  "password": "aa\naa\naaaa",
+  "score": 3,
+  "guesses_log10": 8.000043
+ },
+ {
+  "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "score": 4,
+  "guesses_log10": 23.0
+ },
+ {
+  "password": "abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab",
+  "score": 4,
+  "guesses_log10": 43.69897
+ },
+ {
+  "password": "Xk8#vQ2!Xk8#vQ2!Xk8#vQ2!Xk8#vQ2!Xk8#vQ2!Xk8#vQ2!Xk8#vQ2!Xk8#vQ2!Xk8#vQ2!Xk8#vQ2!Xk8#vQ2!Xk8#vQ2!Xk8#vQ2!Xk8#vQ2!Xk8#vQ2!",
+  "score": 4,
+  "guesses_log10": 33.380211
+ },
+ {
+  "password": "correcthorsebatterystaplecorrecthorsebatterystaplecorrecthorsebatterystaplecorrecthorsebatterystaplecorrecthorsebatterystaplecorrecthorsebatterystaple",
+  "score": 4,
+  "guesses_log10": 66.784076
+ },
+ {
+  "password": "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890",
+  "score": 4,
+  "guesses_log10": 51.954243
+ },
+ {
+  "password": "The quick brown fox jumps over the lazy dog, then naps by the river until the sun goes down again!",
+  "score": 4,
+  "guesses_log10": 97.478595
+ },
+ {
+  "password": "password1",
+  "score": 0,
+  "guesses_log10": 1.113943
+ },
+ {
+  "password": "27653",
+  "score": 0,
+  "guesses_log10": 1.39794
+ },
+ {
+  "password": "password123",
+  "score": 0,
+  "guesses_log10": 1.491362
+ },
+ {
+  "password": "master",
+  "score": 0,
+  "guesses_log10": 1.568202
+ },
+ {
+  "password": "starwars",
+  "score": 0,
+  "guesses_log10": 1.633468
+ },
+ {
+  "password": "buster",
+  "score": 0,
+  "guesses_log10": 1.690196
+ },
+ {
+  "password": "charlie",
+  "score": 0,
+  "guesses_log10": 1.740363
+ },
+ {
+  "password": "klaster",
+  "score": 0,
+  "guesses_log10": 1.78533
+ },
+ {
+  "password": "pepper",
+  "score": 0,
+  "guesses_log10": 1.826075
+ },
+ {
+  "password": "freedom1",
+  "score": 0,
+  "guesses_log10": 1.863323
+ },
+ {
+  "password": "ginger",
+  "score": 0,
+  "guesses_log10": 1.897627
+ },
+ {
+  "password": "ashley",
+  "score": 0,
+  "guesses_log10": 1.929419
+ },
+ {
+  "password": "yankees",
+  "score": 0,
+  "guesses_log10": 1.959041
+ },
+ {
+  "password": "matrix",
+  "score": 0,
+  "guesses_log10": 1.986772
+ },
+ {
+  "password": "moon",
+  "score": 0,
+  "guesses_log10": 2.012837
+ },
+ {
+  "password": "heather",
+  "score": 0,
+  "guesses_log10": 2.037426
+ },
+ {
+  "password": "hammer",
+  "score": 0,
+  "guesses_log10": 2.060698
+ },
+ {
+  "password": "test",
+  "score": 0,
+  "guesses_log10": 2.082785
+ },
+ {
+  "password": "orange",
+  "score": 0,
+  "guesses_log10": 2.103804
+ },
+ {
+  "password": "bigdog",
+  "score": 0,
+  "guesses_log10": 2.123852
+ },
+ {
+  "password": "facebook",
+  "score": 0,
+  "guesses_log10": 2.143015
+ },
+ {
+  "password": "flower",
+  "score": 0,
+  "guesses_log10": 2.161368
+ },
+ {
+  "password": "chelsea1",
+  "score": 0,
+  "guesses_log10": 2.178977
+ },
+ {
+  "password": "yellow",
+  "score": 0,
+  "guesses_log10": 2.1959
+ },
+ {
+  "password": "tigers",
+  "score": 0,
+  "guesses_log10": 2.212188
+ },
+ {
+  "password": "killer",
+  "score": 0,
+  "guesses_log10": 2.227887
+ },
+ {
+  "password": "123qwe",
+  "score": 0,
+  "guesses_log10": 2.243038
+ },
+ {
+  "password": "pokemon",
+  "score": 0,
+  "guesses_log10": 2.257679
+ },
+ {
+  "password": "abcd1234",
+  "score": 0,
+  "guesses_log10": 2.271842
+ },
+ {
+  "password": "P@ssw0rd",
+  "score": 0,
+  "guesses_log10": 1.20412
+ },
+ {
+  "password": "guest",
+  "score": 0,
+  "guesses_log10": 2.311754
+ },
+ {
+  "password": "123abc",
+  "score": 0,
+  "guesses_log10": 2.324282
+ },
+ {
+  "password": "1234554321",
+  "score": 0,
+  "guesses_log10": 2.33646
+ },
+ {
+  "password": "999999",
+  "score": 0,
+  "guesses_log10": 1.778151
+ },
+ {
+  "password": "147258369",
+  "score": 0,
+  "guesses_log10": 2.359835
+ },
+ {
+  "password": "123000",
+  "score": 0,
+  "guesses_log10": 2.371068
+ },
+ {
+  "password": "asdasd",
+  "score": 0,
+  "guesses_log10": 2.382017
+ },
+ {
+  "password": "lkjhgfdsa",
+  "score": 0,
+  "guesses_log10": 1.778151
+ },
+ {
+  "password": "iloveu",
+  "score": 0,
+  "guesses_log10": 2.403121
+ },
+ {
+  "password": "angel1",
+  "score": 0,
+  "guesses_log10": 2.4133
+ },
+ {
+  "password": "cupcake",
+  "score": 0,
+  "guesses_log10": 2.423246
+ },
+ {
+  "password": "jesus",
+  "score": 0,
+  "guesses_log10": 2.432969
+ },
+ {
+  "password": "hope",
+  "score": 0,
+  "guesses_log10": 2.44248
+ },
+ {
+  "password": "mother",
+  "score": 0,
+  "guesses_log10": 2.451786
+ },
+ {
+  "password": "grandma",
+  "score": 0,
+  "guesses_log10": 2.460898
+ },
+ {
+  "password": "november",
+  "score": 0,
+  "guesses_log10": 2.469822
+ },
+ {
+  "password": "january",
+  "score": 0,
+  "guesses_log10": 2.478566
+ },
+ {
+  "password": "saturday",
+  "score": 0,
+  "guesses_log10": 2.487138
+ },
+ {
+  "password": "london",
+  "score": 0,
+  "guesses_log10": 2.495544
+ },
+ {
+  "password": "sydney",
+  "score": 0,
+  "guesses_log10": 2.503791
+ },
+ {
+  "password": "phoenix",
+  "score": 0,
+  "guesses_log10": 2.511883
+ },
+ {
+  "password": "florida",
+  "score": 0,
+  "guesses_log10": 2.519828
+ },
+ {
+  "password": "brazil",
+  "score": 0,
+  "guesses_log10": 2.52763
+ },
+ {
+  "password": "mercedes",
+  "score": 0,
+  "guesses_log10": 2.535294
+ },
+ {
+  "password": "jaguar",
+  "score": 0,
+  "guesses_log10": 2.542825
+ },
+ {
+  "password": "wizard",
+  "score": 0,
+  "guesses_log10": 2.550228
+ },
+ {
+  "password": "spider",
+  "score": 0,
+  "guesses_log10": 2.557507
+ },
+ {
+  "password": "xmen",
+  "score": 0,
+  "guesses_log10": 2.564666
+ },
+ {
+  "password": "legolas",
+  "score": 0,
+  "guesses_log10": 2.571709
+ },
+ {
+  "password": "hogwarts",
+  "score": 0,
+  "guesses_log10": 2.578639
+ },
+ {
+  "password": "mewtwo",
+  "score": 0,
+  "guesses_log10": 2.585461
+ },
+ {
+  "password": "nintendo",
+  "score": 0,
+  "guesses_log10": 2.592177
+ },
+ {
+  "password": "fortnite",
+  "score": 0,
+  "guesses_log10": 2.598791
+ },
+ {
+  "password": "eminem",
+  "score": 0,
+  "guesses_log10": 2.605305
+ },
+ {
+  "password": "drummer",
+  "score": 0,
+  "guesses_log10": 2.611723
+ },
+ {
+  "password": "sugar",
+  "score": 0,
+  "guesses_log10": 2.618048
+ },
+ {
+  "password": "tiger",
+  "score": 0,
+  "guesses_log10": 2.624282
+ },
+ {
+  "password": "shark",
+  "score": 0,
+  "guesses_log10": 2.630428
+ },
+ {
+  "password": "kitty",
+  "score": 0,
+  "guesses_log10": 2.636488
+ },
+ {
+  "password": "unicorn",
+  "score": 0,
+  "guesses_log10": 2.642465
+ },
+ {
+  "password": "patriots",
+  "score": 0,
+  "guesses_log10": 2.64836
+ },
+ {
+  "password": "manchester",
+  "score": 0,
+  "guesses_log10": 2.654177
+ },
+ {
+  "password": "liverpool1",
+  "score": 0,
+  "guesses_log10": 2.659916
+ },
+ {
+  "password": "master1",
+  "score": 0,
+  "guesses_log10": 2.665581
+ },
+ {
+  "password": "basketball",
+  "score": 0,
+  "guesses_log10": 2.671173
+ },
+ {
+  "password": "boxing",
+  "score": 0,
+  "guesses_log10": 2.676694
+ },
+ {
+  "password": "nothing",
+  "score": 0,
+  "guesses_log10": 2.682145
+ },
+ {
+  "password": "letmein123",
+  "score": 0,
+  "guesses_log10": 2.687529
+ },
+ {
+  "password": "test123",
+  "score": 0,
+  "guesses_log10": 2.692847
+ },
+ {
+  "password": "sample",
+  "score": 0,
+  "guesses_log10": 2.698101
+ },
+ {
+  "password": "manager",
+  "score": 0,
+  "guesses_log10": 2.703291
+ },
+ {
+  "password": "oracle",
+  "score": 0,
+  "guesses_log10": 2.708421
+ },
+ {
+  "password": "ubuntu",
+  "score": 0,
+  "guesses_log10": 2.713491
+ },
+ {
+  "password": "private",
+  "score": 0,
+  "guesses_log10": 2.718502
+ },
+ {
+  "password": "enter",
+  "score": 0,
+  "guesses_log10": 2.723456
+ },
+ {
+  "password": "dollar",
+  "score": 0,
+  "guesses_log10": 2.728354
+ },
+ {
+  "password": "blink182",
+  "score": 0,
+  "guesses_log10": 2.733197
+ },
+ {
+  "password": "sexy",
+  "score": 0,
+  "guesses_log10": 2.737987
+ },
+ {
+  "password": "lebron23",
+  "score": 0,
+  "guesses_log10": 2.742725
+ },
+ {
+  "password": "four",
+  "score": 0,
+  "guesses_log10": 2.747412
+ },
+ {
+  "password": "aaaaa",
+  "score": 0,
+  "guesses_log10": 1.69897
+ },
+ {
+  "password": "1234567891",
+  "score": 0,
+  "guesses_log10": 2.756636
+ },
+ {
+  "password": "87654321",
+  "score": 0,
+  "guesses_log10": 0.90309
+ },
+ {
+  "password": "qwerasdf",
+  "score": 0,
+  "guesses_log10": 2.765669
+ },
+ {
+  "password": "qaz123",
+  "score": 0,
+  "guesses_log10": 2.770115
+ },
+ {
+  "password": "michael1",
+  "score": 0,
+  "guesses_log10": 2.774517
+ },
+ {
+  "password": "hannah",
+  "score": 0,
+  "guesses_log10": 2.778874
+ },
+ {
+  "password": "isabella",
+  "score": 0,
+  "guesses_log10": 2.783189
+ },
+ {
+  "password": "david",
+  "score": 0,
+  "guesses_log10": 2.78746
+ },
+ {
+  "password": "jason",
+  "score": 0,
+  "guesses_log10": 2.791691
+ },
+ {
+  "password": "rebecca",
+  "score": 0,
+  "guesses_log10": 2.79588
+ },
+ {
+  "password": "alexander",
+  "score": 0,
+  "guesses_log10": 2.800029
+ },
+ {
+  "password": "ben",
+  "score": 0,
+  "guesses_log10": 2.804139
+ },
+ {
+  "password": "abacus",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "ask",
+  "score": 0,
+  "guesses_log10": 3.0
+ },
+ {
+  "password": "biscuit",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "cactus",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "climate",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "curtain",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "dummy",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "fauna",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "galleon",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "haul",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "jingle",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "longhorn",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "mound",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "palette",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "postcard",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "review",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "shall",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "spring",
+  "score": 0,
+  "guesses_log10": 2.463893
+ },
+ {
+  "password": "tenth",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "utmost",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "youth",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "Combine12",
+  "score": 2,
+  "guesses_log10": 6.304663
+ },
+ {
+  "password": "armpit",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "Produce",
+  "score": 1,
+  "guesses_log10": 4.001474
+ },
+ {
+  "password": "office ditch escapade",
+  "score": 4,
+  "guesses_log10": 15.179039
+ },
+ {
+  "password": "Multiplex Lapdog Bureau",
+  "score": 4,
+  "guesses_log10": 16.34484
+ },
+ {
+  "password": "jolt tramp swordfish38",
+  "score": 4,
+  "guesses_log10": 17.478595
+ },
+ {
+  "password": "other league viaduct motorcade vicuna",
+  "score": 4,
+  "guesses_log10": 28.504221
+ },
+ {
+  "password": "leopard.mercy.prose.huckleberry31",
+  "score": 4,
+  "guesses_log10": 23.781099
+ },
+ {
+  "password": "lotus_invoice_enough_zoom_bill",
+  "score": 4,
+  "guesses_log10": 26.480069
+ },
+ {
+  "password": "appetite-sandstone",
+  "score": 3,
+  "guesses_log10": 9.206884
+ },
+ {
+  "password": "Insult Utility",
+  "score": 3,
+  "guesses_log10": 9.78823
+ },
+ {
+  "password": "rutabaga.budget",
+  "score": 3,
+  "guesses_log10": 9.206884
+ },
+ {
+  "password": "obscure.payment.peach",
+  "score": 4,
+  "guesses_log10": 15.781171
+ },
+ {
+  "password": "history_shine_solid",
+  "score": 4,
+  "guesses_log10": 15.179039
+ },
+ {
+  "password": "Stop",
+  "score": 1,
+  "guesses_log10": 4.0
+ },
+ {
+  "password": "Utmost96",
+  "score": 2,
+  "guesses_log10": 6.304663
+ },
+ {
+  "password": "findboss73",
+  "score": 3,
+  "guesses_log10": 10.0
+ },
+ {
+  "password": "hunger.cordial.tagalong.niche",
+  "score": 4,
+  "guesses_log10": 21.963415
+ },
+ {
+  "password": "auburn soap give comedy liver",
+  "score": 4,
+  "guesses_log10": 25.180514
+ },
+ {
+  "password": "Agate Export Licorice Mutual Buffet",
+  "score": 4,
+  "guesses_log10": 29.621915
+ },
+ {
+  "password": "Abbey.Curfew.Check.Midriff.Panda",
+  "score": 4,
+  "guesses_log10": 27.64044
+ },
+ {
+  "password": "Hailstone Develop Gatehouse Eclair Rinse",
+  "score": 4,
+  "guesses_log10": 29.708328
+ },
+ {
+  "password": "Tonightdormouseself",
+  "score": 4,
+  "guesses_log10": 12.180542
+ },
+ {
+  "password": "Crackle Outpost",
+  "score": 3,
+  "guesses_log10": 9.78823
+ },
+ {
+  "password": "jumpsuit_cashew_alpaca_clap13",
+  "score": 4,
+  "guesses_log10": 23.781099
+ },
+ {
+  "password": "cash",
+  "score": 0,
+  "guesses_log10": 2.726727
+ },
+ {
+  "password": "decent engage laugh improve cashew",
+  "score": 4,
+  "guesses_log10": 27.504343
+ },
+ {
+  "password": "Project Buttress Snowshoe China",
+  "score": 4,
+  "guesses_log10": 22.862351
+ },
+ {
+  "password": "Filigree-Sauna-Atlas-Dizzy44",
+  "score": 4,
+  "guesses_log10": 24.082129
+ },
+ {
+  "password": "flotilla.barrel.fabulous",
+  "score": 4,
+  "guesses_log10": 16.179039
+ },
+ {
+  "password": "heir",
+  "score": 1,
+  "guesses_log10": 3.700444
+ },
+ {
+  "password": "inside_manual_spoil_king_proud",
+  "score": 4,
+  "guesses_log10": 26.180514
+ },
+ {
+  "password": "duck_toward_shortcake_roof_wellspring2",
+  "score": 4,
+  "guesses_log10": 27.803831
+ },
+ {
+  "password": "Astute_Despite",
+  "score": 3,
+  "guesses_log10": 9.78823
+ },
+ {
+  "password": "Estuary_Amnesty",
+  "score": 3,
+  "guesses_log10": 9.78823
+ },
+ {
+  "password": "Return-Anyway-Raise2",
+  "score": 4,
+  "guesses_log10": 17.383161
+ },
+ {
+  "password": "lady-beam-glaze-apricot",
+  "score": 4,
+  "guesses_log10": 19.781099
+ },
+ {
+  "password": "refuse nocturne sweat81",
+  "score": 4,
+  "guesses_log10": 17.7811
+ },
+ {
+  "password": "ornament_hotcake_shellac_gambit_unless",
+  "score": 4,
+  "guesses_log10": 28.504221
+ },
+ {
+  "password": "Round-Skateboard-Green-Horn-Fortress",
+  "score": 4,
+  "guesses_log10": 27.083604
+ },
+ {
+  "password": "tPbmH3",
+  "score": 1,
+  "guesses_log10": 6.0
+ },
+ {
+  "password": "bundle-lumber-soon-sleep-maroon-paper",
+  "score": 4,
+  "guesses_log10": 32.504207
+ },
+ {
+  "password": "thelinux!",
+  "score": 3,
+  "guesses_log10": 8.11694
+ },
+ {
+  "password": "serviceGLORY",
+  "score": 2,
+  "guesses_log10": 7.007939
+ },
+ {
+  "password": "bejxqfeiclhvsbrjk",
+  "score": 4,
+  "guesses_log10": 17.0
+ },
+ {
+  "password": "avalanchepatient",
+  "score": 2,
+  "guesses_log10": 7.702004
+ },
+ {
+  "password": "theadmin1231960",
+  "score": 3,
+  "guesses_log10": 9.864926
+ },
+ {
+  "password": "zxcv1913tornadoBATH",
+  "score": 4,
+  "guesses_log10": 15.756031
+ },
+ {
+  "password": "dHaA",
+  "score": 1,
+  "guesses_log10": 4.0
+ },
+ {
+  "password": "stand-dogwood-dinosaur-bellhop",
+  "score": 4,
+  "guesses_log10": 21.963415
+ },
+ {
+  "password": "!Biker!",
+  "score": 2,
+  "guesses_log10": 7.0
+ },
+ {
+  "password": "9212FORMAT",
+  "score": 3,
+  "guesses_log10": 8.165857
+ },
+ {
+  "password": "PWAJNqsZi4n1VXi8RH",
+  "score": 4,
+  "guesses_log10": 18.0
+ },
+ {
+  "password": "nuthatch_bold_doubt_soul_saltbox_fought",
+  "score": 4,
+  "guesses_log10": 31.180514
+ },
+ {
+  "password": "theCoffee1991",
+  "score": 4,
+  "guesses_log10": 10.557551
+ },
+ {
+  "password": "negative4218MOLASSESxyz",
+  "score": 4,
+  "guesses_log10": 14.838178
+ },
+ {
+  "password": "KmzF$)djy@Yaa$5lE4aN0nTH",
+  "score": 4,
+  "guesses_log10": 24.0
+ },
+ {
+  "password": "flask-push",
+  "score": 3,
+  "guesses_log10": 9.001478
+ },
+ {
+  "password": "!Moon",
+  "score": 1,
+  "guesses_log10": 4.149835
+ },
+ {
+  "password": "pocket8129RADIATOR",
+  "score": 4,
+  "guesses_log10": 12.343412
+ },
+ {
+  "password": "55351965792",
+  "score": 3,
+  "guesses_log10": 9.831198
+ },
+ {
+  "password": "airfoil.wisteria.novel.houseboat.drank",
+  "score": 4,
+  "guesses_log10": 27.504343
+ },
+ {
+  "password": "Money123",
+  "score": 1,
+  "guesses_log10": 5.065206
+ },
+ {
+  "password": "clerkLAUNDRY",
+  "score": 3,
+  "guesses_log10": 8.002991
+ },
+ {
+  "password": "E#3K",
+  "score": 1,
+  "guesses_log10": 4.0
+ },
+ {
+  "password": "leeway.footprint.ardent",
+  "score": 4,
+  "guesses_log10": 16.061277
+ },
+ {
+  "password": "!rebecca?",
+  "score": 3,
+  "guesses_log10": 8.001626
+ },
+ {
+  "password": "9292asdfbayonetHIBISCUS",
+  "score": 4,
+  "guesses_log10": 14.197899
+ },
+ {
+  "password": "assgcbwvuj",
+  "score": 3,
+  "guesses_log10": 9.975891
+ },
+ {
+  "password": "custom lamppost tour trellis twin teacup",
+  "score": 4,
+  "guesses_log10": 31.504207
+ },
+ {
+  "password": "Rome1",
+  "score": 1,
+  "guesses_log10": 4.355643
+ },
+ {
+  "password": "abcGOLF",
+  "score": 1,
+  "guesses_log10": 5.017868
+ },
+ {
+  "password": "6108982192884555333",
+  "score": 4,
+  "guesses_log10": 16.857992
+ },
+ {
+  "password": "manual_headband_toucan_rhubarb_houseboat_beside",
+  "score": 4,
+  "guesses_log10": 35.06236
+ },
+ {
+  "password": "1593572026",
+  "score": 2,
+  "guesses_log10": 6.663701
+ },
+ {
+  "password": "STORYcollarabc",
+  "score": 4,
+  "guesses_log10": 10.181906
+ },
+ {
+  "password": "Hp#IGO{57}o(eN)_-2zrE:",
+  "score": 4,
+  "guesses_log10": 22.0
+ },
+ {
+  "password": "hexagon radio person portal yoga",
+  "score": 4,
+  "guesses_log10": 26.958665
+ },
+ {
+  "password": "themustang@1",
+  "score": 3,
+  "guesses_log10": 8.267641
+ },
+ {
+  "password": "4811zxcvROUGHgeranium",
+  "score": 4,
+  "guesses_log10": 15.757505
+ },
+ {
+  "password": "Ea+V",
+  "score": 1,
+  "guesses_log10": 4.0
+ },
+ {
+  "password": "merry_shelter_severe_list",
+  "score": 4,
+  "guesses_log10": 21.480071
+ },
+ {
+  "password": "login!",
+  "score": 1,
+  "guesses_log10": 4.041393
+ },
+ {
+  "password": "!@#4256",
+  "score": 2,
+  "guesses_log10": 6.715903
+ },
+ {
+  "password": "Ki42auFV6D!]*f)+?]_9",
+  "score": 4,
+  "guesses_log10": 20.0
+ },
+ {
+  "password": "zero arrest crater like stronghold",
+  "score": 4,
+  "guesses_log10": 25.958665
+ },
+ {
+  "password": "MyMoon!",
+  "score": 2,
+  "guesses_log10": 7.0
+ },
+ {
+  "password": "BLUFF6678",
+  "score": 3,
+  "guesses_log10": 8.000043
+ },
+ {
+  "password": "FnvE.",
+  "score": 1,
+  "guesses_log10": 5.0
+ },
+ {
+  "password": "jumblecabaretride",
+  "score": 4,
+  "guesses_log10": 11.879541
+ },
+ {
+  "password": "!Sophia123",
+  "score": 3,
+  "guesses_log10": 8.01541
+ },
+ {
+  "password": "8582puzzle",
+  "score": 3,
+  "guesses_log10": 8.001517
+ },
+ {
+  "password": "5Pfbw!m2)0oki",
+  "score": 4,
+  "guesses_log10": 13.0
+ },
+ {
+  "password": "spike_piano_brush",
+  "score": 4,
+  "guesses_log10": 15.179039
+ },
+ {
+  "password": "!mommy",
+  "score": 1,
+  "guesses_log10": 4.197556
+ },
+ {
+  "password": "SPARKfabulous7318",
+  "score": 4,
+  "guesses_log10": 12.343412
+ },
+ {
+  "password": "DpIqHHOCD014paSSQs",
+  "score": 4,
+  "guesses_log10": 17.653213
+ },
+ {
+  "password": "march balcony plus fondue",
+  "score": 4,
+  "guesses_log10": 18.961986
+ },
+ {
+  "password": "!Nothing2026",
+  "score": 3,
+  "guesses_log10": 8.717134
+ },
+ {
+  "password": "fossilxyz8377",
+  "score": 4,
+  "guesses_log10": 10.372536
+ },
+ {
+  "password": "jNQArlL",
+  "score": 2,
+  "guesses_log10": 7.0
+ },
+ {
+  "password": "parkway_latitude_like_spatula",
+  "score": 4,
+  "guesses_log10": 20.180542
+ },
+ {
+  "password": "!abcdefgh!",
+  "score": 3,
+  "guesses_log10": 8.00013
+ },
+ {
+  "password": "abcENCRYPTpeel",
+  "score": 4,
+  "guesses_log10": 10.181906
+ },
+ {
+  "password": "0772414021256424167737",
+  "score": 4,
+  "guesses_log10": 21.164353
+ },
+ {
+  "password": "plumber groom cliff height legacy switch",
+  "score": 4,
+  "guesses_log10": 33.504207
+ },
+ {
+  "password": "martin!",
+  "score": 1,
+  "guesses_log10": 4.084934
+ },
+ {
+  "password": "PITCHFORK985axle",
+  "score": 4,
+  "guesses_log10": 11.302504
+ },
+ {
+  "password": "35695681598113062858477",
+  "score": 4,
+  "guesses_log10": 21.480229
+ },
+ {
+  "password": "whisk_flair_roll",
+  "score": 4,
+  "guesses_log10": 14.781818
+ },
+ {
+  "password": "the1122332026",
+  "score": 3,
+  "guesses_log10": 9.582063
+ },
+ {
+  "password": "regard5041SALON",
+  "score": 4,
+  "guesses_log10": 12.480084
+ },
+ {
+  "password": ",KYk$5)-MRn81m",
+  "score": 4,
+  "guesses_log10": 14.0
+ },
+ {
+  "password": "slab_whisk_mouthpiece_bulk_coral",
+  "score": 4,
+  "guesses_log10": 25.781099
+ },
+ {
+  "password": "houston!",
+  "score": 1,
+  "guesses_log10": 4.21643
+ },
+ {
+  "password": "7891abc",
+  "score": 2,
+  "guesses_log10": 6.004321
+ },
+ {
+  "password": "FO2YdJRzoCkcpGy466qJY",
+  "score": 4,
+  "guesses_log10": 21.0
+ },
+ {
+  "password": "sterngatewayleapgeckothroneperil",
+  "score": 4,
+  "guesses_log10": 25.060001
+ },
+ {
+  "password": "monkey1998",
+  "score": 1,
+  "guesses_log10": 5.869232
+ },
+ {
+  "password": "import7176GRIPzxcv",
+  "score": 4,
+  "guesses_log10": 15.290572
+ },
+ {
+  "password": "yccbuzoelsisvydknuef",
+  "score": 4,
+  "guesses_log10": 20.0
+ },
+ {
+  "password": "autoquality",
+  "score": 2,
+  "guesses_log10": 7.702004
+ },
+ {
+  "password": "MyJoshua2026",
+  "score": 3,
+  "guesses_log10": 8.903524
+ },
+ {
+  "password": "BAZOOKAnotch5675",
+  "score": 4,
+  "guesses_log10": 12.205228
+ },
+ {
+  "password": "TF[PX^%t(NDDk)Egnpk!3rtP",
+  "score": 4,
+  "guesses_log10": 24.0
+ },
+ {
+  "password": "ironwoodparchment",
+  "score": 2,
+  "guesses_log10": 7.702004
+ },
+ {
+  "password": "shadow1@1",
+  "score": 1,
+  "guesses_log10": 5.011993
+ },
+ {
+  "password": "!@#5406pauseROUTE",
+  "score": 4,
+  "guesses_log10": 15.480069
+ },
+ {
+  "password": "81jC6j$.G9RvBXFC^B",
+  "score": 4,
+  "guesses_log10": 18.0
+ },
+ {
+  "password": "lunar handshake clatter compact costume",
+  "score": 4,
+  "guesses_log10": 28.550772
+ },
+ {
+  "password": "theRanger?",
+  "score": 3,
+  "guesses_log10": 8.029708
+ },
+ {
+  "password": "9685peelPENNYxyz",
+  "score": 4,
+  "guesses_log10": 14.67172
+ },
+ {
+  "password": "H3MCCFpc2ojEKmc6pVy9fTm",
+  "score": 4,
+  "guesses_log10": 23.0
+ },
+ {
+  "password": "shutospreybeechlifeguardferryfoot",
+  "score": 4,
+  "guesses_log10": 25.060001
+ },
+ {
+  "password": "!idontknow1993",
+  "score": 3,
+  "guesses_log10": 8.495361
+ },
+ {
+  "password": "!@#FIRM7457",
+  "score": 4,
+  "guesses_log10": 11.0
+ },
+ {
+  "password": "hoefmxovnyst",
+  "score": 4,
+  "guesses_log10": 12.0
+ },
+ {
+  "password": "waiter_pickle_repeat",
+  "score": 4,
+  "guesses_log10": 16.179039
+ },
+ {
+  "password": "MyFive!",
+  "score": 2,
+  "guesses_log10": 7.0
+ },
+ {
+  "password": "2006ditch",
+  "score": 2,
+  "guesses_log10": 7.864856
+ },
+ {
+  "password": "rjchzytvqyi",
+  "score": 4,
+  "guesses_log10": 11.0
+ },
+ {
+  "password": "axis-convent-drown-wild-thief-jumble",
+  "score": 4,
+  "guesses_log10": 31.781099
+ },
+ {
+  "password": "theGolfer1",
+  "score": 3,
+  "guesses_log10": 8.062507
+ },
+ {
+  "password": "occur3400DRAPEzxcv",
+  "score": 4,
+  "guesses_log10": 15.871431
+ },
+ {
+  "password": "Ukx7KL5ixH6Vs",
+  "score": 4,
+  "guesses_log10": 13.0
+ },
+ {
+  "password": "storeroom optic tabletop arise pike",
+  "score": 4,
+  "guesses_log10": 26.781099
+ },
+ {
+  "password": "beckham@1",
+  "score": 1,
+  "guesses_log10": 5.0086
+ },
+ {
+  "password": "3917asdf",
+  "score": 2,
+  "guesses_log10": 6.976788
+ },
+ {
+  "password": "K?CZrKbO19OAIbk4R-U",
+  "score": 4,
+  "guesses_log10": 19.0
+ },
+ {
+  "password": "wormholebusyhuddleprofit",
+  "score": 4,
+  "guesses_log10": 16.182016
+ },
+ {
+  "password": "theandrew?",
+  "score": 3,
+  "guesses_log10": 8.013596
+ },
+ {
+  "password": "!@#rusticAPPOINT2393",
+  "score": 4,
+  "guesses_log10": 15.945502
+ },
+ {
+  "password": "KLH1YNvWoDBZFQJcg",
+  "score": 4,
+  "guesses_log10": 17.0
+ },
+ {
+  "password": "slipknotcurrent",
+  "score": 2,
+  "guesses_log10": 6.609997
+ },
+ {
+  "password": "Myjune123",
+  "score": 3,
+  "guesses_log10": 8.000043
+ },
+ {
+  "password": "!@#careful2338",
+  "score": 4,
+  "guesses_log10": 11.279062
+ },
+ {
+  "password": "urtivhiacodqwgtc",
+  "score": 4,
+  "guesses_log10": 16.0
+ },
+ {
+  "password": "weathervanebikemedalbundlecash",
+  "score": 4,
+  "guesses_log10": 19.607792
+ },
+ {
+  "password": "Chicken1971",
+  "score": 2,
+  "guesses_log10": 6.615656
+ },
+ {
+  "password": "1766abc",
+  "score": 1,
+  "guesses_log10": 5.869232
+ },
+ {
+  "password": "0432330706534386114",
+  "score": 4,
+  "guesses_log10": 18.164353
+ },
+ {
+  "password": "anorak ladder",
+  "score": 3,
+  "guesses_log10": 9.206884
+ },
+ {
+  "password": "MyPuppy1995",
+  "score": 3,
+  "guesses_log10": 9.588334
+ },
+ {
+  "password": "4618FISCAL",
+  "score": 3,
+  "guesses_log10": 8.165857
+ },
+ {
+  "password": "rdxsuf",
+  "score": 1,
+  "guesses_log10": 6.0
+ },
+ {
+  "password": "gratefulroundmegaphone",
+  "score": 4,
+  "guesses_log10": 11.879541
+ },
+ {
+  "password": "!mnbvcxz",
+  "score": 1,
+  "guesses_log10": 4.173769
+ },
+ {
+  "password": "ABUSEasdfcabinet9607",
+  "score": 4,
+  "guesses_log10": 16.945457
+ },
+ {
+  "password": "TadLd^4^{bdL=N!]2zkZ(Nv",
+  "score": 4,
+  "guesses_log10": 23.0
+ },
+ {
+  "password": "beehive_bribe_flake_scarf",
+  "score": 4,
+  "guesses_log10": 21.179039
+ },
+ {
+  "password": "theabcd1234!",
+  "score": 3,
+  "guesses_log10": 8.046183
+ },
+ {
+  "password": "PLANE2684!@#",
+  "score": 4,
+  "guesses_log10": 11.302504
+ },
+ {
+  "password": "fE01G7oVokrCC2slW",
+  "score": 4,
+  "guesses_log10": 17.0
+ },
+ {
+  "password": "snow cadet warthog tortilla",
+  "score": 4,
+  "guesses_log10": 20.781099
+ },
+ {
+  "password": "!000000",
+  "score": 1,
+  "guesses_log10": 4.041393
+ },
+ {
+  "password": "!@#garland3566",
+  "score": 4,
+  "guesses_log10": 11.415678
+ },
+ {
+  "password": "t$ou!N02oLNk^J",
+  "score": 4,
+  "guesses_log10": 14.0
+ },
+ {
+  "password": "slim pattern pickle nautilus awful",
+  "score": 4,
+  "guesses_log10": 27.803831
+ },
+ {
+  "password": "MyZxcvbnm123",
+  "score": 3,
+  "guesses_log10": 8.060698
+ },
+ {
+  "password": "defend6505",
+  "score": 2,
+  "guesses_log10": 7.864856
+ },
+ {
+  "password": "Kq0CCk9uvNiVU",
+  "score": 4,
+  "guesses_log10": 13.0
+ },
+ {
+  "password": "gecko segment scallion",
+  "score": 4,
+  "guesses_log10": 15.781171
+ },
+ {
+  "password": "killer2026",
+  "score": 2,
+  "guesses_log10": 6.393996
+ },
+ {
+  "password": "ABOLISHtractorzxcv",
+  "score": 4,
+  "guesses_log10": 11.292268
+ },
+ {
+  "password": "!_(##h3TF6Xak",
+  "score": 4,
+  "guesses_log10": 13.0
+ },
+ {
+  "password": "aglow_gelatin_feeble_dive",
+  "score": 4,
+  "guesses_log10": 21.480071
+ },
+ {
+  "password": "denver",
+  "score": 0,
+  "guesses_log10": 2.510545
+ },
+ {
+  "password": "xyzdripping",
+  "score": 1,
+  "guesses_log10": 5.899083
+ },
+ {
+  "password": "1bBDki6dC9g1w2Qs2DS",
+  "score": 4,
+  "guesses_log10": 19.0
+ },
+ {
+  "password": "zinnia cardinal approve wife",
+  "score": 4,
+  "guesses_log10": 21.003982
+ },
+ {
+  "password": "!emma!",
+  "score": 1,
+  "guesses_log10": 6.0
+ },
+ {
+  "password": "asdf8899again",
+  "score": 4,
+  "guesses_log10": 11.284455
+ },
+ {
+  "password": "94905518711225406204903",
+  "score": 4,
+  "guesses_log10": 21.149878
+ },
+ {
+  "password": "transit-spoon-pinecone",
+  "score": 4,
+  "guesses_log10": 15.179039
+ },
+ {
+  "password": "Everything!",
+  "score": 1,
+  "guesses_log10": 4.467756
+ },
+ {
+  "password": "9500LONG",
+  "score": 2,
+  "guesses_log10": 8.0
+ },
+ {
+  "password": "0696317096874515312",
+  "score": 4,
+  "guesses_log10": 18.662663
+ },
+ {
+  "password": "puppet often",
+  "score": 3,
+  "guesses_log10": 9.206884
+ },
+ {
+  "password": "Summer@1",
+  "score": 1,
+  "guesses_log10": 4.635484
+ },
+ {
+  "password": "PORTICOmedley5300",
+  "score": 4,
+  "guesses_log10": 12.457351
+ },
+ {
+  "password": "3w$I8h",
+  "score": 1,
+  "guesses_log10": 6.0
+ },
+ {
+  "password": "duck_basket_super_pluck_beyond_seabird",
+  "score": 4,
+  "guesses_log10": 32.958665
+ },
+ {
+  "password": "demo2024",
+  "score": 2,
+  "guesses_log10": 6.861307
+ },
+ {
+  "password": "2277ZOOMzxcvring",
+  "score": 4,
+  "guesses_log10": 15.290572
+ },
+ {
+  "password": "eiOH0l9jP94dPtX9rDMFIOfM",
+  "score": 4,
+  "guesses_log10": 24.0
+ },
+ {
+  "password": "space_diskette_foxglove",
+  "score": 4,
+  "guesses_log10": 15.781171
+ },
+ {
+  "password": "MyAndrew2026",
+  "score": 3,
+  "guesses_log10": 8.751495
+ },
+ {
+  "password": "serenade6048abc",
+  "score": 4,
+  "guesses_log10": 10.180441
+ },
+ {
+  "password": "3538270",
+  "score": 2,
+  "guesses_log10": 7.0
+ },
+ {
+  "password": "glare apple",
+  "score": 3,
+  "guesses_log10": 8.353775
+ },
+ {
+  "password": "Qwe123?",
+  "score": 1,
+  "guesses_log10": 4.23147
+ },
+ {
+  "password": "broilONSLAUGHTxyz2139",
+  "score": 4,
+  "guesses_log10": 14.838178
+ },
+ {
+  "password": "76892778102",
+  "score": 4,
+  "guesses_log10": 11.0
+ },
+ {
+  "password": "active.bass.cross.movie.solo",
+  "score": 4,
+  "guesses_log10": 25.781099
+ },
+ {
+  "password": "7341FLESHalphazxcv",
+  "score": 4,
+  "guesses_log10": 17.082133
+ },
+ {
+  "password": "198666531484",
+  "score": 4,
+  "guesses_log10": 10.465383
+ },
+ {
+  "password": "armpit-import",
+  "score": 3,
+  "guesses_log10": 9.206884
+ },
+ {
+  "password": "!Lemon1",
+  "score": 2,
+  "guesses_log10": 7.0
+ },
+ {
+  "password": "SONIC3980asdf",
+  "score": 4,
+  "guesses_log10": 10.48254
+ },
+ {
+  "password": "8X1wDldnxrSFc",
+  "score": 4,
+  "guesses_log10": 13.0
+ },
+ {
+  "password": "pass-gentle-pink-carpet-only",
+  "score": 4,
+  "guesses_log10": 24.133314
+ },
+ {
+  "password": "Lauren",
+  "score": 1,
+  "guesses_log10": 3.097604
+ },
+ {
+  "password": "awareLIQUORICE",
+  "score": 3,
+  "guesses_log10": 8.002991
+ },
+ {
+  "password": "FSYNQt73l[TFTr",
+  "score": 4,
+  "guesses_log10": 14.0
+ },
+ {
+  "password": "sketch.palace.chestnut.rule.lucky",
+  "score": 4,
+  "guesses_log10": 26.211658
+ },
+ {
+  "password": "MyMetallica1",
+  "score": 3,
+  "guesses_log10": 8.020411
+ },
+ {
+  "password": "asdfSONG",
+  "score": 2,
+  "guesses_log10": 7.113342
+ },
+ {
+  "password": "+y4esf",
+  "score": 1,
+  "guesses_log10": 6.0
+ },
+ {
+  "password": "contact-aspen-resist",
+  "score": 4,
+  "guesses_log10": 15.179039
+ },
+ {
+  "password": "!redsox@1",
+  "score": 3,
+  "guesses_log10": 8.011342
+ },
+ {
+  "password": "abc540",
+  "score": 1,
+  "guesses_log10": 5.041393
+ },
+ {
+  "password": "Yk5y68E7r",
+  "score": 3,
+  "guesses_log10": 9.0
+ },
+ {
+  "password": "duet_chatter_chorus_hotshot",
+  "score": 4,
+  "guesses_log10": 21.003982
+ },
+ {
+  "password": "Mypatrick1988",
+  "score": 3,
+  "guesses_log10": 8.808292
+ },
+ {
+  "password": "1308apple",
+  "score": 2,
+  "guesses_log10": 6.78624
+ },
+ {
+  "password": "rPrOHwF3iWKaO0oiV",
+  "score": 4,
+  "guesses_log10": 17.0
+ },
+ {
+  "password": "errand.pepper.twenty",
+  "score": 4,
+  "guesses_log10": 14.907268
+ },
+ {
+  "password": "!Poiuyt123",
+  "score": 3,
+  "guesses_log10": 8.006338
+ },
+ {
+  "password": "qwertyweave",
+  "score": 1,
+  "guesses_log10": 5.709015
+ },
+ {
+  "password": "49WvqXBpccFl7oX29EC",
+  "score": 4,
+  "guesses_log10": 19.0
+ },
+ {
+  "password": "weirdeditconifersideboard",
+  "score": 4,
+  "guesses_log10": 16.182016
+ },
+ {
+  "password": "!computer!",
+  "score": 3,
+  "guesses_log10": 8.000167
+ },
+ {
+  "password": "lavender5392abcBEAKER",
+  "score": 4,
+  "guesses_log10": 14.781818
+ },
+ {
+  "password": "S)&.r)a3Ea=",
+  "score": 4,
+  "guesses_log10": 11.0
+ },
+ {
+  "password": "lighthouse.vireo.stew.skylight",
+  "score": 4,
+  "guesses_log10": 20.179039
+ },
+ {
+  "password": "Batman2008",
+  "score": 2,
+  "guesses_log10": 6.184237
+ },
+ {
+  "password": "CABINcloud",
+  "score": 3,
+  "guesses_log10": 8.002991
+ },
+ {
+  "password": "pslqyscplimdwp",
+  "score": 4,
+  "guesses_log10": 14.0
+ },
+ {
+  "password": "daily.alive",
+  "score": 3,
+  "guesses_log10": 9.206884
+ },
+ {
+  "password": "thehope@1",
+  "score": 3,
+  "guesses_log10": 8.425208
+ },
+ {
+  "password": "PARABLE3331!@#",
+  "score": 4,
+  "guesses_log10": 10.480036
+ },
+ {
+  "password": "67737516315368719499",
+  "score": 4,
+  "guesses_log10": 20.0
+ },
+ {
+  "password": "nurse_collide_java_boardwalk_similar",
+  "score": 4,
+  "guesses_log10": 26.505565
+ },
+ {
+  "password": "basketball2026",
+  "score": 2,
+  "guesses_log10": 6.836159
+ },
+ {
+  "password": "hedgeabc",
+  "score": 1,
+  "guesses_log10": 5.709015
+ },
+ {
+  "password": "Q,i1:dP9?X_xVAR.*X3FV",
+  "score": 4,
+  "guesses_log10": 21.0
+ },
+ {
+  "password": "culture.cunning.witch",
+  "score": 4,
+  "guesses_log10": 15.781171
+ },
+ {
+  "password": "!fortnite?",
+  "score": 3,
+  "guesses_log10": 8.001033
+ },
+ {
+  "password": "village9372xyzLACQUER",
+  "score": 4,
+  "guesses_log10": 14.974685
+ },
+ {
+  "password": "5:wOpg]S#)_v6XpBDT1})3",
+  "score": 4,
+  "guesses_log10": 22.0
+ },
+ {
+  "password": "epauletgypsumpastelragedried",
+  "score": 4,
+  "guesses_log10": 20.581413
+ },
+ {
+  "password": "!houston@1",
+  "score": 3,
+  "guesses_log10": 8.008336
+ },
+ {
+  "password": "checkmate1684xyz",
+  "score": 4,
+  "guesses_log10": 10.236539
+ },
+ {
+  "password": "QOgbc",
+  "score": 1,
+  "guesses_log10": 5.0
+ },
+ {
+  "password": "bearskin six neck osprey pants",
+  "score": 4,
+  "guesses_log10": 24.180514
+ },
+ {
+  "password": "wolverine@1",
+  "score": 1,
+  "guesses_log10": 4.920123
+ },
+ {
+  "password": "VALID!@#tarantula",
+  "score": 4,
+  "guesses_log10": 11.417151
+ },
+ {
+  "password": "At-jNWdvvlY*Y.u5",
+  "score": 4,
+  "guesses_log10": 16.0
+ },
+ {
+  "password": "member.sector",
+  "score": 3,
+  "guesses_log10": 9.206884
+ },
+ {
+  "password": "159753123",
+  "score": 1,
+  "guesses_log10": 4.247973
+ },
+ {
+  "password": "ADAMANTqwerty952oasis",
+  "score": 4,
+  "guesses_log10": 13.78823
+ },
+ {
+  "password": "objkkugy",
+  "score": 2,
+  "guesses_log10": 8.0
+ },
+ {
+  "password": "oath-picture",
+  "score": 3,
+  "guesses_log10": 9.001478
+ },
+ {
+  "password": "!locked@1",
+  "score": 3,
+  "guesses_log10": 8.013469
+ },
+ {
+  "password": "MANTISnerveasdf",
+  "score": 4,
+  "guesses_log10": 11.292268
+ },
+ {
+  "password": "761585192902512",
+  "score": 4,
+  "guesses_log10": 13.419625
+ },
+ {
+  "password": "farm pomegranate",
+  "score": 3,
+  "guesses_log10": 9.001478
+ },
+ {
+  "password": "276531",
+  "score": 1,
+  "guesses_log10": 4.041393
+ },
+ {
+  "password": "1283zxcvANCESTOR",
+  "score": 4,
+  "guesses_log10": 11.455077
+ }
+]

@@ -1,0 +1,12 @@
+{
+  "format": "dashlane",
+  "input": "tests/vectors/import/_inputs/dashlane.zip",
+  "python_format": "dashlane-zip",
+  "result": {
+    "diagnostics": [
+      "credentials.csv: columns not recognised; skipped."
+    ],
+    "records": [],
+    "source_format": "dashlane-zip"
+  }
+}

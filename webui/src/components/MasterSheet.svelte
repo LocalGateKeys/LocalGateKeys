@@ -1,6 +1,7 @@
 <script>
   /** Change the master password: one form, one call; the vault locks afterwards. */
   import ErrorLogLink from './ErrorLogLink.svelte';
+  import { t } from '../lib/i18n.svelte.js';
   import { call } from '../lib/api.js';
   import { okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
@@ -26,7 +27,7 @@
   async function submit(event) {
     event.preventDefault();
     if (busy) return;
-    if (next !== again) { error = 'The new passwords did not match.'; return; }
+    if (next !== again) { error = t('masterSheet.mismatch'); return; }
     busy = true; error = '';
     const result = await call('master_change', current, next, again, needsPhrase ? phrase : null);
     busy = false;
@@ -41,22 +42,22 @@
   }
 </script>
 
-<div class="scrim" role="dialog" aria-modal="true" aria-label="Change master password">
+<div class="scrim" role="dialog" aria-modal="true" aria-label={t('masterSheet.title')}>
   <form class="sheet glass" onsubmit={submit}>
-    <h2>Change master password</h2>
+    <h2>{t('masterSheet.title')}</h2>
     <div class="group">
-      <Field label="Current master password" type="password" bind:value={current} autofocus autocomplete="current-password" />
-      <Field label="New master password (at least 12 characters)" type="password" bind:value={next} autocomplete="new-password" />
-      <Field label="Enter the new password again" type="password" bind:value={again} autocomplete="new-password" />
+      <Field label={t('masterSheet.current')} type="password" bind:value={current} autofocus autocomplete="current-password" />
+      <Field label={t('masterSheet.new')} type="password" bind:value={next} autocomplete="new-password" />
+      <Field label={t('masterSheet.again')} type="password" bind:value={again} autocomplete="new-password" />
     </div>
     {#if needsPhrase}
-      <p class="note">The vault is re-encrypted with a new key. Enter your 24-word recovery phrase to keep it working, or leave this blank and create a new phrase afterwards:</p>
-      <div class="group"><Field label="Recovery phrase" type="password" bind:value={phrase} /></div>
+      <p class="note">{t('masterSheet.phraseNote')}</p>
+      <div class="group"><Field label={t('masterSheet.phrase')} type="password" bind:value={phrase} /></div>
     {/if}
     {#if error}<p class="error" role="alert">{error}<ErrorLogLink text={error} /></p>{/if}
     <footer>
-      <Button label="Cancel" onclick={() => { wipe(); onclose(); }} />
-      <Button type="submit" variant="primary" label="Change password" busy={busy} busyLabel="Re-encrypting…" />
+      <Button label={t('common.cancel')} onclick={() => { wipe(); onclose(); }} />
+      <Button type="submit" variant="primary" label={t('masterSheet.change')} busy={busy} busyLabel={t('masterSheet.reencrypting')} />
     </footer>
   </form>
 </div>

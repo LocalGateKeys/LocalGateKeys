@@ -1,6 +1,6 @@
 # LocalGateKeys iOS
 
-`LGKCore/` is the Swift package with the sync, crypto and LAN logic shared by the app and its extensions.
+`LGKCore/` is the Swift package with the sync, crypto and LAN logic shared by the iPhone and Mac apps and their extensions.
 
 ## Tests
 
@@ -25,12 +25,23 @@ xcodegen generate
 
 Targets: `LocalGateKeys` (app), `AutoFill` (credential provider extension), `SafariSave` (Safari Web Extension), `AppShared` (framework that links
 LGKCore and re-exports it), `AppSharedTests`, `AutoFillTests` (the extension's matcher, unlock-then-fill flow and identity refresh, unhosted),
-`LocalGateKeysTests` (app view models, hosted in the app). AutoFill matching uses the desktop's
+`LocalGateKeysTests` (app view models, hosted in the app), `LocalGateKeysWatch` (the Apple Watch app with the
+pinned 2FA codes, sources under `Watch/`, embedded in the iPhone app) and `LocalGateKeysWatchTests` (its own scheme). AutoFill matching uses the desktop's
 `src/localvault/assets/public_suffix_list.dat`, bundled into the app and the extension by project.yml. Run the app tests:
 
 ```
 xcodebuild test -project ios/LocalGateKeys.xcodeproj -scheme LocalGateKeys \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro' CODE_SIGNING_ALLOWED=NO
+```
+
+Mac targets (macOS 14+, same version train as the iPhone app): `LocalGateKeysMac` (app, sources under `Mac/`,
+sharing some model files with `App/`), `AutoFillMac` (credential provider extension), `SafariMac` (Safari Web
+Extension), `AppSharedMac` (the AppShared sources built for macOS), `LocalGateKeysMacTests` (the app's sources
+compiled straight in, unhosted). Run the Mac tests:
+
+```
+xcodebuild test -project ios/LocalGateKeys.xcodeproj -scheme LocalGateKeysMac \
+  -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO
 ```
 
 ## Vendored code
@@ -53,8 +64,8 @@ only the stored identity, not the page URL, so iOS's own domain matching decides
 
 `SafariSave` (`app.localgatekeys.app.safari`) offers to save the logins you sign in with in Safari. Its web
 resources in `SafariSave/Resources/` are generated, never edited by hand: run
-`node browser-extension/build-safari-extension.cjs` (a node test fails when the committed folder differs from a
-fresh build). The shared content scripts are the desktop's, unchanged; `background-safari.js` keeps captures in
+`node browser-extension/build-safari-extension.cjs` (it writes both `SafariSave/Resources/` and the Mac's `SafariMac/Resources/`;
+a node test fails when the committed folder differs from a fresh build). The shared content scripts are the desktop's, unchanged; `background-safari.js` keeps captures in
 memory only and asks the native handler through `sendNativeMessage("app.localgatekeys.app", …)`.
 
 `SafariWebExtensionHandler` passes each message to `SafariSaveService` (AppShared): `classify` against the

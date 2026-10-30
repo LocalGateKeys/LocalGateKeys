@@ -32,19 +32,54 @@ describe('Collections', () => {
   });
 });
 
-describe('Getting started', () => {
-  it('sends the welcome choice and opens the route a stage asks for', async () => {
-    const base = { ok: true, title: 'Getting started', subtitle: 's', intro: 'i', heading: 'Stage 1 of 7 · Welcome', purpose: 'p', action: 'a',
-      status: 'Pending', primary: 'Save safety choice', can_skip: true, offline: true, stage: 'welcome',
-      stages: [{ key: 'welcome', label: 'Welcome', state: 'current' }] };
-    const api = fakeApi({ onboarding_state: vi.fn().mockResolvedValue(base),
-      onboarding_perform: vi.fn().mockResolvedValue({ ...base, stage: 'security', primary: 'Review security', open: { route: 'security' } }) });
+describe('Set up LocalGateKeys', () => {
+  const steps = (current, extra = {}) => ['vault', 'unlock', 'import', 'phrase', 'browser'].map((key, i) => ({
+    key, label: key, text: `${key} text`, primary: `Do ${key}`,
+    state: extra[key] ?? (i === 0 ? 'done' : key === current ? 'current' : 'todo') }));
+  const view = (current, extra) => ({ ok: true, title: 'Set up LocalGateKeys', subtitle: 's', steps: steps(current, extra),
+    current, done: 1, total: 5, progress: '1 of 5', message: '', complete: false, card: true, hidden: false });
+
+  it('opens with skipped steps offered again and starts a step', async () => {
+    const api = fakeApi({ onboarding_show: vi.fn().mockResolvedValue(view('unlock')),
+      onboarding_perform: vi.fn().mockResolvedValue({ ...view('unlock'), open: { route: 'hello', params: { startHello: true } } }) });
     const onroute = vi.fn();
     render(OnboardingPage, { onclose: vi.fn(), onroute });
-    await fireEvent.click(await screen.findByLabelText('Keep strict offline mode enabled'));
-    await fireEvent.click(screen.getByRole('button', { name: 'Save safety choice' }));
-    await waitFor(() => expect(api.onboarding_perform).toHaveBeenCalledWith(false));
-    expect(onroute.mock.calls[0][0]).toBe('security');
+    await fireEvent.click(await screen.findByRole('button', { name: 'Do unlock' }));
+    await waitFor(() => expect(api.onboarding_perform).toHaveBeenCalledWith('unlock'));
+    expect(api.onboarding_show).toHaveBeenCalled();
+    expect(onroute.mock.calls[0].slice(0, 2)).toEqual(['hello', { startHello: true }]);
+  });
+
+  it('skips one step, or the whole setup from the first screen', async () => {
+    const api = fakeApi({ onboarding_show: vi.fn().mockResolvedValue(view('unlock')),
+      onboarding_skip: vi.fn().mockResolvedValue(view('import', { unlock: 'skipped' })),
+      onboarding_skip_all: vi.fn().mockResolvedValue(view(null)) });
+    const onclose = vi.fn();
+    render(OnboardingPage, { onclose, onroute: vi.fn() });
+    await fireEvent.click(await screen.findByRole('button', { name: 'Skip' }));
+    await waitFor(() => expect(api.onboarding_skip).toHaveBeenCalledWith('unlock'));
+    expect(await screen.findByRole('button', { name: 'Do import' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Skip setup' })).toBeNull(); // not the first screen any more
+  });
+
+  it('Skip setup closes the guide', async () => {
+    const api = fakeApi({ onboarding_show: vi.fn().mockResolvedValue(view('unlock')),
+      onboarding_skip_all: vi.fn().mockResolvedValue(view(null)) });
+    const onclose = vi.fn();
+    render(OnboardingPage, { onclose, onroute: vi.fn() });
+    await fireEvent.click(await screen.findByRole('button', { name: 'Skip setup' }));
+    await waitFor(() => expect(onclose).toHaveBeenCalled());
+    expect(api.onboarding_skip_all).toHaveBeenCalled();
+  });
+
+  it('shows the vault card until it is hidden', async () => {
+    const api = fakeApi({ onboarding_card: vi.fn().mockResolvedValue({ ok: true, card: true, progress: '3 of 5', done: 3, total: 5 }),
+      onboarding_hide: vi.fn().mockResolvedValue({ ok: true, card: false }) });
+    render(Home, { vault: UNLOCKED });
+    expect(await screen.findByText('Finish setting up · 3 of 5')).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Hide' }));
+    await waitFor(() => expect(api.onboarding_hide).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByText('Finish setting up · 3 of 5')).toBeNull());
   });
 });
 

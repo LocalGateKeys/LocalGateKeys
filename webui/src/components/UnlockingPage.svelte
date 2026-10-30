@@ -1,6 +1,7 @@
 <script>
   /** Windows Hello and camera verification for this profile: status, set up, remove. */
   import { call } from '../lib/api.js';
+  import { t } from '../lib/i18n.svelte.js';
   import { okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
   import CameraView from './CameraView.svelte';
@@ -18,8 +19,8 @@
 
   async function load() {
     const [h, f] = await Promise.all([call('hello_status'), call('face_status')]);
-    if (okOrToast(h, 'Could not read Windows Hello')) hello = h;
-    if (okOrToast(f, 'Could not read camera verification')) face = f;
+    if (okOrToast(h, t('unlockingPage.helloReadFailed'))) hello = h;
+    if (okOrToast(f, t('unlockingPage.cameraReadFailed'))) face = f;
   }
 
   async function run(method, kind) {
@@ -34,8 +35,8 @@
         card = result.phrase_card;
         phraseNotes = Array.isArray(card.notes) ? card.notes.filter((n) => typeof n === 'string' && n) : [];
       }
-    } else if (result.error.code !== 'cancelled') toast(result.error.message, '', 'error');
-    else if (result.error.message !== 'Cancelled.') message = result.error.message;
+    } else if (result.error.code === 'cancelled_notice') message = result.error.message;
+    else if (result.error.code !== 'cancelled') toast(result.error.message, '', 'error');
     load();
   }
 
@@ -45,18 +46,18 @@
 
   async function autoStart(event) {
     const result = await call('hello_auto_start', event.currentTarget.checked);
-    if (okOrToast(result, 'Not saved')) hello = { ...hello, auto_start: result.auto_start };
+    if (okOrToast(result, t('unlockingPage.notSaved'))) hello = { ...hello, auto_start: result.auto_start };
   }
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label="Unlocking">
+<div class="sheet glass" role="dialog" aria-label={t('unlockingPage.title')}>
   <header>
-    <h2>Unlocking</h2>
-    <button class="close" aria-label="Close" onclick={onclose}>✕</button>
+    <h2>{t('unlockingPage.title')}</h2>
+    <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
   {#if message}<p class="summary" role="status">{message}</p>{/if}
   {#if phraseNotes.length}
-    <ul class="phrase-notes" aria-label="What changed with the new recovery phrase">
+    <ul class="phrase-notes" aria-label={t('unlockingPage.phraseChanged')}>
       {#each phraseNotes as note, i (i)}<li>{note}</li>{/each}
     </ul>
   {/if}
@@ -68,31 +69,31 @@
       <p class="status {hello.tone}">{hello.status}</p>
       {#if hello.supported}
         <p class="note">{hello.guidance}</p>
-        {#if busy === 'hello'}<p class="note" role="status">Complete the Windows Security prompt(s). Setup also tests that silent unlocking is refused.</p>{/if}
-        <label class="toggle"><input type="checkbox" checked={hello.auto_start} onchange={autoStart} /> Start Windows Hello automatically on the unlock screen</label>
-        <p class="note">Open Windows Settings &gt; Accounts &gt; Sign-in options on your Windows PC to manage face, fingerprint or PIN.</p>
+        {#if busy === 'hello'}<p class="note" role="status">{t('unlockingPage.helloPrompt')}</p>{/if}
+        <label class="toggle"><input type="checkbox" checked={hello.auto_start} onchange={autoStart} /> {t('unlockingPage.helloAuto')}</label>
+        <p class="note">{t('unlockingPage.helloManage')}</p>
         <footer>
-          {#if hello.enabled || hello.incomplete}<Button label="Remove" variant="danger" onclick={() => run('hello_disable', 'hello')} disabled={!!busy} />{/if}
-          {#if !hello.enabled}<Button label="Enable for this profile" variant="primary" busy={busy === 'hello'} busyLabel="Waiting for Windows…" onclick={() => run('hello_enable', 'hello')} disabled={!!busy || hello.incomplete} />{/if}
+          {#if hello.enabled || hello.incomplete}<Button label={t('unlockingPage.remove')} variant="danger" onclick={() => run('hello_disable', 'hello')} disabled={!!busy} />{/if}
+          {#if !hello.enabled}<Button label={t('unlockingPage.helloEnable')} variant="primary" busy={busy === 'hello'} busyLabel={t('unlockingPage.waitingWindows')} onclick={() => run('hello_enable', 'hello')} disabled={!!busy || hello.incomplete} />{/if}
         </footer>
       {/if}
     </div>
   {/if}
   {#if face && !card}
-    <div class="section-label">Camera verification</div>
+    <div class="section-label">{t('unlockingPage.camera')}</div>
     <div class="group card">
       <p class="status {face.tone}">{face.status}</p>
       {#if face.supported}
-        <p class="note">An ordinary webcam with local face matching. A convenience, not hardware-backed authentication; Windows Hello is stronger when your PC supports it.</p>
+        <p class="note">{t('unlockingPage.cameraNote')}</p>
         <footer>
-          {#if face.enabled || face.incomplete}<Button label="Remove" variant="danger" onclick={() => run('face_disable', 'face')} disabled={!!busy} />{/if}
-          {#if !face.enabled}<Button label="Set up camera verification" variant="primary" onclick={() => run('face_enable', 'face')} disabled={!!busy || face.incomplete} />{/if}
+          {#if face.enabled || face.incomplete}<Button label={t('unlockingPage.remove')} variant="danger" onclick={() => run('face_disable', 'face')} disabled={!!busy} />{/if}
+          {#if !face.enabled}<Button label={t('unlockingPage.cameraSetUp')} variant="primary" onclick={() => run('face_enable', 'face')} disabled={!!busy || face.incomplete} />{/if}
         </footer>
       {/if}
     </div>
   {/if}
 </div>
-{#if busy === 'face'}<CameraView title="Set up camera verification" mode="enroll" />{/if}
+{#if busy === 'face'}<CameraView title={t('unlockingPage.cameraSetUp')} mode="enroll" />{/if}
 
 <style>
   .sheet {

@@ -41,6 +41,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 
 from . import config, distribution
 from .version import APP_VERSION, BUILD_DATE
+from .i18n import t
 
 # Fixed HTTPS URL of the signed bundle, served by the Cloudflare Worker in
 # cloudflare/update-feed. Compiled into every client: never change it casually
@@ -112,7 +113,7 @@ _ARTIFACT_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
 # Static, URL-free message used for every verification failure so that the UI
 # never reveals feed contents or hosting details.
-_VERIFY_FAILED = "The release manifest could not be verified."
+_VERIFY_FAILED = "updates.theReleaseManifestCouldNot"
 
 
 class UpdateCheckError(ValueError):
@@ -260,12 +261,12 @@ def open_release_page() -> bool:
     """Open the HTTPS release notes page of the last verified manifest."""
     result = _LAST_VERIFIED
     if result is None:
-        raise UpdateCheckError("No verified release information is available yet.")
+        raise UpdateCheckError(t("updates.noVerifiedReleaseInformationIs"))
     url = _validate_https_url(result.notes_url)
     try:
         return bool(webbrowser.open(url, new=2))
     except (OSError, webbrowser.Error) as exc:
-        raise UpdateCheckError("The release page could not be opened.") from exc
+        raise UpdateCheckError(t("updates.theReleasePageCouldNot")) from exc
 
 
 def canonical_json(value: object) -> bytes:
@@ -307,7 +308,7 @@ def _fetch_feed(
             if status is None:
                 status = response.getcode()
             if status != 200:
-                raise UpdateCheckError("The release feed returned an unexpected response.")
+                raise UpdateCheckError(t("updates.theReleaseFeedReturnedAn"))
             headers = getattr(response, "headers", {})
             content_length = headers.get("Content-Length") if hasattr(headers, "get") else None
             if content_length is not None:
@@ -315,12 +316,12 @@ def _fetch_feed(
                     declared_size = int(content_length)
                 except (TypeError, ValueError) as exc:
                     raise UpdateCheckError(
-                        "The release manifest has invalid size metadata."
+                        t("updates.theReleaseManifestHasInvalid")
                     ) from exc
                 if declared_size < 0:
-                    raise UpdateCheckError("The release manifest has invalid size metadata.")
+                    raise UpdateCheckError(t("updates.theReleaseManifestHasInvalid"))
                 if declared_size > max_bytes:
-                    raise UpdateCheckError("The release manifest is too large.")
+                    raise UpdateCheckError(t("updates.theReleaseManifestIsToo2"))
             raw = response.read(max_bytes + 1)
     except UpdateCheckError:
         raise
@@ -328,13 +329,13 @@ def _fetch_feed(
         # The host answered, so this is not a connectivity problem.
         exc.close()
         if exc.code == 404:
-            raise UpdateCheckError("No release has been published yet.") from exc
-        raise UpdateCheckError("The release feed returned an unexpected response.") from exc
+            raise UpdateCheckError(t("updates.noReleaseHasBeenPublished")) from exc
+        raise UpdateCheckError(t("updates.theReleaseFeedReturnedAn")) from exc
     except (OSError, urllib.error.URLError, TimeoutError, http.client.HTTPException) as exc:
-        raise UpdateCheckError("The release feed could not be reached.") from exc
+        raise UpdateCheckError(t("updates.theReleaseFeedCouldNot2")) from exc
 
     if not isinstance(raw, bytes) or len(raw) > max_bytes:
-        raise UpdateCheckError("The release manifest is too large or invalid.")
+        raise UpdateCheckError(t("updates.theReleaseManifestIsToo"))
     return raw
 
 
@@ -360,84 +361,84 @@ def _verify_signed(
     try:
         bundle = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_object)
     except (UnicodeDecodeError, json.JSONDecodeError, UpdateCheckError, RecursionError) as exc:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="invalid-json") from exc
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="invalid-json") from exc
     if type(bundle) is not dict or set(bundle) != _BUNDLE_FIELDS:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="bundle-shape")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="bundle-shape")
     manifest = bundle["manifest"]
     signature_block = bundle["signature"]
     if type(manifest) is not dict or type(signature_block) is not dict:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="bundle-shape")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="bundle-shape")
     if set(signature_block) != _SIGNATURE_FIELDS:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="signature-shape")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="signature-shape")
     if signature_block["alg"] != SIGNATURE_ALGORITHM:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="signature-alg")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="signature-alg")
     key_id = signature_block["key_id"]
     if not isinstance(key_id, str) or key_id not in publisher_keys:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="unknown-key")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="unknown-key")
     signature = signature_block["signature"]
     if not isinstance(signature, str):
-        raise UpdateCheckError(_VERIFY_FAILED, reason="signature-encoding")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="signature-encoding")
     try:
         signature_bytes = base64.b64decode(signature, validate=True)
     except (binascii.Error, ValueError) as exc:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="signature-encoding") from exc
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="signature-encoding") from exc
     if len(signature_bytes) != 64:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="signature-length")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="signature-length")
     try:
         message = canonical_json(manifest)
     except (TypeError, ValueError) as exc:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="canonicalisation") from exc
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="canonicalisation") from exc
     try:
         publisher_keys[key_id].verify(signature_bytes, message)
     except InvalidSignature as exc:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="bad-signature") from exc
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="bad-signature") from exc
     return manifest
 
 
 def validate_manifest(manifest: object) -> None:
     """Enforce the exact manifest schema; raise ``UpdateCheckError`` otherwise."""
     if type(manifest) is not dict or set(manifest) != _MANIFEST_FIELDS:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="manifest-shape")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="manifest-shape")
     if manifest["format"] != MANIFEST_FORMAT:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="manifest-format")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="manifest-format")
     if not _is_int(manifest["version"]) or manifest["version"] != MANIFEST_FORMAT_VERSION:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="manifest-version")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="manifest-version")
     _parse_version(manifest["app_version"], reason="app_version")
     _parse_version(manifest["min_supported_version"], reason="min_supported_version")
     _parse_published(manifest["published"])
     _validate_https_url(manifest["notes_url"], reason="notes_url")
     if not _is_int(manifest["sequence"]) or manifest["sequence"] < 0:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="sequence")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="sequence")
     artifacts = manifest["artifacts"]
     if type(artifacts) is not list:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="artifacts")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="artifacts")
     for artifact in artifacts:
         if type(artifact) is not dict or set(artifact) != _ARTIFACT_FIELDS:
-            raise UpdateCheckError(_VERIFY_FAILED, reason="artifact-shape")
+            raise UpdateCheckError(t(_VERIFY_FAILED), reason="artifact-shape")
         name = artifact["name"]
         if not isinstance(name, str) or _ARTIFACT_NAME_PATTERN.fullmatch(name) is None:
-            raise UpdateCheckError(_VERIFY_FAILED, reason="artifact-name")
+            raise UpdateCheckError(t(_VERIFY_FAILED), reason="artifact-name")
         digest = artifact["sha256"]
         if not isinstance(digest, str) or _SHA256_PATTERN.fullmatch(digest) is None:
-            raise UpdateCheckError(_VERIFY_FAILED, reason="artifact-sha256")
+            raise UpdateCheckError(t(_VERIFY_FAILED), reason="artifact-sha256")
         if not _is_int(artifact["size"]) or artifact["size"] < 0:
-            raise UpdateCheckError(_VERIFY_FAILED, reason="artifact-size")
+            raise UpdateCheckError(t(_VERIFY_FAILED), reason="artifact-size")
         _validate_https_url(artifact["url"], reason="artifact-url")
 
 
 def validate_revocations(manifest: object) -> None:
     """Enforce the exact revocation-list schema; raise ``UpdateCheckError`` otherwise."""
     if type(manifest) is not dict or set(manifest) != _REVOCATION_FIELDS:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="revocations-shape")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="revocations-shape")
     if not _is_int(manifest["format"]) or manifest["format"] != REVOCATIONS_FORMAT_VERSION:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="revocations-format")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="revocations-format")
     _parse_published(manifest["published"])
     revoked = manifest["revoked"]
     if type(revoked) is not list or len(revoked) > MAX_REVOCATION_IDS:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="revocations-list")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="revocations-list")
     for license_id in revoked:
         if not isinstance(license_id, str) or _LICENSE_ID_PATTERN.fullmatch(license_id) is None:
-            raise UpdateCheckError(_VERIFY_FAILED, reason="revocations-id")
+            raise UpdateCheckError(t(_VERIFY_FAILED), reason="revocations-id")
 
 
 def revocation_cache_path() -> Path:
@@ -545,13 +546,13 @@ def fetch_revocations(
     # Replay protection: an older list must not replace a newer cached (or remembered) one.
     newest = _newest(_load_verified(revocation_cache_path(), keys), _load_verified(revocation_memory_path(), keys))
     if newest is not None and _parse_published(manifest["published"]) < _parse_published(newest["published"]):
-        raise UpdateCheckError(_VERIFY_FAILED, reason="revocations-rollback")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="revocations-rollback")
     value = json.loads(raw.decode("utf-8"))
     try:
         config.atomic_write_json(revocation_memory_path(), value)
         config.atomic_write_json(revocation_cache_path(), value)
     except OSError as exc:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="state-write") from exc
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="state-write") from exc
     return frozenset(manifest["revoked"])
 
 
@@ -561,7 +562,7 @@ def _enforce_freshness(published: str) -> None:
     build_day = date.fromisoformat(BUILD_DATE)
     build_at = datetime(build_day.year, build_day.month, build_day.day, tzinfo=UTC)
     if published_at < build_at - timedelta(days=MAX_MANIFEST_AGE_DAYS):
-        raise UpdateCheckError(_VERIFY_FAILED, reason="stale-manifest")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="stale-manifest")
 
 
 def _enforce_sequence(sequence: int) -> None:
@@ -569,12 +570,12 @@ def _enforce_sequence(sequence: int) -> None:
     path = update_state_path()
     last_sequence = _read_last_sequence(path)
     if last_sequence is not None and sequence < last_sequence:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="sequence-rollback")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="sequence-rollback")
     if last_sequence is None or sequence > last_sequence:
         try:
             config.atomic_write_json(path, {"last_sequence": sequence})
         except OSError as exc:
-            raise UpdateCheckError(_VERIFY_FAILED, reason="state-write") from exc
+            raise UpdateCheckError(t(_VERIFY_FAILED), reason="state-write") from exc
 
 
 def _read_last_sequence(path: Path) -> int | None:
@@ -630,7 +631,7 @@ def _parse_version(value: object, *, reason: str | None = None) -> tuple[int, in
     match = _VERSION_PATTERN.fullmatch(value) if isinstance(value, str) else None
     if match is None:
         if reason is not None:
-            raise UpdateCheckError(_VERIFY_FAILED, reason=reason)
+            raise UpdateCheckError(t(_VERIFY_FAILED), reason=reason)
         raise UpdateCheckError("The release version must use the x.y.z format.")
     return tuple(int(part) for part in match.groups())
 
@@ -638,14 +639,14 @@ def _parse_version(value: object, *, reason: str | None = None) -> tuple[int, in
 def _parse_published(value: object) -> datetime:
     """Parse an RFC 3339 timestamp with an explicit offset into UTC."""
     if not isinstance(value, str) or len(value) > 64:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="published")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="published")
     text = value[:-1] + "+00:00" if value.endswith(("Z", "z")) else value
     try:
         parsed = datetime.fromisoformat(text)
     except ValueError as exc:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="published") from exc
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="published") from exc
     if "T" not in value or parsed.tzinfo is None or parsed.utcoffset() is None:
-        raise UpdateCheckError(_VERIFY_FAILED, reason="published")
+        raise UpdateCheckError(t(_VERIFY_FAILED), reason="published")
     return parsed.astimezone(UTC)
 
 
@@ -655,7 +656,7 @@ def _validate_https_url(
     def fail(message: str) -> UpdateCheckError:
         if configuration:
             return UpdateCheckError(message)
-        return UpdateCheckError(_VERIFY_FAILED, reason=reason or "url")
+        return UpdateCheckError(t(_VERIFY_FAILED), reason=reason or "url")
 
     if not isinstance(value, str) or not value or len(value) > 2048:
         raise fail("The release URL configuration is invalid.")
@@ -690,7 +691,7 @@ def _unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
     result: dict[str, object] = {}
     for key, value in pairs:
         if key in result:
-            raise UpdateCheckError(_VERIFY_FAILED, reason="duplicate-field")
+            raise UpdateCheckError(t(_VERIFY_FAILED), reason="duplicate-field")
         result[key] = value
     return result
 

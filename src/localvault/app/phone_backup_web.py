@@ -23,30 +23,36 @@ from ..session_guard import StaleSession
 from ..sync.phone_restore import QUARANTINE_KINDS, PhoneRestoreError, plan_restore, restore
 from ..sync.vault_bridge import BridgeError, published_licenses
 from ..vault import VaultLockedError
+from ..i18n import t
 
 _log = logging.getLogger(__name__)
 
-FILE_TYPES = ("LocalGateKeys phone backup (*.lgkm)", "All files (*.*)")
+FILE_TYPES = ("phoneBackupWeb.localgatekeysPhoneBackupLgkm", "phoneBackupWeb.allFiles")
 # Sync issue kinds that skip single records while the rest is applied; any other kind means nothing was applied.
-QUARANTINE = QUARANTINE_KINDS
+# A document whose file is missing or refused is left out; everything else is still applied.
+QUARANTINE = QUARANTINE_KINDS | {"attachment-missing", "attachment-refused"}
 FATAL_REASONS = {
-    "trash-full": "the trash is full",
-    "history-quota": "item history is full",
-    "busy": "the vault changed while restoring. Try again",
+    "trash-full": "phoneBackupWeb.theTrashIsFull",
+    "history-quota": "phoneBackupWeb.itemHistoryIsFull",
+    "busy": "phoneBackupWeb.theVaultChangedWhileRestoring",
 }
 MAX_WRONG = 5
 LOCKOUT_SECONDS = 30.0
-STALE = "Preview again before restoring."
-DONE = "Phone backup restored."
-UNREADABLE = "The vault could not be read for the restore."
+STALE = "phoneBackupWeb.previewAgainBeforeRestoring"
+DONE = "phoneBackupWeb.phoneBackupRestored"
+UNREADABLE = "phoneBackupWeb.theVaultCouldNotBe"
 
 
 def _skipped_text(count: int, verb: str) -> str:
-    return f"{count} items this version cannot read {verb} skipped"
+    return t("phoneBackupWeb.skippedWillBe" if verb == "will be" else "phoneBackupWeb.skippedWere", count=count)
+
+
+def _missing_text(count: int, verb: str) -> str:
+    return t("phoneBackupWeb.missingWillBe" if verb == "will be" else "phoneBackupWeb.missingWere", count=count)
 
 
 def _deleted_text(count: int) -> str:
-    return f"{count} items moved to the trash (deleted on the phone)"
+    return t("phoneBackupWeb.itemsMovedToTheTrash", count=count)
 
 
 class PhoneBackupService:
@@ -70,7 +76,7 @@ class PhoneBackupService:
     def _lease(self) -> Any:
         controller = self._controller
         if not controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile first.")
+            raise ApiError("locked", t("error.lockedProfile"))
         lease = controller.guard.lease()
         controller.require_lease(lease)
         guard = controller.guard
@@ -82,16 +88,16 @@ class PhoneBackupService:
             with path.open("rb") as handle:
                 data = handle.read(MAX_FILE_BYTES + 1)
         except OSError:
-            raise ApiError("invalid", "That file could not be read.") from None
+            raise ApiError("invalid", t("licence.thatFileCouldNotBe")) from None
         if len(data) > MAX_FILE_BYTES:
             raise ApiError("invalid", str(PhoneBackupError("too-large")))
         return data
 
     def choose(self) -> dict[str, Any]:
         self._lease()
-        chosen = self._dialogs.open_file("Restore phone backup (.lgkm)", FILE_TYPES)
+        chosen = self._dialogs.open_file(t("phoneBackupWeb.restorePhoneBackupLgkm"), tuple(t(x) for x in FILE_TYPES))
         if not chosen:
-            raise ApiError("cancelled", "No file was chosen.")
+            raise ApiError("cancelled", t("recovery.noFileWasChosen"))
         path = Path(chosen)
         data = self._read(path)
         try:
@@ -107,12 +113,12 @@ class PhoneBackupService:
         lease = self._lease()
         path = self._paths.get(str(handle or ""))
         if path is None:
-            raise ApiError("invalid", "Choose a backup file first.")
+            raise ApiError("invalid", t("phoneBackupWeb.chooseABackupFileFirst"))
         if not password:
-            raise ApiError("invalid", "Enter the backup password.")
+            raise ApiError("invalid", t("phoneBackupWeb.enterTheBackupPassword"))
         with self._lock:
             if time.monotonic() < self._blocked_until:
-                raise ApiError("busy", "Too many attempts. Try again in 30 seconds.")
+                raise ApiError("busy", t("phoneBackupWeb.tooManyAttemptsTryAgain"))
         data = self._read(path)
         now = int(time.time())
         try:
@@ -132,62 +138,71 @@ class PhoneBackupService:
         except PhoneRestoreError as exc:
             raise ApiError("invalid", str(exc)) from None
         except (StaleSession, VaultLockedError):
-            raise ApiError("locked", "Unlock this profile first.") from None
+            raise ApiError("locked", t("error.lockedProfile")) from None
         except BridgeError:
-            raise ApiError("invalid", UNREADABLE) from None
+            raise ApiError("invalid", t(UNREADABLE)) from None
         token = secrets.token_urlsafe(12)
         self._plans.clear()  # only the latest preview can be restored
         self._plans[token] = (str(handle), plan)
-        lines = [f"{plan.new} new items", f"{plan.updated} items updated from the backup",
-                 f"{plan.unchanged} already up to date"]
+        lines = [t("phoneBackupWeb.newItems", new=plan.new), t("phoneBackupWeb.itemsUpdatedFromTheBackup", updated=plan.updated),
+                 t("phoneBackupWeb.alreadyUpToDate", unchanged=plan.unchanged)]
         if plan.deleted:
             lines.append(_deleted_text(plan.deleted))
+        if plan.files:
+            lines.append(t("phoneBackupWeb.documentFilesFromTheBackup", v1=len(plan.files)))
+        if plan.files_missing:
+            lines.append(_missing_text(plan.files_missing, "will be"))
         if plan.skipped:
             lines.append(_skipped_text(plan.skipped, "will be"))
         if plan.held_back:
-            lines.append(f"{plan.held_back} items held back by the free plan's 4-item limit")
+            lines.append(t("phoneBackupWeb.itemsHeldBackByThe", held_back=plan.held_back))
         if plan.totp_as_field:
-            lines.append(f"{plan.totp_as_field} two-factor keys kept as hidden fields "
-                         "(two-factor codes need Pro)")
-        return {"token": token, "lines": lines, "status": "Preview is ready. Review it, then restore."}
+            lines.append(t("phoneBackupWeb.twoFactorKeysKeptAs", totp_as_field=plan.totp_as_field))
+        return {"token": token, "lines": lines, "status": t("phoneBackupWeb.previewIsReadyReviewIt")}
 
     def commit(self, token: str, handle: str) -> dict[str, Any]:
         lease = self._lease()
         entry = self._plans.pop(str(token or ""), None)
         if entry is None or entry[0] != str(handle or "") or str(handle) not in self._paths:
-            raise ApiError("invalid", STALE)
+            raise ApiError("invalid", t(STALE))
         plan = entry[1]
         self._paths.pop(str(handle), None)
         try:
             report = restore(self._controller.session, lease, plan, now=int(time.time()))
         except (StaleSession, VaultLockedError):
-            raise ApiError("locked", "Unlock this profile first.") from None
+            raise ApiError("locked", t("error.lockedProfile")) from None
         except BridgeError:
-            raise ApiError("invalid", UNREADABLE) from None
+            raise ApiError("invalid", t(UNREADABLE)) from None
         fatal = [kind for kind in report.issues if kind not in QUARANTINE]
         if fatal:
-            reason = FATAL_REASONS.get(fatal[0], "the vault could not be updated")
-            return {"lines": [], "status": f"Nothing was restored: {reason}.", "changed": False}
+            reason = t(FATAL_REASONS.get(fatal[0], "phoneBackupWeb.theVaultCouldNotBeUpdated"))
+            return {"lines": [], "status": t("phoneBackupWeb.nothingWasRestored2", reason=reason), "changed": False}
         adopted = self._adopt_licences(lease, report.licenses)
         changed = bool(report.new or report.updated or report.deleted)
-        lines = [f"{report.new} new items", f"{report.updated} items updated from the backup"]
+        lines = [t("phoneBackupWeb.newItems", new=report.new), t("phoneBackupWeb.itemsUpdatedFromTheBackup", updated=report.updated)]
         if report.deleted:
             lines.append(_deleted_text(report.deleted))
+        if report.files:
+            lines.append(t("phoneBackupWeb.documentFilesRestored", files=report.files))
+        refused = sum(1 for kind in report.issues if kind == "attachment-refused")
+        if refused:
+            lines.append(t("phoneBackupWeb.documentFilesWereDamagedAnd", refused=refused))
+        if report.files_missing:
+            lines.append(_missing_text(report.files_missing, "were"))
         if report.held_back:
-            lines.append(f"{report.held_back} items held back by the free plan's 4-item limit")
+            lines.append(t("phoneBackupWeb.itemsHeldBackByThe", held_back=report.held_back))
         if report.totp_as_field:
-            lines.append(f"{report.totp_as_field} two-factor keys kept as hidden fields "
-                         "(two-factor codes need Pro)")
+            lines.append(t("phoneBackupWeb.twoFactorKeysKeptAs", totp_as_field=report.totp_as_field))
         if report.skipped and not changed and not adopted:
-            status = f"Nothing was restored: {_skipped_text(report.skipped, 'were')}."
+            status = t("phoneBackupWeb.nothingWasRestored", v1=_skipped_text(report.skipped, 'were'))
         else:
-            status = DONE
+            status = t(DONE)
             if report.skipped:
                 status += f" {_skipped_text(report.skipped, 'were')}."
             if adopted:
-                status += " Your Pro licence was restored."
+                status += " " + t("phoneBackupWeb.yourProLicenceWasRestored")
                 if report.held_back:
-                    status += f" Restore again to bring back the {report.held_back} held-back items."
+                    status += " " + t("phoneBackupWeb.restoreAgainToBringBack", held_back=report.held_back)
         changed = changed or adopted
         if changed:
             self._controller.touch()

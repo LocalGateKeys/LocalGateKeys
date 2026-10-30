@@ -1,5 +1,6 @@
 package app.localgatekeys.android.sync
 
+import app.localgatekeys.core.sync.AttachmentVault
 import app.localgatekeys.android.pro.LicenseKeys
 import app.localgatekeys.android.vault.SecretSlots
 import app.localgatekeys.android.vault.VaultCounterStore
@@ -47,6 +48,8 @@ data class SyncDependencies(
     /** This phone's Wi-Fi IPv4 subnet, read before a pairing dial (null: unknown, nothing is compared). */
     val localSubnet: () -> IPv4Subnet? = { null },
     val io: CoroutineDispatcher = Dispatchers.IO,
+    /** The open vault's attachment files (attachment sync); null: documents are neither received nor published. */
+    val attachments: AttachmentVault? = null,
 ) {
     /** Never shows the slots, keys or licence keys. */
     override fun toString(): String = "SyncDependencies(deviceName=$deviceName, editDebounceMillis=$editDebounceMillis)"
@@ -62,13 +65,14 @@ data class SyncDependencies(
             lan: (HelloCounterSource, RandomSource, UnixClock) -> LanTransporting = { _, _, _ -> LanTransporting.UNAVAILABLE },
             folders: FolderOpening = FolderOpening.UNAVAILABLE,
             localSubnet: () -> IPv4Subnet? = { null },
+            attachments: AttachmentVault? = null,
         ): SyncDependencies {
             val clock = SystemClock()
             val random = SystemRandomSource()
             val counters = HelloCounterSource(VaultCounterStore(slots), clock)
             return SyncDependencies(
                 slots = slots, folders = folders, lan = lan(counters, random, clock), random = random, clock = clock,
-                licenseKeys = LicenseKeys.production, localSubnet = localSubnet,
+                licenseKeys = LicenseKeys.production, localSubnet = localSubnet, attachments = attachments,
             )
         }
     }

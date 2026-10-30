@@ -57,13 +57,29 @@ REJECTED: dict[str, tuple[str, str]] = {
     "noncanonical_salt.lgkm": (PASSWORD, "not-a-backup"),
     "non_ascii_app_version.lgkm": (PASSWORD, "bad-payload"),
     "truncated.lgkm": (PASSWORD, "not-a-backup"),
-    "version_2.lgkm": (PASSWORD, "unsupported-version"),
+    "version_3.lgkm": (PASSWORD, "unsupported-version"),
     "wrong_password.lgkm": (WRONG_PASSWORD, "wrong-password-or-damaged"),
     "zero_vv_counter.lgkm": (PASSWORD, "bad-payload"),
 }
 
+#: Format 2 (document files): file name under ``format2/rejected/`` -> reason (all opened with PASSWORD).
+REJECTED_V2 = {
+    "empty_files.lgkm": "bad-payload",
+    "file_hash_mismatch.lgkm": "bad-payload",
+    "files_in_version_1.lgkm": "bad-payload",
+    "payload_version_1.lgkm": "bad-payload",
+    "unreferenced_file.lgkm": "bad-payload",
+    "unsorted_files.lgkm": "bad-payload",
+}
+ATTACHMENTS = SYNC / "attachments" / "vectors.json"
+#: The document of the format-2 vector: it carries the ``small`` blob of the attachment sync vectors.
+DOCUMENT_ID = "88888888-aaaa-4000-8000-000000000008"
+DOCUMENT_BLOB = "small"
+EXTRA_BLOB = "unicode-name"  # same size as ``small``; used by the rejected files only
+
 GENERATED_FILES = tuple(sorted(
     ["README.md", "backup.lgkm", "expected.json"] + [f"rejected/{name}" for name in REJECTED]
+    + ["format2/backup.lgkm", "format2/expected.json"] + [f"format2/rejected/{name}" for name in REJECTED_V2]
 ))
 
 
@@ -92,6 +108,22 @@ def input_states() -> list[ItemState]:
     lic = json.loads((SYNC / "license_state.json").read_text(encoding="utf-8"))
     states.append(ItemState(lic["state_id"], {device_a_id(): LICENSE_VV_COUNTER}, False, None, lic["wrapper"]))
     return sorted(states, key=lambda s: s.item_id)
+
+
+def attachment_blob(name: str) -> tuple[dict, bytes]:
+    """(reference, sealed blob) of one entry of the attachment sync vectors."""
+    entry = next(b for b in json.loads(ATTACHMENTS.read_text(encoding="utf-8"))["blobs"] if b["name"] == name)
+    return entry["ref"], base64.b64decode(entry["blob"])
+
+
+def document_state() -> ItemState:
+    """A live document (stored form: wrapper with its ``attachment`` reference), version vector {A: 1}."""
+    ref, _blob = attachment_blob(DOCUMENT_BLOB)
+    record = {"created_at": 1789956800, "favorite": False, "id": DOCUMENT_ID, "kind": "document",
+              "payload": {"attachment_id": ref["id"], "description": "Scan of the passport"},
+              "tags": [], "title": "Passport", "updated_at": 1789956800}
+    return ItemState(DOCUMENT_ID, {device_a_id(): 1}, False, None,
+                     {"attachment": ref, "ns": "item", "record": record, "schema": 1, "updated_at": 1789956800})
 
 
 def state_dict(s: ItemState) -> dict:
@@ -186,7 +218,7 @@ def _build(derive) -> dict[str, bytes]:
         "wrong_password.lgkm": backup,
         "flipped_ciphertext.lgkm": envelope(header, bytes(flipped)),
         "edited_header.lgkm": envelope(edited, ct),
-        "version_2.lgkm": envelope({**header, "version": 2}, ct),
+        "version_3.lgkm": envelope({**header, "version": 3}, ct),
         "kdf_time_11.lgkm": envelope({**header, "kdf": {**header["kdf"], "time_cost": 11}}, ct),
         "extra_header_key.lgkm": envelope({**header, "extra": 1}, ct),
         "duplicate_ids.lgkm": seal(key, header, duplicated),
@@ -232,7 +264,74 @@ def _build(derive) -> dict[str, bytes]:
     files = {"README.md": readme(device_id, len(states), padded_app_version).encode("utf-8"),
              "backup.lgkm": backup, "expected.json": dumps(expected)}
     files.update({f"rejected/{name}": data for name, data in rejected.items()})
+    files.update(_build_v2(key, states, device_id))
     return files
+
+
+def _build_v2(key: bytes, base_states: list[ItemState], device_id: str) -> dict[str, bytes]:
+    """``format2/``: the same inputs plus one document and its file (header and payload version 2)."""
+    from localvault.sync.vault_bridge import _documents, check_remote_state
+
+    ref, blob = attachment_blob(DOCUMENT_BLOB)
+    extra_ref, extra_blob = attachment_blob(EXTRA_BLOB)
+    assert len(extra_blob) == len(blob) and extra_ref["blob"] != ref["blob"]
+    doc = document_state()
+    with _documents(object()):
+        assert check_remote_state(doc) is None, check_remote_state(doc)
+    states = sorted([*base_states, doc], key=lambda s: s.item_id)
+    files_in = {ref["blob"]: blob}
+    backup = write_phone_backup(
+        states, password=PASSWORD, device_id=device_id, platform=PLATFORM, app_version=APP_VERSION,
+        created_at=CREATED_AT, pro_hint=PRO_HINT, files=files_in, _salt=SALT, _nonce=NONCE)
+    env = json.loads(backup)
+    header = env["header"]
+    assert header["version"] == 2
+    aad = canonical_json(header)
+    plain = AESGCM(key).decrypt(NONCE, base64.b64decode(env["ciphertext"]), aad)
+    payload = json.loads(plain)
+    assert plain == canonical_json(payload) and payload["version"] == 2
+    opened = read_phone_backup(backup, PASSWORD)
+    assert dict(opened.files) == files_in and [state_dict(s) for s in opened.states] == payload["states"]
+
+    def entry(blob_id: str, data: bytes) -> dict:
+        return {"blob": blob_id, "data": b64(data)}
+
+    v1_header = {**header, "version": 1}
+    both = sorted([entry(ref["blob"], blob), entry(extra_ref["blob"], extra_blob)], key=lambda e: e["blob"])
+    rejected = {
+        "empty_files.lgkm": seal(key, header, {**payload, "files": []}),
+        "file_hash_mismatch.lgkm": seal(key, header, {**payload, "files": [entry(ref["blob"], extra_blob)]}),
+        "files_in_version_1.lgkm": seal(key, v1_header, {**payload, "version": 1}),
+        "payload_version_1.lgkm": seal(key, header, {**payload, "version": 1}),
+        "unreferenced_file.lgkm": seal(key, header, {**payload, "files": both}),
+        "unsorted_files.lgkm": seal(key, header, {**payload, "files": both[::-1]}),
+    }
+    assert set(rejected) == set(REJECTED_V2)
+    for name, data in rejected.items():
+        try:
+            read_phone_backup(data, PASSWORD)
+        except PhoneBackupError as exc:
+            assert exc.reason == REJECTED_V2[name], (name, exc.reason)
+        else:
+            raise AssertionError(f"format2/{name} was accepted")
+    expected = {
+        "password": PASSWORD,
+        "header": header,
+        "aad_hex": aad.hex(),
+        "payload_canonical_sha256": hashlib.sha256(plain).hexdigest(),
+        "payload_size": len(plain),
+        "file_size": len(backup),
+        "file_sha256": hashlib.sha256(backup).hexdigest(),
+        "device_id": device_id,
+        "states": payload["states"],
+        "document_id": DOCUMENT_ID,
+        "files": [{"blob": ref["blob"], "blob_size": len(blob), "blob_sha256": hashlib.sha256(blob).hexdigest(),
+                   "attachment_id": ref["id"], "source": f"tests/vectors/sync/attachments/vectors.json blobs[name={DOCUMENT_BLOB}]"}],
+        "rejected": {name: {"password": PASSWORD, "reason": reason} for name, reason in sorted(REJECTED_V2.items())},
+    }
+    out = {"format2/backup.lgkm": backup, "format2/expected.json": dumps(expected)}
+    out.update({f"format2/rejected/{name}": data for name, data in rejected.items()})
+    return out
 
 
 def readme(device_id: str, state_count: int, padded_app_version: str) -> str:
@@ -327,7 +426,7 @@ production build does not know that key, so it treats the licence as needing a n
 | `rejected/wrong_password.lgkm` | The same bytes as `backup.lgkm`. | Open with password `{WRONG_PASSWORD}`: `wrong-password-or-damaged`. |
 | `rejected/flipped_ciphertext.lgkm` | One bit of the first ciphertext byte flipped. | `wrong-password-or-damaged`. |
 | `rejected/edited_header.lgkm` | `created_at` + 1, ciphertext unchanged, so the AAD no longer matches. | `wrong-password-or-damaged`. |
-| `rejected/version_2.lgkm` | Header `version` 2. Refused from the header, before any key derivation. | `unsupported-version`. |
+| `rejected/version_3.lgkm` | Header `version` 3 (no such format). Refused from the header, before any key derivation. | `unsupported-version`. |
 | `rejected/kdf_time_11.lgkm` | Header `kdf.time_cost` 11 (above the maximum of 10). Refused before any key derivation. | `bad-kdf`. |
 | `rejected/extra_header_key.lgkm` | An extra key `extra` in the header (headers must have exactly the listed keys). | `not-a-backup`. |
 | `rejected/duplicate_ids.lgkm` | A correctly encrypted payload whose first state appears twice (ids must be strictly increasing). | `bad-payload`. |
@@ -336,6 +435,32 @@ production build does not know that key, so it treats the licence as needing a n
 | `rejected/noncanonical_ciphertext.lgkm` | A correctly encrypted backup (`app_version` `{padded_app_version}`, so the ciphertext base64 ends in padding) whose `ciphertext` text is changed to a different base64 spelling of the same bytes (a spare bit set). Refused before any key derivation. | `not-a-backup`. |
 | `rejected/non_ascii_app_version.lgkm` | A correctly encrypted payload whose `app_version` is `1.0.é` (not printable ASCII). | `bad-payload`. |
 | `rejected/zero_vv_counter.lgkm` | A correctly encrypted payload where one state's `vv` has a counter of 0. | `bad-payload`. |
+
+## Format 2: document files (`format2/`)
+
+Format 2 is format 1 with header `version` 2, payload `version` 2 and one more payload key, `files`:
+
+```
+payload = {{..., "files": [{{"blob": <blob id, 64 lowercase hex>, "data": b64(sync blob)}} ...], "version": 2}}
+```
+
+`files` has 1..500 entries, strictly ascending by `blob`. Each `data` is canonical base64 of exactly one sync
+blob (`LGKABLB1`, `tests/vectors/sync/attachments`), its SHA-256 is `blob`, and it is named, with the same
+`blob_size`, by the `attachment` reference of at least one live document state in the same payload. A writer
+emits format 2 only when it includes at least one file, and format 1 otherwise. Readers accept both. Every
+failure of these rules is `bad-payload`. A reader opens a file with its reference (`open_blob`) only when it
+restores it.
+
+| File | What it is | Reason |
+| --- | --- | --- |
+| `format2/backup.lgkm` | The fixed inputs plus the document `{DOCUMENT_ID}` whose `attachment` is the `{DOCUMENT_BLOB}` reference of the attachment vectors, and that blob as the one file. Write it with the fixed salt and nonce and compare every byte. | opens |
+| `format2/expected.json` | Header, AAD, payload hash and size, states, the file list, and `rejected`. | |
+| `format2/rejected/empty_files.lgkm` | Version 2 with `files` `[]`. | `bad-payload` |
+| `format2/rejected/file_hash_mismatch.lgkm` | The file entry's `data` is another blob of the same size. | `bad-payload` |
+| `format2/rejected/files_in_version_1.lgkm` | Header and payload version 1 with a `files` key. | `bad-payload` |
+| `format2/rejected/payload_version_1.lgkm` | Header version 2, payload version 1. | `bad-payload` |
+| `format2/rejected/unreferenced_file.lgkm` | A second file no document names (the `{EXTRA_BLOB}` blob). | `bad-payload` |
+| `format2/rejected/unsorted_files.lgkm` | The two files in descending order. | `bad-payload` |
 
 Every `.lgkm` file is canonical JSON with no trailing newline and is kept byte-exact in git
 (`*.lgkm binary`, `tests/vectors/** -text`); the other files use LF.

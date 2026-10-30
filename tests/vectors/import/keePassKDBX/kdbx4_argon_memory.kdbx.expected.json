@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Argon2 memory parameter is outside the supported range",
+    "type": "format"
+  },
+  "format": "keePassKDBX",
+  "input": "tests/vectors/import/_inputs/kdbx4_argon_memory.kdbx",
+  "password": "kdbx fixture password",
+  "python_format": "kdbx"
+}

@@ -69,10 +69,30 @@ Contracts for UI code (Task 8)
   that should be followed by a sync run asks for one with
   ``submit(..., run_after=True)`` instead of running a transport inline.
 
-Sync is Pro-only (2026-10-19).  The app does not build a service on the free
-plan (``app.sync.SyncWebService``); as a second line, a service whose session
+Sync is Pro-only (2026-10-19).  On the free plan the app builds only a
+licence-only service (below); as a second line, a full service whose session
 does not allow ``"sync"`` (``session.pro_features``) starts no listener and
 runs no round.  Data earlier syncs brought stays in the vault either way.
+
+Licence-only mode (free PC, 2026-10-29)
+---------------------------------------
+``SyncService(licence_only=True)`` lets a free PC receive a licence bought on
+another device (App Store, Play, a Pro PC) and nothing else:
+
+* it runs no round on unlock and no timers: only ``run_now`` and jobs with
+  ``run_after`` start one.  The LAN listener runs only for
+  ``LICENCE_ONLY_LISTEN_SECONDS`` after such a round, and while a pairing code
+  is armed (plus that long), so a paired phone can connect;
+* every adapter runs licence-only (``licence_only`` set on it; an adapter
+  without the attribute is skipped): the folder reads the peers' views and
+  writes nothing (``FolderSync.licence_round``); LAN exchanges send an empty
+  view, answer a peer's view with an empty one, refuse witness and document
+  requests, and keep only the licences (``vault_bridge.licenses_in_views``).
+  No merge, no apply, no witness flush, no peer bookkeeping;
+* the licences found go to ``licensing.adopt_synced_license`` as below
+  (verifies, not revoked, covers this build, no removal pending).  Once it
+  installs one, the app sees ``license_adopted``, the plan turns Pro and the
+  app replaces this service with a full one.
 
 Licences carried by sync
 ------------------------
@@ -89,11 +109,12 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
+import functools
 import logging
 import queue
 import threading
 import time
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
@@ -113,6 +134,8 @@ from .vault_bridge import (
 RUN_INTERVAL_SECONDS = 5 * 60
 DEBOUNCE_SECONDS = 10
 POLL_SECONDS = 1.0
+#: Licence-only: how long the LAN listener stays up after a requested round (and after a pairing code expires).
+LICENCE_ONLY_LISTEN_SECONDS = 120.0
 #: Longest the Tk thread stays parked for one held gate before it carries on regardless.
 MAX_UI_PARK_SECONDS = 120.0
 
@@ -486,6 +509,10 @@ class SyncStatusView:
     aborted: bool = False
     #: The last run installed a Pro licence received by sync.
     license_adopted: bool = False
+    #: How many items the last run, or the last sync a peer started, added, changed or deleted.
+    items_changed: int = 0
+    #: Per-device "last synced" times (``SyncGroupState.peer_synced_at``): peer id -> unix seconds.
+    peer_synced_at: Mapping[str, int] = field(default_factory=dict)
 
     @property
     def needs_attention(self) -> bool:
@@ -522,6 +549,8 @@ class FolderAdapter:
     def __init__(self, *, install_id: str, _kdf_override: tuple[int, int, int] | None = None) -> None:
         self.install_id = install_id
         self._kdf_override = _kdf_override
+        #: Set by a licence-only ``SyncService``: runs read licences only (``FolderSync.licence_round``).
+        self.licence_only = False
 
     def configured(self, state: SyncGroupState) -> bool:
         return bool(state.folder_path)
@@ -537,6 +566,8 @@ class FolderAdapter:
             setattr(fs, name, _ui_released(gate, getattr(fs, name)))
         # The own-file write is fenced: re-check lease, service and park state right before it.
         fs.write_own = _fenced(lease, fs.write_own)
+        if self.licence_only:
+            return fs.licence_round(session, lease, now=now)
         return fs.run_once(session, lease, now=now)
 
 
@@ -692,9 +723,13 @@ class LanAdapter:
     def __init__(self, *, install_id: str, endpoint: Callable[[], LANEndpoint | None],
                  transport_factory: Callable[[Any], Any] | None = None,
                  clock: Callable[[], float] | None = None, monotonic: Callable[[], float] | None = None,
-                 timeout: float | None = None) -> None:
+                 timeout: float | None = None, announcer: Any = None, browser: Any = None) -> None:
         self.install_id = install_id
+        #: sync.discovery_client browser: finds a paired host whose pinned address stopped answering
+        #: (None: no discovery).
+        self.browser = browser
         self._endpoint = endpoint
+        self.announcer = announcer  # sync.announce.Announcer, or None (no Bonjour announcement)
         self._factory = transport_factory or SyncTransport
         self._clock = clock or time.time
         self._monotonic = monotonic or time.monotonic
@@ -705,6 +740,10 @@ class LanAdapter:
         self.transport: Any = None
         self.responder: LanResponder | None = None
         self.listen_issue: SyncIssue | None = None
+        #: Set by the service: called with the report of each merge a peer (a phone) started.
+        self.on_served: Callable[[RunReport], None] | None = None
+        #: Set by a licence-only ``SyncService``: exchanges send an empty view and keep only licences.
+        self.licence_only = False
 
     @property
     def listening(self) -> bool:
@@ -730,6 +769,7 @@ class LanAdapter:
             key = None if endpoint is None else (state.device_id, state.group_id, endpoint)
             if key is not None and key == self._key and self.transport is not None:
                 self.listen_issue = None  # already listening there: an old failure no longer applies
+                self._announce(state, endpoint)  # the group key may have rotated
                 return
             self._stop_locked()
             if key is None:
@@ -740,6 +780,8 @@ class LanAdapter:
                 transport = self._factory(tstate)
                 responder = LanResponder(session, lease, install_id=self.install_id,
                                          clock=lambda: int(self._clock()), monotonic=self._monotonic)
+                responder.on_served = self._served
+                responder.licence_only = self.licence_only
                 transport.set_peer_request_handler(gate.wrap(responder))
             except Exception as exc:
                 # Kept visible (the pairing screen reports it) instead of only in a log line.
@@ -752,8 +794,25 @@ class LanAdapter:
                 return
             self.listen_issue = None
             self.transport, self.responder, self._key = transport, responder, key
+            self._announce(state, endpoint)
+
+    def _announce(self, state: SyncGroupState, endpoint: LANEndpoint | None) -> None:
+        if self.announcer is None or endpoint is None:
+            return
+        from .lan_sync import _group_key
+
+        with contextlib.suppress(Exception):  # announcing is best effort; the pinned address still works
+            self.announcer.start(_group_key(state), state.device_id, endpoint.host, endpoint.port)
+
+    def _served(self, report: RunReport) -> None:
+        on_served = self.on_served
+        if on_served is not None:
+            on_served(report)
 
     def _stop_locked(self) -> None:
+        if self.announcer is not None:
+            with contextlib.suppress(Exception):
+                self.announcer.stop()
         transport, responder = self.transport, self.responder
         self.transport = self.responder = None
         self._key = None
@@ -799,6 +858,38 @@ class LanAdapter:
         if responder is not None:
             responder.expire_enrollment()
 
+    def _find_again(self, releasing: Any, gate: SyncGate, session: Any, lease: Any, peer_id: str, now: int,
+                    found_box: list[Any]) -> RunReport | None:
+        """The pinned address of *peer_id* failed: dial its announced LAN addresses (capped).
+
+        The first exchange that completes (``wrote``: the hello verified the pinned keys) stores that
+        address and its report is returned; None when no announced address worked.
+        """
+        from . import discovery, discovery_client
+        from .lan_sync import _group_key, peer_endpoint, save_peer_endpoint
+
+        if not found_box:
+            try:
+                with gate.released():  # the browse waits on the network: never inside the gate
+                    found_box.append(self.browser.browse(discovery.SERVICE_TYPE, discovery_client.BROWSE_SECONDS))
+            except Exception:  # noqa: BLE001 - discovery is best effort; the pinned failure stands
+                found_box.append([])
+        _check_lease(session, lease)
+        state = load_sync_state(session)  # read again: the gate was released while browsing
+        pinned = peer_endpoint(state, peer_id) if state is not None else None
+        if pinned is None or not found_box[0]:
+            return None
+        targets = discovery_client.candidates(found_box[0], _group_key(state), peer_id, now,
+                                              port=pinned.port, exclude=pinned)
+        timeout = min(self._timeout or discovery_client.DIAL_SECONDS, discovery_client.DIAL_SECONDS)
+        for target in targets:
+            report = sync_with(releasing, peer_id, session, lease, install_id=self.install_id, now=now,
+                               endpoint=target, timeout=timeout, licence_only=self.licence_only)
+            if report.wrote:
+                save_peer_endpoint(session, lease, peer_id, target, install_id=self.install_id)
+                return report
+        return None
+
     def run(self, session: Any, lease: Any, *, now: int, gate: SyncGate) -> RunReport:
         transport, responder = self.transport, self.responder
         if transport is None:
@@ -814,12 +905,15 @@ class LanAdapter:
         wrote = False
         licenses: list[dict[str, Any]] = []
         releasing = _ReleasingTransport(transport, gate)
+        found_box: list[Any] = []  # one browse per run, shared by every unreachable host
         for entry in state.lan_peers:
             peer_id = entry.get("device_id")
             if not isinstance(peer_id, str) or entry.get("revoked") is True or not entry.get("endpoint"):
                 continue  # a peer without an endpoint (a phone) connects to us instead
             report = sync_with(releasing, peer_id, session, lease, install_id=self.install_id, now=now,
-                               timeout=self._timeout)
+                               timeout=self._timeout, licence_only=self.licence_only)
+            if any(i.kind == "unreachable" for i in report.issues) and self.browser is not None:
+                report = self._find_again(releasing, gate, session, lease, peer_id, now, found_box) or report
             applied, deleted = applied + report.applied, deleted + report.deleted
             conflicts += report.conflicts
             skipped.update(report.skipped)
@@ -885,6 +979,11 @@ class _Status:
     conflicts: int = 0
     aborted: bool = False
     license_adopted: bool = False
+    items_changed: int = 0
+
+
+def _changed_items(report: RunReport) -> int:
+    return report.applied + report.deleted + report.conflicts
 
 
 class SyncService:
@@ -904,10 +1003,15 @@ class SyncService:
                  transports: Sequence[SyncTransportAdapter], clock: Callable[[], float] = time.time,
                  scheduler: Scheduler | None = None, worker: Any = None,
                  post_result: Callable[[SyncStatusView], None] | None = None,
-                 gate: SyncGate | None = None, change_marker: Callable[[], Any] | None = None) -> None:
+                 gate: SyncGate | None = None, change_marker: Callable[[], Any] | None = None,
+                 licence_only: bool = False) -> None:
         if not isinstance(install_id, str) or not install_id:
             raise ValueError("install id must be a non-empty string")
         self.session = session
+        #: A free PC: see "Licence-only mode" in the module docstring.
+        self.licence_only = bool(licence_only)
+        #: Licence-only: the clock time until which the LAN listener may run (pairing or a round).
+        self._listen_until = 0.0
         self._raw_lease = lease
         self.install_id = install_id
         self._transports = tuple(transports)
@@ -929,6 +1033,11 @@ class SyncService:
         self._timers: dict[str, Any] = {}
         self._enroll_timers: list[Any] = []
         self._status = _Status(transports={t.name: TransportStatus(t.name) for t in self._transports})
+        for adapter in self._transports:
+            if hasattr(adapter, "on_served"):
+                adapter.on_served = functools.partial(self._peer_synced, adapter.name)
+            if hasattr(adapter, "licence_only"):
+                adapter.licence_only = self.licence_only
 
     # lease ---------------------------------------------------------------------------------------
 
@@ -955,9 +1064,17 @@ class SyncService:
         allowed = getattr(self.session, "pro_features", None)
         return allowed is None or "sync" in allowed
 
+    def _may_run(self) -> bool:
+        """A round may run: the plan includes sync, or this is a licence-only service."""
+        return self.licence_only or self._plan_allows_sync()
+
     def on_unlock(self) -> None:
-        """Start the listener (if configured), run once, then every five minutes."""
-        if self._stopped.is_set() or not self._plan_allows_sync():
+        """Start the listener (if configured), run once, then every five minutes.
+
+        A licence-only service does nothing here: it runs only when asked
+        (``run_now``, a job with ``run_after``) and listens only then.
+        """
+        if self._stopped.is_set() or self.licence_only or not self._plan_allows_sync():
             return
         self._worker.submit(self._listener_job)
         self._request()
@@ -1093,14 +1210,26 @@ class SyncService:
             self._status.global_issues = issues
 
     def _sync_listeners(self, state: SyncGroupState | None) -> None:
+        if self.licence_only and self._clock() >= self._listen_until:
+            state = None  # licence-only: no listener outside pairing and a requested round
         for adapter in self._transports:
             if state is not None and hasattr(adapter, "ensure_listener"):
                 adapter.ensure_listener(self.session, self._lease, state, self.gate)
             elif state is None and hasattr(adapter, "stop_listener"):
                 adapter.stop_listener()
 
+    def _open_listen_window(self, seconds: float) -> None:
+        """Licence-only: let the LAN listener run for *seconds* from now, then stop it."""
+        until = float(self._clock()) + max(0.0, float(seconds))
+        with self._mu:
+            if until <= self._listen_until:
+                return
+            self._listen_until = until
+        self._schedule("listen-window", until - float(self._clock()),
+                       lambda: self._worker.submit(self._listener_job))
+
     def _listener_job(self) -> None:
-        if self._stopped.is_set() or not self._plan_allows_sync():
+        if self._stopped.is_set() or not self._may_run():
             return
         try:
             with self.gate.hold():
@@ -1111,8 +1240,11 @@ class SyncService:
                 _log.exception("starting the sync listener failed")
 
     def _run_once(self) -> None:
-        if self._stopped.is_set() or not self._plan_allows_sync():
+        if self._stopped.is_set() or not self._may_run():
             return
+        if self.licence_only:
+            # A requested round: paired phones (which connect to this PC) can reach it for a while.
+            self._open_listen_window(LICENCE_ONLY_LISTEN_SECONDS)
         now = int(self._clock())
         results: dict[str, RunReport] = {}
         configured: dict[str, bool] = {}
@@ -1149,6 +1281,8 @@ class SyncService:
                 configured[adapter.name] = adapter.configured(state)
                 if not configured[adapter.name]:
                     continue
+                if self.licence_only and getattr(adapter, "licence_only", False) is not True:
+                    continue  # an adapter that cannot run licence-only never runs on a free PC
                 _check_lease(self.session, self._lease)
                 try:
                     results[adapter.name] = adapter.run(self.session, self._lease, now=now, gate=self.gate)
@@ -1160,6 +1294,19 @@ class SyncService:
                     _log.exception("sync transport %s failed", adapter.name)
                     results[adapter.name] = RunReport(
                         issues=(SyncIssue("error", f"{type(exc).__name__}: {exc}"),))
+            if self.licence_only:
+                return  # writes no witness state either
+            # Peer generations the LAN save throttle held back (served exchanges included) are saved at
+            # every run, so a lock loses at most one run interval of rises, never a stored value.
+            _check_lease(self.session, self._lease)
+            try:
+                from .lan_sync import flush_witness
+
+                flush_witness(self.session, self._lease)
+            except SyncAborted:
+                raise
+            except Exception:  # noqa: BLE001 - witness bookkeeping must not fail the run
+                _log.exception("witness flush failed")
 
     def _adopt_licenses(self, results: dict[str, RunReport]) -> bool:
         """Offer licences to the licence store (inside the gate).
@@ -1186,6 +1333,7 @@ class SyncService:
             st = self._status
             st.aborted = False
             st.license_adopted = adopted
+            st.items_changed = sum(_changed_items(r) for r in results.values())
             for adapter in self._transports:
                 old = st.transports.get(adapter.name, TransportStatus(adapter.name))
                 report = results.get(adapter.name)
@@ -1199,6 +1347,22 @@ class SyncService:
                     adapter.name, True, now, now if synced else old.last_sync, dedupe_issues(report.issues))
                 st.skipped[adapter.name] = tuple(report.skipped)
                 st.conflicts += report.conflicts
+
+    def _peer_synced(self, name: str, report: RunReport) -> None:
+        """A peer (a phone, which connects to this PC) synced with us: record it like a run of *name*."""
+        if self._stopped.is_set():
+            return
+        now = int(self._clock())
+        with self._mu:
+            st = self._status
+            old = st.transports.get(name, TransportStatus(name))
+            st.transports[name] = dataclasses.replace(old, last_sync=now)
+            st.items_changed = _changed_items(report)
+            st.license_adopted = False
+            st.conflicts += report.conflicts
+        self._publish()
+        if self.licence_only and report.licenses:
+            self._request()  # a round offers the served licences for adoption at once
 
     def _publish(self) -> None:
         if self._post_result is not None:
@@ -1215,7 +1379,16 @@ class SyncService:
                 configured=st.configured, last_sync=max(synced) if synced else None, transports=transports,
                 issues=issues, skipped=skipped, conflicts=st.conflicts, running=self._running,
                 listening=any(getattr(t, "listening", False) for t in self._transports), aborted=st.aborted,
-                license_adopted=st.license_adopted)
+                license_adopted=st.license_adopted, items_changed=st.items_changed,
+                peer_synced_at=self._peer_synced_at())
+
+    def _peer_synced_at(self) -> dict[str, int]:
+        """The stored per-device times; empty when the vault is locked or not in a group."""
+        try:
+            state = load_sync_state(self.session)
+        except Exception:  # noqa: BLE001 - a status read never fails the status bar
+            return {}
+        return dict(state.peer_synced_at) if state is not None else {}
 
     # LAN enrollment ---------------------------------------------------------------------------------------
 
@@ -1224,6 +1397,9 @@ class SyncService:
         lan = next((t for t in self._transports if hasattr(t, "start_enrollment")), None)
         if lan is None or self._stopped.is_set():
             return
+        if self.licence_only:
+            self._open_listen_window(max(0.0, float(offer.expires_at) - float(self._clock()))
+                                     + LICENCE_ONLY_LISTEN_SECONDS)
 
         def job() -> None:
             if self._stopped.is_set():
@@ -1333,6 +1509,13 @@ class SyncService:
             with self._mu:  # only the reasons that keep the LAN listener from starting
                 issue = next((i for i in self._status.global_issues if i.kind in _LAN_BLOCKING_ISSUES), None)
         return None, issue or SyncIssue("lan-not-listening")
+
+    @property
+    def lan_announcement(self) -> str:
+        """The Bonjour announcement state ("off", "announcing", "public-network", "unavailable")."""
+        lan = next((t for t in self._transports if hasattr(t, "start_enrollment")), None)
+        announcer = getattr(lan, "announcer", None)
+        return "off" if announcer is None else str(announcer.state)
 
     def lan_transport(self) -> Any:
         """The running LAN transport (pass it to ``remove_lan_peer`` so the peer is revoked at once)."""

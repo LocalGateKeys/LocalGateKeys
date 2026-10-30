@@ -1,0 +1,10 @@
+name;url;username;password;note
+
+Quoted;"https://q.example.com";"al""ex";"p;w";"line1
+line2"
+Stray;https://s.example.com;ab"c;"x"y;
+Extra;https://e.example.com;e;pw;n;extra1;extra2
+Short;https://short.example.com
+  	 ;;;;
+"Unterminated;https://u.example.com;u;pw;n
+more

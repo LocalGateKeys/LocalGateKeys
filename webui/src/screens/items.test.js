@@ -181,6 +181,6 @@ describe('NewItem and GA import', () => {
       skipped: [], best: 1, batch: { index: 0, size: 2 } });
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Scan a 2FA QR code' })).toBeNull());
     expect(screen.getByRole('combobox', { name: 'Account for this login' })).toHaveValue('1');
-    expect(screen.getByText(/Code 1 of 2\. 2 account\(s\) found\. Best match selected/)).toBeInTheDocument();
+    expect(screen.getByText(/Code 1 of 2\. 2 accounts found\. Best match selected/)).toBeInTheDocument();
   });
 });

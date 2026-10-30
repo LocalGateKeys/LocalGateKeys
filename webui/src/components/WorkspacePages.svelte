@@ -1,6 +1,7 @@
 <script>
   /** Reminders, Activity history, Keyboard shortcuts and Collections: simple list pages over safe metadata. */
   import { call } from '../lib/api.js';
+  import { t } from '../lib/i18n.svelte.js';
   import { okOrToast, openRoute, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
 
@@ -11,11 +12,11 @@
   let renaming = $state(null);
 
   const LOADERS = { reminders: 'reminders_list', activity: 'activity_list', shortcuts: 'shortcuts_list', collections: 'collections_list' };
-  const TITLES = { reminders: 'Reminders', activity: 'Activity history', shortcuts: 'Keyboard shortcuts', collections: 'Collections' };
+  const TITLES = $derived({ reminders: t('workspacePages.reminders'), activity: t('workspacePages.activity'), shortcuts: t('workspacePages.shortcuts'), collections: t('workspacePages.collections') });
 
   async function load() {
     const r = await call(LOADERS[kind]);
-    if (okOrToast(r, `Could not open ${TITLES[kind]}`)) data = r;
+    if (okOrToast(r, t('workspacePages.openFailed', { title: TITLES[kind] }))) data = r;
   }
   $effect(() => { load(); });
 
@@ -32,10 +33,10 @@
 
 <svelte:window onkeydowncapture={kind === 'shortcuts' ? keys : undefined} />
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label={TITLES[kind]}>
+<div class="sheet glass" role="dialog" aria-label={TITLES[kind]}>
   <header>
     <h2>{data?.title ?? TITLES[kind]}</h2>
-    <button class="close" aria-label="Close" onclick={onclose}>✕</button>
+    <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
   {#if data}
     {#if data.subtitle}<p class="muted">{data.subtitle}
@@ -44,23 +45,23 @@
       {/if}
     </p>{/if}
     {#if kind === 'reminders'}
-      <div class="group rows" role="listbox" aria-label="Reminders">
+      <div class="group rows" role="listbox" aria-label={t('workspacePages.reminders')}>
         {#each data.rows as r (r.id)}
           <button role="option" aria-selected={picked === r.id} class="row" class:on={picked === r.id} onclick={() => (picked = r.id)}>
             <span class="grow">{r.title}</span><span class="muted">{r.due}</span><span class="tag">{r.status}</span>
           </button>
-        {:else}<p class="empty">Nothing coming up.</p>{/each}
+        {:else}<p class="empty">{t('workspacePages.nothingComing')}</p>{/each}
       </div>
       <footer>
-        <Button label="Snooze 1 day" disabled={!picked} onclick={() => act('reminders_snooze', picked)} />
-        <Button label="Complete" variant="primary" disabled={!picked} onclick={() => act('reminders_complete', picked)} />
+        <Button label={t('workspacePages.snooze')} disabled={!picked} onclick={() => act('reminders_snooze', picked)} />
+        <Button label={t('workspacePages.complete')} variant="primary" disabled={!picked} onclick={() => act('reminders_complete', picked)} />
       </footer>
     {:else if kind === 'activity'}
       <div class="group rows">
-        <div class="row head"><span class="grow">When</span><span class="grow">Event</span><span>Result</span><span>Count</span></div>
+        <div class="row head"><span class="grow">{t('workspacePages.when')}</span><span class="grow">{t('workspacePages.event')}</span><span>{t('workspacePages.result')}</span><span>{t('workspacePages.count')}</span></div>
         {#each data.rows as r, i (i)}
           <div class="row"><span class="grow">{r.when}</span><span class="grow">{r.event}</span><span>{r.result}</span><span>{r.count}</span></div>
-        {:else}<p class="empty">No activity yet.</p>{/each}
+        {:else}<p class="empty">{t('workspacePages.noActivity')}</p>{/each}
       </div>
     {:else if kind === 'shortcuts'}
       {#each [...new Set(data.rows.map((r) => r.group))] as group (group)}
@@ -76,20 +77,20 @@
         {#each data.collections as c (c.id)}
           <div class="row">
             {#if renaming === c.id}
-              <input aria-label="Collection name" bind:value={name} />
-              <Button label="Save" variant="primary" disabled={!name.trim()} onclick={() => act('collections_rename', c.id, name.trim(), null)} />
-              <Button label="Cancel" onclick={() => (renaming = null)} />
+              <input aria-label={t('workspacePages.collectionName')} bind:value={name} />
+              <Button label={t('common.save')} variant="primary" disabled={!name.trim()} onclick={() => act('collections_rename', c.id, name.trim(), null)} />
+              <Button label={t('common.cancel')} onclick={() => (renaming = null)} />
             {:else}
               <span class="grow">{c.name}</span>
-              <Button label="Rename" onclick={() => { renaming = c.id; name = c.name; }} />
-              <Button label="Archive" onclick={() => act('collections_archive', c.id)} />
+              <Button label={t('workspacePages.rename')} onclick={() => { renaming = c.id; name = c.name; }} />
+              <Button label={t('workspacePages.archive')} onclick={() => act('collections_archive', c.id)} />
             {/if}
           </div>
-        {:else}<p class="empty">No collections yet.</p>{/each}
+        {:else}<p class="empty">{t('workspacePages.noCollections')}</p>{/each}
       </div>
       <form class="add" onsubmit={(e) => { e.preventDefault(); if (!renaming) act('collections_create', name.trim(), ''); }}>
-        <input aria-label="New collection name" placeholder="New collection" bind:value={name} disabled={!!renaming} />
-        <Button type="submit" label="Add collection" disabled={!name.trim() || !!renaming} />
+        <input aria-label={t('workspacePages.newName')} placeholder={t('workspacePages.newCollection')} bind:value={name} disabled={!!renaming} />
+        <Button type="submit" label={t('workspacePages.addCollection')} disabled={!name.trim() || !!renaming} />
       </form>
     {/if}
   {/if}

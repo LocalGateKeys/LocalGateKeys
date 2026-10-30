@@ -1,0 +1,72 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSLocalNetworkUsageDescription" : {
+      "comment" : "Local Network permission prompt (Mac).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisieren Sie über Ihr Heim-WLAN mit den Geräten, die Sie gekoppelt haben."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync with the devices you paired, over your home Wi-Fi."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincroniza con los dispositivos que emparejaste, mediante tu Wi-Fi doméstica."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza con i dispositivi che hai associato, tramite il Wi-Fi di casa."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ペアリングしたデバイスと、自宅のWi-Fi経由で同期します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "집 Wi-Fi를 통해 페어링한 기기와 동기화합니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniseer via je wifi-thuisnetwerk met de apparaten die je hebt gekoppeld."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizuj ze sparowanymi urządzeniami przez domową sieć Wi-Fi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronize com os dispositivos que você pareou, pelo Wi-Fi de casa."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过家庭 Wi-Fi 与您配对的设备同步。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

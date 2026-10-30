@@ -1,5 +1,9 @@
 import Foundation
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 enum WebsiteInputError: Error, Equatable {
     /// Desktop web logins always have an origin (`Normalise.entry` refuses an empty one).
@@ -12,9 +16,9 @@ enum WebsiteInputError: Error, Equatable {
 /// exact origin (`scheme://host[:port]`) that LGKCore `Origin.canonicalize` accepts. Before canonicalising:
 /// trim, add `https://` when no scheme is given, and drop any path, query or fragment.
 enum WebsiteInput {
-    static let requiredMessage = "Website is required"
-    static let invalidMessage = "Enter a website like github.com"
-    static let httpMessage = "Use https:// for this website. Plain http:// works only for localhost."
+    static let requiredMessage = String(localized: "Website is required")
+    static let invalidMessage = String(localized: "Enter a website like github.com")
+    static let httpMessage = String(localized: "Use https:// for this website. Plain http:// works only for localhost.")
 
     /// ASCII characters that may appear in what is typed for the host and port.
     private static let hostChars = Set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._:[]@%~".unicodeScalars)

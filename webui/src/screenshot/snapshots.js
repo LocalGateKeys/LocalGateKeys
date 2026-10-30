@@ -454,7 +454,7 @@ export const settingsPage = {
         {
           "type": "button",
           "title": "Updates",
-          "description": "Version 0.4.8",
+          "description": "Version 0.4.10",
           "label": "Check now",
           "route": "updates",
           "params": {},
@@ -678,8 +678,8 @@ export const settingsPage = {
         },
         {
           "type": "button",
-          "title": "Setup guide",
-          "description": "Walk through the basics again",
+          "title": "Show setup again",
+          "description": "The five setup steps, with skipped ones offered again",
           "label": "Open",
           "route": "onboarding",
           "params": {},

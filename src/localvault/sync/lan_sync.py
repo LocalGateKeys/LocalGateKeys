@@ -59,6 +59,42 @@ get ``too-large``.
   at most 64 MiB; a responder keeps at most one transfer per peer and two in
   total in each direction.
 * ``{"type":"error","reason"}``.
+* ``{"type":"witness","group_id","epoch","view"}`` (2026-10-29): ``view`` is
+  standard base64 of a witness file (``group.py`` format 2, zero records, at
+  most ``MAX_WITNESS_BYTES``) carrying the sender's vault generation and its
+  witness of its peers.  After a view exchange in format 1 the initiator sends
+  one; a responder of this version checks it (``witness.check``) and answers
+  with its own, and a responder from before answers ``bad-message`` (ignored:
+  nothing is reported, the next exchange tries again).  A device that sent or
+  answered a witness is recorded in ``witness_peers``.
+
+* ``{"type":"blob-get","blob","seq"}`` and ``{"type":"blob","blob","seq","total","size","data"}``
+  (attachment sync, 2026-10-29, ``attachment_sync.py``): after the view exchange the initiator
+  fetches, chunk by chunk, the file of each document in the responder's view that it lacks.  A
+  responder serves only blobs of its own live documents and answers ``{"type":"error",
+  "reason":"no-blob"}`` otherwise.  A responder that gets a ``blob-get`` records the initiator in
+  ``attachment_peers``; an initiator that needed no file sends one probe ``blob-get`` (blob id of 64
+  zeros) to a peer not yet listed, and records it when the answer is ``no-blob`` or a chunk (an
+  older app answers ``bad-message``, which removes it).  Documents are only sent in views to peers in
+  ``attachment_peers``.  A responder cannot fetch: a document it receives waits
+  (``attachment-missing``) until it syncs as initiator, or gets the file through the folder.
+
+Format gating (2026-10-29): the initiator sends its view as format 2 (the
+generation and witness inline, no witness message) only to a peer listed in
+``witness_peers``; the responder answers in the format the request used.  A
+``bad-view`` refusal of a format-2 view (the peer went back to an older app)
+counts; two in a row remove the peer from ``witness_peers`` so the next
+exchange uses format 1 (an older app cannot say why it refused, and one bad
+transfer must not switch a capable peer back).
+Witness state (``witness_memory``): the highest generation checked from each
+peer is kept in memory for the unlock session and is what every check and
+every published witness uses, so no checked value is ever thrown away.  It is
+saved when it matters (a new peer, a new capability, a new suspicion), when a
+peer's generation rose and that peer was not saved in the last
+``witness_memory.SAVE_INTERVAL_SECONDS`` (a LAN exchange otherwise saves
+nothing, see C1), with every folder run's state, and by :func:`flush_witness`
+at the end of the service.  ``LAN_GENERATION_SLACK`` is kept for the vectors'
+constants table only; nothing uses it any more.
 
 Every incoming view is decoded with ``expected_device_id`` = the authenticated
 peer; the peer must be listed in this vault's ``lan_peers``, not revoked, and
@@ -80,6 +116,8 @@ import base64
 import binascii
 import contextlib
 import dataclasses
+import hmac
+import ipaddress
 import json
 import math
 import secrets
@@ -90,7 +128,10 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
+from . import attachment_sync
+from .attachment_flow import import_missing, own_blob
 from .group import MAX_BYTES, GroupKey, SyncFormatError, View, decode_view, encode_view
+from .lan_address import is_lan_address
 from .pairing import (
     DEFAULT_ENROLL_NAME,
     ENROLL_REQUEST_MAGIC,
@@ -131,10 +172,16 @@ from .vault_bridge import (
     BridgeError,
     SyncGroupState,
     _check_lease,
+    licenses_in_views,
     load_sync_state,
+    document_refs,
     local_view,
+    publishable,
     save_sync_state,
 )
+from .witness import Observation, observation, own_witness, prune, session_generation
+from .witness import check as witness_check
+from . import witness_memory
 
 #: Raw view bytes per message when sending.
 CHUNK_BYTES = 512 * 1024
@@ -143,6 +190,8 @@ CHUNK_LIMIT = 560 * 1024
 MAX_VIEW_BYTES = MAX_BYTES
 MAX_CHUNKS = 65536
 TRANSFER_TTL_SECONDS = 300
+#: Licences a responder keeps between runs (several peers, each at most ``MAX_SYNC_LICENSES``).
+MAX_KEPT_LICENSES = 64
 #: In-flight chunked transfers a responder keeps per direction (one per peer at most).
 MAX_TRANSFERS = 2
 #: Pause before the one retry of a chunk request the peer did not answer.
@@ -159,7 +208,18 @@ _FIELDS = {
     "next": frozenset({"type", "transfer", "seq"}),
     "ack": frozenset({"type", "transfer", "seq"}),
     "error": frozenset({"type", "reason"}),
+    "witness": frozenset({"type", "group_id", "epoch", "view"}),
+    "blob-get": frozenset({"type", "blob", "seq"}),
+    "blob": frozenset({"type", "blob", "seq", "total", "size", "data"}),
 }
+#: Error reasons of the attachment messages (kept apart from ``ERROR_REASONS``, which the vectors pin).
+ATTACHMENT_ERROR_REASONS = ("no-blob",)
+#: Blob id of the capability probe (never a real blob).
+PROBE_BLOB = "0" * 64
+#: Largest witness file accepted in a ``witness`` message.
+MAX_WITNESS_BYTES = 16 * 1024
+#: A peer generation is saved once it is this far above the stored one (see the module docstring).
+LAN_GENERATION_SLACK = 32
 _MAX_INT = 2**53 - 1
 _HEX = frozenset("0123456789abcdef")
 #: Every reason a responder can send in an ``error`` message (the iOS app and the test vectors use this list).
@@ -256,6 +316,16 @@ def parse_message(raw: bytes) -> dict[str, Any]:
             raise LanSyncError("too-large")
     if kind == "error" and (not isinstance(msg["reason"], str) or not 1 <= len(msg["reason"]) <= 64):
         raise LanSyncError("bad-message")
+    if kind in ("blob-get", "blob"):
+        try:
+            attachment_sync.parse_message(msg)
+        except attachment_sync.AttachmentSyncError as exc:
+            raise LanSyncError("too-large" if exc.reason == "too-large" else "bad-message") from None
+    if kind == "witness":
+        if not isinstance(msg["group_id"], str) or not _is_int(msg["epoch"], 1) or not isinstance(msg["view"], str):
+            raise LanSyncError("bad-message")
+        if len(msg["view"]) > 4 * math.ceil(MAX_WITNESS_BYTES / 3):
+            raise LanSyncError("too-large")
     return msg
 
 
@@ -346,6 +416,73 @@ def _with_peer(state: SyncGroupState, entry: Mapping[str, Any]) -> SyncGroupStat
     if len(others) >= MAX_LAN_PEERS:
         raise LanSyncError("too-many-peers", f"at most {MAX_LAN_PEERS} LAN peers")
     return dataclasses.replace(state, lan_peers=(*others, dict(entry)))
+
+
+def save_peer_endpoint(session: Any, lease: Any, device_id: str, endpoint: LANEndpoint, *,
+                       install_id: str) -> bool:
+    """Store *endpoint* as the listening address of the paired *device_id*; whether it changed.
+
+    Call it only after an authenticated exchange with *device_id* at *endpoint* completed (the
+    discovery client) or after a QR of that same device was checked (:func:`refind_from_qr`):
+    the address is a hint, identity stays the pinned keys.  A LAN address only.
+    """
+    if not isinstance(endpoint, LANEndpoint):
+        raise LanSyncError("bad-offer", "a validated LAN endpoint is required")
+    try:
+        lan_ok = is_lan_address(ipaddress.ip_address(endpoint.host))
+    except ValueError:
+        lan_ok = False
+    if not lan_ok:
+        raise LanSyncError("bad-offer", "only a local network address is stored")
+    state = _joined_state(session, lease, _check_install(install_id))
+    entry = peer_entry(state, device_id)
+    if entry is None or entry.get("revoked") is True:
+        return False
+    where = {"host": endpoint.host, "port": endpoint.port}
+    if entry.get("endpoint") == where:
+        return False
+    entry["endpoint"] = where
+    _check_lease(session, lease)
+    save_sync_state(session, _with_peer(state, entry))
+    return True
+
+
+def refind_from_qr(qr: str | Mapping[str, Any], session: Any, lease: Any, *, install_id: str,
+                   now: float | None = None) -> str:
+    """"Find again": take only the address from a QR of an ALREADY paired host; its device id.
+
+    The offer must name this vault's group and the pinned device, with the same signing and
+    exchange keys and certificate fingerprint as pinned; anything else is refused with
+    ``LanSyncError("not-this-device")``.  Nothing is enrolled and no secret of the offer is used.
+    """
+    _check_install(install_id)
+    _check_lease(session, lease)
+    state = load_sync_state(session)
+    if state is None:
+        raise LanSyncError("not-joined", "this PC is not in a sync group")
+    try:
+        bundle = parse_qr_payload(qr) if isinstance(qr, str) else qr
+        offer = PairingOffer.from_bundle_dict(bundle)
+    except PairingError as exc:
+        raise LanSyncError("bad-offer", str(exc)) from exc
+    if offer.expires_at < int(time.time() if now is None else now):
+        raise LanSyncError("offer-used-or-expired", USED_OR_EXPIRED_MESSAGE)
+    entry = peer_entry(state, offer.inviter_device_id)
+
+    def same(pinned: Any, offered: str) -> bool:
+        return isinstance(pinned, str) and hmac.compare_digest(pinned.encode("utf-8"), offered.encode("utf-8"))
+
+    if (entry is None or entry.get("revoked") is True or offer.group_id != state.group_id
+            or entry.get("group_id") != state.group_id
+            # Every pinned key must match, compared in constant time (``&`` so no early exit).
+            or not (same(entry.get("signing_public"), base64.b64encode(offer.inviter_signing_public).decode("ascii"))
+                    & same(entry.get("exchange_public"),
+                           base64.b64encode(offer.inviter_exchange_public).decode("ascii"))
+                    & same(entry.get("fingerprint"), offer.certificate_fingerprint))):
+        raise LanSyncError("not-this-device", "This code is from a device this PC is not paired with.")
+    save_peer_endpoint(session, lease, offer.inviter_device_id,
+                       LANEndpoint(offer.endpoint_host, offer.endpoint_port), install_id=install_id)
+    return offer.inviter_device_id
 
 
 def remove_lan_peer(session: Any, lease: Any, device_id: str, *, install_id: str,
@@ -563,6 +700,10 @@ class LanInbox:
     def __init__(self) -> None:
         self.incoming: dict[str, _Incoming] = {}
         self.outgoing: dict[str, _Outgoing] = {}
+        self.blobs: dict[str, tuple[str, bytes]] = {}  # peer -> (blob id, blob) being served
+        #: (store revision key, {blob id: ref}) of this device's live documents, so a run of
+        #: ``blob-get seq 0`` requests does not rebuild ``local_view`` for every file.
+        self.live_documents: tuple[tuple[Any, ...], dict[str, Any]] | None = None
 
     def expire(self, now: float) -> None:
         for table in (self.incoming, self.outgoing):
@@ -576,7 +717,10 @@ class LanInbox:
 
 
 def _serve(session: Any, lease: Any, peer: PairedDevice, request: bytes, *,
-           install_id: str, now: int, inbox: LanInbox) -> tuple[dict[str, Any], RunReport | None]:
+           install_id: str, now: int, inbox: LanInbox,
+           licence_only: bool = False) -> tuple[dict[str, Any], RunReport | None]:
+    """One request.  *licence_only* (a free PC): a peer's view gives only its licences and is
+    answered with an empty view; witness and document requests are refused; nothing is written."""
     _check_install(install_id)
     if not isinstance(peer, PairedDevice):
         raise ValueError("an authenticated peer record is required")
@@ -598,6 +742,12 @@ def _serve(session: Any, lease: Any, peer: PairedDevice, request: bytes, *,
         return _error("unknown-peer"), RunReport(issues=(SyncIssue("unknown-peer", peer.device_id),))
     if msg["type"] == "next":
         return _next_chunk(inbox, peer.device_id, msg), None
+    if licence_only and msg["type"] in ("witness", "blob-get"):
+        return _error("bad-message"), None  # what an older app answers: the peer carries on quietly
+    if msg["type"] == "witness":
+        return _serve_witness(session, lease, state, peer.device_id, msg, now)
+    if msg["type"] == "blob-get":
+        return _serve_blob(session, lease, peer.device_id, msg, inbox, now), None
     if msg["type"] != "view":
         return _error("bad-message"), None
     if msg["group_id"] != state.group_id:
@@ -620,11 +770,27 @@ def _serve(session: Any, lease: Any, peer: PairedDevice, request: bytes, *,
         kind = "device-mismatch" if reason == "device-mismatch" else "bad-peer-data"
         return _error(reason), RunReport(issues=(SyncIssue(kind, f"{peer.device_id}: {exc.reason}"),))
 
+    if licence_only:
+        report = RunReport(own_states=(), licenses=licenses_in_views([view]))
+        try:
+            reply, _out = _prepare_view(session, lease, (), now)
+        except LanSyncError as exc:
+            return _error(exc.reason), None
+        inbox.outgoing.pop(peer.device_id, None)  # an empty view is always one chunk
+        return reply, report
+
     report = run_merge(session, lease, device_id=state.device_id, views=[view], now=now)
+    note_peer_synced(session, lease, peer.device_id, report, now)
+    inline = view.format == 2
+    obs = observation(view)
+    if obs is not None:
+        report = dataclasses.replace(report, issues=(*report.issues, *apply_witness(session, lease, [obs])))
     if report.own_states is None:
         return _error("local-data"), report
+    report = dataclasses.replace(report, own_states=publishable(
+        report.own_states, documents=peer.device_id in state.attachment_peers))
     try:
-        reply, out = _prepare_view(session, lease, report.own_states, now)
+        reply, out = _prepare_view(session, lease, report.own_states, now, inline=inline)
     except LanSyncError as exc:
         return _error(exc.reason), dataclasses.replace(
             report, issues=(*report.issues, SyncIssue(exc.reason, str(exc))))
@@ -634,6 +800,135 @@ def _serve(session: Any, lease: Any, peer: PairedDevice, request: bytes, *,
     else:
         inbox.outgoing.pop(peer.device_id, None)
     return reply, dataclasses.replace(report, wrote=True)
+
+
+def apply_witness(session: Any, lease: Any, observations: list[Observation], *,
+                  drop_capable: str | None = None) -> tuple[SyncIssue, ...]:
+    """Check *observations* against this vault and save the witness state when it matters.
+
+    The check runs against the session's in-memory generations (``witness_memory``), never
+    against a stale stored value.  Saved: a new peer, a change of ``witness_peers`` or
+    ``rollback_suspected``, or a risen generation of a peer not saved in the last
+    ``SAVE_INTERVAL_SECONDS``.  *drop_capable* removes that peer from ``witness_peers``.
+    """
+    _check_lease(session, lease)
+    state = load_sync_state(session)
+    own_generation = session_generation(session)
+    if state is None or own_generation is None:
+        return ()
+    mem = witness_memory.memory(session, state.group_id, state.device_id)
+    known = witness_memory.merged(state.peer_generations, mem)
+    checked = witness_check(state.device_id, own_generation, observations, known, state.rollback_suspected)
+    keep = _witness_ids(state)
+    generations = prune(checked.peer_generations, keep)
+    capable = set(state.witness_peers) | set(checked.capable)
+    capable.discard(drop_capable)
+    capable_t = tuple(prune(dict.fromkeys(capable, 0), keep))
+    stored = state.peer_generations
+    now = witness_memory.monotonic()
+    if mem is not None:
+        mem.generations = dict(generations)
+    risen = [d for d, g in generations.items() if d in stored and g > stored[d]]
+    due = mem is None or any(now - mem.saved_at.get(d, -math.inf) >= witness_memory.SAVE_INTERVAL_SECONDS
+                             for d in risen)
+    worth = (checked.rollback_suspected != state.rollback_suspected or capable_t != state.witness_peers
+             or any(d not in stored for d in generations) or (bool(risen) and due))
+    if worth:
+        new_state = dataclasses.replace(state, peer_generations=generations,
+                                        rollback_suspected=checked.rollback_suspected, witness_peers=capable_t)
+        _check_lease(session, lease)
+        save_sync_state(session, new_state)
+        if mem is not None:
+            for d in generations:
+                mem.saved_at[d] = now
+    return checked.issues
+
+
+def flush_witness(session: Any, lease: Any) -> bool:
+    """Save the session's in-memory peer generations that are above the stored ones.
+
+    Call it at the end of the sync service (before the vault locks) so a rise that the
+    save throttle held back is not lost.  Returns True when it saved.
+    """
+    _check_lease(session, lease)
+    state = load_sync_state(session)
+    if state is None:
+        return False
+    mem = witness_memory.memory(session, state.group_id, state.device_id)
+    generations = prune(witness_memory.merged(state.peer_generations, mem), _witness_ids(state))
+    if generations == dict(state.peer_generations):
+        return False
+    _check_lease(session, lease)
+    save_sync_state(session, dataclasses.replace(state, peer_generations=generations))
+    if mem is not None:
+        now = witness_memory.monotonic()
+        for d in generations:
+            mem.saved_at[d] = now
+    return True
+
+
+def _known_generations(session: Any, state: SyncGroupState) -> dict[str, int]:
+    """Stored peer generations raised to the session's in-memory ones (what this device publishes)."""
+    return witness_memory.merged(state.peer_generations,
+                                 witness_memory.memory(session, state.group_id, state.device_id))
+
+
+def _witness_ids(state: SyncGroupState) -> set[str]:
+    """Peers whose generations this device keeps and publishes: keyring members and LAN peers."""
+    ids = set(state.members) | {p.get("device_id") for p in state.lan_peers}
+    ids.discard(state.device_id)
+    return {i for i in ids if isinstance(i, str)}
+
+
+def witness_file(session: Any, state: SyncGroupState, now: int) -> bytes | None:
+    """This device's witness file for a LAN exchange (counter = the stored own counter), or None."""
+    generation = session_generation(session)
+    if generation is None:
+        return None
+    return encode_view(_group_key(state), state.device_id, state.own_counter, (), now,
+                       vault_generation=generation,
+                       witness=own_witness(_known_generations(session, state), _witness_ids(state),
+                                           state.device_id))
+
+
+def _witness_message(state: SyncGroupState, raw: bytes) -> dict[str, Any]:
+    return {"type": "witness", "group_id": state.group_id, "epoch": state.epoch,
+            "view": base64.b64encode(raw).decode("ascii")}
+
+
+def _open_witness(state: SyncGroupState, peer_id: str, msg: Mapping[str, Any]) -> Observation | SyncIssue:
+    """The observation of a ``witness`` message from *peer_id*, or the issue it raises."""
+    if msg["group_id"] != state.group_id:
+        return SyncIssue("group-mismatch", peer_id)
+    if msg["epoch"] != state.epoch:
+        return SyncIssue("epoch-behind" if msg["epoch"] > state.epoch else "peer-epoch-behind", peer_id)
+    try:
+        raw = _b64d(msg["view"])
+        view = decode_view(_group_key(state), raw, expected_device_id=peer_id, max_bytes=MAX_WITNESS_BYTES,
+                           max_records=0)
+    except LanSyncError:
+        return SyncIssue("bad-peer-data", f"{peer_id}: witness")
+    except SyncFormatError as exc:
+        kind = "device-mismatch" if exc.reason == "device-mismatch" else "bad-peer-data"
+        return SyncIssue(kind, f"{peer_id}: witness {exc.reason}")
+    if view.format != 2:
+        return SyncIssue("bad-peer-data", f"{peer_id}: witness format")
+    return Observation(peer_id, view.vault_generation, view.witness)
+
+
+def _serve_witness(session: Any, lease: Any, state: SyncGroupState, peer_id: str,
+                   msg: Mapping[str, Any], now: int) -> tuple[dict[str, Any], RunReport | None]:
+    obs = _open_witness(state, peer_id, msg)
+    if isinstance(obs, SyncIssue):
+        reason = {"group-mismatch": "group-mismatch", "device-mismatch": "device-mismatch",
+                  "epoch-behind": "peer-epoch-behind", "peer-epoch-behind": "epoch-behind"}.get(obs.kind, "bad-view")
+        return _error(reason), RunReport(issues=(obs,))
+    issues = apply_witness(session, lease, [obs])
+    state = load_sync_state(session) or state
+    raw = witness_file(session, state, now)
+    if raw is None:
+        return _error("local-data"), RunReport(issues=issues) if issues else None
+    return _witness_message(state, raw), RunReport(issues=issues) if issues else None
 
 
 def _receive_chunk(inbox: LanInbox, peer_id: str, msg: Mapping[str, Any], now: float) -> bytes | None:
@@ -667,6 +962,137 @@ def _receive_chunk(inbox: LanInbox, peer_id: str, msg: Mapping[str, Any], now: f
     return b"".join(current.parts)
 
 
+def note_peer_synced(session: Any, lease: Any, peer_id: str, report: RunReport, now: float) -> bool:
+    """Record ``peer_synced_at[peer_id] = now`` when a Wi-Fi merge changed records (local only).
+
+    Same rule as Android's ``PeerSyncedAt``: an exchange that changed nothing leaves the time
+    (and the vault) as they were.  Whether the state was saved.
+    """
+    if not (report.applied or report.deleted or report.conflicts):
+        return False
+    state = load_sync_state(session)
+    if state is None or peer_id == state.device_id:
+        return False
+    new_state = state.synced_with([peer_id], int(now))
+    if new_state == state:
+        return False
+    _check_lease(session, lease)
+    save_sync_state(session, new_state)
+    return True
+
+
+def set_attachment_peer(session: Any, lease: Any, peer_id: str, capable: bool) -> bool:
+    """Add *peer_id* to (or remove it from) ``attachment_peers``; whether the state changed."""
+    state = load_sync_state(session)
+    if state is None:
+        return False
+    peers = set(state.attachment_peers)
+    peers = peers | {peer_id} if capable else peers - {peer_id}
+    if peers == set(state.attachment_peers) or (capable and len(peers) > MAX_LAN_PEERS):
+        return False
+    _check_lease(session, lease)
+    save_sync_state(session, dataclasses.replace(state, attachment_peers=tuple(sorted(peers))))
+    return True
+
+
+def _attachment_error(reason: str) -> dict[str, Any]:
+    """An error of the attachment messages (``ATTACHMENT_ERROR_REASONS``, outside the pinned ``ERROR_REASONS``)."""
+    assert reason in ATTACHMENT_ERROR_REASONS
+    return {"type": "error", "reason": reason}
+
+
+def _live_documents(session: Any, lease: Any, inbox: LanInbox, now: int) -> dict[str, Any] | None:
+    """{blob id: ref} of this device's live documents, cached per store revision.
+
+    The revision key is the session object, the sync device id and the committed vault
+    generation (it grows with every save), so any saved change (a document added, edited or
+    deleted, a group change) rebuilds the map.  None when the local view cannot be built.
+    """
+    state = load_sync_state(session)
+    if state is None:
+        return None
+    generation = session_generation(session)
+    key = (id(session), state.device_id, generation)
+    cached = inbox.live_documents
+    if generation is not None and cached is not None and cached[0] == key:
+        return cached[1]
+    try:
+        local = local_view(session, lease, device_id=state.device_id, now=now)
+    except BridgeError:
+        return None
+    live = {r.blob: r for r in document_refs(local.values())}
+    inbox.live_documents = (key, live) if generation is not None else None
+    return live
+
+
+def _serve_blob(session: Any, lease: Any, peer_id: str, msg: Mapping[str, Any], inbox: LanInbox,
+                now: int) -> dict[str, Any]:
+    """One chunk of the blob of one of this device's own live documents, else ``no-blob``."""
+    set_attachment_peer(session, lease, peer_id, True)
+    blob_id = msg["blob"]
+    cached = inbox.blobs.get(peer_id)
+    if cached is None or cached[0] != blob_id or msg["seq"] == 0:
+        inbox.blobs.pop(peer_id, None)
+        if blob_id == PROBE_BLOB:
+            return _attachment_error("no-blob")
+        live = _live_documents(session, lease, inbox, now)
+        ref = live.get(blob_id) if live is not None else None
+        blob = own_blob(session, ref) if ref is not None else None
+        if blob is None:
+            return _attachment_error("no-blob")
+        cached = inbox.blobs[peer_id] = (blob_id, blob)
+        while len(inbox.blobs) > MAX_TRANSFERS:
+            del inbox.blobs[next(iter(inbox.blobs))]
+    try:
+        reply = attachment_sync.blob_chunk(cached[1], msg["seq"])
+    except attachment_sync.AttachmentSyncError:
+        inbox.blobs.pop(peer_id, None)
+        return _error("bad-chunk")
+    if msg["seq"] == reply["total"] - 1:
+        inbox.blobs.pop(peer_id, None)
+    return reply
+
+
+def _note_support(answered: list[bool], reply: Mapping[str, Any]) -> None:
+    """Only a chunk or ``no-blob`` shows support and only ``bad-message`` shows an older app; any other
+    error (revoked, busy, ...) says nothing about the peer's support."""
+    if reply.get("type") == "blob" or reply.get("reason") == "no-blob":
+        answered.append(True)
+    elif reply.get("reason") == "bad-message":
+        answered.append(False)
+
+
+def _fetch_blobs(call: Callable[..., dict[str, Any]], session: Any, lease: Any, peer_id: str,
+                 view: View) -> list[SyncIssue]:
+    """Fetch the files of the peer's documents this vault lacks; probe once to learn the peer's support."""
+    answered: list[bool] = []  # True: the peer knows blob-get; False: an older app
+
+    def fetch(ref: attachment_sync.AttachmentRef) -> bytes | None:
+        download = attachment_sync.BlobDownload(ref)
+        seq = 0
+        while True:
+            reply = call(attachment_sync.blob_get(ref.blob, seq))
+            if reply.get("type") == "error":
+                _note_support(answered, reply)
+                return None
+            answered.append(True)
+            try:
+                blob = download.add(reply)
+            except attachment_sync.AttachmentSyncError:
+                return None
+            if blob is not None:
+                return blob
+            seq += 1
+
+    issues = import_missing(session, lease, view.states, fetch)
+    state = load_sync_state(session)
+    if not answered and state is not None and peer_id not in state.attachment_peers:
+        _note_support(answered, call(attachment_sync.blob_get(PROBE_BLOB)))
+    if answered:
+        set_attachment_peer(session, lease, peer_id, answered[-1])
+    return issues
+
+
 def _next_chunk(inbox: LanInbox, peer_id: str, msg: Mapping[str, Any]) -> dict[str, Any]:
     out = inbox.outgoing.get(peer_id)
     if out is None or out.transfer != msg["transfer"] or msg["seq"] != out.sent:
@@ -679,8 +1105,9 @@ def _next_chunk(inbox: LanInbox, peer_id: str, msg: Mapping[str, Any]) -> dict[s
     return reply
 
 
-def _prepare_view(session: Any, lease: Any, own_states: Any, now: int) -> tuple[dict[str, Any], _Outgoing | None]:
-    """Encode this device's view; first chunk + the rest.
+def _prepare_view(session: Any, lease: Any, own_states: Any, now: int, *,
+                  inline: bool = False) -> tuple[dict[str, Any], _Outgoing | None]:
+    """Encode this device's view; first chunk + the rest.  *inline*: format 2 (generation and witness).
 
     The header carries the stored ``own_counter`` as is: LAN never checks view
     counters, so no counter is reserved and nothing is saved here (saving on
@@ -692,8 +1119,12 @@ def _prepare_view(session: Any, lease: Any, own_states: Any, now: int) -> tuple[
         raise LanSyncError("not-joined")
     gk = _group_key(state)
     counter = state.own_counter
+    generation = session_generation(session) if inline else None
+    witness = (own_witness(_known_generations(session, state), _witness_ids(state), state.device_id)
+               if inline else None)
     try:
-        raw = encode_view(gk, state.device_id, counter, own_states, now)
+        raw = encode_view(gk, state.device_id, counter, own_states, now, vault_generation=generation,
+                          witness=witness if generation is not None else None)
     except SyncFormatError as exc:
         raise LanSyncError("too-large", exc.reason) from exc
     if len(raw) > MAX_VIEW_BYTES or math.ceil(len(raw) / max(1, CHUNK_BYTES)) > MAX_CHUNKS:
@@ -816,15 +1247,31 @@ class LanResponder:
         self.accept_timeout = float(accept_timeout)
         #: Called (on the transport thread) when a request starts waiting for Accept, e.g. to refresh the screen.
         self.on_pending = on_pending
+        #: Called (on the transport thread) after a peer's request reached the merge step: a phone
+        #: connects to this PC, so this is the only sign on this side that a sync with it happened.
+        self.on_served: Callable[[RunReport], None] | None = None
+        #: A free PC: serve views licence-only (``_serve``); set by ``service.LanAdapter``.
+        self.licence_only = False
         self._transport: SyncTransport | None = None
         self._deadline = 0.0  # monotonic expiry of the armed offer
         self._refuse_until = 0.0  # monotonic end of the "used up or expired" grace period
 
     def __call__(self, peer: PairedDevice, request: bytes) -> bytes:
         reply, report = _serve(self.session, self.lease, peer, request,
-                               install_id=self.install_id, now=self.clock(), inbox=self.inbox)
+                               install_id=self.install_id, now=self.clock(), inbox=self.inbox,
+                               licence_only=self.licence_only)
         if report is not None:
+            earlier = self.last_report
+            if earlier is not None and earlier.licenses:
+                # A licence-only PC stores nothing: keep licences already received until the next
+                # run collects them, so a later refused request does not drop them.
+                kept = (earlier.licenses + report.licenses)[-MAX_KEPT_LICENSES:]
+                report = dataclasses.replace(report, licenses=kept)
             self.last_report = report
+            on_served = self.on_served
+            if report.own_states is not None and on_served is not None:
+                with contextlib.suppress(Exception):  # the status update must not cost the peer its reply
+                    on_served(report)
         return encode_message(reply)
 
     # enrollment ------------------------------------------------------------------------------
@@ -1032,11 +1479,15 @@ def _reply_issue(reply: Mapping[str, Any]) -> SyncIssue:
 
 def sync_with(transport: SyncTransport, peer_id: str, session: Any, lease: Any, *,
               install_id: str, now: int, endpoint: LANEndpoint | None = None,
-              timeout: float | None = None) -> RunReport:
+              timeout: float | None = None, licence_only: bool = False) -> RunReport:
     """One LAN sync with *peer_id*: exchange views both ways and merge.
 
     *endpoint* defaults to the peer's stored endpoint.  Network failures and
     refusals become issues; lock and lease errors propagate.
+
+    *licence_only* (a free PC): send an empty view, keep only the licences of
+    the reply (``RunReport.licenses``) and write nothing: no merge, no document
+    files, no witness, no peer bookkeeping.
     """
     _check_install(install_id)
     _check_lease(session, lease)
@@ -1079,21 +1530,32 @@ def sync_with(transport: SyncTransport, peer_id: str, session: Any, lease: Any, 
         return parse_message(raw)
 
     try:
-        try:
-            local = local_view(session, lease, device_id=state.device_id, now=now)
-        except BridgeError as exc:
-            return RunReport(issues=(SyncIssue("local-data", str(exc)),))
-        own = tuple(local[k] for k in sorted(local))
-        first, out = _prepare_view(session, lease, own, now)
+        if licence_only:
+            own: tuple[Any, ...] = ()  # publishes nothing
+            inline = False
+        else:
+            try:
+                local = local_view(session, lease, device_id=state.device_id, now=now)
+            except BridgeError as exc:
+                return RunReport(issues=(SyncIssue("local-data", str(exc)),))
+            own = publishable(tuple(local[k] for k in sorted(local)), documents=peer_id in state.attachment_peers)
+            inline = peer_id in state.witness_peers and session_generation(session) is not None
+        first, out = _prepare_view(session, lease, own, now, inline=inline)
         reply = call(first, retry=False)  # an unreachable peer is reported at once
         if out is not None:
             for seq in range(1, len(out.parts)):
                 if reply != {"type": "ack", "transfer": out.transfer, "seq": seq - 1}:
-                    return RunReport(issues=(_reply_issue(reply),))
+                    return _refused(session, lease, reply, peer_id, inline)
                 reply = call(_view_message(out.gk, out.transfer, seq, out.parts, out.size))
         view = _receive_reply_view(call, reply, state, peer_id, now)
         if isinstance(view, SyncIssue):
+            if inline and reply.get("type") == "error":
+                return _refused(session, lease, reply, peer_id, inline)
             return RunReport(issues=(view,))
+        if licence_only:
+            _check_lease(session, lease)
+            return RunReport(licenses=licenses_in_views([view]))
+        file_issues = _fetch_blobs(call, session, lease, peer_id, view)
     except LanSyncError as exc:
         return RunReport(issues=(SyncIssue("bad-reply" if exc.reason == "bad-message" else exc.reason,
                                            str(exc)),))
@@ -1105,7 +1567,69 @@ def sync_with(transport: SyncTransport, peer_id: str, session: Any, lease: Any, 
         return RunReport(issues=(SyncIssue("unreachable", f"{type(exc).__name__}: {exc}"),))
 
     report = run_merge(session, lease, device_id=state.device_id, views=[view], now=now)
-    return dataclasses.replace(report, wrote=True)
+    note_peer_synced(session, lease, peer_id, report, now)
+    report = dataclasses.replace(report, issues=(*file_issues, *report.issues))
+    extra: tuple[SyncIssue, ...] = ()
+    if inline:
+        mem = witness_memory.memory(session, state.group_id, state.device_id)
+        if mem is not None:
+            mem.refusals.pop(peer_id, None)  # a format-2 exchange went through
+    obs = observation(view)
+    if obs is not None:
+        extra = apply_witness(session, lease, [obs])
+    elif not inline:
+        extra = _exchange_witness(call, session, lease, peer_id, now)
+    return dataclasses.replace(report, issues=(*report.issues, *extra), wrote=True)
+
+
+#: Consecutive ``bad-view`` refusals of a format-2 view that drop a peer's format-2 support.
+FORMAT_REFUSALS_TO_DROP = 2
+
+
+def _refused(session: Any, lease: Any, reply: Mapping[str, Any], peer_id: str, inline: bool) -> RunReport:
+    """A refused exchange; repeated ``bad-view`` refusals of a format-2 view drop the peer's support.
+
+    The refusal carries no detail (an older app answers ``bad-view`` for any view it cannot
+    read), so a single one may be a damaged transfer: only ``FORMAT_REFUSALS_TO_DROP`` in a
+    row (no successful format-2 exchange in between) count as "the peer went back to an older app".
+    """
+    if inline and reply.get("type") == "error" and reply.get("reason") == "bad-view":
+        state = load_sync_state(session)
+        mem = witness_memory.memory(session, state.group_id, state.device_id) if state is not None else None
+        count = FORMAT_REFUSALS_TO_DROP
+        if mem is not None:
+            count = mem.refusals[peer_id] = mem.refusals.get(peer_id, 0) + 1
+        if count >= FORMAT_REFUSALS_TO_DROP:
+            if mem is not None:
+                mem.refusals.pop(peer_id, None)
+            apply_witness(session, lease, [], drop_capable=peer_id)
+    return RunReport(issues=(_reply_issue(reply),))
+
+
+def _exchange_witness(call: Callable[..., dict[str, Any]], session: Any, lease: Any, peer_id: str,
+                      now: int) -> tuple[SyncIssue, ...]:
+    """Send this device's witness after a format-1 exchange; check the peer's answer.
+
+    A peer from before 2026-10-29 answers ``bad-message``, a lost connection gives nothing: both
+    are silent (the views were merged already; the next exchange tries again).
+    """
+    _check_lease(session, lease)
+    state = load_sync_state(session)
+    if state is None:
+        return ()
+    raw = witness_file(session, state, now)
+    if raw is None:
+        return ()
+    try:
+        reply = call(_witness_message(state, raw))
+    except (LanSyncError, TransportError, SyncStateError, OSError):
+        return ()
+    if reply.get("type") != "witness":
+        return ()
+    obs = _open_witness(state, peer_id, reply)
+    if isinstance(obs, SyncIssue):
+        return (obs,)
+    return apply_witness(session, lease, [obs])
 
 
 def _receive_reply_view(call: Callable[[Mapping[str, Any]], dict[str, Any]], reply: dict[str, Any],
@@ -1137,6 +1661,8 @@ def _receive_reply_view(call: Callable[[Mapping[str, Any]], dict[str, Any]], rep
 __all__ = [
     "ACCEPT_TIMEOUT_SECONDS", "CHUNK_BYTES", "CHUNK_LIMIT", "ENROLL_REPLY_SECONDS", "ERROR_REASONS", "MAX_CHUNKS",
     "MAX_TRANSFERS", "MAX_VIEW_BYTES", "LanInbox", "LanResponder", "LanSyncError", "PendingEnrollment", "RunReport", "begin_pairing", "create_lan_group", "encode_message", "enroll_from_qr",
-    "parse_message", "peer_endpoint", "peer_entry", "peer_from_entry", "peer_to_entry", "remove_lan_peer",
+    "MAX_WITNESS_BYTES", "LAN_GENERATION_SLACK", "FORMAT_REFUSALS_TO_DROP", "apply_witness", "flush_witness",
+    "witness_file",
+    "parse_message", "peer_endpoint", "peer_entry", "peer_from_entry", "peer_to_entry", "remove_lan_peer", "save_peer_endpoint", "refind_from_qr",
     "serve_request", "split_view", "sync_with", "transport_state",
 ]

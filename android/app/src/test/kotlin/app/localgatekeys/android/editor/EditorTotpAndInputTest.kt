@@ -1,5 +1,7 @@
 package app.localgatekeys.android.editor
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.pro.ProFeatures
 import app.localgatekeys.android.vault.VaultItem
 import app.localgatekeys.android.vault.i
@@ -41,7 +43,8 @@ class EditorTotpAndInputTest {
         e.set("label", "Shop"); e.set("origin", "https://shop.example"); e.set("totp", "JBSWY3DPEHPK3PXP")
         assertEquals(SaveResult.NEEDS_PRO, e.save())
         assertTrue(e.showUpgrade)
-        assertEquals(ProFeatures.totpMessage, e.totpError)
+        assertEquals(ProFeatures.totpMessage(EnglishTxt()), e.totpError)
+        assertTrue(e.totpErrorIsPro)
         assertEquals("Two-factor codes need Pro.", e.error)
         assertEquals(0, store.commits)
         e.set("totp", "")
@@ -146,10 +149,10 @@ class EditorTotpAndInputTest {
         val e = ed(CountingStore())
         e.set("totp", "JBSWY3DPEHPK3PXP")
         for ((code, message) in listOf(
-            "https://shop.example/login" to EditorModel.NOT_TOTP_QR_MESSAGE,
-            "" to EditorModel.NOT_TOTP_QR_MESSAGE,
-            "otpauth-migration://offline?data=CjEKCkhlbGxvId6tvu8" to EditorModel.MIGRATION_QR_MESSAGE,
-            "otpauth://hotp/x?secret=JBSWY3DPEHPK3PXP" to Totp.message(TotpException(TotpException.Kind.NOT_OTPAUTH_URI)),
+            "https://shop.example/login" to EnglishTxt().s(R.string.editor_not_totp_qr),
+            "" to EnglishTxt().s(R.string.editor_not_totp_qr),
+            "otpauth-migration://offline?data=CjEKCkhlbGxvId6tvu8" to EnglishTxt().s(R.string.editor_migration_qr),
+            "otpauth://hotp/x?secret=JBSWY3DPEHPK3PXP" to TotpText.message(TotpException(TotpException.Kind.NOT_OTPAUTH_URI), EnglishTxt()),
         )) {
             e.scanTotp(code)
             assertEquals(code, message, e.totpError)

@@ -15,40 +15,40 @@ const AUTOMATIC_KEY = "automatic_save_blocked_origins";
 const FIELD_ACTION_IDS = ["fill", "identity", "card", "save", "generate"];
 const PAGE_ACTION_IDS = [...FIELD_ACTION_IDS, "automatic"];
 const COMMAND_LABELS = {
-  fill_current: "Fill login",
-  fill_identity: "Fill identity",
-  fill_card: "Fill card",
-  save_current: "Save login",
-  generate_new: "Generate password",
+  fill_current: tr("popup_fill_login"),
+  fill_identity: tr("popup_fill_identity"),
+  fill_card: tr("popup_fill_card_label"),
+  save_current: tr("popup_save_login"),
+  generate_new: tr("popup_generate_password"),
 };
 const DIAGNOSTIC_ERRORS = {
-  agent_offline: "Open LocalGateKeys, repair the browser connection, then try again.",
-  agent_state_missing: "Finish choosing a profile in LocalGateKeys, then try again.",
-  agent_state_invalid: "Restart LocalGateKeys and repair the browser connection.",
-  agent_unavailable: "Restart LocalGateKeys, then refresh the connection.",
-  agent_connection_lost: "The bridge disconnected. Repair the browser connection and try again.",
-  version_mismatch: "Update the extension and LocalGateKeys, then restart both.",
-  integration_disabled: "Browser integration is paused. Re-enable it in LocalGateKeys Settings.",
-  native_host_error: "The native host could not be reached. Repair the browser connection in LocalGateKeys.",
-  timeout: "The bridge took too long to respond. Close any desktop prompt and try again.",
+  agent_offline: tr("popup_diag_agent_offline"),
+  agent_state_missing: tr("popup_diag_state_missing"),
+  agent_state_invalid: tr("popup_diag_state_invalid"),
+  agent_unavailable: tr("popup_diag_unavailable"),
+  agent_connection_lost: tr("popup_diag_connection_lost"),
+  version_mismatch: tr("popup_diag_version_mismatch"),
+  integration_disabled: tr("popup_integration_disabled"),
+  native_host_error: tr("popup_diag_native_host"),
+  timeout: tr("popup_diag_timeout"),
 };
 const COMMAND_ERRORS = {
-  not_found: "No saved login was found for this site. Save a login first or check its fill policy.",
-  session_changed: "The vault is locked or the profile changed. Click Fill login again to continue.",
-  integration_disabled: "Browser integration is paused. Re-enable it in LocalGateKeys Settings.",
-  destination_changed: "This page changed. Open the popup again on the intended login form.",
-  busy: "Finish the open LocalGateKeys prompt, then try again.",
-  agent_offline: "LocalGateKeys is offline. Open the desktop app and repair the browser connection.",
-  identity_not_found: "No identity field was found on this page. Open a contact or address form and try again.",
-  invalid_identity_fields: "The page requested an unsupported identity field. Choose contact or address fields only.",
-  user_cancelled: "The fill was cancelled before any field was released.",
-  card_not_found: "No payment card is saved in this profile. Add a card in LocalGateKeys first.",
-  card_form_not_found: "No payment form was found on this page. Open a checkout form with a card-number field and try again.",
-  invalid_card_fields: "The page requested an unsupported card field. Choose card fields only.",
-  origin_mismatch: "This page changed origin. Open the extension again on the intended page.",
-  version_mismatch: "Update and reload the extension and LocalGateKeys before filling identity fields.",
-  gesture_nonce_invalid: "The click expired or belongs to another page. Choose the action again.",
-  gesture_nonce_required: "Update and reload the extension: this action needs a fresh gesture nonce.",
+  not_found: tr("popup_cmd_not_found"),
+  session_changed: tr("popup_cmd_session_changed"),
+  integration_disabled: tr("popup_integration_disabled"),
+  destination_changed: tr("popup_cmd_destination_changed"),
+  busy: tr("popup_cmd_busy"),
+  agent_offline: tr("popup_cmd_offline"),
+  identity_not_found: tr("popup_cmd_identity_not_found"),
+  invalid_identity_fields: tr("popup_cmd_invalid_identity"),
+  user_cancelled: tr("popup_cmd_cancelled"),
+  card_not_found: tr("popup_cmd_card_not_found"),
+  card_form_not_found: tr("popup_cmd_card_form_not_found"),
+  invalid_card_fields: tr("popup_cmd_invalid_card"),
+  origin_mismatch: tr("popup_cmd_origin_mismatch"),
+  version_mismatch: tr("popup_cmd_version_mismatch"),
+  gesture_nonce_invalid: tr("popup_cmd_nonce_invalid"),
+  gesture_nonce_required: tr("popup_cmd_nonce_required"),
 };
 
 let currentTab = null;
@@ -84,11 +84,11 @@ function setAutomaticAvailable(enabled) {
 function updateActionGuidance() {
   if (!currentTab) return;
   const guidance = {
-    checking: "Checking LocalGateKeys before enabling this page's actions.",
-    offline: "Reconnect LocalGateKeys to use this site's actions.",
-    setup: "Finish LocalGateKeys setup before using this site's actions.",
-    locked: "Choose an action to request unlock; nothing fills automatically.",
-    connected: "Only this site's origin is checked. Nothing fills until you choose an action.",
+    checking: tr("popup_guidance_checking"),
+    offline: tr("popup_guidance_offline"),
+    setup: tr("popup_guidance_setup"),
+    locked: tr("popup_guidance_locked"),
+    connected: tr("popup_guidance_connected"),
   };
   siteHintNode.textContent = guidance[diagnosticsState] || guidance.checking;
 }
@@ -107,11 +107,11 @@ function setAutomaticButton(enabled) {
   automaticNode.dataset.enabled = value ? "true" : "false";
   automaticNode.setAttribute("aria-pressed", String(value));
   automaticLabelNode.textContent = value
-    ? "Turn off save prompts on this site"
-    : "Turn on save prompts on this site";
+    ? tr("popup_auto_turn_off")
+    : tr("popup_auto_turn_on");
   automaticHintNode.textContent = value
-    ? "On: you're asked after a successful sign-in here"
-    : "Off: LocalGateKeys won't offer to save on this site";
+    ? tr("popup_auto_on_hint")
+    : tr("popup_auto_off_hint");
 }
 
 function actionableError(response, fallback) {
@@ -121,7 +121,7 @@ function actionableError(response, fallback) {
 
 function diagnosticError(response) {
   if (response?.message) return response.message;
-  return DIAGNOSTIC_ERRORS[response?.error] || "Open LocalGateKeys and repair the browser connection, then try again.";
+  return DIAGNOSTIC_ERRORS[response?.error] || tr("popup_diag_default");
 }
 
 // ping is unauthenticated metadata: {ok, version, locked} only. It carries no
@@ -131,25 +131,25 @@ function diagnosticError(response) {
 function applyDiagnostics(response) {
   if (!response?.ok) {
     diagnosticsState = "offline";
-    setConnectionStatus("offline", "Offline", diagnosticError(response));
+    setConnectionStatus("offline", tr("popup_state_offline"), diagnosticError(response));
     updateFieldActionAvailability();
     return "offline";
   }
   if (response.locked === true) {
     diagnosticsState = "locked";
-    setConnectionStatus("locked", "Locked", "Choose an action to continue; the desktop app will ask before unlocking.");
+    setConnectionStatus("locked", tr("popup_state_locked"), tr("popup_locked_desc"));
     updateFieldActionAvailability();
     return "locked";
   }
   if (response.locked !== false) {
     diagnosticsState = "setup";
-    setConnectionStatus("setup", "Setup required", "LocalGateKeys did not report a ready browser profile. Finish setup, then refresh.");
+    setConnectionStatus("setup", tr("popup_state_setup"), tr("popup_setup_desc"));
     updateFieldActionAvailability();
     return "setup";
   }
   diagnosticsState = "connected";
-  const version = typeof response.version === "string" && response.version ? ` (LocalGateKeys ${response.version})` : "";
-  setConnectionStatus("connected", "Connected", `LocalGateKeys is ready${version}. Nothing is unlocked until you choose an action.`);
+  const version = typeof response.version === "string" && response.version ? tr("popup_version_suffix",response.version) : "";
+  setConnectionStatus("connected", tr("popup_state_connected"), tr("popup_ready_version",version));
   updateFieldActionAvailability();
   return "connected";
 }
@@ -160,22 +160,22 @@ async function refreshConnection({ announce = false } = {}) {
   connectionNode.setAttribute("aria-busy", "true");
   diagnosticsState = "checking";
   updateFieldActionAvailability();
-  setConnectionStatus("checking", "Checking connection…", "Contacting LocalGateKeys without unlocking your vault.");
+  setConnectionStatus("checking", tr("popup_checking_connection"), tr("popup_checking_connection_desc"));
   connectionRequest = (async () => {
     try {
       const response = await api.runtime.sendMessage({ type: "diagnostics" });
       const state = applyDiagnostics(response);
       if (announce) {
-        if (state === "connected") setStatus("Connection refreshed. LocalGateKeys is ready.", "success");
-        else if (state === "locked") setStatus("Connection refreshed. Unlock will happen only after you choose an action.", "info");
-        else if (state === "setup") setStatus("Connection refreshed. Finish LocalGateKeys setup, then refresh.", "error");
-        else setStatus(`Connection unavailable. ${diagnosticError(response)}`, "error");
+        if (state === "connected") setStatus(tr("popup_refreshed_ready"), "success");
+        else if (state === "locked") setStatus(tr("popup_refreshed_locked"), "info");
+        else if (state === "setup") setStatus(tr("popup_refreshed_setup"), "error");
+        else setStatus(tr("popup_connection_unavailable",diagnosticError(response)), "error");
       }
       return response;
     } catch {
       const response = { ok: false, error: "native_host_error" };
       applyDiagnostics(response);
-      if (announce) setStatus(`Connection unavailable. ${diagnosticError(response)}`, "error");
+      if (announce) setStatus(tr("popup_connection_unavailable",diagnosticError(response)), "error");
       return response;
     } finally {
       connectionRequest = null;
@@ -201,14 +201,14 @@ async function updateAutomaticButton() {
     return enabled;
   } catch {
     setAutomaticButton(false);
-    setStatus("Could not read this site's automatic-save setting. Try again.", "error");
+    setStatus(tr("popup_auto_read_failed"), "error");
     return false;
   }
 }
 
 async function toggleAutomatic() {
   if (!currentTab) {
-    setStatus("Open an http or https page before changing automatic save.", "error");
+    setStatus(tr("popup_auto_need_page"), "error");
     return;
   }
   automaticNode.disabled = true;
@@ -221,11 +221,11 @@ async function toggleAutomatic() {
     await api.storage.local.set({ [AUTOMATIC_KEY]: next });
     setAutomaticButton(!enabled);
     setStatus(
-      enabled ? "Automatic save is off for this site." : "Automatic save is on. You will be asked before a login is saved.",
+      enabled ? tr("popup_auto_now_off") : tr("popup_auto_now_on"),
       "success",
     );
   } catch {
-    setStatus("Could not update automatic save for this site. Try again.", "error");
+    setStatus(tr("popup_auto_update_failed"), "error");
   } finally {
     automaticNode.disabled = !currentTab;
     automaticNode.setAttribute("aria-busy", "false");
@@ -251,17 +251,17 @@ async function sameOriginFrameIds(tab) {
 async function sendCommand(command) {
   if (commandInFlight) return;
   if (!currentTab) {
-    setStatus("Open an http or https page with a login form first.", "error");
+    setStatus(tr("popup_need_login_page"), "error");
     return;
   }
   if (!fieldActionsReady()) {
     const message = diagnosticsState === "checking"
-      ? "Still checking LocalGateKeys. Wait for the connection status, then try again."
+      ? tr("popup_wait_checking")
       : diagnosticsState === "locked"
-        ? "Unlock is requested only after you choose a field action."
+        ? tr("popup_unlock_on_action")
         : diagnosticsState === "setup"
-            ? "Finish LocalGateKeys setup, then refresh the connection before using field actions."
-            : "Field actions are unavailable. Open LocalGateKeys and repair the browser connection, then refresh.";
+            ? tr("popup_finish_setup_refresh")
+            : tr("popup_actions_unavailable");
     setStatus(message, diagnosticsState === "locked" ? "info" : "error");
     return;
   }
@@ -270,7 +270,7 @@ async function sendCommand(command) {
   const buttonId = {fill_current:"fill", fill_identity:"identity", fill_card:"card", save_current:"save", generate_new:"generate"}[command];
   const button = document.getElementById(buttonId);
   button.setAttribute("aria-busy", "true");
-  setStatus(`${COMMAND_LABELS[command]} is looking for supported fields…`, "info");
+  setStatus(tr("popup_looking",COMMAND_LABELS[command]), "info");
   let restoreFocus = false;
   try {
     const frameIds = await sameOriginFrameIds(currentTab);
@@ -289,23 +289,23 @@ async function sendCommand(command) {
       if (response?.ok) break;
     }
     if (response?.ok) {
-      setStatus(`${COMMAND_LABELS[command]} started on this page.`, "success");
+      setStatus(tr("popup_started",COMMAND_LABELS[command]), "success");
       setTimeout(() => window.close(), 500);
     } else {
       const fallback = command === "fill_current"
-        ? "No supported login field was found. Open a sign-in form and try again."
+        ? tr("popup_fb_login")
         : command === "fill_identity"
-          ? "No supported contact or address field was found. Open an identity form and try again."
+          ? tr("popup_fb_identity")
         : command === "fill_card"
-          ? "No payment form was found on this page. Open a checkout form with a card-number field and try again."
+          ? tr("popup_cmd_card_form_not_found")
         : command === "save_current"
-          ? "No current login field was found. Enter a login, then try again."
-          : "No unambiguous new-password fields were found. Open a sign-up or password-change form and try again.";
+          ? tr("popup_fb_save")
+          : tr("popup_fb_generate");
       setStatus(actionableError(response, fallback), "error");
       restoreFocus = true;
     }
   } catch {
-    setStatus("This page could not be reached. Reload the page and try again.", "error");
+    setStatus(tr("popup_page_unreachable"), "error");
     restoreFocus = true;
   } finally {
     commandInFlight = false;
@@ -318,7 +318,17 @@ async function sendCommand(command) {
   }
 }
 
+// Fills every data-i18n element from the locale catalog; the English text in
+// popup.html stays as the fallback. textContent only, never innerHTML.
+function applyTranslations() {
+  if (typeof document.querySelectorAll !== "function") return;
+  for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = tr(el.dataset.i18n);
+  for (const el of document.querySelectorAll("[data-i18n-aria-label]")) el.setAttribute("aria-label", tr(el.dataset.i18nAriaLabel));
+  for (const el of document.querySelectorAll("[data-i18n-title]")) el.setAttribute("title", tr(el.dataset.i18nTitle));
+}
+
 async function initialize() {
+  applyTranslations();
   try {
     const [tab] = await api.tabs.query({ active: true, currentWindow: true });
     const url = new URL(tab?.url || "");
@@ -331,8 +341,8 @@ async function initialize() {
     await Promise.all([refreshConnection(), updateAutomaticButton()]);
   } catch {
     currentTab = null;
-    siteNode.textContent = "This page is not available to LocalGateKeys.";
-    siteHintNode.textContent = "Open a standard http or https login page to use these actions.";
+    siteNode.textContent = tr("popup_page_unavailable");
+    siteHintNode.textContent = tr("popup_page_unavailable_hint");
     setPageActionsEnabled(false);
     await refreshConnection();
   }

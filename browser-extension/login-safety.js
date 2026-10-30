@@ -155,9 +155,9 @@
    return now.action===ctx.action && now.method===ctx.method && now.target===ctx.target;
  }
  function snapshot(field, usernameOnly=false) {
-   if (!onTop(field) || (!usernameOnly && !currentPassword(field))) throw new Error("The target field is hidden, covered, or no longer a login field.");
+   if (!onTop(field) || (!usernameOnly && !currentPassword(field))) throw new Error(tr("err_target_field_hidden"));
    const form=field.form;
-   if (form && !safeForm(form)) throw new Error("The form points to another origin. LocalGateKeys will not fill it.");
+   if (form && !safeForm(form)) throw new Error(tr("err_form_other_origin"));
    return {field,form,origin:location.origin,type:field.type,autocomplete:field.autocomplete,usernameOnly,...formState(form)};
  }
  function unchanged(ctx) {
@@ -211,9 +211,9 @@
    return otpHint.test(otpText(el));
  }
  function otpSnapshot(field){
-   if (!onTop(field) || !otpField(field)) throw new Error("The code field is hidden, covered, or no longer a 2FA field.");
+   if (!onTop(field) || !otpField(field)) throw new Error(tr("err_code_field_hidden"));
    const form=field.form;
-   if (form && !safeForm(form)) throw new Error("The form points to another origin. LocalGateKeys will not fill it.");
+   if (form && !safeForm(form)) throw new Error(tr("err_form_other_origin"));
    return {field,form,origin:location.origin,type:field.type,autocomplete:field.autocomplete,usernameOnly:true,boxes:otpBoxes(field),...formState(form)};
  }
  // ---- Payment cards. Explicit HTML autocomplete tokens are authoritative.
@@ -269,9 +269,9 @@
  function cardSnapshot(field) {
    const scope=cardScope(field);
    const map=cardFieldMap(scope);
-   if (!onTop(field) || !(map["cc-number"]||[]).includes(field)) throw new Error("The card field is hidden, covered, or no longer part of a payment form.");
+   if (!onTop(field) || !(map["cc-number"]||[]).includes(field)) throw new Error(tr("err_card_field_hidden"));
    const form=field.form;
-   if (form && !safeForm(form)) throw new Error("The form points to another origin. LocalGateKeys will not fill it.");
+   if (form && !safeForm(form)) throw new Error(tr("err_form_other_origin"));
    const tokens=Object.keys(map).filter(t=>map[t].length===1 && onTop(map[t][0]));
    return {field,form,scope,origin:location.origin,type:field.type,autocomplete:field.autocomplete,name:field.name,id:field.id,tokens,...formState(form)};
  }

@@ -43,6 +43,21 @@ Format rules (version 1)
 * ``expected_device_id`` (decode) binds a file to the device that must have
   written it; a file under another device's name is rejected.
 
+Format 2 (rollback witnesses, 2026-10-29)
+-----------------------------------------
+Identical to format 1 except the header line is exactly
+``{"format":2,"group_id","device_id","epoch","counter","written_at",
+"vault_generation","witness"}``.  ``vault_generation`` is the writer's vault
+generation when it encoded the file (an int in 0..2**53-1).  ``witness`` maps
+peer device ids (``is_valid_id``, never the writer's own id) to the highest
+vault generation the writer has seen from that peer (ints in 0..2**53-1), at
+most ``MAX_WITNESS`` entries.  The header is the AAD, so both are
+authenticated.  Readers accept format 1 and format 2; a format-2 file with any
+other key set is ``bad-header``.  Builds before 2026-10-29 reject format 2, so
+a writer only uses it when every reader advertised support (see the transports
+and ``witness.py``).  A *witness file* is a format-2 view with zero records:
+it carries the two fields next to a format-1 view during that transition.
+
 View signature (sidecar, added 2026-10-24, audit M-7)
 -----------------------------------------------------
 The view file itself is unchanged (older apps read it as before).  Its writer also
@@ -83,6 +98,8 @@ from localvault.updates import canonical_json
 
 MAGIC = b"LGKSYNC1\n"
 FORMAT = 1
+FORMAT_WITNESS = 2
+MAX_WITNESS = 64
 ITEM_LABEL = "lgk-sync-item-v1"
 RECORD_INFO = b"localgatekeys|sync|folder-record|v1|"
 FILE_INFO = b"localgatekeys|sync|folder-file|v1|"
@@ -95,6 +112,7 @@ _NONCE_LEN = 12
 _TAG_LEN = 16
 _ITEM_FIELDS = frozenset({"id", "vv", "deleted", "deleted_at", "ct"})
 _HEADER_FIELDS = frozenset({"format", "group_id", "device_id", "epoch", "counter", "written_at"})
+_HEADER_FIELDS_V2 = _HEADER_FIELDS | {"vault_generation", "witness"}
 SIG_LABEL = b"lgk-sync-view-sig-v1|"
 SIG_FORMAT = 1
 MAX_SIG_BYTES = 4096
@@ -166,6 +184,20 @@ class GroupKey:
 class View:
     header: dict
     states: tuple[ItemState, ...]
+
+    @property
+    def format(self) -> int:
+        return self.header["format"]
+
+    @property
+    def vault_generation(self) -> int | None:
+        """The writer's vault generation (format 2), None for a format-1 view."""
+        return self.header.get("vault_generation")
+
+    @property
+    def witness(self) -> dict[str, int]:
+        """The writer's witness of its peers (format 2), {} for a format-1 view."""
+        return dict(self.header.get("witness", {}))
 
 
 def _nonce(source: NonceSource | None) -> bytes:
@@ -267,6 +299,16 @@ def _check_header_values(device_id: object, epoch: object, counter: object, writ
         raise SyncFormatError("bad-header", "invalid epoch")
 
 
+def _check_witness_values(device_id: object, vault_generation: object, witness: object) -> None:
+    if not _is_int(vault_generation):
+        raise SyncFormatError("bad-header", "invalid vault_generation")
+    if not isinstance(witness, Mapping) or len(witness) > MAX_WITNESS:
+        raise SyncFormatError("bad-header", "invalid witness")
+    for peer, generation in witness.items():
+        if not _is_id(peer) or peer == device_id or not _is_int(generation):
+            raise SyncFormatError("bad-header", "invalid witness entry")
+
+
 def encode_view(
     gk: GroupKey,
     device_id: str,
@@ -274,11 +316,22 @@ def encode_view(
     states: Iterable[ItemState],
     written_at: int,
     *,
+    vault_generation: int | None = None,
+    witness: Mapping[str, int] | None = None,
     nonce_source: NonceSource | None = None,
     max_records: int = MAX_RECORDS,
 ) -> bytes:
-    """Serialise *states* into one device view file (see module docstring)."""
+    """Serialise *states* into one device view file (see module docstring).
+
+    Format 1 unless *vault_generation* is given; then format 2 with *witness* (default {}).
+    """
     _check_header_values(device_id, gk.epoch, counter, written_at)
+    if vault_generation is None and witness is not None:
+        raise SyncFormatError("bad-header", "a witness needs a vault_generation")
+    if vault_generation is not None:
+        witness = {} if witness is None else witness
+        _check_witness_values(device_id, vault_generation, witness)
+        witness = dict(witness)
     ordered = sorted(states, key=lambda s: s.item_id)
     if len(ordered) > max_records:
         raise SyncFormatError("too-many-records", f"{len(ordered)} > {max_records}")
@@ -295,16 +348,17 @@ def encode_view(
         return nonce
 
     sealed = [seal_item(gk, s, nonce_source=unique_nonces) for s in ordered]
-    header = canonical_json(
-        {
-            "format": FORMAT,
-            "group_id": gk.group_id,
-            "device_id": device_id,
-            "epoch": gk.epoch,
-            "counter": counter,
-            "written_at": written_at,
-        }
-    )
+    fields: dict = {
+        "format": FORMAT,
+        "group_id": gk.group_id,
+        "device_id": device_id,
+        "epoch": gk.epoch,
+        "counter": counter,
+        "written_at": written_at,
+    }
+    if vault_generation is not None:
+        fields.update(format=FORMAT_WITNESS, vault_generation=vault_generation, witness=witness)
+    header = canonical_json(fields)
     nonce = unique_nonces(_NONCE_LEN)
     body = AESGCM(gk.file_key()).encrypt(nonce, canonical_json(sealed), header)
     return MAGIC + header + b"\n" + nonce + body
@@ -322,14 +376,18 @@ def _read_header(raw: bytes) -> tuple[dict, bytes, int]:
         header = _loads(header_bytes)
     except (ValueError, RecursionError) as exc:
         raise SyncFormatError("bad-header", "header is not JSON") from exc
-    if not isinstance(header, dict) or set(header) != _HEADER_FIELDS:
+    if not isinstance(header, dict) or "format" not in header:
         raise SyncFormatError("bad-header", "header fields")
     fmt = header["format"]
-    if isinstance(fmt, bool) or fmt != FORMAT or not isinstance(fmt, int):
+    if isinstance(fmt, bool) or not isinstance(fmt, int) or fmt not in (FORMAT, FORMAT_WITNESS):
         raise SyncFormatError("bad-header", "unsupported format")
+    if set(header) != (_HEADER_FIELDS if fmt == FORMAT else _HEADER_FIELDS_V2):
+        raise SyncFormatError("bad-header", "header fields")
     if not _is_id(header["group_id"]):
         raise SyncFormatError("bad-header", "group_id")
     _check_header_values(header["device_id"], header["epoch"], header["counter"], header["written_at"])
+    if fmt == FORMAT_WITNESS:
+        _check_witness_values(header["device_id"], header["vault_generation"], header["witness"])
     try:
         canonical = canonical_json(header)
     except (ValueError, TypeError) as exc:

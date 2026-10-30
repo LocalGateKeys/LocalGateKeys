@@ -17,9 +17,9 @@
 	<key>CFBundlePackageType</key>
 	<string>XPC!</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
-	<string>7</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LGKAppGroup</key>
 	<string>$(LGK_APP_GROUP)</string>
 	<key>LGKKeychainGroup</key>
@@ -33,6 +33,14 @@
 				<key>ProvidesPasskeys</key>
 				<true/>
 				<key>ProvidesPasswords</key>
+				<true/>
+				<key>ProvidesTextToInsert</key>
+				<true/>
+				<key>SupportedCredentialExchangeVersions</key>
+				<array>
+					<string>1.0</string>
+				</array>
+				<key>SupportsCredentialExchange</key>
 				<true/>
 			</dict>
 		</dict>

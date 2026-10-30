@@ -1,34 +1,45 @@
 package app.localgatekeys.android.settings
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.Txt
 import app.localgatekeys.android.pro.ItemLimit
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** Settings copy (ios/App/Settings/SettingsView.swift, "iPhone" -> "phone"). */
-object SettingsText {
-    const val DATA_NOT_COLLECTED = "Data not collected — LocalGateKeys has no analytics and no servers."
-    /**
-     * The website's legal pages. They name the Windows app, the browser extensions, the helper and the iPhone only:
-     * they must be updated for Android and Google Play before release (carried to Task 15).
-     */
-    const val PRIVACY_POLICY_URL = "https://localgatekeys.app/legal/privacy.html"
-    const val LICENCE_AGREEMENT_URL = "https://localgatekeys.app/legal/eula.html"
-    const val GENERATOR_FOOTER = "The generator starts from the options you used last."
-    const val ERASE_BUTTON = "Erase this phone's vault"
-    const val ERASE_FOOTER = "Deletes the vault on this phone only. Your PC and the sync folder are not changed."
+/** Settings copy (ios/App/Settings/SettingsView.swift, "iPhone" -> "phone"), resolved through [t]. */
+class SettingsText(private val t: Txt) {
+    val dataNotCollected: String get() = t.s(R.string.settings_data_not_collected)
+
+    /** Task 9: what a Play purchase also unlocks (never where to buy). */
+    val alsoUnlocksWindows: String get() = t.s(R.string.settings_also_unlocks_windows)
+    val copyKey: String get() = t.s(R.string.settings_copy_key)
+    val keyCopied: String get() = t.s(R.string.settings_key_copied)
+    val generatorFooter: String get() = t.s(R.string.settings_generator_footer)
+    val eraseButton: String get() = t.s(R.string.settings_erase_button)
+    val eraseFooter: String get() = t.s(R.string.settings_erase_footer)
 
     fun syncStatus(joined: Boolean, lastSyncedAt: Long?, shortTime: (Long) -> String): String = when {
-        !joined -> "Not set up"
-        lastSyncedAt == null -> "On"
-        else -> "Last synced ${shortTime(lastSyncedAt)}"
+        !joined -> t.s(R.string.settings_not_set_up)
+        lastSyncedAt == null -> t.s(R.string.security_on)
+        else -> t.s(R.string.settings_last_synced, shortTime(lastSyncedAt))
     }
 
-    fun proStatus(isPro: Boolean): String = if (isPro) "Pro is active" else "Free (up to ${ItemLimit.FREE_ITEMS} items)"
+    fun proStatus(isPro: Boolean): String =
+        if (isPro) t.s(R.string.settings_pro_active) else t.plural(R.plurals.settings_pro_free_limit, ItemLimit.FREE_ITEMS, ItemLimit.FREE_ITEMS)
 
     /** "<short> (<build>)", or just the short version when there is no build number. */
-    fun version(name: String, code: String): String = if (code.isEmpty()) name else "$name ($code)"
+    fun version(name: String, code: String): String = if (code.isEmpty()) name else t.s(R.string.settings_version_build, name, code)
+
+    companion object {
+        /**
+         * The website's legal pages. They name the Windows app, the browser extensions, the helper and the iPhone only:
+         * they must be updated for Android and Google Play before release (carried to Task 15).
+         */
+        const val PRIVACY_POLICY_URL = "https://localgatekeys.app/legal/app/privacy.html"
+        const val LICENCE_AGREEMENT_URL = "https://localgatekeys.app/legal/app/eula.html"
+    }
 }
 
 /** For the app's theme: dark or light for [systemDark] (System follows it). */
@@ -59,6 +70,7 @@ class InitialsField(private val settings: AppSettings) {
 class AutofillStatusModel(
     private val isEnabled: suspend () -> Boolean,
     private val open: suspend () -> Unit,
+    private val t: Txt,
 ) {
     private val _enabled = MutableStateFlow<Boolean?>(null)
     val enabled: StateFlow<Boolean?> = _enabled.asStateFlow()
@@ -84,19 +96,14 @@ class AutofillStatusModel(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            _openError.value = OPEN_FAILED_MESSAGE
+            _openError.value = t.s(R.string.autofill_open_failed)
         }
     }
 
-    companion object {
-        const val OPEN_FAILED_MESSAGE =
-            "Autofill settings could not be opened. In the Settings app, search for Autofill service and choose LocalGateKeys."
-
-        fun statusText(enabled: Boolean?): String = when (enabled) {
-            null -> "…"
-            true -> "On"
-            false -> "Off"
-        }
+    fun statusText(enabled: Boolean?): String = when (enabled) {
+        null -> "…"
+        true -> t.s(R.string.security_on)
+        false -> t.s(R.string.settings_off)
     }
 }
 

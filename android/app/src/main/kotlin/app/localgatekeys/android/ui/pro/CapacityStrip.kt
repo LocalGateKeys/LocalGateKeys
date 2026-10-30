@@ -1,4 +1,7 @@
 package app.localgatekeys.android.ui.pro
+import app.localgatekeys.android.i18n.rememberTxt
+import app.localgatekeys.android.i18n.Txt
+import app.localgatekeys.android.R
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,7 +39,7 @@ import app.localgatekeys.android.ui.theme.LgkTheme
 @Composable
 fun CapacityStrip(used: Int?, isPro: Boolean, modifier: Modifier = Modifier) {
     val c = LgkTheme.colors
-    val caption = CapacityStrip.caption(used, isPro)
+    val caption = CapacityStrip.caption(used, isPro, rememberTxt())
     val shape = RoundedCornerShape(10.dp)
     Column(
         modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = caption }.testTag("capacity"),
@@ -68,10 +71,10 @@ fun CapacityStrip(used: Int?, isPro: Boolean, modifier: Modifier = Modifier) {
 object CapacityStrip {
     fun filled(slot: Int, used: Int?, isPro: Boolean): Boolean = isPro || slot < minOf(used ?: 0, ItemLimit.FREE_ITEMS)
 
-    fun caption(used: Int?, isPro: Boolean): String {
+    fun caption(used: Int?, isPro: Boolean, txt: Txt): String {
         val free = ItemLimit.FREE_ITEMS
-        if (isPro) return "No limit on items"
-        if (used == null) return "Free: $free items. Pro: no limit."
-        return "${minOf(used, free)} of $free free items used. Pro: no limit."
+        if (isPro) return txt.s(R.string.capacity_no_limit)
+        if (used == null) return txt.plural(R.plurals.capacity_free_limit, free, free)
+        return txt.plural(R.plurals.capacity_used, free, minOf(used, free), free)
     }
 }

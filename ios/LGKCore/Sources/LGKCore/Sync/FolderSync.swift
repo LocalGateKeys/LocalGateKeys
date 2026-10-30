@@ -16,6 +16,12 @@ struct PeerRead {
     var digests: [String: String] = [:]
     /// Device id -> base64 signing key of every accepted view that carried a valid signature.
     var signers: [String: String] = [:]
+    /// Generations and witnesses published with the accepted views (`Witness.observation`).
+    var observations: [WitnessObservation] = []
+    /// Device id -> view counter of every accepted view that published a generation (format 2 or witness file).
+    var witnessed: [String: Int64] = [:]
+    /// Device id -> view counter of every accepted signed format-1 view without a matching witness file.
+    var unwitnessed: [String: Int64] = [:]
 }
 
 /// The cloud-folder transport (desktop `folder_transport.FolderSync`); see that module's docstring for every rule.
@@ -56,6 +62,7 @@ public struct FolderSync {
         var out = state
         out.lastSeen = [:]; out.peerDigests = [:]
         out.viewSigners = state.viewSigners.filter { $0.key == state.deviceID }
+        out.witnessCounters = [:]   // generations themselves survive (they are not tied to the group key)
         return out
     }
 
@@ -75,13 +82,22 @@ public struct FolderSync {
     /// Device id -> base64 signing key of every LAN-paired peer (desktop `_paired_keys`): the only key that
     /// peer's view signature may carry when the keyring lists none for it, ahead of the signer pinned on first use.
     public let pairedKeys: [String: String]
+    /// The unlock session's in-memory peer generations (shared with LAN sync, which saves them throttled):
+    /// the check starts from them and a run's commit catches the stored values up.
+    public let witnessMemory: WitnessMemory
+    /// This device's own attachment files (attachment sync). nil: no capability file is written, received
+    /// documents wait (`attachment-missing`) and documents are never published.
+    public let attachmentBlobs: (any AttachmentBlobStore)?
 
     public init(access: any FolderAccess, installID: String, licenseKeys: [String: [UInt8]] = [:],
-                pairedKeys: [String: String] = [:]) throws {
+                pairedKeys: [String: String] = [:], witnessMemory: WitnessMemory = WitnessMemory(),
+                attachmentBlobs: (any AttachmentBlobStore)? = nil) throws {
         guard !installID.isEmpty, installID.unicodeScalars.count <= Self.maxInstallID, !installID.contains("\u{0}") else {
             throw FolderSyncError("bad-install-id", "install id must be a non-empty bounded string")
         }
         self.access = access; self.installID = installID; self.licenseKeys = licenseKeys; self.pairedKeys = pairedKeys
+        self.witnessMemory = witnessMemory
+        self.attachmentBlobs = attachmentBlobs
     }
 
     // MARK: keyring
@@ -265,9 +281,51 @@ public struct FolderSync {
                 continue
             }
             out.views.append(PeerView(deviceID: dev, states: view.states))
+            // Rollback witnesses: a format-2 header, else a matching witness file signed by the view's signer.
+            var obs = Witness.observation(view.header)
+            if obs == nil, let signer { obs = readWitness(gk, header: view.header, signer: signer) }
+            if let obs {
+                out.observations.append(obs)
+                out.witnessed[dev] = counter
+            } else if signer != nil {
+                out.unwitnessed[dev] = counter
+            }
         }
         if !ignored.isEmpty { out.issues.append(Self.ignoredIssue(ignored)) }
         return out
+    }
+
+    /// The observation of a format-1 view from its witness file (desktop `_read_witness`), or nil when the file
+    /// is missing, stale, bad, or not signed by `signer` (the base64 key that signed the view). Silent: a cloud
+    /// client may upload the witness after the view.
+    func readWitness(_ gk: GroupKey, header: ViewHeader, signer: String) -> WitnessObservation? {
+        let dev = header.deviceID
+        guard let path = FolderLayout.witnessFile(dev), let sigPath = FolderLayout.witnessSignatureFile(dev),
+              let raw = try? access.read(path, limit: Witness.maxWitnessBytes + 1),
+              let sig = try? access.read(sigPath, limit: ViewSignature.maxBytes + 1),
+              let file = try? ViewFile.decode(raw, key: gk, expectedDeviceID: dev, maxBytes: Witness.maxWitnessBytes,
+                                              maxRecords: 0),
+              let key = try? ViewSignature.verify(sig, raw: raw, header: file.header),
+              Base64.encode(key) == signer else { return nil }
+        return Witness.observation(header, witnessFile: (header: file.header, records: file.states.count))
+    }
+
+    /// Writes the own witness file, then its signature (desktop `_write_witness_pair`).
+    func writeWitnessPair(_ deviceID: String, raw: [UInt8], sig: [UInt8]) throws {
+        guard let path = FolderLayout.witnessFile(deviceID), let sigPath = FolderLayout.witnessSignatureFile(deviceID) else {
+            throw FolderSyncError("write-failed", "device id is not a safe file name")
+        }
+        try access.writeAtomic(path, raw)
+        try access.writeAtomic(sigPath, sig)
+    }
+
+    /// The own witness file for the view at `counter` (zero records, format 2) and its signature.
+    func encodeWitness(_ gk: GroupKey, _ state: SyncGroupState, counter: Int64, generation: Int64,
+                       witness: [String: Int64], clock: some UnixClock,
+                       random: some RandomSource) throws -> (raw: [UInt8], sig: [UInt8]) {
+        let raw = try ViewFile.encode(key: gk, deviceID: state.deviceID, counter: counter, states: [], now: clock,
+                                      random: random, vaultGeneration: generation, witness: witness)
+        return (raw, try ViewSignature.sign(raw, header: try ViewFile.decodeHeader(raw), identity: state.identity))
     }
 
     enum SignatureCheck { case signed(String), unsigned, refused(SyncIssue) }
@@ -314,6 +372,10 @@ public struct FolderSync {
         var present = false
         /// The file carries a valid signature by this device's own key.
         var selfSigned = false
+        /// View format of the file (1 or 2), 0 when absent or unreadable.
+        var format: Int64 = 0
+        /// A format-1 file has a valid own-signed witness file for the same counter.
+        var witnessed = false
     }
 
     /// What the own file holds; a file without a valid own signature always needs a write.
@@ -330,12 +392,19 @@ public struct FolderSync {
            let key = try? ViewSignature.verify(sig, raw: raw, header: view.header) {
             selfSigned = key == state.identity.signingPublicKey
         }
+        let format = view.header.format
+        var witnessed = false
+        if format == ViewFile.format && selfSigned {
+            witnessed = readWitness(gk, header: view.header, signer: Base64.encode(state.identity.signingPublicKey)) != nil
+        }
         guard let ownStates else {
-            return OwnStatus(needsWrite: false, counter: counter, stale: stale, present: true, selfSigned: selfSigned)
+            return OwnStatus(needsWrite: false, counter: counter, stale: stale, present: true, selfSigned: selfSigned,
+                             format: format, witnessed: witnessed)
         }
         let needs = view.states != ownStates || counter != state.ownCounter || !selfSigned
             || writtenAt < now - Self.ownRefreshSeconds
-        return OwnStatus(needsWrite: needs, counter: counter, stale: stale, present: true, selfSigned: selfSigned)
+        return OwnStatus(needsWrite: needs, counter: counter, stale: stale, present: true, selfSigned: selfSigned,
+                         format: format, witnessed: witnessed)
     }
 
     // MARK: one run
@@ -362,6 +431,7 @@ public struct FolderSync {
         }
         let original = state
         let current = Self.memberIDs(ring)
+        let unacked = Self.unackedMembers(state, current: current)
         if gk.epoch != state.epoch {
             state = Self.epochReset(state)
             state.epoch = gk.epoch; state.key = gk.key; state.membersEpoch = gk.epoch
@@ -391,10 +461,44 @@ public struct FolderSync {
                               signers: state.viewSigners.filter { $0.key != state.deviceID },
                               pairedKeys: pairedKeys.filter { $0.key != state.deviceID }, keyringKeys: ringKeys)
         issues += peers.issues
+        let folderBlobs = FolderBlobs(access: access)
+        // Document files first: a document is applied only once its file was imported.
+        if let local = attachmentBlobs {
+            issues += folderBlobs.importMissing(peers.views.flatMap(\.states), into: local)
+        }
         let knownDevices = members.union(state.lastSeen.keys).union([state.deviceID])
         var report = SyncRunner.run(store: snapshot, views: peers.views, device: state.deviceID, now: now,
-                                    licenseKeys: licenseKeys, known: knownDevices)
+                                    licenseKeys: licenseKeys, known: knownDevices, blobs: attachmentBlobs)
         issues += report.issues
+
+        // Rollback witnesses (desktop run_once step 9): check every accepted peer generation against this vault's.
+        let ownGeneration = Witness.generation(snapshot)
+        let checked = Witness.check(
+            ownID: state.deviceID, ownGeneration: ownGeneration ?? 0,
+            observations: ownGeneration != nil ? peers.observations : [],
+            peerGenerations: witnessMemory.merged(state.peerGenerations, groupID: state.groupID, deviceID: state.deviceID),
+            rollbackSuspected: state.rollbackSuspected)
+        issues += checked.issues
+        let witnessKeep = members.union(state.lanPeers.map(\.deviceID)).union(pairedKeys.keys).subtracting([state.deviceID])
+        let peerGenerations = Witness.prune(checked.peerGenerations, keep: witnessKeep)
+        witnessMemory.setGenerations(peerGenerations, groupID: state.groupID, deviceID: state.deviceID)
+        let witnessPeers = Witness.prune(ids: state.witnessPeers + Array(checked.capable), keep: witnessKeep)
+        // A peer known to publish its generation whose newer signed view comes without one: the witness file was
+        // deleted, damaged or withheld. One run of grace (the view was already there last run) covers a cloud
+        // client that uploads the witness file after the view.
+        let knownWitnessing = Set(witnessPeers).union(state.witnessCounters.keys)
+        for (dev, ctr) in peers.unwitnessed.sorted(by: { $0.key < $1.key })
+        where knownWitnessing.contains(dev) && ctr > (state.witnessCounters[dev] ?? -1) && state.lastSeen[dev] == ctr {
+            issues.append(SyncIssue("witness-missing", dev))
+        }
+        var witnessCounters = state.witnessCounters.merging(peers.witnessed) { $1 }.filter { witnessKeep.contains($0.key) }
+        if witnessCounters.count > Self.maxPeersSeen {
+            witnessCounters = Dictionary(uniqueKeysWithValues: witnessCounters.sorted { $0.key < $1.key }
+                .prefix(Self.maxPeersSeen).map { ($0.key, $0.value) })
+        }
+        // Gating: format 2 only when every other member of the accepted keyring showed support.
+        let others = current.subtracting([state.deviceID])
+        let inline = ownGeneration != nil && !others.isEmpty && others.isSubset(of: Set(witnessPeers))
 
         let ownKey = Base64.encode(state.identity.signingPublicKey)
         var lastSeen = state.lastSeen.merging(peers.seen) { $1 }
@@ -406,9 +510,19 @@ public struct FolderSync {
             digests = digests.filter { members.contains($0.key) }
             signers = signers.filter { members.contains($0.key) }
         }
+        // Documents are published only when every other member wrote a valid signed capability file.
+        let documents = attachmentBlobs != nil
+            && others.allSatisfy { folderBlobs.capable(gk, deviceID: $0, signer: signers[$0]) }
+        report.ownStates = report.ownStates.map { AttachmentDocuments.publishable($0, documents: documents) }
         var newState = state
         newState.lastSeen = lastSeen; newState.peerDigests = digests; newState.viewSigners = signers
         newState.membersEpoch = gk.epoch; newState.members = members.sorted(); newState.keyring = ringBytes
+        newState.unackedMembers = unacked
+        newState.peerGenerations = peerGenerations; newState.rollbackSuspected = checked.rollbackSuspected
+        newState.witnessPeers = witnessPeers; newState.witnessCounters = witnessCounters
+        // Workstream 6: a peer whose newer view was accepted this run was synced with now (local only).
+        let accepted = peers.seen.filter { $0.key != state.deviceID && $0.value > (state.lastSeen[$0.key] ?? -1) }.keys
+        newState = newState.synced(with: accepted.sorted(), now: now)
         let status = ownFileStatus(gk, state, ownStates: report.ownStates, now: now)
         if status.stale { issues.append(SyncIssue("stale-self", "this device had not synced for over a year")) }
         var fileCounter = status.counter
@@ -424,6 +538,19 @@ public struct FolderSync {
         }
         let base = max(state.ownCounter, fileCounter)
         var needsWrite = status.needsWrite
+        // The own file is rewritten once when its format disagrees with the gate, or when a format-1 file has no
+        // matching own witness; a change of generation alone never rewrites it. When the view is current and only
+        // its witness file is missing or bad, just the witness file is written again (same counter, no commit).
+        var witnessOnly = false
+        if report.ownStates != nil && status.present
+            && ((status.format == ViewFile.format && ownGeneration != nil && (inline || !status.witnessed))
+                || (status.format == ViewFile.formatWitness && !inline)) {
+            if status.format == ViewFile.format && !inline && status.selfSigned && status.counter == state.ownCounter {
+                witnessOnly = !needsWrite
+            } else {
+                needsWrite = true
+            }
+        }
         if base >= VersionVector.maxCounter {
             // Only a counter stored before the bounds existed can get here; never fail the whole run.
             issues.append(SyncIssue("counter-exhausted", "own counter \(base)"))
@@ -446,17 +573,52 @@ public struct FolderSync {
             }
         }
 
+        // Attachment sync: own capability file, own blobs before the view, then the sweep.
+        if attachmentBlobs != nil {
+            do { try folderBlobs.writeCapability(gk, identity: state.identity, clock: clock, random: random) } catch {
+                issues.append(SyncIssue("write-failed", "capability: \(error)"))
+            }
+        }
+        if needsWrite, documents, let own = report.ownStates, let local = attachmentBlobs {
+            issues += folderBlobs.publishOwn(own, from: local, now: now)
+        }
+        if let own = report.ownStates, others.isSubset(of: Set(peers.views.map(\.deviceID))) {
+            // Every member's view was read: a blob none of them references can go (after 7 days).
+            let referenced = Set(AttachmentDocuments.refs(own + peers.views.flatMap(\.states)).map(\.blob))
+            folderBlobs.sweep(referenced: referenced, now: now)
+        }
+
         if needsWrite, let own = report.ownStates, let path = FolderLayout.deviceFile(state.deviceID),
            let sigPath = FolderLayout.signatureFile(state.deviceID) {
             do {
+                let witness = Witness.ownWitness(newState.peerGenerations, members: witnessKeep, ownID: state.deviceID)
                 let raw = try ViewFile.encode(key: gk, deviceID: state.deviceID, counter: counter, states: own,
-                                              now: clock, random: random)
+                                              now: clock, random: random, vaultGeneration: inline ? ownGeneration : nil,
+                                              witness: inline ? witness : nil)
                 let sig = try ViewSignature.sign(raw, header: try ViewFile.decodeHeader(raw), identity: state.identity)
+                var side: (raw: [UInt8], sig: [UInt8])?
+                if !inline, let ownGeneration {
+                    side = try encodeWitness(gk, state, counter: counter, generation: ownGeneration, witness: witness,
+                                             clock: clock, random: random)
+                }
+                // Order: view, signature, witness file, witness signature.
                 try access.writeAtomic(path, raw)
                 try access.writeAtomic(sigPath, sig)
+                if let side { try writeWitnessPair(state.deviceID, raw: side.raw, sig: side.sig) }
                 report.wrote = true
             } catch let e as SyncFormatError {
                 issues.append(SyncIssue("too-large", "\(e)"))
+            } catch {
+                issues.append(SyncIssue("write-failed", "\(error)"))
+            }
+        } else if witnessOnly, let ownGeneration {
+            // The view itself is current: write only its witness file (same counter), so a deleted witness costs
+            // one small write per run and never a counter bump or a store commit.
+            do {
+                let witness = Witness.ownWitness(newState.peerGenerations, members: witnessKeep, ownID: state.deviceID)
+                let side = try encodeWitness(gk, state, counter: fileCounter, generation: ownGeneration, witness: witness,
+                                             clock: clock, random: random)
+                try writeWitnessPair(state.deviceID, raw: side.raw, sig: side.sig)
             } catch {
                 issues.append(SyncIssue("write-failed", "\(error)"))
             }
@@ -517,10 +679,12 @@ public struct FolderSync {
             let old = snapshot.sync
             // Counters seen at another epoch are dropped (see `epochReset`); the new identity signs afresh.
             let same = old != nil && old!.epoch == gk.epoch
+            // The generation offset belongs to the vault, not the identity: a re-join never lowers the generation.
             let newState = SyncGroupState(
                 groupID: gk.groupID, epoch: gk.epoch, key: gk.key, identity: identity, installID: installID,
                 hasFolder: true, lastSeen: same ? old!.lastSeen : [:], peerDigests: same ? old!.peerDigests : [:],
-                membersEpoch: gk.epoch, members: Self.memberIDs(newRing).sorted(), keyring: written, ownCounter: 0)
+                membersEpoch: gk.epoch, members: Self.memberIDs(newRing).sorted(), keyring: written, ownCounter: 0,
+                generationOffset: old?.generationOffset ?? 0)
             do {
                 try store.commit(StoreChange(baseRevision: snapshot.revision, records: snapshot.records,
                                              meta: snapshot.meta, sync: newState))
@@ -531,6 +695,8 @@ public struct FolderSync {
             if let old, old.installID == installID, let path = FolderLayout.deviceFile(old.deviceID) {
                 try? access.remove(path)  // our previous identity's file is obsolete
                 if let sigPath = FolderLayout.signatureFile(old.deviceID) { try? access.remove(sigPath) }
+                if let w = FolderLayout.witnessFile(old.deviceID) { try? access.remove(w) }
+                if let w = FolderLayout.witnessSignatureFile(old.deviceID) { try? access.remove(w) }
             }
         }
         return runOnce(store: store, random: random, clock: clock)

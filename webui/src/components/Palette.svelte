@@ -1,6 +1,7 @@
 <script>
   /** Ctrl+K command palette: items and actions; > actions, # tags, @ collections. */
   import { call } from '../lib/api.js';
+  import { t } from '../lib/i18n.svelte.js';
   import { okOrToast, toast } from '../lib/toast.js';
 
   let { onclose, onopen, onnavigate } = $props();
@@ -40,26 +41,26 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={onclose}>
-  <div class="palette glass" role="dialog" aria-modal="true" aria-label="Command palette" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
+  <div class="palette glass" role="dialog" aria-modal="true" aria-label={t('palette.title')} tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
     <input
       bind:this={input}
       role="combobox"
       aria-expanded="true"
       aria-controls="palette-rows"
-      aria-label="Search items and actions"
-      placeholder="Search items and actions — > actions, # tags, @ collections"
+      aria-label={t('palette.searchLabel')}
+      placeholder={t('palette.placeholder')}
       bind:value={query}
       oninput={refresh}
       onkeydown={key}
     />
-    <div id="palette-rows" role="listbox" aria-label="Results">
+    <div id="palette-rows" role="listbox" aria-label={t('palette.results')}>
       {#each rows as row, i (i)}
         {#if i === 0 || rows[i - 1].group !== row.group}<div class="group-label">{row.group}</div>{/if}
         <div role="option" tabindex="-1" aria-selected={i === active} class="row" onclick={() => run(row)} onkeydown={() => {}}>
           <span>{row.title}</span><span class="sub">{row.subtitle}</span>
         </div>
       {:else}
-        <p class="none">No matches</p>
+        <p class="none">{t('palette.noMatches')}</p>
       {/each}
     </div>
   </div>

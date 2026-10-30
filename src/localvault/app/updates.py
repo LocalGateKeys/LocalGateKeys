@@ -11,10 +11,9 @@ from typing import Any, Callable
 from .. import licensing, updates
 from ..api.result import ApiError
 from ..config import BRAND_NAME
+from ..i18n import t
 
-OFFLINE_TEXT = ("Check for updates once anyway?\n\nThis check sends two requests: one for release information and "
-                "one for the licence revocation list. Both contain only the app version, never vault data. Strict "
-                "offline mode stays on.")
+OFFLINE_TEXT = ("updates.checkForUpdatesOnceAnyway")
 
 
 class UpdatesService:
@@ -58,33 +57,33 @@ class UpdatesService:
                 # revocation list when the user asks and network use is allowed.
                 self._refresh_revocations()
             return {"available": False,
-                    "message": f"{BRAND_NAME} updates are installed by {managed_by}." if managed_by
-                    else "Update checks are not configured yet. Release hosting has not been published."}
+                    "message": t("updates.updatesAreInstalledBy", BRAND_NAME=BRAND_NAME, managed_by=managed_by) if managed_by
+                    else t("updates.updateChecksAreNotConfigured2")}
         if bool(getattr(self._controller.settings, "strict_offline_mode", True)):
-            if not self._port.confirm("Strict offline mode is on", OFFLINE_TEXT):
-                raise ApiError("cancelled", "Cancelled.")
+            if not self._port.confirm(t("updates.strictOfflineModeIsOn"), t(OFFLINE_TEXT)):
+                raise ApiError("cancelled", t("error.cancelled"))
         if not self._in_flight.acquire(blocking=False):
-            raise ApiError("busy", "An update check is already running.")
+            raise ApiError("busy", t("updates.anUpdateCheckIsAlready"))
         try:
             result = self._check()
         except updates.UpdateCheckError as exc:
-            raise ApiError("update_failed", str(exc) or "The release feed could not be checked.") from None
+            raise ApiError("update_failed", str(exc) or t("updates.theReleaseFeedCouldNot")) from None
         except Exception:  # noqa: BLE001
-            raise ApiError("update_failed", "The release feed could not be checked.") from None
+            raise ApiError("update_failed", t("updates.theReleaseFeedCouldNot")) from None
         finally:
             self._in_flight.release()
         self._refresh_revocations()
         if result is None:
-            return {"available": False, "message": "Update checks are not configured yet."}
+            return {"available": False, "message": t("updates.updateChecksAreNotConfigured")}
         if result.is_newer:
             try:
                 note = licensing.update_coverage_note(result.published)
             except Exception:  # noqa: BLE001
                 note = None
             return {"available": True, "current": result.current_version, "latest": result.latest_version,
-                    "note": note or "", "message": "A newer version is available."}
+                    "note": note or "", "message": t("updates.aNewerVersionIsAvailable")}
         return {"available": False,
-                "message": f"LocalGateKeys is up to date. Current version: {result.current_version}."}
+                "message": t("updates.localgatekeysIsUpToDate", current_version=result.current_version)}
 
     def open_release_page(self) -> dict[str, Any]:
         try:
@@ -92,7 +91,7 @@ class UpdatesService:
         except Exception:  # noqa: BLE001
             opened = False
         if not opened:
-            raise ApiError("invalid", "The configured release page could not be opened.")
+            raise ApiError("invalid", t("updates.theConfiguredReleasePageCould"))
         return {}
 
     def reminder(self) -> dict[str, Any]:
@@ -105,10 +104,8 @@ class UpdatesService:
         if not updates.update_reminder_due(self._controller.settings.update_reminder_snoozed_until):
             return {"due": False}
         days = updates.build_age_days()
-        return {"due": True, "title": "Check for updates?", "text": (
-            f"This version of LocalGateKeys is {days} days old and may be missing security fixes.\n\nCheck for a "
-            "newer version now? This check sends two requests (release information and the licence revocation "
-            "list). Both contain only the app version, never vault data.")}
+        return {"due": True, "title": t("updates.checkForUpdates"), "text": (
+            t("updates.thisVersionOfLocalgatekeysIs", days=days))}
 
     def snooze(self) -> dict[str, Any]:
         with self._snooze_lock:
@@ -117,5 +114,5 @@ class UpdatesService:
             try:
                 settings.save()
             except OSError:
-                raise ApiError("invalid", "The setting could not be saved.") from None
+                raise ApiError("invalid", t("settings.error.notSaved")) from None
         return {}

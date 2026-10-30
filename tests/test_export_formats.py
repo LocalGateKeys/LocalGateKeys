@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+from localvault.i18n import t
 from localvault import export as export_module
 from localvault.export import (
     ExportError,
@@ -56,8 +57,8 @@ def test_export_csv_round_trips_through_bitwarden_csv_importer(session, tmp_path
     summary = export_csv(session, path, include_totp=False, restrict_permissions=False)
     assert isinstance(summary, ExportSummary) and summary.path == path and summary.format == "csv"
     assert summary.count == 5 and summary.by_kind == {"login": 3, "note": 1, "identity": 1}
-    assert ExportWarning.PLAINTEXT in summary.warnings and ExportWarning.SPREADSHEET in summary.warnings
-    assert ExportWarning.TOTP not in summary.warnings and ExportWarning.KDBX not in summary.warnings
+    assert t(ExportWarning.PLAINTEXT) in summary.warnings and t(ExportWarning.SPREADSHEET) in summary.warnings
+    assert t(ExportWarning.TOTP) not in summary.warnings and t(ExportWarning.KDBX) not in summary.warnings
     rows = list(csv.DictReader(io.StringIO(path.read_text(encoding="utf-8"))))
     assert list(rows[0]) == ["folder", "favorite", "type", "name", "notes", "fields", "reprompt", "login_uri",
                              "login_username", "login_password", "login_totp"]
@@ -69,7 +70,7 @@ def test_export_csv_round_trips_through_bitwarden_csv_importer(session, tmp_path
     assert imported["Memo"].notes == "remember the milk" and "Where: fridge" in path.read_text(encoding="utf-8")
     assert imported["Me"].kind == "note" and any(f["name"] == "given_name" for f in imported["Me"].custom_fields)
     with_totp = export_csv(session, tmp_path / "totp.csv", include_totp=True, restrict_permissions=False)
-    assert with_totp.totp_count == 1 and ExportWarning.TOTP in with_totp.warnings
+    assert with_totp.totp_count == 1 and t(ExportWarning.TOTP) in with_totp.warnings
     assert "otpauth://totp/Example?secret=JBSWY3DPEHPK3PXP" in (tmp_path / "totp.csv").read_text(encoding="utf-8")
     assert "pw-alice" not in repr(summary)
 
@@ -107,7 +108,7 @@ def test_export_keepass_xml_round_trips(session, tmp_path: Path):
 def test_export_kdbx_is_encrypted_and_round_trips(session, tmp_path: Path):
     path = tmp_path / "out.kdbx"
     summary = export_kdbx(session, path, "a strong export password", kdf_params=FAST_ARGON, restrict_permissions=False)
-    assert summary.encrypted and summary.warnings == (ExportWarning.KDBX,)
+    assert summary.encrypted and summary.warnings == (t(ExportWarning.KDBX),)
     raw = path.read_bytes()
     assert raw[:4] == b"\x03\xd9\xa2\x9a" and b"pw-alice" not in raw and b"JBSWY3DPEHPK3PXP" not in raw
     with pytest.raises(ImportPasswordError):
@@ -162,7 +163,7 @@ def test_export_restricts_permissions_where_possible(session, tmp_path: Path):
     summary = export_json(session, tmp_path / "restricted.json")
     if os.name == "nt":
         assert summary.permissions_restricted is True
-        assert ExportWarning.PERMISSIONS not in summary.warnings
+        assert t(ExportWarning.PERMISSIONS) not in summary.warnings
     else:
         assert oct(os.stat(tmp_path / "restricted.json").st_mode & 0o777) == "0o600"
 
@@ -172,7 +173,7 @@ def test_export_permission_failure_leaves_default_acl_and_warns(session, tmp_pat
     monkeypatch.setattr(export_module, "_current_user_sid", lambda: None)
     summary = export_json(session, tmp_path / "unrestricted.json")
     assert summary.permissions_restricted is False
-    assert ExportWarning.PERMISSIONS in summary.warnings
+    assert t(ExportWarning.PERMISSIONS) in summary.warnings
     assert (tmp_path / "unrestricted.json").read_bytes().startswith(b"{")
 
     # A failing icacls grant must be rolled back with /reset and still produce the file.
@@ -186,7 +187,7 @@ def test_export_permission_failure_leaves_default_acl_and_warns(session, tmp_pat
     monkeypatch.setattr(export_module, "_current_user_sid", lambda: "S-1-5-21-1-2-3-1001")
     monkeypatch.setattr(export_module, "_icacls", fake_icacls)
     summary = export_json(session, tmp_path / "rolled-back.json")
-    assert summary.permissions_restricted is False and ExportWarning.PERMISSIONS in summary.warnings
+    assert summary.permissions_restricted is False and t(ExportWarning.PERMISSIONS) in summary.warnings
     # The private staging directory is restricted (inheritable) first, then the empty file.
     assert calls == [("/inheritance:r", "/grant:r", "*S-1-5-21-1-2-3-1001:(OI)(CI)F"),
                      ("/inheritance:r", "/grant:r", "*S-1-5-21-1-2-3-1001:F"), ("/reset",)]
@@ -242,5 +243,5 @@ def test_export_records_dispatch_and_locked_vault(session, tmp_path: Path):
     session.lock()
     with pytest.raises(ExportError, match="locked"):
         export_csv(session, tmp_path / "locked.csv", restrict_permissions=False)
-    assert ExportWarning.for_format("csv", include_totp=True)[:2] == (ExportWarning.PLAINTEXT, ExportWarning.TOTP)
+    assert ExportWarning.for_format("csv", include_totp=True)[:2] == (t(ExportWarning.PLAINTEXT), t(ExportWarning.TOTP))
     assert export_module.EXPORT_FORMATS["kdbx"]

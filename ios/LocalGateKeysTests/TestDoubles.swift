@@ -89,6 +89,25 @@ final class FakePurchases: ProPurchasing {
         return entitled
     }
     func entitlementChanges() -> AsyncStream<Void> { AsyncStream { $0.finish() } }
+    /// The signed transaction handed to the licence claim while entitled.
+    var jws: String? = "eyJhbGciOiJFUzI1NiJ9.e30.c2ln"
+    func currentTransactionJWS() async -> String? { entitled ? jws : nil }
+}
+
+/// The licence Worker: answers `answer` and records every JWS it was sent.
+final class FakeLicenceClaim: LicenceClaiming, @unchecked Sendable {
+    private let lock = NSLock()
+    private var answerValue: ClaimResult
+    private var sent: [String] = []
+    init(_ answer: ClaimResult) { answerValue = answer }
+    var answer: ClaimResult {
+        get { lock.withLock { answerValue } }
+        set { lock.withLock { answerValue = newValue } }
+    }
+    var calls: [String] { lock.withLock { sent } }
+    func claim(jws: String) async -> ClaimResult {
+        lock.withLock { sent.append(jws); return answerValue }
+    }
 }
 
 @MainActor

@@ -133,14 +133,14 @@ def test_garbage_and_truncated_files_are_not_backups(monkeypatch):
 
 
 def test_version_and_kdf_rules(monkeypatch):
-    v2 = _envelope(lambda h: h.update(version=2))
+    v3 = _envelope(lambda h: h.update(version=3))
     v_str = _envelope(lambda h: h.update(version="2"))
     v_bool = _envelope(lambda h: h.update(version=True))
     kdf_edits = ({"time_cost": 11}, {"time_cost": 0}, {"memory_cost_kib": 4096},
                  {"memory_cost_kib": 512 * 1024 + 1}, {"parallelism": 17}, {"name": "scrypt"})
     forged = [_envelope(lambda h, e=edit: h["kdf"].update(e)) for edit in kdf_edits]
     _no_argon(monkeypatch)
-    assert _reason(v2).reason == "unsupported-version"
+    assert _reason(v3).reason == "unsupported-version"
     assert _reason(v_str).reason == "not-a-backup"
     assert _reason(v_bool).reason == "not-a-backup"
     for data, edit in zip(forged, kdf_edits):

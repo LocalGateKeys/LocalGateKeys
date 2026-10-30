@@ -1,6 +1,10 @@
 import Foundation
 import Network
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 // LAN sync runs only in the main app (this target). The AutoFill extension never links this file.
 
@@ -109,8 +113,8 @@ struct SocketEnroller: EnrollmentSending {
 
 // MARK: Network.framework
 
-/// TCP over `NWConnection` to a literal LAN address. No discovery (the desktop does not advertise over
-/// Bonjour): the address comes from the scanned QR offer and is pinned with the peer.
+/// TCP over `NWConnection` to a literal LAN address: the one from the scanned QR offer pinned with the
+/// peer, or one found by `HostFinder` (Bonjour) after the pinned one stopped answering. No DNS lookup.
 struct NWLanDialer: LanDialer {
     /// Desktop `DEFAULT_SOCKET_TIMEOUT = 5.0`, per sync connection.
     var timeout: TimeInterval = 5

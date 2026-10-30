@@ -1,0 +1,60 @@
+{
+  "format": "dashlane",
+  "input": "tests/fixtures/imports/dashlane/ids.csv",
+  "python_format": "dashlane-csv",
+  "result": {
+    "diagnostics": [],
+    "records": [
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Document type",
+            "value": "Passport"
+          },
+          {
+            "hidden": true,
+            "name": "Number",
+            "value": "000000000"
+          },
+          {
+            "hidden": false,
+            "name": "Name",
+            "value": "Alex Example"
+          },
+          {
+            "hidden": false,
+            "name": "Issue date",
+            "value": "2020-01-01"
+          },
+          {
+            "hidden": false,
+            "name": "Expiry date",
+            "value": "2030-01-01"
+          },
+          {
+            "hidden": false,
+            "name": "Place of issue",
+            "value": "GB"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 2,
+        "tags": [],
+        "title": "Passport - Alex Example",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      }
+    ],
+    "source_format": "dashlane-csv"
+  }
+}

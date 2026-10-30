@@ -308,6 +308,67 @@ final class LocalStoreTests: XCTestCase {
         _ = try LocalStore.bootstrap(directory: dir, vault: vault, random: FixedRandom())
         XCTAssertNotNil(try vault.read(.localKey))
     }
+
+    func test_sync_state_lan_peers_round_trip_and_old_states_decode() throws {
+        var sync = try XCTUnwrap(try sampleChange(base: 0).sync)
+        XCTAssertEqual(try LocalStore.decodeSync(LocalStore.encodeSync(sync)).lanPeers, [])
+        sync.lanPeers = [LanPeer(deviceID: "desk", groupID: "grp", name: "Desk PC", endpoint: try LanEndpoint(validating: "192.168.1.4", port: 47821),
+                                 signingPublic: Array(repeating: 1, count: 32), exchangePublic: Array(repeating: 2, count: 32), pairedAt: 9),
+                         LanPeer(deviceID: "old", groupID: "grp", signingPublic: Array(repeating: 3, count: 32),
+                                 exchangePublic: Array(repeating: 4, count: 32), revoked: true)]
+        XCTAssertEqual(try LocalStore.decodeSync(LocalStore.encodeSync(sync)), sync)
+        // A state stored before the field existed decodes with no LAN peers.
+        guard case .object(var o) = LocalStore.encodeSync(sync) else { return XCTFail() }
+        o["lan_peers"] = nil
+        var old = sync; old.lanPeers = []
+        XCTAssertEqual(try LocalStore.decodeSync(.object(o)), old)
+        o["lan_peers"] = .array([.string("x")])
+        XCTAssertThrowsError(try LocalStore.decodeSync(.object(o))) { XCTAssertEqual($0 as? LocalStoreError, .corrupt("lan_peers")) }
+    }
+
+    func test_sync_state_unacked_members_round_trip_and_old_states_decode() throws {
+        var sync = try XCTUnwrap(try sampleChange(base: 0).sync)
+        sync.unackedMembers = ["c-device"]
+        XCTAssertEqual(try LocalStore.decodeSync(LocalStore.encodeSync(sync)), sync)
+        guard case .object(var o) = LocalStore.encodeSync(sync) else { return XCTFail() }
+        o["unacked_members"] = nil
+        XCTAssertEqual(try LocalStore.decodeSync(.object(o)).unackedMembers, [])
+        o["unacked_members"] = .string("x")
+        XCTAssertThrowsError(try LocalStore.decodeSync(.object(o))) { XCTAssertEqual($0 as? LocalStoreError, .corrupt("unacked_members")) }
+    }
+
+    func test_sync_state_witness_fields_round_trip_only_when_set_and_old_states_decode() throws {
+        let plain = try XCTUnwrap(try sampleChange(base: 0).sync)
+        guard case .object(let p) = LocalStore.encodeSync(plain) else { return XCTFail() }
+        for k in ["peer_generations", "rollback_suspected", "witness_peers", "witness_counters", "generation_offset"] {
+            XCTAssertNil(p[k], k)   // defaults are not written
+        }
+        var sync = plain
+        sync.peerGenerations = ["b-device": 12]; sync.rollbackSuspected = 40
+        sync.witnessPeers = ["b-device"]; sync.witnessCounters = ["b-device": 5]; sync.generationOffset = 7
+        XCTAssertEqual(try LocalStore.decodeSync(LocalStore.encodeSync(sync)), sync)
+        guard case .object(var o) = LocalStore.encodeSync(sync) else { return XCTFail() }
+        o["peer_generations"] = .object(["b-device": .int(-1)])
+        XCTAssertThrowsError(try LocalStore.decodeSync(.object(o))) { XCTAssertEqual($0 as? LocalStoreError, .corrupt("peer_generations")) }
+        o["peer_generations"] = nil
+        o["witness_peers"] = .array([.string("bad id")])
+        XCTAssertThrowsError(try LocalStore.decodeSync(.object(o))) { XCTAssertEqual($0 as? LocalStoreError, .corrupt("witness_peers")) }
+    }
+
+    func test_sync_state_attachment_peers_round_trip_only_when_set() throws {
+        let plain = try XCTUnwrap(try sampleChange(base: 0).sync)
+        guard case .object(let p) = LocalStore.encodeSync(plain) else { return XCTFail() }
+        XCTAssertNil(p["attachment_peers"])   // default is not written
+        var sync = plain
+        sync.attachmentPeers = ["b-device", "c-device"]
+        guard case .object(var o) = LocalStore.encodeSync(sync) else { return XCTFail() }
+        XCTAssertEqual(o["attachment_peers"], .array([.string("b-device"), .string("c-device")]))
+        XCTAssertEqual(try LocalStore.decodeSync(.object(o)), sync)
+        o["attachment_peers"] = .array([.string("b-device"), .string("b-device")])
+        XCTAssertThrowsError(try LocalStore.decodeSync(.object(o))) { XCTAssertEqual($0 as? LocalStoreError, .corrupt("attachment_peers")) }
+        o["attachment_peers"] = .string("b-device")
+        XCTAssertThrowsError(try LocalStore.decodeSync(.object(o))) { XCTAssertEqual($0 as? LocalStoreError, .corrupt("attachment_peers")) }
+    }
 }
 
 struct FixedClock: UnixClock { var now: Int64 { 1_700_000_000 } }

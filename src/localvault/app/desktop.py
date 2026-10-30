@@ -21,13 +21,13 @@ from typing import Any, Callable
 from ..api.result import ApiError
 from ..session_guard import StaleSession
 from .setting_links import open_settings
+from ..i18n import t
 
 SCAN_MAX_AGE = 120.0  # seconds a scanned window may wait for the binding sheet
 
 BROWSER_EXECUTABLE_NAMES = {"brave.exe", "chrome.exe", "firefox.exe", "msedge.exe", "opera.exe", "vivaldi.exe"}
 EMBEDDED_TOKENS = ("cef", "chrome", "chromium", "webview")
-FAILED = ("Desktop verification/input failed. The app may have changed or rejected input; review the fields before "
-          "retrying.")
+FAILED = ("desktop.desktopVerificationInputFailedThe")
 
 
 def _safe(value: Any, limit: int = 160) -> str:
@@ -87,7 +87,7 @@ class DesktopService:
     def _session(self) -> Any:
         session = self._controller.session
         if session is None:
-            raise ApiError("locked", "The vault locked; nothing was filled.")
+            raise ApiError("locked", t("desktop.theVaultLockedNothingWas"))
         return session
 
     def _lease(self) -> Any:
@@ -99,7 +99,7 @@ class DesktopService:
         try:
             return _with_com(fn)
         except Exception:  # noqa: BLE001 - the app changed or refused input
-            raise ApiError("desktop_failed", FAILED) from None
+            raise ApiError("desktop_failed", t(FAILED)) from None
 
     # -------------------------------------------------------------------- fill
     def fill_foreground(self) -> None:
@@ -114,7 +114,7 @@ class DesktopService:
     def fill_window(self, hwnd: int) -> None:
         """Fill one app window (the hotkey's foreground window, or the window the field button sat beside)."""
         if not self._busy.acquire(blocking=False):
-            self._status("A desktop operation is already running. Please wait or lock to cancel.", "warning")
+            self._status(t("desktop.aDesktopOperationIsAlready"), "warning")
             return
         try:
             self._fill_window(hwnd)
@@ -122,7 +122,7 @@ class DesktopService:
             if exc.code != "cancelled":
                 self._status(exc.message, "error")
         except StaleSession:
-            self._status("The vault locked; nothing was filled.", "warning")
+            self._status(t("desktop.theVaultLockedNothingWas"), "warning")
         finally:
             self._busy.release()
 
@@ -130,10 +130,10 @@ class DesktopService:
         uia = self._uia
         snapshot = self._uia_job(lambda: uia.scan_window(hwnd))
         if Path(snapshot.exe_path).name.casefold() in BROWSER_EXECUTABLE_NAMES:
-            self._status("Use the browser field icon for normal browser logins.")
+            self._status(t("desktop.useTheBrowserFieldIcon"))
             return
         if not any(c.enabled and c.visible and c.is_password for c in snapshot.controls):
-            self._status("The desktop password field is no longer available.")
+            self._status(t("desktop.theDesktopPasswordFieldIs"))
             return
         was_locked = not self._controller.is_unlocked()
         if was_locked:
@@ -144,7 +144,7 @@ class DesktopService:
             # The unlock took a while: match the binding against the window as it is now.
             snapshot = self._uia_job(lambda: uia.scan_window(hwnd))
             if not any(c.enabled and c.visible and c.is_password for c in snapshot.controls):
-                self._status("The desktop password field is no longer available.")
+                self._status(t("desktop.theDesktopPasswordFieldIs"))
                 return
         lease = self._lease()  # every prompt below is followed by a lease check: a lock or switch ends the fill
         entries = self._serialise(lambda: self._session.find_desktop(snapshot.exe_path))
@@ -157,11 +157,11 @@ class DesktopService:
                 self._raise_window()
                 options = [{"id": str(e.get("id", "")), "label": _safe(e.get("label", "")),
                             "detail": _safe(e.get("username", ""))} for e in entries]
-                chosen = self._port.choose("Choose account for this app", "", options)
+                chosen = self._port.choose(t("desktop.chooseAccountForThisApp"), "", options)
                 self._controller.require_lease(lease)
                 entry = next((e for e in entries if str(e.get("id", "")) == chosen), None)
                 if entry is None:
-                    self._status("Desktop fill cancelled.")
+                    self._status(t("desktop.desktopFillCancelled"))
                     return
             if uia.desktop_entry_matches_snapshot(entry, snapshot):
                 self._fill_entry(str(entry.get("id", "")), snapshot)
@@ -188,22 +188,17 @@ class DesktopService:
                 # Same (or same-signer) program, another window or other login fields: never adopt
                 # its title or layout silently, it may be a different login screen of the same app.
                 self._raise_window()
-                approved = self._port.confirm("App window changed", (
-                    f"{_safe(Path(snapshot.exe_path).name)} shows a different window"
-                    + (" or different login fields" if layout_changed else "")
-                    + f" than when this login was saved.\n\nApp: {_safe(snapshot.exe_path)}\n"
-                    f"Saved window: {_safe(saved_title)}\nCurrent window: {_safe(snapshot.title)}\n\n"
-                    "Fill the saved login into this window and remember it?"))
+                approved = self._port.confirm(t("desktop.appWindowChanged"), t(
+                    "desktop.windowAndFieldsChanged" if layout_changed else "desktop.windowChanged",
+                    app=_safe(Path(snapshot.exe_path).name), exe_path=_safe(snapshot.exe_path),
+                    saved_title=_safe(saved_title), title=_safe(snapshot.title)))
             if not signer_verified:
                 self._raise_window()
-                approved = self._port.confirm("App was updated", (
-                    f"{_safe(Path(snapshot.exe_path).name)} changed since this login was saved, most likely because "
-                    f"the app updated.\n\nApp: {_safe(snapshot.exe_path)}\nWindow: {_safe(snapshot.title)}\n\nThis app "
-                    "is not code-signed, so LocalGateKeys cannot verify the new version came from the same publisher. "
-                    "Trust it and fill the saved login?"))
+                approved = self._port.confirm(t("desktop.appWasUpdated"), (
+                    t("desktop.changedSinceThisLoginWas", app=_safe(Path(snapshot.exe_path).name), exe_path=_safe(snapshot.exe_path), title=_safe(snapshot.title))))
             self._controller.require_lease(lease)
             if not approved:
-                self._status("Updated app was not trusted; nothing was filled.")
+                self._status(t("desktop.updatedAppWasNotTrusted"))
                 return True
             entry_id = str(entry.get("id", ""))
             self._serialise(lambda: self._controller.require_lease(lease) or self._session.accept_desktop_update(
@@ -217,27 +212,22 @@ class DesktopService:
     def _offer_rebind(self, entry: dict[str, Any], snapshot: Any) -> None:
         self._raise_window()
         label, username = _safe(entry.get("label", "")), _safe(entry.get("username", ""))
-        approved = self._port.confirm("Refresh saved desktop binding?", (
-            "The selected LocalGateKeys account" + (f" ({label})" if label else "") + (f" — {username}" if username else "")
-            + " is saved for this app, but its window or login controls have changed.\n\n"
-            f"App: {_safe(Path(snapshot.exe_path).name)}\nWindow: {_safe(snapshot.title)}\n\n"
-            "Refresh this selected account's binding to the current login screen?\n\n"
-            "The saved username and password stay in the encrypted vault. LocalGateKeys will ask you to confirm the "
-            "current username and password fields."))
+        account = t("desktop.theSelectedLocalgatekeysAccount") + (f" ({label})" if label else "") + (f" — {username}" if username else "")
+        approved = self._port.confirm(t("desktop.refreshSavedDesktopBinding"), t(
+            "desktop.accountSavedChanged", account=account, app=_safe(Path(snapshot.exe_path).name),
+            title=_safe(snapshot.title)))
         if not approved:
-            self._status("Saved desktop binding was not changed.")
+            self._status(t("desktop.savedDesktopBindingWasNot"))
             return
         token = self._remember(snapshot, entry_id=str(entry.get("id", "")), fill_after=True, dynamic=True)
         self._bus.emit("navigate", {"route": "desktop-bind", "params": {"token": token}})
 
     def _offer_add(self, snapshot: Any) -> None:
         self._raise_window()
-        approved = self._port.confirm("Add desktop login?", (
-            f"No saved login exists for this app.\n\nApp: {_safe(Path(snapshot.exe_path).name)}\n"
-            f"Window: {_safe(snapshot.title)}\n\nAdd a LocalGateKeys login for this password field? LocalGateKeys will "
-            "not read the password currently in the app."))
+        approved = self._port.confirm(t("desktop.addDesktopLogin"), (
+            t("desktop.noSavedLoginExistsFor", app=_safe(Path(snapshot.exe_path).name), title=_safe(snapshot.title))))
         if not approved:
-            self._status("Desktop login was not added.")
+            self._status(t("desktop.desktopLoginWasNotAdded"))
             return
         token = self._remember(snapshot, fill_after=True)
         self._bus.emit("navigate", {"route": "desktop-bind", "params": {"token": token}})
@@ -249,34 +239,34 @@ class DesktopService:
         lease = self._lease()
         entry = self._serialise(lambda: self._session.get_entry(entry_id))
         if not entry:
-            self._status("The entry was removed", "error")
+            self._status(t("desktop.theEntryWasRemoved"), "error")
             return
         try:
             if not uia.desktop_entry_matches_snapshot(entry, snapshot):
-                self._status("App/binding changed. Rebind explicitly before filling.", "warning")
+                self._status(t("desktop.appBindingChangedRebindExplicitly"), "warning")
                 return
             policy = normalized_policy(entry.get("policy"))
             if policy["fill"] == "never":
-                self._status("Filling is disabled for this entry.")
+                self._status(t("desktop.fillingIsDisabledForThis"))
                 return
-            if policy["require_master_password"] and not self._reauthenticate("Authorize desktop fill", lease):
+            if policy["require_master_password"] and not self._reauthenticate(t("desktop.authorizeDesktopFill"), lease):
                 return
             scope = entry.get("scope", {})
             selector = scope.get("password_selector") or {}
             warnings = []
             if not selector.get("is_password"):
-                warnings.append("This field is not marked as a protected password field.")
+                warnings.append(t("desktop.thisFieldIsNotMarked"))
             embedded = _embedded(selector)
             if embedded and not scope.get("embedded_web_fill_approved"):
-                warnings.append("This app displays embedded web content. Its website origin cannot be verified.")
+                warnings.append(t("desktop.thisAppDisplaysEmbeddedWeb"))
             if warnings:
                 self._raise_window()
                 answer = self._port.confirm_remember(
-                    "Confirm desktop fill",
-                    "LocalGateKeys found a saved credential, but this app contains embedded or higher-risk login UI.\n\n"
+                    t("desktop.confirmDesktopFill"),
+                    t("desktop.localgatekeysFoundASavedCredential")
                     + "\n".join(warnings)
-                    + f"\n\nApp: {_safe(Path(snapshot.exe_path).name)}\nWindow: {_safe(snapshot.title)}",
-                    "Remember approval for this saved app binding" if embedded else "")
+                    + t("desktop.appWindow", app=_safe(Path(snapshot.exe_path).name), title=_safe(snapshot.title)),
+                    t("desktop.rememberApprovalForThisSaved") if embedded else "")
                 self._controller.require_lease(lease)
                 if not answer.get("approved"):
                     return
@@ -288,15 +278,15 @@ class DesktopService:
             submitted = self._uia_job(lambda: uia.fill_desktop_entry(
                 entry, snapshot, guard=lambda: self._controller.require_lease(lease), sign_in=do_sign_in))
             self._controller.touch()
-            self._status("Credentials filled; Sign in invoked once." if submitted
-                         else "Credentials filled. Sign in manually (or bind a supported Sign in button).")
+            self._status(t("desktop.credentialsFilledSignInInvoked") if submitted
+                         else t("desktop.credentialsFilledSignInManually"))
         finally:
             entry.clear()
 
     def fill_entry_now(self, entry_id: str) -> dict[str, Any]:
         """The Fill button on a desktop login: switch to the app; checked after 3 seconds."""
         if not self._busy.acquire(blocking=False):
-            raise ApiError("busy", "A desktop operation is already running. Please wait or lock to cancel.")
+            raise ApiError("busy", t("desktop.aDesktopOperationIsAlready"))
         try:
             self._sleep(3)
             snapshot = self._uia_job(self._uia.scan_foreground_window)
@@ -321,7 +311,7 @@ class DesktopService:
             self._snapshots.pop(str(token), None)
             held = None
         if held is None or bool(held.get("sign_in")) != sign_in:  # a button scan never rebinds, and back
-            raise ApiError("expired", "Inspect the app again.")
+            raise ApiError("expired", t("desktop.inspectTheAppAgain"))
         return held
 
     # ------------------------------------------------------ sign-in button
@@ -338,7 +328,7 @@ class DesktopService:
             if not entry or entry.get("kind") != "desktop":
                 if entry:
                     entry.clear()
-                raise ApiError("invalid", "Select a desktop login first.")
+                raise ApiError("invalid", t("desktop.selectADesktopLoginFirst"))
             try:  # only non-secret binding metadata leaves the vault call
                 return {"kind": "desktop", "scope": copy.deepcopy(entry.get("scope", {}))}
             finally:
@@ -346,7 +336,7 @@ class DesktopService:
         bound = self._serialise(binding)
         scan = getattr(self._uia, "scan_bound_window", scan_bound_window)
         if not self._busy.acquire(blocking=False):
-            raise ApiError("busy", "A desktop operation is already running. Please wait or lock to cancel.")
+            raise ApiError("busy", t("desktop.aDesktopOperationIsAlready"))
         try:
             snapshot = self._uia_job(lambda: scan(bound, include_buttons=True, include_all_buttons=True))
         finally:
@@ -354,12 +344,11 @@ class DesktopService:
         self._controller.require_lease(lease)
         buttons = [b for b in snapshot.buttons if b.visible and b.enabled]
         if not buttons:
-            raise ApiError("refused", "No visible UI Automation buttons were exposed by this login window. "
-                                      "Use manual sign-in.")
+            raise ApiError("refused", t("desktop.noVisibleUiAutomationButtons"))
         token = self._remember(snapshot, entry_id=entry_id)
         self._snapshots[token]["sign_in"] = True
         self._snapshots[token]["lease"] = lease  # the save belongs to this session only
-        current = (bound["scope"].get("sign_in_selector") or {}).get("name") or "Not mapped"
+        current = (bound["scope"].get("sign_in_selector") or {}).get("name") or t("desktop.notMapped")
         return {"token": token, "app": _safe(Path(snapshot.exe_path).name), "title": _safe(snapshot.title),
                 "current": _safe(str(current)),
                 "buttons": [{"index": b.index, "name": _safe(b.name)} for b in buttons]}
@@ -372,27 +361,21 @@ class DesktopService:
         visible = [b for b in snapshot.buttons if b.visible and b.enabled]
         control = next((b for b in visible if b.index == index), None)
         if control is None:
-            raise ApiError("invalid", "Choose one of the listed buttons.")
+            raise ApiError("invalid", t("desktop.chooseOneOfTheListed"))
         selector = control.selector()
         selector["explicit_user_mapping"] = True
         stable = bool(selector.get("automation_id") or selector.get("class_name"))
         selector["identity_mode"] = "exact_metadata" if stable else "unique_name"
         if not stable and sum(1 for b in visible if b.name == control.name) != 1:
-            raise ApiError("refused", "This login action exposes only its accessible name, and that name is not "
-                                      "unique in the verified app window. LocalGateKeys will not guess which button "
-                                      "to invoke.")
-        note = ("This button exposes a stable automation/class identity that LocalGateKeys can verify before "
-                "invoking it." if stable else
-                "This app does not expose a stable automation/class id for this button. LocalGateKeys will bind the "
-                "exact accessible button name and invoke it only when that name resolves to exactly one enabled "
-                "button in the verified app window.")
-        if not self._port.confirm("Trust this login action?", (
-                f"Action: {_safe(control.name)}\nWindow: {_safe(snapshot.title)}\n\n{note}\n\nThe verified "
-                "application, desktop binding, and this button are checked again immediately before submission.")):
-            raise ApiError("cancelled", "Cancelled.")
+            raise ApiError("refused", t("desktop.thisLoginActionExposesOnly"))
+        note = (t("desktop.thisButtonExposesAStable") if stable else
+                t("desktop.thisAppDoesNotExpose"))
+        if not self._port.confirm(t("desktop.trustThisLoginAction"), (
+                t("desktop.actionWindowTheVerifiedApplication", name=_safe(control.name), title=_safe(snapshot.title), note=note))):
+            raise ApiError("cancelled", t("error.cancelled"))
         self._controller.require_lease(lease)  # a lock or switch during the prompt ends it here
         if self._snapshots.pop(str(token), None) is None:
-            raise ApiError("expired", "Inspect the app again.")
+            raise ApiError("expired", t("desktop.inspectTheAppAgain"))
         from ..vault import VaultError
 
         try:
@@ -402,8 +385,7 @@ class DesktopService:
             raise ApiError("invalid", str(exc)) from None
         self._controller.touch()
         self._bus.emit("items.changed", {})
-        return {"message": f"Sign-in button {_safe(control.name)} saved. It is pressed only when \"Sign in after "
-                           "filling\" is on, in Settings or this login's policy.",
+        return {"message": t("desktop.signInButtonSavedIt", name=_safe(control.name)),
                 "action": open_settings("autofill")}
 
     def require_web_warning(self, entry_id: str) -> dict[str, Any]:
@@ -411,14 +393,14 @@ class DesktopService:
         lease = self._lease()
         self._serialise(lambda: self._controller.require_lease(lease)
                         or self._session.set_desktop_embedded_fill_approval(entry_id, False))
-        return {"message": "LocalGateKeys will warn before filling this app's embedded web content again."}
+        return {"message": t("desktop.localgatekeysWillWarnBeforeFilling")}
 
     def scan_for_binding(self, entry_id: str | None = None) -> dict[str, Any]:
         """Bind (or rebind) a desktop login: the user switches to the app; it is inspected after 3 seconds."""
         if os.name != "nt":
-            raise ApiError("unsupported", "Desktop binding is available only on Windows.")
+            raise ApiError("unsupported", t("desktop.desktopBindingIsAvailableOnly"))
         if not self._busy.acquire(blocking=False):
-            raise ApiError("busy", "A desktop operation is already running. Please wait or lock to cancel.")
+            raise ApiError("busy", t("desktop.aDesktopOperationIsAlready"))
         try:
             self._sleep(3)
             snapshot = self._uia_job(self._uia.scan_foreground_window)
@@ -432,20 +414,15 @@ class DesktopService:
 
     def binding_form_for(self, snapshot: Any) -> dict[str, Any]:
         if not snapshot.title.strip():
-            raise ApiError("refused", "Unsupported untitled window: the foreground window has no title, so "
-                                      "LocalGateKeys cannot bind it with a strong enough window identity.")
+            raise ApiError("refused", t("desktop.unsupportedUntitledWindowTheForeground"))
         if Path(snapshot.exe_path).name.casefold() in BROWSER_EXECUTABLE_NAMES:
-            raise ApiError("refused", "Use the browser extension: LocalGateKeys will not bind a normal browser "
-                                      "through desktop UI Automation. Use the extension so the credential can be "
-                                      "restricted to the exact web origin.")
+            raise ApiError("refused", t("desktop.useTheBrowserExtensionLocalgatekeys"))
         if not snapshot.controls:
-            raise ApiError("refused", "Unsupported login UI: this window exposes no editable controls through Windows "
-                                      "UI Automation. LocalGateKeys will not use screen scraping or a keylogger. "
-                                      "Embedded/custom game UIs need an app-specific integration.")
+            raise ApiError("refused", t("desktop.unsupportedLoginUiThisWindow"))
         default_user, default_password = self._uia.choose_default_selectors(snapshot.controls)
         return {
             "title": _safe(snapshot.title), "app": _safe(snapshot.exe_path),
-            "intro": "Select the username and password controls. No current field values are read.",
+            "intro": t("desktop.selectTheUsernameAndPassword"),
             "controls": [{"index": c.index, "password": bool(c.is_password),
                           "label": f"#{c.index}  {'PASSWORD' if c.is_password else 'text'}  "
                                    f"name={_safe(c.name or '-', 80)}  id={_safe(c.automation_id or '-', 80)}"}
@@ -463,25 +440,22 @@ class DesktopService:
         if not entry_id:
             # Checked before the scan is used up, so a typo does not mean inspecting the app again.
             if not str(label).strip():
-                raise ApiError("invalid", "Enter a label.")
+                raise ApiError("invalid", t("desktop.enterALabel"))
             if not password:
-                raise ApiError("invalid", "Enter the password into LocalGateKeys (not into the target app).")
+                raise ApiError("invalid", t("desktop.enterThePasswordIntoLocalgatekeys"))
         self._snapshots.pop(str(token), None)
         by_index = {c.index: c for c in snapshot.controls}
         password_control = by_index.get(password_index)
         if password_control is None:
-            raise ApiError("invalid", "Choose the password control.")
+            raise ApiError("invalid", t("desktop.chooseThePasswordControl"))
         user_control = by_index.get(user_index) if user_index is not None else None
         if not password_control.is_password and not self._port.confirm(
-                "Unprotected UIA field", "The selected field is not marked as a protected password field by the app. "
-                "Save this mapping anyway? LocalGateKeys still will not read its current value."):
-            raise ApiError("cancelled", "Cancelled.")
+                t("desktop.unprotectedUiaField"), t("desktop.theSelectedFieldIsNot")):
+            raise ApiError("cancelled", t("error.cancelled"))
         password_selector = password_control.selector()
         if _embedded(password_selector) and not self._port.confirm(
-                "Embedded web content", "This field appears to be rendered by Chromium/CEF/WebView inside a desktop "
-                "app. LocalGateKeys can verify the app, window, signer, and control, but not the embedded page's web "
-                "origin. Bind it anyway and require confirmation on every fill?"):
-            raise ApiError("cancelled", "Cancelled.")
+                t("desktop.embeddedWebContent"), t("desktop.thisFieldAppearsToBe")):
+            raise ApiError("cancelled", t("error.cancelled"))
         signer = snapshot.signer
         signer_valid = (isinstance(signer, dict) and str(signer.get("status", "")).casefold() == "valid"
                         and bool(signer.get("thumbprint")))
@@ -497,16 +471,15 @@ class DesktopService:
         try:
             if entry_id:
                 self._serialise(lambda: self._session.update_desktop_binding(entry_id, **common))
-                message = ("Dynamic desktop binding refreshed. Stable app identity and field selectors will be "
-                           "verified on future fills." if held["dynamic"] else
-                           "Embedded-web binding refreshed; volatile WebView layout changes will be tolerated."
+                message = (t("desktop.dynamicDesktopBindingRefreshedStable") if held["dynamic"] else
+                           t("desktop.embeddedWebBindingRefreshedVolatile")
                            if mode == "embedded_web_volatile" else
-                           "Desktop credential rebound with strict native layout validation.")
+                           t("desktop.desktopCredentialReboundWithStrict"))
             else:
                 entry_id = self._serialise(lambda: self._session.add_desktop(
                     label=str(label).strip(), username=str(username), password=password, **common))
-                signer_text = (signer or {}).get("subject") if signer_valid else "no valid signer pin"
-                message = f"Bound {label} to {snapshot.exe_path} ({_safe(str(signer_text))})."
+                signer_text = (signer or {}).get("subject") if signer_valid else t("desktop.noValidSignerPin")
+                message = t("desktop.boundTo", label=label, exe_path=snapshot.exe_path, signer_text=_safe(str(signer_text)))
         except ItemLimitReached as exc:
             self._port.show_upgrade(limit=exc.limit, message=str(exc), on_enter=lambda: None)
             raise ApiError("item_limit", str(exc)) from None
@@ -518,7 +491,7 @@ class DesktopService:
         self._controller.touch()
         self._bus.emit("items.changed", {})
         if held["fill_after"] and self._port.confirm(
-                "Fill the app now?", f"Fill {_safe(str(label or 'this login'))} into {_safe(snapshot.title)} now?"):
+                t("desktop.fillTheAppNow"), t("desktop.fillIntoNow", label=_safe(str(label or t("desktop.thisLogin"))), title=_safe(snapshot.title))):
             try:
                 self._fill_entry(entry_id, snapshot)
             except ApiError as exc:

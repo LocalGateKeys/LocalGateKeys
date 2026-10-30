@@ -133,9 +133,16 @@ def main() -> None:
     installed = False
     if link is not None:
         installed = _install_from_link(link)
+    from . import share_open
+
+    shared = share_open.find_share_file(_unknown)
+    if shared is not None:
+        share_open.note(shared)  # the running app (or this one, once unlocked) takes it
     mutex = _acquire_windows_instance_mutex()
     if mutex is None:
-        if link is None:
+        if shared is not None:
+            share_open.signal_running_app()
+        elif link is None:
             _tell_already_running(args.background)
         elif installed:
             from .licence_link import signal_running_app

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import pytest
 
+from localvault.i18n import t
 from localvault.api.result import ApiError
 from localvault.app.controller import WebController
 from localvault.app.documents import (
@@ -113,7 +114,7 @@ def test_open_refused_when_setting_off(env):
     controller.settings.document_open_enabled = False
     with pytest.raises(ApiError) as off:
         service.open_externally(ref)
-    assert off.value.code == "needs_setting" and off.value.message == OPEN_OFF_TEXT
+    assert off.value.code == "needs_setting" and off.value.message == t(OPEN_OFF_TEXT)
     assert off.value.fix["key"] == "document_open_enabled"
 
 
@@ -128,7 +129,7 @@ def test_first_open_warns_once(env, monkeypatch):
     service.open_externally(ref)
     service.open_externally(ref)
     warnings = [a for a in port.asked if a[0] == "Open a decrypted copy?"]
-    assert len(warnings) == 1 and warnings[0][1] == OPEN_WARNING_TEXT
+    assert len(warnings) == 1 and warnings[0][1] == t(OPEN_WARNING_TEXT)
     assert controller.settings.document_open_warning_seen is True and len(opened) == 2
 
 

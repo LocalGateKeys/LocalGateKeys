@@ -10,6 +10,8 @@ from pathlib import Path
 
 import pytest
 
+from localvault.i18n import t
+
 from localvault.app import sync_view as ui
 from localvault.session_guard import StaleSession
 from localvault.sync import folder_transport as ft
@@ -393,7 +395,7 @@ def test_view_marks_unconfirmed_members_and_offers_confirmation() -> None:
     view = ui.sync_view(None, group, lan_endpoint="", now=NOW)
     member = next(m for m in view.folder.members if m.device_id == "new-1")
     assert member.detail == "Added by another device, not confirmed"
-    assert "ack-members" in view.folder.actions and ui._ACTION_LABELS["ack-members"] == "These are my devices"
+    assert "ack-members" in view.folder.actions and t(ui._ACTION_LABELS["ack-members"]) == "These are my devices"
     assert ui.issue_severity("member-added") == "warning"
     intro = ui.rotation_intro(group)
     assert "goes only to: this PC" in intro and "Phone" in intro and "lose access" in intro

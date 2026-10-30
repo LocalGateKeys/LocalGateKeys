@@ -1,0 +1,69 @@
+{
+  "format": "keePassCSV",
+  "input": "tests/fixtures/imports/keepassxc.csv",
+  "python_format": "keepass-csv",
+  "result": {
+    "diagnostics": [],
+    "records": [
+      {
+        "card": {},
+        "created": 1704103200,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "Work",
+        "identity": {},
+        "kind": "login",
+        "modified": 1714557600,
+        "notes": "Use the EU gateway.",
+        "password": "kpxc-pass-1",
+        "source_row": 2,
+        "tags": [],
+        "title": "VPN",
+        "totp_uri": "otpauth://totp/VPN:alex?secret=JBSWY3DPEHPK3PXP&period=30&digits=6&issuer=VPN",
+        "urls": [
+          "https://vpn.example.com"
+        ],
+        "username": "alex"
+      },
+      {
+        "card": {},
+        "created": 1704103200,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": 1714557600,
+        "notes": "",
+        "password": "kpxc-pass-2",
+        "source_row": 3,
+        "tags": [],
+        "title": "Home NAS",
+        "totp_uri": "",
+        "urls": [
+          "nas.example.lan"
+        ],
+        "username": "admin"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "Notes",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "Left 10, right 20, left 30.",
+        "password": "",
+        "source_row": 4,
+        "tags": [],
+        "title": "Safe combination",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      }
+    ],
+    "source_format": "keepass-csv"
+  }
+}

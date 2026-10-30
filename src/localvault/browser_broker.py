@@ -37,6 +37,7 @@ from .origin import (
 )
 from .passkey_broker import PASSKEY_ACTIONS, PASSKEY_PROTOCOL, PasskeyBrokerMixin
 from .session_guard import StaleSession
+from .i18n import t
 from .vault import ItemLimitReached, VaultError
 from .version import APP_VERSION, PROTOCOL_VERSION
 
@@ -294,7 +295,7 @@ class BrowserBroker(PasskeyBrokerMixin):
             raise StaleSession()
         policy = normalized_policy(entry.get("policy"))
         if policy["fill"] == "never": return {"ok": False, "error": "fill_disabled"}
-        if policy["require_master_password"] and not self.reauthenticate("Confirm master password for this credential", lease):
+        if policy["require_master_password"] and not self.reauthenticate(t("broker.confirmMasterCredential"), lease):
             return {"ok": False, "error": "user_cancelled"}
         self._permission(request, origin, context, release=True)
         username_only = request.get("username_only") is True
@@ -361,7 +362,7 @@ class BrowserBroker(PasskeyBrokerMixin):
                 return {"ok": False, "error": "totp_not_found"}
             policy = normalized_policy(entry.get("policy"))
             if policy["fill"] == "never": return {"ok": False, "error": "fill_disabled"}
-            if policy["require_master_password"] and not self.reauthenticate("Confirm master password for this 2FA code", lease):
+            if policy["require_master_password"] and not self.reauthenticate(t("broker.confirmMasterCode"), lease):
                 return {"ok": False, "error": "user_cancelled"}
             if requires_totp_confirmation(self.settings):
                 # Same trusted desktop prompt as identity/password-update

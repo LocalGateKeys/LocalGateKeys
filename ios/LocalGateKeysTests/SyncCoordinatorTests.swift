@@ -97,6 +97,15 @@ final class FakeLan: LanTransporting, @unchecked Sendable {
         return try exchange(localStates)
     }
 
+    /// The address `exchangeViewsFindingHost` reports the host answered at (discovery); nil: the pinned one.
+    var movedTo: LanEndpoint?
+    func exchangeViewsFindingHost(peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey, localStates: [ItemState],
+                                  ownCounter: Int64) async throws -> HostFinder.Result {
+        let states = try await exchangeViews(peer: peer, identity: identity, groupKey: groupKey, localStates: localStates,
+                                             ownCounter: ownCounter)
+        return HostFinder.Result(states: states, moved: lock.withLock { movedTo })
+    }
+
     func enroll(endpoint: LanEndpoint, request: [UInt8], onConnected: @escaping @Sendable () -> Void) async throws -> [UInt8] {
         lock.withLock { enrolls += 1 }
         if connectsBeforeHold { onConnected() }
@@ -301,6 +310,47 @@ final class SyncCoordinatorTests: XCTestCase {
         XCTAssertEqual(autoFill.calls, 1)
         XCTAssertEqual(c.phase, .idle); XCTAssertTrue(c.membership.joined); XCTAssertEqual(c.membership.peer, peer)
         XCTAssertNotNil(c.lastSyncedAt); XCTAssertEqual(c.issues, [])
+    }
+
+    // MARK: Find again (sync after an IP change)
+
+    func test_find_again_moves_the_pinned_address_without_pairing_again() async throws {
+        lan.exchange = { _ in [] }
+        let store = LockedStore()
+        let c = try await qrJoined(store)
+        let paired = try XCTUnwrap(try keychain.pairedPeer())
+        let old = try LanEndpoint(validating: "192.168.1.99", port: 47821)
+        try keychain.setPairedPeer(PinnedPeer(deviceID: paired.deviceID, groupID: paired.groupID, signingPublic: paired.signingPublic,
+                                              exchangePublic: paired.exchangePublic, endpoint: old))
+        let stateBefore = store.snapshot.sync
+        let ok = await c.findAgain(try SyncVectors.qrText())
+        XCTAssertTrue(ok, c.actionError ?? "")
+        XCTAssertEqual(try keychain.pairedPeer(), paired)        // the QR's address, same keys
+        XCTAssertEqual(lan.enrolls, 1)                           // no new enrollment
+        XCTAssertEqual(store.snapshot.sync?.identity, stateBefore?.identity)
+        XCTAssertEqual(store.snapshot.sync?.groupID, stateBefore?.groupID)
+    }
+
+    func test_find_again_refuses_another_devices_code_and_changes_nothing() async throws {
+        lan.exchange = { _ in [] }
+        let store = LockedStore()
+        let c = try await qrJoined(store)
+        let paired = try XCTUnwrap(try keychain.pairedPeer())
+        var otherKey = paired.signingPublic
+        otherKey[0] ^= 1
+        let other = PinnedPeer(deviceID: paired.deviceID, groupID: paired.groupID, signingPublic: otherKey,
+                               exchangePublic: paired.exchangePublic, endpoint: try LanEndpoint(validating: "192.168.1.99", port: 47821))
+        try keychain.setPairedPeer(other)
+        let exchanges = lan.exchanges
+        let ok = await c.findAgain(try SyncVectors.qrText())
+        XCTAssertFalse(ok)
+        XCTAssertEqual(c.actionError, SyncWording.findAgainText(.otherDevice))
+        XCTAssertEqual(try keychain.pairedPeer(), other)
+        XCTAssertEqual(lan.exchanges, exchanges)
+        XCTAssertEqual(lan.enrolls, 1)
+        let junk = await c.findAgain("not a code")
+        XCTAssertFalse(junk)
+        XCTAssertEqual(c.actionError, SyncWording.findAgainText(.notAPairingCode))
     }
 
     func test_qr_refusals_use_desktop_wording_and_leave_store_untouched() async throws {
@@ -534,6 +584,9 @@ final class SyncCoordinatorTests: XCTestCase {
         lan.exchange = { _ in throw LanSyncError("bad-message") }
         await c.sync(.manual)
         XCTAssertEqual(c.issues.map(\.kind), ["bad-reply"])
+
+        XCTAssertEqual(SyncWording.itemsUpdated(1), "1 item updated from your other devices.")
+        XCTAssertEqual(SyncWording.itemsUpdated(3), "3 items updated from your other devices.")
 
         // Table checks: verbatim desktop copy, shown with "iPhone" for "PC".
         XCTAssertEqual(SyncWording.desktopText(SyncIssue("keyring-missing")),

@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Funciones | LocalGateKeys</title>
+  <meta name="description" content="Qué hace LocalGateKeys, edición por edición: bóveda cifrada, relleno en el navegador y en el escritorio, claves de acceso, Windows Hello, códigos de dos factores, importaciones, copias de seguridad y sincronización entre dispositivos.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/es/features">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/features">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/features">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/features">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/features">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/features">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/features">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/features">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/features">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/features">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/features">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/features">
+  <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../brand/icon-256.png">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">Saltar al contenido</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../es/index.html">
+        <img src="../brand/icon.svg" alt="" width="36" height="36">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav aria-label="Principal">
+        <ul class="nav">
+          <li><a href="../es/features.html" aria-current="page">Funciones</a></li>
+          <li><a href="../es/pricing.html">Precios</a></li>
+          <li><a href="../es/security.html">Seguridad</a></li>
+          <li><a href="../es/get-started.html">Primeros pasos</a></li>
+          <li><a href="../es/help.html">Guía</a></li>
+          <li><a href="../es/download.html">Descargar</a></li>
+          <li><a href="../es/support.html">Soporte</a></li>
+          <li><a href="../buy.html">Comprar Pro</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Todo lo que hace, y dónde lo hace</h1>
+  <p class="lead">Todo esto se ejecuta en tus propios dispositivos. Free admite hasta 4 elementos; <a href="../es/pricing.html">Pro</a> quita el límite y añade sincronización, códigos de dos factores y documentos.</p>
+</div>
+<div class="wrap">
+  <figure class="shot"><picture><source srcset="../screenshots/home-vault-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/home-vault-dark.webp" width="2880" height="1800" alt="La página de inicio de LocalGateKeys: estado de las contraseñas, próximos recordatorios, una tarjeta de códigos de un solo uso con códigos de dos factores en vivo y una lista de inicios de sesión con los logotipos de los sitios." loading="lazy" decoding="async"></picture><figcaption>Inicio: estado de las contraseñas, recordatorios, códigos de dos factores en vivo y tus elementos. Bóveda de demostración con cuentas inventadas.</figcaption></figure>
+</div>
+
+<div class="wrap page-body">
+  <section class="feature-group" aria-labelledby="f-vault">
+    <h2 id="f-vault">La bóveda</h2>
+    <dl>
+      <div><dt>Cifrada en tu disco</dt><dd>Todo lo que guardas se cifra con una clave protegida por tu contraseña maestra, con Argon2id y AES-256-GCM. También se cifran los nombres, los nombres de usuario y los sitios web, no solo las contraseñas.</dd></div>
+      <div><dt>Más que contraseñas</dt><dd>Inicios de sesión de sitios web y de aplicaciones de escritorio, claves de acceso, tarjetas de pago, cuentas bancarias, identidades, notas seguras, documentos, claves SSH, claves de API, redes Wi-Fi, marcadores, licencias de software, suscripciones, garantías y compras, cada uno con sus propios campos.</dd></div>
+      <div><dt>Documentos (Pro)</dt><dd>Guarda archivos, como documentos escaneados, en la bóveda, de hasta 25 MB cada uno. Cada archivo se cifra con su propia clave. Puedes previsualizar un documento, guardar una copia o abrirlo en otra aplicación.</dd></div>
+      <div><dt>Códigos de dos factores (Pro)</dt><dd>Guarda la clave de configuración de un sitio y LocalGateKeys muestra el código actual en la parte superior del inicio de sesión y en una tarjeta de Códigos de un solo uso en la página de inicio. Los códigos siguen el estándar TOTP (RFC 6238): de 6 a 8 dígitos, de 15 a 120 segundos, SHA-1, SHA-256 o SHA-512.</dd></div>
+      <div><dt>Añadir un código desde un código QR</dt><dd>Recorta el código QR de la página de configuración de dos factores del sitio con Win+Mayús+S y pégalo, o acércalo a tu cámara web. También sirve un código QR de exportación de Google Authenticator. La imagen se lee en tu PC y nunca se guarda.</dd></div>
+      <div><dt>Generador de contraseñas</dt><dd>Contraseñas aleatorias de 8 a 256 caracteres, o frases de contraseña de 3 a 16 palabras.</dd></div>
+      <div><dt>Estado de las contraseñas</dt><dd>Descubre qué contraseñas guardadas son débiles, están repetidas, tienen más de un año o no tienen código de dos factores. Las comprobaciones de filtraciones con Have I Been Pwned están desactivadas hasta que las actives, solo se ejecutan cuando las inicias y envían solo cinco caracteres de un hash, nunca la contraseña.</dd></div>
+      <div><dt>Logotipos de sitios e iconos por tipo</dt><dd>Cada elemento muestra el icono del sitio, un logotipo integrado para sitios conocidos o un icono de su tipo, para que lo reconozcas de un vistazo.</dd></div>
+      <div><dt>Búsqueda y colecciones</dt><dd>Encuentra elementos con una paleta de comandos (Ctrl+K), filtros, favoritos y tus propias colecciones. Las flechas, Intro y Ctrl+C funcionan en la lista de elementos directamente desde el cuadro de búsqueda.</dd></div>
+      <div><dt>Papelera y deshacer</dt><dd>Los elementos eliminados van a la papelera, y el mensaje que lo confirma tiene un botón Deshacer. La papelera se vacía sola tras 30 días, o conserva todo hasta que la vacíes.</dd></div>
+      <div><dt>Historial de contraseñas</dt><dd>Cuando cambia la contraseña de un inicio de sesión, las últimas cinco contraseñas anteriores se conservan en su historial cifrado.</dd></div>
+    </dl>
+    <div class="shots">
+      <figure class="shot"><picture><source srcset="../screenshots/item-2fa-code-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/item-2fa-code-dark.webp" width="2880" height="1800" alt="Un inicio de sesión de GitHub abierto en LocalGateKeys, con su código de dos factores actual arriba y después el nombre de usuario, la contraseña oculta, el sitio web, las notas y los códigos de recuperación." loading="lazy" decoding="async"></picture><figcaption>El código de dos factores actual está en la parte superior del inicio de sesión.</figcaption></figure>
+      <figure class="shot"><picture><source srcset="../screenshots/generator-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/generator-dark.webp" width="2880" height="1800" alt="El generador de contraseñas con una contraseña aleatoria de 20 caracteres y opciones de longitud, letras, dígitos y símbolos." loading="lazy" decoding="async"></picture><figcaption>El generador crea contraseñas aleatorias o frases de contraseña.</figcaption></figure>
+      <figure class="shot"><picture><source srcset="../screenshots/security-center-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/security-center-dark.webp" width="2880" height="1800" alt="El Centro de seguridad con una puntuación de 77 sobre 100, con contraseñas débiles, repetidas, sin dos factores y antiguas por revisar, y comprobaciones de desbloqueo y de copias de seguridad." loading="lazy" decoding="async"></picture><figcaption>El Centro de seguridad indica qué corregir primero.</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-move">
+    <h2 id="f-move">Entrar y salir</h2>
+    <dl>
+      <div><dt>Importar desde otros gestores de contraseñas</dt><dd>Trae exportaciones de 1Password, Bitwarden, LastPass, Dashlane, Proton Pass, KeePass y KeePassXC (incluidos los archivos <code>.kdbx</code>), Chrome, Edge, Brave, Firefox y Safari, o de cualquier otro archivo CSV. Revisas cada elemento antes de que se escriba nada, y la importación nunca se conecta a internet.</dd></div>
+      <div><dt>Exportar</dt><dd>Exporta a un archivo KeePass KDBX 4 cifrado, a CSV o JSON compatible con Bitwarden, o a XML de KeePass. Cada exportación pide primero tu contraseña maestra.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-fill">
+    <h2 id="f-fill">Rellenar inicios de sesión</h2>
+    <dl>
+      <div><dt>Extensión para Chrome y Edge</dt><dd>Rellena y guarda inicios de sesión en sitios web, incluidos los que piden el nombre de usuario y la contraseña en páginas distintas. La extensión pide a la aplicación de tu PC, mediante un ayudante local, los inicios de sesión que coinciden con el sitio exacto. También rellena códigos de dos factores, direcciones y tarjetas de pago.</dd></div>
+      <div><dt>Avisos de guardado que controlas tú</dt><dd>Después de iniciar sesión, la extensión ofrece guardar un inicio de sesión nuevo o actualizar una contraseña cambiada. Puedes desactivar el aviso para cualquier sitio desde el botón de la barra de herramientas.</dd></div>
+      <div><dt>Tú inicias cada relleno</dt><dd>No se rellena nada hasta que eliges una cuenta. Los formularios no se envían por ti, salvo que actives "Iniciar sesión tras rellenar" en Ajustes, y entonces solo después de un relleno que hayas iniciado tú.</dd></div>
+      <div><dt>Claves de acceso</dt><dd>Cuando un sitio web en Chrome o Edge ofrece una clave de acceso, LocalGateKeys puede guardarla en tu bóveda e iniciar sesión con ella. Apruebas cada clave de acceso en la aplicación de escritorio, con Windows Hello o tu contraseña maestra, y el diálogo de claves de acceso del propio navegador siempre está a un clic. La clave privada nunca sale de la aplicación.</dd></div>
+      <div><dt>Relleno en aplicaciones de Windows</dt><dd>Rellena las ventanas de inicio de sesión de programas de Windows con un botón junto al campo de contraseña o con un atajo de teclado (Ctrl+Mayús+Espacio). Cada aplicación se vincula una sola vez, y el relleno se rechaza si el programa, su ventana o sus campos han cambiado desde entonces.</dd></div>
+      <div><dt>Acceso rápido</dt><dd>Busca en tu bóveda y copia desde cualquier lugar con un atajo de teclado (Ctrl+Alt+K por defecto). Ctrl+Alt+L bloquea la bóveda al instante.</dd></div>
+      <div><dt>Sin registro de teclas, nunca</dt><dd>LocalGateKeys no instala ningún gancho de teclado, no lee el contenido de la pantalla para encontrar contraseñas y no inyecta nada en otros programas. Si una aplicación no expone campos de inicio de sesión adecuados, no se rellena.</dd></div>
+    </dl>
+    <figure class="shot shot-small"><img src="../screenshots/browser-fill.webp" width="480" height="540" alt="Una página de inicio de sesión con la extensión de LocalGateKeys ofreciendo dos cuentas guardadas para ese sitio." loading="lazy" decoding="async"><figcaption>La extensión ofrece solo los inicios de sesión guardados para el sitio en el que estás.</figcaption></figure>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-unlock">
+    <h2 id="f-unlock">Desbloqueo</h2>
+    <dl>
+      <div><dt>Contraseña maestra</dt><dd>Al menos 12 caracteres, nunca escrita en el disco. Es lo único que abre tu bóveda, y no podemos restablecerla.</dd></div>
+      <div><dt>Windows Hello</dt><dd>Desbloquea con tu huella, tu rostro o tu PIN mediante Windows Hello, una vez que lo hayas configurado en LocalGateKeys.</dd></div>
+      <div><dt>Comprobación con la cámara</dt><dd>Una comprobación facial opcional con la cámara web para PC sin Windows Hello. Es una comodidad, no una protección antisuplantación certificada; elige Windows Hello cuando puedas.</dd></div>
+      <div><dt>Frase de recuperación</dt><dd>Una frase opcional de 24 palabras que puede abrir la bóveda si olvidas la contraseña maestra. Se muestra una sola vez y la aplicación nunca la guarda.</dd></div>
+      <div><dt>Bloqueo automático y borrado del portapapeles</dt><dd>La bóveda se bloquea tras el tiempo que elijas, y las contraseñas copiadas se borran del portapapeles. Solo se borra lo que copió LocalGateKeys.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-backup">
+    <h2 id="f-backup">Copias de seguridad</h2>
+    <dl>
+      <div><dt>Copias de seguridad cifradas programadas</dt><dd>Diarias o semanales, a la hora que establezcas. Cada copia es un archivo cifrado completo, comprobado tras escribirse, con los adjuntos incluidos.</dd></div>
+      <div><dt>Copia adicional en una carpeta que elijas</dt><dd>Haz que cada copia se duplique en una carpeta de OneDrive, Google Drive, Dropbox o Proton Drive, o en cualquier otro lugar. Solo se copian archivos de copia de seguridad cifrados, nunca la bóveda activa.</dd></div>
+      <div><dt>Paquetes de transferencia cifrados</dt><dd>Mueve elementos seleccionados a otra bóveda en un archivo cifrado protegido por su propia contraseña.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-sync">
+    <h2 id="f-sync">Sincronización entre tus dispositivos (Pro)</h2>
+    <dl>
+      <div><dt>Por tu Wi-Fi doméstico</dt><dd>Empareja un PC una vez con un código QR de un solo uso (entre PC pegas su texto). Cuando ambos están desbloqueados en la misma red, intercambian los cambios directamente por una conexión autenticada y cifrada. Nada pasa por internet.</dd></div>
+      <div><dt>A través de tu propia carpeta en la nube</dt><dd>Si tus PC rara vez están en la misma red, sincroniza mediante una carpeta de OneDrive, Dropbox, Google Drive o iCloud Drive que ya uses, protegida por una contraseña de sincronización. El proveedor solo almacena archivos cifrados. Puedes usar las dos vías.</dd></div>
+      <div><dt>Qué se sincroniza</dt><dd>Inicios de sesión de sitios web y de aplicaciones de escritorio, y otros elementos como notas y marcadores. Las colecciones, los documentos y los adjuntos todavía no se sincronizan. Si editas en dos PC a la vez, se conservan las dos versiones, y una eliminación mueve el elemento a la papelera en los demás PC.</dd></div>
+      <div><dt>iPhone</dt><dd>La aplicación para iPhone se sincroniza con tu PC con Windows. <a href="https://apps.apple.com/app/id6825488435">Consíguela en la App Store</a>.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-privacy">
+    <h2 id="f-privacy">Privacidad</h2>
+    <dl>
+      <div><dt>Sin cuenta</dt><dd>Nunca te registras ni inicias sesión. Una licencia Pro es una clave que conservas tú, comprobada en tu PC.</dd></div>
+      <div><dt>Sin telemetría</dt><dd>La aplicación no envía datos de uso, informes de fallos ni analíticas.</dd></div>
+      <div><dt>Modo estrictamente sin conexión</dt><dd>Activado por defecto. Bloquea las solicitudes de internet en segundo plano y las comprobaciones de filtraciones, y una búsqueda de actualizaciones te pregunta antes.</dd></div>
+      <div><dt>Iconos de sitios web, tú decides</dt><dd>Para mostrar el icono de un sitio, la aplicación lo descarga de ese sitio. Esto le indica al sitio que tienes una cuenta allí, y nada más. Está desactivado por defecto: activa "Mostrar iconos de sitios web" en Ajustes (el modo estrictamente sin conexión debe estar desactivado).</dd></div>
+      <div><dt>Búsquedas de actualizaciones que inicias tú</dt><dd>Buscar actualizaciones descarga un pequeño archivo firmado. La aplicación nunca descarga ni instala nada por sí sola.</dd></div>
+    </dl>
+  </section>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand">LocalGateKeys</p>
+        <p>Un gestor de contraseñas para Windows que guarda tu bóveda en tus propios dispositivos.</p>
+        <p class="quiet">Este sitio no usa cookies, no ejecuta analíticas y no carga nada de otras empresas.</p>
+      </div>
+      <nav aria-label="Producto">
+        <h2>Producto</h2>
+        <ul>
+          <li><a href="../es/features.html">Funciones</a></li>
+          <li><a href="../es/pricing.html">Precios</a></li>
+          <li><a href="../es/download.html">Descargar</a></li>
+          <li><a href="../es/licence.html">Tu licencia Pro</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Ayuda">
+        <h2>Ayuda</h2>
+        <ul>
+          <li><a href="../es/help.html">Guía de usuario</a></li>
+          <li><a href="../es/support.html">Soporte y preguntas frecuentes</a></li>
+          <li><a href="../es/security.html">Seguridad</a></li>
+          <li><a href="../legal/vulnerability-disclosure.html">Informar de una vulnerabilidad</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Legal">
+        <h2>Legal</h2>
+        <p class="quiet">Estos documentos están en inglés, y la versión en inglés es la que se aplica y la vinculante.</p>
+        <ul>
+          <li><a href="../legal/eula.html">Contrato de licencia</a></li>
+          <li><a href="../legal/privacy.html">Política de privacidad</a></li>
+          <li><a href="../legal/terms-of-sale.html">Condiciones de venta</a></li>
+          <li><a href="../legal/refunds.html">Política de reembolsos</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base">
+      <p>&copy; 2026 Ilias Pelekas. Contacto: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows es una marca comercial del grupo de empresas Microsoft. Chrome es una marca comercial de Google LLC.</p>
+      <p class="lang-switch" role="navigation" aria-label="Idioma"><a href="../features.html" hreflang="en" lang="en">English</a> · <a href="../es/features.html" hreflang="es" lang="es" aria-current="true">Español</a> · <a href="../it/features.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/features.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/features.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../ja/features.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/features.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/features.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/features.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/features.html" hreflang="nl" lang="nl">Nederlands</a></p>
+    </div>
+  </footer>
+</body>
+</html>

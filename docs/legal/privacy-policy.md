@@ -1,4 +1,4 @@
-<!-- summary: The LocalGateKeys apps collect nothing. What this website, update checks, the licence revocation list and Pro purchases involve. -->
+<!-- summary: The LocalGateKeys apps collect nothing from your vault; in-app Pro purchases send the store receipt to the licence server. What this website, update checks, the licence revocation list and Pro purchases involve. -->
 <!-- draft-notice -->
 > **DRAFT for legal review. Not legal advice. Do not publish as is.** This document was drafted without a lawyer. It must be reviewed and adapted by a lawyer qualified in {{JURISDICTION}} (and, where you sell to them, for the EU/UK GDPR and US state privacy laws) before it is published or relied on.
 <!-- /draft-notice -->
@@ -16,7 +16,7 @@
 - **Licence store.** The licence-issuer Worker keeps every issued licence in Cloudflare KV under a retrieval token, with an order index. Decide how long it keeps them ({{LICENCE_RETENTION}}) and whether it deletes them after a refund.
 - **What the merchant of record shares.** Confirm with {{MERCHANT_OF_RECORD}} which buyer fields you receive (for example name, email, country, postcode, order ID, VAT ID) and remove the ones you do not.
 - **Retention periods** for order records ({{ORDER_RETENTION}}, usually set by tax law) and support emails ({{SUPPORT_RETENTION}}).
-- **iPhone crash reports.** Decide whether you will read Apple's opt-in crash reports in App Store Connect. If yes, keep section 7.3; the App Store label can still be "Data Not Collected" only if nothing else is collected.
+- **iPhone crash reports.** Decide whether you will read Apple's opt-in crash reports in App Store Connect. If yes, keep section 7.4; the App Store label can still be "Data Not Collected" only if nothing else is collected.
 - **Support tooling.** Which email provider hosts {{CONTACT_EMAIL}} (it processes support emails) and where it stores data.
 - **Effective date** ({{EFFECTIVE_DATE}}).
 <!-- /owner-decisions -->
@@ -27,7 +27,7 @@ This policy explains what personal data {{COMPANY_NAME}}, {{COMPANY_ADDRESS}} ("
 
 ## 1. Summary
 
-- **The apps collect nothing.** The LocalGateKeys Windows app, browser extension, local browser helper and iPhone app do not send us your vault, usage data, crash reports, analytics or identifiers. There is no account.
+- **The apps collect nothing from your vault.** The LocalGateKeys apps, browser extension and local browser helper do not send us your vault, usage data, crash reports or analytics. There is no account. The only exception is a Pro purchase made in the App Store or Google Play: the app sends the store's purchase record to our licence server (section 7).
 - **The website sets no cookies** and uses no analytics, trackers, third-party scripts or third-party fonts.
 - **Payments are handled by {{MERCHANT_OF_RECORD}}**, our merchant of record. We never see your card details.
 - **Our servers only see ordinary connection data** when the app checks for updates or downloads the licence revocation list, and you can turn both off with Strict offline mode.
@@ -135,11 +135,13 @@ Legal basis: legitimate interests in answering your request (Article 6(1)(f) GDP
 
 ## 7. iPhone app
 
-7.1 The LocalGateKeys iPhone app, when released, collects no data. Its App Store privacy label is "Data Not Collected". It syncs only with your own Windows PC, over your own network, or through your own cloud folder.
+7.1 The LocalGateKeys iPhone and Mac apps send us nothing from your vault. They sync only with your own devices, over your own network, or through your own cloud folder. When you buy Pro in the app, the app sends the App Store's signed purchase record to our licence server, which checks it with Apple and returns a licence that also unlocks your other devices (see 7.3). The App Store privacy label therefore lists "Purchases: Purchase History", used only for app functionality, not linked to you and not used for tracking.
 
 7.2 Apple processes data about your App Store download and purchases under Apple's privacy policy. We receive only aggregated, non-identifying download and sales reports from Apple.
 
-7.3 If you choose to share analytics with app developers in your iPhone settings, Apple may provide us with crash reports that do not identify you. We use them only to fix bugs.
+7.3 The purchase record contains the product, the App Store's transaction identifiers and dates; it has no name, email or Apple Account details. We keep the original transaction identifier and the licence issued for it for as long as the licence can be used, so a reinstall gets the same licence and a refund can revoke it. The Android app does the same with the Google Play purchase token (Play Data safety: "Purchase history", app functionality). To limit abuse, the licence server keeps a keyed hash of your IP address for up to one hour.
+
+7.4 If you choose to share analytics with app developers in your iPhone settings, Apple may provide us with crash reports that do not identify you. We use them only to fix bugs.
 
 ## 8. Sharing
 

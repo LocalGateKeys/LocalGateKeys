@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Wrong password or corrupted database",
+    "type": "wrong_password"
+  },
+  "format": "keePassKDBX",
+  "input": "tests/vectors/import/_inputs/kdbx3_salsa20.kdbx",
+  "password": "wrong kdbx password",
+  "python_format": "kdbx"
+}

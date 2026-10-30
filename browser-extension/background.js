@@ -40,50 +40,50 @@ function pageUrlFor(value, origin) {
   return u.href;
 }
 const readableErrors = {
-  agent_offline: "The older native host could not reach the app. If LocalGateKeys is already open, update the desktop app, repair the bridge, and restart it.",
-  agent_state_missing: "No running connection was found. Finish choosing a profile in LocalGateKeys. If the main window is already open, restart the app from the same repository as the bridge.",
-  agent_state_invalid: "The saved bridge connection is invalid or outdated. Exit LocalGateKeys fully, including the tray, and restart the repository copy.",
-  agent_access_denied: "Windows denied access to the bridge. Run the browser and LocalGateKeys as the same Windows user without Administrator mode, then repair the current-user bridge.",
-  agent_unavailable: "The app connection is not accepting requests. Exit LocalGateKeys fully (including the tray), then restart it from the repository used to repair the bridge.",
-  agent_busy: "The bridge is busy. Finish any open LocalGateKeys dialog and try again.",
-  agent_connection_lost: "The local bridge disconnected before replying. Repair the bridge if this repeats. No automatic retry was made.",
-  agent_connection_changed: "The connection points to a different app instance. Restart LocalGateKeys from the repository used to repair the bridge.",
-  bridge_dependencies_missing: "The native host is missing required Python packages. Refresh the repository environment, then run scripts/repair_browser_bridge.ps1.",
-  bridge_protocol_error: "The local bridge returned an invalid response. Update all bridge files together and restart LocalGateKeys.",
-  bridge_internal_error: "The native bridge encountered an error. Run scripts/test_browser_bridge.ps1 and share its sanitized report.",
-  caller_not_browser: "LocalGateKeys only accepts requests from a native host started by a signed browser. Restart the browser; if this repeats, repair the bridge from Connections in LocalGateKeys.",
-  rate_limited: "Too many password checks from this site in a short time. Wait a minute and try again.",
-  unauthorized: "The bridge token no longer matches the app. Exit LocalGateKeys fully, restart the repository copy, and reload this page.",
-  version_mismatch: "Update/reload the extension and restart LocalGateKeys. Their versions do not match.",
-  client_not_allowed: "LocalGateKeys rejected the native-host identity. Exit the app, run scripts/repair_browser_bridge.ps1 from the repository, then restart LocalGateKeys.",
-  session_changed: "The vault locked, the profile changed, or this request expired. Click the icon again.",
-  integration_disabled: "Browser integration is paused in LocalGateKeys.",
-  not_found: "No permitted saved login for this exact website. Save a login or check its fill policy.",
-  destination_changed: "The page or active tab changed. Click the icon again on the intended login form.",
-  busy: "Finish the open LocalGateKeys prompt first.",
-  identity_not_found: "No identity profile is available in this profile.",
-  invalid_identity_fields: "Choose only the reviewed contact or address fields.",
-  user_cancelled: "Identity fill was cancelled before any field was released.",
-  user_gesture_required: "Start this action from the extension or an in-page LocalGateKeys button.",
-  gesture_nonce_invalid: "The click expired or belongs to another page. Click again.",
-  gesture_nonce_required: "Update the browser extension: this action needs a fresh gesture nonce.",
-  origin_mismatch: "The page origin changed. Start identity fill again on the intended page.",
-  invalid_request: "The identity request was rejected because its page context changed.",
-  invalid_approval: "The identity approval is invalid or expired. Start again.",
-  card_not_found: "No payment card is saved in this profile.",
-  invalid_card_fields: "Choose only the reviewed card fields.",
-  totp_not_found: "No saved login for this exact site has a 2FA setup key.",
-  unsupported_request: "This extension action is not supported by the current bridge.",
+  get agent_offline() { return tr("bg_err_agent_offline"); },
+  get agent_state_missing() { return tr("bg_err_agent_state_missing"); },
+  get agent_state_invalid() { return tr("bg_err_agent_state_invalid"); },
+  get agent_access_denied() { return tr("bg_err_agent_access_denied"); },
+  get agent_unavailable() { return tr("bg_err_agent_unavailable"); },
+  get agent_busy() { return tr("bg_err_agent_busy"); },
+  get agent_connection_lost() { return tr("bg_err_agent_connection_lost"); },
+  get agent_connection_changed() { return tr("bg_err_agent_connection_changed"); },
+  get bridge_dependencies_missing() { return tr("bg_err_bridge_dependencies_missing"); },
+  get bridge_protocol_error() { return tr("bg_err_bridge_protocol_error"); },
+  get bridge_internal_error() { return tr("bg_err_bridge_internal_error"); },
+  get caller_not_browser() { return tr("bg_err_caller_not_browser"); },
+  get rate_limited() { return tr("bg_err_rate_limited"); },
+  get unauthorized() { return tr("bg_err_unauthorized"); },
+  get version_mismatch() { return tr("bg_err_version_mismatch"); },
+  get client_not_allowed() { return tr("bg_err_client_not_allowed"); },
+  get session_changed() { return tr("bg_err_session_changed"); },
+  get integration_disabled() { return tr("bg_err_integration_disabled"); },
+  get not_found() { return tr("bg_err_not_found"); },
+  get destination_changed() { return tr("bg_err_destination_changed"); },
+  get busy() { return tr("bg_err_busy"); },
+  get identity_not_found() { return tr("bg_err_identity_not_found"); },
+  get invalid_identity_fields() { return tr("bg_err_invalid_identity_fields"); },
+  get user_cancelled() { return tr("bg_err_user_cancelled"); },
+  get user_gesture_required() { return tr("bg_err_user_gesture_required"); },
+  get gesture_nonce_invalid() { return tr("bg_err_gesture_nonce_invalid"); },
+  get gesture_nonce_required() { return tr("bg_err_gesture_nonce_required"); },
+  get origin_mismatch() { return tr("bg_err_origin_mismatch"); },
+  get invalid_request() { return tr("bg_err_invalid_request"); },
+  get invalid_approval() { return tr("bg_err_invalid_approval"); },
+  get card_not_found() { return tr("bg_err_card_not_found"); },
+  get invalid_card_fields() { return tr("bg_err_invalid_card_fields"); },
+  get totp_not_found() { return tr("bg_err_totp_not_found"); },
+  get unsupported_request() { return tr("bg_err_unsupported_request"); },
 };
 function itemLimitMessage(limit) {
   const count = Number.isInteger(limit) && limit > 0 ? limit : 4;
-  return `Your free LocalGateKeys holds ${count} items. Upgrade to Pro for unlimited.`;
+  return tr("content_item_limit", count);
 }
 function hostError(message) {
-  if (/not found/i.test(message)) return "Native host is not registered. Repair the browser connection from LocalGateKeys.";
-  if (/forbidden/i.test(message)) return "Extension ID is not allowed by the native-host registration. Repair the bridge.";
-  if (/exited/i.test(message)) return "The native host stopped unexpectedly. Open Connections in LocalGateKeys for diagnostics.";
-  return "Browser connection failed. Open Connections in LocalGateKeys.";
+  if (/not found/i.test(message)) return tr("bg_host_not_registered");
+  if (/forbidden/i.test(message)) return tr("bg_host_forbidden");
+  if (/exited/i.test(message)) return tr("bg_host_exited");
+  return tr("bg_host_failed");
 }
 function nativeRequest(payload) {
   return new Promise((resolve) => {
@@ -94,7 +94,7 @@ function nativeRequest(payload) {
       "begin_card_browser","approve_card_browser","release_card_browser","begin_totp_browser","get_totp_browser",
       "passkey_create_browser","passkey_get_browser"].includes(payload.action);
     const timeoutMs = interactive ? 90000 : 15000;
-    const timer = setTimeout(() => finish({ok:false,error:"timeout",message:"The LocalGateKeys bridge did not respond. Close any stale desktop prompt and try again."}), timeoutMs);
+    const timer = setTimeout(() => finish({ok:false,error:"timeout",message:tr("bg_timeout")}), timeoutMs);
     // Promise form only (Chrome MV3 and Firefox both reject with the lastError text).
     Promise.resolve()
       .then(() => api.runtime.sendNativeMessage(HOST_NAME, {...payload, protocol:PROTOCOL, extension_version:EXTENSION_VERSION}))

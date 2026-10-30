@@ -6,6 +6,21 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>LocalGateKeys</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>LocalGateKeys shared item</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>$(BUNDLE_PREFIX).lgkshare</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -17,9 +32,9 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
-	<string>7</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LGKAppGroup</key>
 	<string>$(LGK_APP_GROUP)</string>
 	<key>LGKAppKeychainGroup</key>
@@ -28,6 +43,8 @@
 	<string>$(LGK_KEYCHAIN_GROUP)</string>
 	<key>LGKSafariKeychainGroup</key>
 	<string>$(LGK_SAFARI_KEYCHAIN_GROUP)</string>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<false/>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_lgksync._tcp</string>
@@ -38,7 +55,36 @@
 	<string>Unlock your vault with Face ID.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Sync with the PC you paired, over your home Wi-Fi.</string>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>ASCredentialExchangeActivity</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.content</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>LocalGateKeys shared item</string>
+			<key>UTTypeIdentifier</key>
+			<string>$(BUNDLE_PREFIX).lgkshare</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>lgkshare</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/vnd.localgatekeys.share+json</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
 </dict>
 </plist>

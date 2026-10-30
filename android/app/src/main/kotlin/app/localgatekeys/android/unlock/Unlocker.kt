@@ -1,6 +1,10 @@
 package app.localgatekeys.android.unlock
 
 import app.localgatekeys.android.settings.AppSettings
+import app.localgatekeys.android.vault.AppPasswordLock
+import app.localgatekeys.android.vault.AppPasswordRequiredException
+import app.localgatekeys.android.vault.BiometricChangedException
+import app.localgatekeys.android.vault.VaultKeyException
 import app.localgatekeys.android.vault.LocalStore
 import app.localgatekeys.android.vault.LocalStoreException
 import app.localgatekeys.android.vault.SecretSlots
@@ -52,6 +56,9 @@ interface Unlocker {
     /** Shows the prompt titled [reason] and opens the vault; throws when it cannot (see [AppLockModel.message]). */
     suspend fun unlock(reason: String): UnlockedVault
 
+    /** Task 7: unlock with [credential] (the app password or the recovery phrase); System is [unlock]. */
+    suspend fun unlock(reason: String, credential: UnlockCredential): UnlockedVault = unlock(reason)
+
     /**
      * The app locked: dismisses a prompt that is showing and shuts every vault this unlocker opened, without
      * blocking the calling (main) thread. The next unlock asks again.
@@ -69,6 +76,21 @@ data class VaultDirs(val vault: File, val wrappedKey: File, val secrets: File) {
     }
 }
 
+/**
+ * How an unlock proves the owner. [System]: today's prompt, or the biometric shortcut when the app password is on.
+ * [Password] and [Recovery] carry NFC UTF-8 bytes the opener zeroes when it is done.
+ */
+sealed class UnlockCredential {
+    object System : UnlockCredential()
+    class Password(val bytes: ByteArray) : UnlockCredential() {
+        override fun toString() = "Password"
+    }
+    /** The 24 words and the new app password to set. */
+    class Recovery(val phrase: String, val newPassword: ByteArray) : UnlockCredential() {
+        override fun toString() = "Recovery"
+    }
+}
+
 /** The prompt failed or was dismissed. [code] is a `BiometricPrompt.ERROR_*` value. */
 class AuthenticationException(val code: Int, message: String = "authentication error $code") : Exception(message)
 
@@ -80,6 +102,12 @@ interface Authenticator {
      * [AuthenticationException] when dismissed or failed.
      */
     suspend fun authenticate(reason: String, cipher: Cipher?): Cipher?
+
+    /**
+     * Task 7: a strong-biometric-only prompt for the app-password shortcut (no screen lock), always with a [cipher];
+     * its cancel button reads "Use app password". Fakes default to [authenticate].
+     */
+    suspend fun authenticateBiometric(reason: String, cipher: Cipher): Cipher? = authenticate(reason, cipher)
 
     /** Dismisses a prompt that is showing (the app locked meanwhile). */
     fun cancel()
@@ -105,15 +133,92 @@ class VaultOpener(
     private val random: RandomSource,
     private val settings: AppSettings?,
     private val cryptoBound: Boolean,
+    /** Task 7: the optional app password. Null or off: today's unlock, unchanged. */
+    private val appPassword: AppPasswordLock? = null,
 ) {
-    suspend fun open(authenticate: suspend (Cipher?) -> Cipher?): UnlockedVault {
-        val action = withContext(Dispatchers.IO) { LocalStore.bootstrap(dirs.vault, dirs.wrappedKey.exists()) }
-        return when (action) {
-            LocalStore.Companion.BootstrapAction.VAULT_WITHOUT_KEY ->
-                throw LocalStoreException(LocalStoreException.Kind.VAULT_WITHOUT_KEY)
-            LocalStore.Companion.BootstrapAction.FIRST_RUN -> firstRun(authenticate)
-            LocalStore.Companion.BootstrapAction.OPEN -> openExisting(authenticate)
+    suspend fun open(
+        authenticate: suspend (Cipher?) -> Cipher?,
+        credential: UnlockCredential = UnlockCredential.System,
+        authenticateBiometric: suspend (Cipher) -> Cipher? = authenticate,
+    ): UnlockedVault {
+        try {
+            val (action, passwordOn) = withContext(Dispatchers.IO) {
+                val on = appPassword?.isOn() == true
+                LocalStore.bootstrap(dirs.vault, dirs.wrappedKey.exists() || on) to on
+            }
+            return when (action) {
+                LocalStore.Companion.BootstrapAction.VAULT_WITHOUT_KEY ->
+                    throw LocalStoreException(LocalStoreException.Kind.VAULT_WITHOUT_KEY)
+                LocalStore.Companion.BootstrapAction.FIRST_RUN -> {
+                    if (credential != UnlockCredential.System) throw AppPasswordRequiredException()
+                    firstRun(authenticate)
+                }
+                LocalStore.Companion.BootstrapAction.OPEN ->
+                    if (passwordOn) openWithAppPassword(appPassword!!, credential, authenticateBiometric)
+                    else if (credential != UnlockCredential.System) throw IllegalStateException("the app password is off")
+                    else openExisting(authenticate)
+            }
+        } finally {
+            when (credential) {
+                is UnlockCredential.Password -> credential.bytes.fill(0)
+                is UnlockCredential.Recovery -> credential.newPassword.fill(0)
+                UnlockCredential.System -> {}
+            }
         }
+    }
+
+    /**
+     * Password mode: the password, the phrase (which also sets the new password) or the biometric-only shortcut.
+     * A passcode-capable key left from an interrupted turn-on is deleted once the vault opened.
+     */
+    private suspend fun openWithAppPassword(
+        lock: AppPasswordLock,
+        credential: UnlockCredential,
+        authenticateBiometric: suspend (Cipher) -> Cipher?,
+    ): UnlockedVault {
+        val localKey: ByteArray = when (credential) {
+            is UnlockCredential.Password -> withContext(Dispatchers.IO) { lock.unwrapPassword(credential.bytes) }
+            is UnlockCredential.Recovery -> withContext(Dispatchers.IO) {
+                val k = lock.unwrapPhrase(credential.phrase)
+                try {
+                    lock.write(lock.record().withNewPassword(k, credential.newPassword, random))
+                } catch (e: Exception) {
+                    k.fill(0)
+                    throw e
+                }
+                k
+            }
+            UnlockCredential.System -> {
+                if (!withContext(Dispatchers.IO) { lock.biometricOn() }) throw AppPasswordRequiredException()
+                val (wrapped, cipher) = withContext(Dispatchers.IO) { biometric(lock) { lock.bioCipherForUnwrap() } }
+                val authorised = authenticateBiometric(cipher) ?: cipher
+                withContext(Dispatchers.IO) { biometric(lock) { lock.bioKey.unwrap(wrapped, authorised) } }
+            }
+        }
+        try {
+            return withContext(Dispatchers.IO) {
+                try {
+                    if (dirs.wrappedKey.exists()) dirs.wrappedKey.delete()
+                    if (vaultKey.exists()) vaultKey.delete()
+                } catch (e: Exception) {
+                    // retried at the next unlock; the password file decides the mode
+                }
+                openWith(localKey)
+            }
+        } finally {
+            localKey.fill(0)
+        }
+    }
+
+    /** An invalidated biometric key (new fingerprint or face): remove the shortcut and ask for the password. */
+    private inline fun <T> biometric(lock: AppPasswordLock, block: () -> T): T = try {
+        block()
+    } catch (e: VaultKeyException) {
+        if (e.kind == VaultKeyException.Kind.INVALIDATED || e.kind == VaultKeyException.Kind.MISSING) {
+            try { lock.removeBiometric() } catch (x: Exception) {}
+            throw BiometricChangedException()
+        }
+        throw e
     }
 
     private suspend fun firstRun(authenticate: suspend (Cipher?) -> Cipher?): UnlockedVault {
@@ -220,8 +325,14 @@ class VaultUnlocker(
     private val open = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<UnlockedVault, Boolean>())
     private val closer = CoroutineScope(SupervisorJob() + closeContext)
 
-    override suspend fun unlock(reason: String): UnlockedVault {
-        val v = opener.open { cipher -> authenticator.authenticate(reason, cipher) }
+    override suspend fun unlock(reason: String): UnlockedVault = unlock(reason, UnlockCredential.System)
+
+    override suspend fun unlock(reason: String, credential: UnlockCredential): UnlockedVault {
+        val v = opener.open(
+            authenticate = { cipher -> authenticator.authenticate(reason, cipher) },
+            credential = credential,
+            authenticateBiometric = { cipher -> authenticator.authenticateBiometric(reason, cipher) },
+        )
         synchronized(open) { open.add(v) }
         return v
     }

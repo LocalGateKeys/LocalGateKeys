@@ -18,7 +18,7 @@ struct UpgradeView: View {
                     header
                     CapacityStrip(used: itemsUsed, isPro: pro.isPro)
                     benefits
-                    Text("Sync with your PC needs Pro on the PC as well.")
+                    Text("Also unlocks Windows: pair your PC.")
                         .font(.footnote).foregroundStyle(Palette.secondaryText)
                         .multilineTextAlignment(.center)
                 }
@@ -39,20 +39,20 @@ struct UpgradeView: View {
                 .shadow(color: Palette.glowBlue.opacity(0.45), radius: 24, y: 8)
                 .accessibilityHidden(true)
             Text("LocalGateKeys Pro").font(.largeTitle.bold()).foregroundStyle(Palette.text)
-            Text(pro.isPro ? "Everything is unlocked on this iPhone."
-                           : "Pay once for unlimited items and two\u{2011}factor codes.")
+            Text(pro.isPro ? String(localized: "Everything is unlocked on this iPhone.")
+                           : String(localized: "Pay once for unlimited items and two\u{2011}factor codes."))
                 .font(.title3).foregroundStyle(Palette.secondaryText).multilineTextAlignment(.center)
         }
     }
 
     private var benefits: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Benefit(symbol: "square.stack.3d.up.fill", title: "Unlimited items",
-                    detail: "Logins, cards, notes and everything else, past the free \(ItemLimit.freeItems).")
-            Benefit(symbol: "number.square.fill", title: "Two-factor codes",
-                    detail: "Add and change 2FA codes. Codes you already saved keep working without Pro.")
-            Benefit(symbol: "checkmark.seal.fill", title: "One payment",
-                    detail: "No subscription and no account. Restore it on another iPhone with the same Apple Account.")
+            Benefit(symbol: "square.stack.3d.up.fill", title: String(localized: "Unlimited items"),
+                    detail: String(localized: "Logins, cards, notes and everything else, past the free \(ItemLimit.freeItems)."))
+            Benefit(symbol: "number.square.fill", title: String(localized: "Two-factor codes"),
+                    detail: String(localized: "Add and change 2FA codes. Codes you already saved keep working without Pro."))
+            Benefit(symbol: "checkmark.seal.fill", title: String(localized: "One payment"),
+                    detail: String(localized: "No subscription and no account. Restore it on another iPhone with the same Apple Account."))
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -70,12 +70,12 @@ struct UpgradeView: View {
                     Task { await pro.buy(); if pro.isPro { dismiss() } }
                 } label: {
                     Group {
-                        if pro.busy { ProgressView().tint(.white) }
-                        else { Text(pro.price.map { "Buy for \($0)" } ?? "Buy Pro") }
+                        if pro.busy { ProgressView().tint(Palette.onAccent) }
+                        else { Text(pro.price.map { String(localized: "Buy for \($0)") } ?? String(localized: "Buy Pro")) }
                     }
                     .font(.headline).frame(maxWidth: .infinity, minHeight: 52)
                 }
-                .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).tint(Palette.accent)
+                .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).tint(Palette.accent).foregroundStyle(Palette.onAccent)
                 .disabled(pro.busy || !pro.canBuy)
                 Text("One-time purchase, no subscription.")
                     .font(.footnote).foregroundStyle(Palette.secondaryText)
@@ -153,8 +153,8 @@ private struct CapacityStrip: View {
     private func filled(_ slot: Int) -> Bool { isPro || slot < min(used ?? 0, ItemLimit.freeItems) }
 
     private var caption: String {
-        if isPro { return "No limit on items" }
-        guard let used else { return "Free: \(ItemLimit.freeItems) items. Pro: no limit." }
-        return "\(min(used, ItemLimit.freeItems)) of \(ItemLimit.freeItems) free items used. Pro: no limit."
+        if isPro { return String(localized: "No limit on items") }
+        guard let used else { return String(localized: "Free: \(ItemLimit.freeItems) items. Pro: no limit.") }
+        return String(localized: "\(min(used, ItemLimit.freeItems)) of \(ItemLimit.freeItems) free items used. Pro: no limit.")
     }
 }

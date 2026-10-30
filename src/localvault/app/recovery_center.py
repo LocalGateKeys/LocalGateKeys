@@ -37,6 +37,7 @@ from ..vault import (
     VaultSession,
     unlock_with_recovery_phrase,
 )
+from ..i18n import t
 
 
 def summarize_recovery(result: Mapping[str, Any] | BackupInventory) -> dict[str, Any]:
@@ -46,7 +47,7 @@ def summarize_recovery(result: Mapping[str, Any] | BackupInventory) -> dict[str,
     elif isinstance(result, Mapping):
         raw = dict(result)
     else:
-        raise RecoveryError("Recovery result is malformed")
+        raise RecoveryError(t("recoveryCenter.recoveryResultIsMalformed"))
     allowed = {
         "operation", "path", "source", "destination", "profile_name", "version", "entries",
         "attachments", "attachment_count", "attachment_bytes", "backup_bytes", "backup_sha256",
@@ -59,7 +60,7 @@ def summarize_recovery(result: Mapping[str, Any] | BackupInventory) -> dict[str,
     if "warnings" in safe:
         warnings = safe["warnings"]
         if not isinstance(warnings, (list, tuple)) or not all(isinstance(value, str) for value in warnings):
-            raise RecoveryError("Recovery warnings are malformed")
+            raise RecoveryError(t("recoveryCenter.recoveryWarningsAreMalformed"))
         safe["warnings"] = list(warnings)
     # Passwords and vault payloads are intentionally not copied even if a
     # caller passes an over-rich result mapping.
@@ -73,18 +74,14 @@ def recovery_phrase_change_warnings(change: Mapping[str, Any]) -> list[str]:
     """Plain-language notes after a recovery phrase was replaced (a data-key rotation)."""
     if change.get("operation") not in {"replace", "remove"}:
         return []
-    notes = ["The previous recovery phrase no longer opens this vault. Backup files you exported or copied "
-             "elsewhere earlier still open with the old phrase or the master password of that time: delete "
-             "them if the old phrase may be known to someone else."]
+    notes = [t("recoveryCenter.thePreviousRecoveryPhraseNo")]
     reenroll = [name for name in change.get("reenroll_required", ()) if name in {"hello", "face"}]
     if reenroll:
-        names = " and ".join({"hello": "Windows Hello", "face": "camera verification"}[name] for name in reenroll)
-        notes.append(f"Set up {names} again; the vault was re-encrypted under a new key.")
+        names = t("common.listAnd").join({"hello": t("settings.hello.title"), "face": t("recoveryCenter.cameraVerification")}[name] for name in reenroll)
+        notes.append(t("recoveryCenter.setUpAgainTheVault", names=names))
     retained = int(change.get("retained_old_copies", 0) or 0)
     if retained:
-        notes.append(f"{retained} older safety cop{'y' if retained == 1 else 'ies'} (before a restore or a format "
-                     "upgrade) in this profile's Backups folder still open with the old phrase or password. "
-                     "Delete them if you no longer need them.")
+        notes.append(t("recoveryCenter.olderSafetyCopies", count=retained))
     return notes
 
 
@@ -100,7 +97,7 @@ class RecoveryPhraseChallenge:
     def __init__(self, phrase: str, *, count: int = WORDS_TO_CONFIRM) -> None:
         words = phrase.split() if isinstance(phrase, str) else []
         if len(words) != 24:
-            raise RecoveryError("A recovery phrase has exactly 24 words")
+            raise RecoveryError(t("recoveryCenter.aRecoveryPhraseHasExactly"))
         remaining = list(range(1, len(words) + 1))
         picks: list[int] = []
         for _ in range(max(1, min(int(count), len(words)))):
@@ -185,7 +182,7 @@ class RecoveryCenter:
                  save_current: Callable[[], Any] | None = None,
                  can_create: bool = True) -> None:
         if controller is None and service is None:
-            raise RecoveryError("A recovery controller or service is required")
+            raise RecoveryError(t("recoveryCenter.aRecoveryControllerOrService"))
         self.controller = controller
         self.service = service or controller.service  # type: ignore[union-attr]
         # ``GuidedRecoveryDrill`` is imported by the application layer to
@@ -206,16 +203,16 @@ class RecoveryCenter:
         path = Path(source)
         try:
             if path.is_symlink() or not path.is_file():
-                raise RecoveryError("Select a regular backup file")
+                raise RecoveryError(t("recoveryCenter.selectARegularBackupFile"))
             with path.open("rb") as handle:
                 prefix = handle.read(4)
         except OSError as exc:
-            raise RecoveryError("Could not read the selected backup") from exc
+            raise RecoveryError(t("recoveryCenter.couldNotReadTheSelected")) from exc
         if prefix.startswith(b"PK\x03\x04"):
             return "full"
         if prefix.startswith(b"{") or prefix.startswith(b"\xef\xbb\xbf{"):
             return "catalog"
-        raise RecoveryError("This file is not a supported LocalGateKeys backup")
+        raise RecoveryError(t("recoveryCenter.thisFileIsNotA"))
 
     def _require_current(self) -> None:
         if self.current_check is not None:
@@ -225,7 +222,7 @@ class RecoveryCenter:
 
     def _require_create(self) -> None:
         if not self.can_create:
-            raise RecoveryError("Unlock this profile to create a backup")
+            raise RecoveryError(t("recoveryCenter.unlockThisProfileToCreate"))
         self._require_current()
 
     def _save_current(self) -> None:
@@ -236,7 +233,7 @@ class RecoveryCenter:
 
     def allocate_restore_profile(self, name: str) -> ProfileRecord:
         if self.profiles is None:
-            raise RecoveryError("Profile storage is unavailable")
+            raise RecoveryError(t("recoveryCenter.profileStorageIsUnavailable"))
         try:
             return self.profiles.allocate_restore_profile(name)
         except ProfileError as exc:
@@ -244,7 +241,7 @@ class RecoveryCenter:
 
     def _restore_path(self, record: ProfileRecord) -> Path:
         if self.profiles is None:
-            raise RecoveryError("Profile storage is unavailable")
+            raise RecoveryError(t("recoveryCenter.profileStorageIsUnavailable"))
         try:
             return self.profiles.restore_profile_path(record)
         except ProfileError as exc:
@@ -252,7 +249,7 @@ class RecoveryCenter:
 
     def _register_restored_profile(self, record: ProfileRecord, destination: Path) -> None:
         if self.profiles is None:
-            raise RecoveryError("Profile storage is unavailable")
+            raise RecoveryError(t("recoveryCenter.profileStorageIsUnavailable"))
         # A successfully published directory is deliberately kept if the
         # session changed or the index write fails; it remains recoverable.
         try:
@@ -260,9 +257,7 @@ class RecoveryCenter:
             self.profiles.register_restored_profile(record)
         except Exception as exc:
             raise RecoveryError(
-                f"The backup was restored, but {BRAND_NAME} could not add {record.name} to your profiles. "
-                f"Your restored data is still saved at {destination}. Resolve the profile-list issue and "
-                "contact support if it continues."
+                t("recoveryCenter.theBackupWasRestoredBut", brand=BRAND_NAME, name=record.name, destination=destination)
             ) from exc
 
     def status(self) -> dict[str, Any]:
@@ -271,7 +266,7 @@ class RecoveryCenter:
     # -- recovery phrase ------------------------------------------------------
     def _session(self) -> Any:
         if self.controller is None:
-            raise RecoveryError("Unlock this profile to manage its recovery phrase")
+            raise RecoveryError(t("recoveryCenter.unlockThisProfileToManage"))
         return self.controller.binding.current()
 
     def recovery_phrase_status(self) -> dict[str, Any]:
@@ -292,7 +287,7 @@ class RecoveryCenter:
         """
         session = self._session()
         if is_blank_secret(vault_password):
-            raise RecoveryError("Enter the vault password")
+            raise RecoveryError(t("recoveryCenter.enterTheVaultPassword"))
         try:
             record_id = session.hello_binding()
             phrase = session.create_recovery_phrase(vault_password)
@@ -354,17 +349,17 @@ class RecoveryCenter:
         if record is not None:
             destination = self._restore_path(record)
         if destination is None:
-            raise RecoveryError("Choose a profile for the restore")
+            raise RecoveryError(t("recoveryCenter.chooseAProfileForThe"))
         backup_kind = self.backup_format(source)
         if backup_kind == "catalog":
             source_path = Path(source)
             digest = sha256_file(source_path)
             expected = kwargs.pop("expected_sha256", None)
             if expected is not None and digest != expected:
-                raise RecoveryError("This backup changed after it was selected. Select it again to preview a new restore.")
+                raise RecoveryError(t("recoveryCenter.thisBackupChangedAfterIt"))
             info = verify_encrypted_backup(source_path, **kwargs)
             if sha256_file(source_path) != digest:
-                raise RecoveryError("This backup changed while it was being checked. Select it again to preview a new restore.")
+                raise RecoveryError(t("recoveryCenter.thisBackupChangedWhileIt"))
             result = {
                 "operation": "restore", "source": str(source_path.absolute()),
                 "destination": str(Path(destination).absolute()), "backup_sha256": digest,
@@ -383,7 +378,7 @@ class RecoveryCenter:
                 result["profile_name"] = record.name
         expected_digest = result.get("backup_sha256")
         if isinstance(expected_digest, str) and sha256_file(source) != expected_digest:
-            raise RecoveryError("This backup changed while it was being checked. Select it again to preview a new restore.")
+            raise RecoveryError(t("recoveryCenter.thisBackupChangedWhileIt"))
         self._require_current()
         self.last_result = summarize_recovery(result)
         return self.last_result
@@ -402,9 +397,9 @@ class RecoveryCenter:
             return self.preview_restore(source, destination, profile_record=record, **kwargs)
         expected_sha256 = kwargs.get("expected_sha256")
         if not isinstance(expected_sha256, str):
-            raise RecoveryError("Restore confirmation is out of date. Preview the backup again.")
+            raise RecoveryError(t("recoveryCenter.restoreConfirmationIsOutOf"))
         if sha256_file(source) != expected_sha256:
-            raise RecoveryError("This backup changed after preview. Nothing was restored; preview it again.")
+            raise RecoveryError(t("recoveryCenter.thisBackupChangedAfterPreview"))
         # The UI has consumed its confirmation; forward it to the core service
         # as well as retaining the fingerprint for its independent validation.
         kwargs["confirm"] = True
@@ -412,10 +407,10 @@ class RecoveryCenter:
         if record is not None:
             destination = self._restore_path(record)
         if destination is None:
-            raise RecoveryError("Choose a profile for the restore")
+            raise RecoveryError(t("recoveryCenter.chooseAProfileForThe"))
         destination = Path(destination)
         if record is None and destination.exists():
-            raise RecoveryError("Restore destination must not already exist")
+            raise RecoveryError(t("recoveryCenter.restoreDestinationMustNotAlready"))
 
         # Restore from a private snapshot, so the bytes authenticated at preview
         # are the same bytes consumed by the mutating restore operation.
@@ -435,7 +430,7 @@ class RecoveryCenter:
                 except (BackupError, OSError, ValueError) as exc:
                     if record is not None and destination.exists():
                         raise RecoveryError(
-                            f"Restore did not finish. Any encrypted data left at {destination} is kept for recovery."
+                            t("recoveryCenter.restoreDidNotFinishAny", destination=destination)
                         ) from exc
                     raise
                 result = {**result, "operation": "restore", "destination": str(destination),
@@ -448,8 +443,7 @@ class RecoveryCenter:
                 except Exception as exc:
                     if record is not None and destination.exists():
                         raise RecoveryError(
-                            f"The backup data was restored, but it could not be added to your profiles. "
-                            f"Your data is still saved at {destination}."
+                            t("recoveryCenter.theBackupDataWasRestored", destination=destination)
                         ) from exc
                     raise
         result = {**result, "source": str(Path(source).absolute())}
@@ -465,28 +459,28 @@ class RecoveryCenter:
                               backup_password_confirmation: str | SecretText,
                               vault_password: str | SecretText) -> dict[str, Any]:
         if self.profiles is None:
-            raise RecoveryError("Profile storage is unavailable")
+            raise RecoveryError(t("recoveryCenter.profileStorageIsUnavailable"))
         if not secrets_match(backup_password, backup_password_confirmation):
-            raise RecoveryError("Backup passwords do not match")
+            raise RecoveryError(t("recoveryCenter.backupPasswordsDoNotMatch"))
         if secrets_match(backup_password, vault_password):
-            raise RecoveryError("Choose a backup password different from your vault password")
+            raise RecoveryError(t("recoveryCenter.chooseABackupPasswordDifferent"))
         length = (backup_password.char_count if isinstance(backup_password, SecretText)
                   else len(backup_password) if isinstance(backup_password, str) else 0)
         if length < 12:
-            raise RecoveryError("Backup password must contain at least 12 characters")
+            raise RecoveryError(t("recoveryCenter.backupPasswordMustContainAt"))
         self._save_current()
         active = next((item for item in self.profiles.list_profiles()
                        if item.id == self.active_profile_id), None)
         if active is None:
             active = self.profiles.active_profile()
         if active is None:
-            raise RecoveryError("There is no profile to back up")
+            raise RecoveryError(t("recoveryCenter.thereIsNoProfileTo"))
         try:
             profile_dir = self.profiles.restore_profile_path(active, require_absent=False)
         except ProfileError as exc:
             raise RecoveryError(str(exc)) from exc
         if not profile_dir.is_dir():
-            raise RecoveryError("The profile to back up is unavailable")
+            raise RecoveryError(t("recoveryCenter.theProfileToBackUp"))
         from ..vault import unlock_vault
         checked_session = unlock_vault(profile_dir / "vault.json", vault_password)
         try:
@@ -514,7 +508,7 @@ class RecoveryCenter:
 
     def verify_restored_catalog(self, trial_profile: Path | str, **kwargs: Any) -> dict[str, Any]:
         if self.drill is None:
-            raise RecoveryError("The guided recovery drill is not configured")
+            raise RecoveryError(t("recoveryCenter.theGuidedRecoveryDrillIs"))
         result = self.drill.verify_restored_catalog(trial_profile, **kwargs)
         self.last_result = summarize_recovery(result)
         return self.last_result
@@ -546,7 +540,7 @@ def _backup_snapshot(source: Path, destination_parent: Path, expected_sha256: st
                 shutil.copyfileobj(original, copy)
             if sha256_file(snapshot) != expected_sha256:
                 shutil.rmtree(scratch, ignore_errors=True)
-                raise RecoveryError("This backup changed while restore was starting. Nothing was restored.")
+                raise RecoveryError(t("recoveryCenter.thisBackupChangedWhileRestore"))
         except OSError as exc:
             last_error = exc
             if scratch is not None:
@@ -557,4 +551,4 @@ def _backup_snapshot(source: Path, destination_parent: Path, expected_sha256: st
         finally:
             shutil.rmtree(scratch, ignore_errors=True)
         return
-    raise RecoveryError("Could not prepare the selected backup") from last_error
+    raise RecoveryError(t("recoveryCenter.couldNotPrepareTheSelected")) from last_error

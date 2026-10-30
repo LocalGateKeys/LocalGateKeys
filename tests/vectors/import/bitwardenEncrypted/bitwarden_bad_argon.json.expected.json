@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Encrypted export Argon2 parameters are outside the supported range",
+    "type": "format"
+  },
+  "format": "bitwardenEncrypted",
+  "input": "tests/vectors/import/_inputs/bitwarden_bad_argon.json",
+  "password": "fixture export password",
+  "python_format": "bitwarden-encrypted-json"
+}

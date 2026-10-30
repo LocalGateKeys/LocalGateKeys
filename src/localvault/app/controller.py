@@ -22,6 +22,7 @@ from ..session_monitor import windows_idle_seconds
 from ..settings import AppSettings
 from ..unlock_policy import clear_master_unlock_requirement, master_unlock_required
 from .unlock_backoff import UnlockBackoff, backoff_seconds_from_error, locked_subtitle, profile_chips
+from ..i18n import t
 from ..vault import (
     InvalidMasterPassword,
     UnlockThrottled,
@@ -32,16 +33,11 @@ from ..vault import (
     unlock_vault,
 )
 
-LOCKED_STATUS = "Vault locked."
-RECOVERY_RESET_TITLE = "Vault re-encrypted with a new key"
-RECOVERY_RESET_TEXT = ("Your new master password is set and the vault was re-encrypted with a new key. The same "
-                       "recovery phrase still opens it. Windows Hello and camera verification were removed; set them "
-                       "up again in Settings if you use them. Old .lgk exports and backups keep their old contents "
-                       "under the old master password, so protect or replace them.")
-RECOVERY_PHRASE_LOST_TEXT = "Your previous recovery phrase no longer opens this vault. Create a new one in Recovery."
-RECOVERY_CLEANUP_TEXT = ("The vault has been re-encrypted and previous biometric unlock bindings are invalid. Some old "
-                         "encrypted local key material could not be removed. Older backup copies may still use their "
-                         "old key; keep those backups protected.")
+LOCKED_STATUS = "palette.vaultLocked"
+RECOVERY_RESET_TITLE = "controller.vaultReEncryptedWithA"
+RECOVERY_RESET_TEXT = ("controller.yourNewMasterPasswordIs")
+RECOVERY_PHRASE_LOST_TEXT = "controller.yourPreviousRecoveryPhraseNo"
+RECOVERY_CLEANUP_TEXT = ("controller.theVaultHasBeenRe")
 
 
 def _marker_stamp(profile_id: str) -> Any:
@@ -62,7 +58,7 @@ def _os_error_message(exc: OSError) -> str:
         error_log.log_exception("vault-file", exc)
     except Exception:  # noqa: BLE001, S110 - logging must not hide the real failure
         pass
-    return "LocalGateKeys could not read or write the vault file. Details are in the error log."
+    return t("controller.localgatekeysCouldNotReadOr")
 
 
 class _DaemonScheduler:
@@ -202,13 +198,13 @@ class WebController:
     def select_profile(self, profile_id: str) -> dict[str, Any]:
         with self._lock:
             if not any(p.id == profile_id for p in self.profiles.list_profiles()):
-                raise ApiError("not_found", "That profile no longer exists.")
+                raise ApiError("not_found", t("controller.thatProfileNoLongerExists"))
             hooks = self._lock_session() if self.is_unlocked() else []
             self.profiles.set_active(profile_id)
             self.guard.invalidate(profile_id)
             if self.handover:
                 self.handover = False
-                self.status = "Profile selected; vault is locked. Websites/apps are not signed out by LocalGateKeys."
+                self.status = t("controller.profileSelectedVaultIsLocked")
         self._run_hooks(hooks)
         return self._publish()
 
@@ -216,10 +212,10 @@ class WebController:
     def _begin(self) -> ProfileRecord:
         with self._lock:
             if self._unlocking:
-                raise ApiError("busy", "Unlock is already in progress.")
+                raise ApiError("busy", t("controller.unlockIsAlreadyInProgress"))
             profile = self._active()
             if profile is None:
-                raise ApiError("no_profile", "Choose a profile first.")
+                raise ApiError("no_profile", t("recovery.chooseAProfileFirst"))
             if self.guard.profile_id != profile.id:
                 # Profile created or switched outside select_profile (first run).
                 self.guard.invalidate(profile.id)
@@ -232,7 +228,7 @@ class WebController:
             active = self._active()
             if self.guard.stamp() != stamp or active is None or active.id != profile.id:
                 candidate.lock()
-                raise ApiError("session_changed", "The profile changed while unlocking. Try again.")
+                raise ApiError("session_changed", t("controller.theProfileChangedWhileUnlocking"))
             candidate.trash_retention_days = self.settings.trash_retention_days
             candidate.trash_auto_purge = self.settings.trash_auto_purge
             # The free plan's item limit is in place before the session is published;
@@ -254,10 +250,8 @@ class WebController:
         self._run_hooks(hooks)
         if getattr(candidate, "rollback_anchor_missing", False) is True:
             # The anti-rollback record was missing: say so (every unlock path finishes here).
-            self._bus.emit("notice", {"kind": "error", "title": "Rollback protection was reset", "message": (
-                "The vault's local rollback record was missing, so LocalGateKeys could not check that this is the "
-                "newest copy of the vault. A new record has been written. If you did not just restore or move this "
-                "vault, check that recent entries are present.")})
+            self._bus.emit("notice", {"kind": "error", "title": t("controller.rollbackProtectionWasReset"), "message": (
+                t("controller.theVaultSLocalRollback"))})
         return self._publish()
 
     def unlock(self, password: str | SecretText) -> dict[str, Any]:
@@ -267,7 +261,7 @@ class WebController:
             stamp = self.guard.stamp()
             path = self.profiles.vault_path(profile.id)
             if not path.exists():
-                raise ApiError("no_vault", "This profile has no vault yet. Create one first.")
+                raise ApiError("no_vault", t("controller.thisProfileHasNoVault"))
             try:
                 candidate = unlock_vault(path, password, backup_dir=self.profiles.backups_dir(profile.id),
                                          backup_count=self.settings.automatic_backup_count)
@@ -290,7 +284,7 @@ class WebController:
         try:
             stamp = self.guard.stamp()
             if not secrets_match(password, confirm):
-                raise ApiError("mismatch", "The master passwords do not match.")
+                raise ApiError("mismatch", t("controller.theMasterPasswordsDoNot"))
             try:
                 candidate = create_vault(self.profiles.vault_path(profile.id), password,
                                          backup_dir=self.profiles.backups_dir(profile.id),
@@ -313,8 +307,7 @@ class WebController:
         profile = self._begin()
         try:
             if master_unlock_required(profile.id):
-                raise ApiError("master_required", "Use your master password this time. Windows Hello and camera "
-                                                  "verification stay off until a master-password unlock.")
+                raise ApiError("master_required", t("unlockMethods.useYourMasterPasswordThis"))
             stamp = self.guard.stamp()
             path = self.profiles.vault_path(profile.id)
             try:
@@ -339,7 +332,7 @@ class WebController:
         from .recovery_center import recover_with_phrase
 
         if not secrets_match(new_password, confirm):
-            raise ApiError("mismatch", "The new passwords did not match.")
+            raise ApiError("mismatch", t("masterSheet.mismatch"))
         profile = self._begin()
         try:
             stamp = self.guard.stamp()
@@ -364,13 +357,13 @@ class WebController:
 
     def _recovery_notices(self, report: dict[str, Any]) -> None:
         if report.get("recovery_phrase_invalidated"):
-            self._bus.emit("notice", {"kind": "error", "title": "Create a new recovery phrase",
-                                      "message": RECOVERY_PHRASE_LOST_TEXT})
+            self._bus.emit("notice", {"kind": "error", "title": t("controller.createANewRecoveryPhrase"),
+                                      "message": t(RECOVERY_PHRASE_LOST_TEXT)})
         else:
-            self._bus.emit("notice", {"kind": "info", "title": RECOVERY_RESET_TITLE, "message": RECOVERY_RESET_TEXT})
+            self._bus.emit("notice", {"kind": "info", "title": t(RECOVERY_RESET_TITLE), "message": t(RECOVERY_RESET_TEXT)})
         if report and not report.get("unlock_cleanup_complete", True):
-            self._bus.emit("notice", {"kind": "error", "title": "Old local unlock cleanup incomplete",
-                                      "message": RECOVERY_CLEANUP_TEXT})
+            self._bus.emit("notice", {"kind": "error", "title": t("controller.oldLocalUnlockCleanupIncomplete"),
+                                      "message": t(RECOVERY_CLEANUP_TEXT)})
 
     # ------------------------------------------------------------------ lock
     def _lock_session(self) -> list[Callable[[], None]]:
@@ -399,7 +392,7 @@ class WebController:
         with self._lock:
             was_unlocked = self.is_unlocked()
             hooks = self._lock_session()
-            self.status = "" if reason == LOCKED_STATUS else str(reason)
+            self.status = "" if reason == LOCKED_STATUS else t(str(reason))
             if was_unlocked:
                 self.locked_at = time.time()
         self._run_hooks(hooks)
@@ -419,10 +412,10 @@ class WebController:
     def require_lease(self, lease: Any) -> None:
         self.guard.require(lease)
         if not self.is_unlocked():
-            raise StaleSession("Vault is locked")
+            raise StaleSession(t("controller.vaultIsLocked"))
         timeout = self.settings.auto_lock_seconds
         if timeout and self._idle_seconds() >= timeout:
-            raise StaleSession("Inactivity timeout reached")
+            raise StaleSession(t("controller.inactivityTimeoutReached"))
 
     def idle_lock_remaining(self) -> int | None:
         if not self.is_unlocked():
@@ -444,8 +437,8 @@ class WebController:
                 stale = False
             remaining = self.idle_lock_remaining()
         if stale:
-            reason = "maximum unlocked session" if self.guard.expired() else "inactivity timeout"
-            self.lock(f"Vault locked: {reason} reached.")
+            reason = t("controller.maximumUnlockedSession") if self.guard.expired() else t("controller.inactivityTimeout")
+            self.lock(t("controller.vaultLockedReached", reason=reason))
             return
         self._bus.emit("autolock.tick", {"remaining": remaining})
 

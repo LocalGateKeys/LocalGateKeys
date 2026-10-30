@@ -548,6 +548,9 @@ final class RecordingSink: CredentialRequestSink {
     func showPasskeys(_ rows: [PasskeyCandidate]) { passkeyLists.append(rows) }
     func completePasskey(_ assertion: PasskeyAssertion) { assertions.append(assertion) }
     func completeRegistration(_ registration: PasskeyRegistration) { registrations.append(registration) }
+    var textLists: [[TextInsertionField]] = [], texts: [String] = []
+    func showTextFields(_ fields: [TextInsertionField]) { textLists.append(fields) }
+    func completeText(_ text: String) { texts.append(text) }
 }
 
 @MainActor

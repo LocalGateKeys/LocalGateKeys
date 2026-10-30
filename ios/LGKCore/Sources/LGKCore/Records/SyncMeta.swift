@@ -239,7 +239,12 @@ public struct SyncMeta: Equatable, Sendable {
                 guard case .object(var r) = record else { throw RecordError(nil, nil, "malformed copy") }
                 let field = ns == .entry ? "label" : "title"
                 if case .string(let t)? = r[field] { r[field] = .string(ConflictSuffix.apply(t, limit: ConflictSuffix.limit)) }
-                let stored = Wrapper.make(ns: ns, record: .object(r))
+                var stored = Wrapper.make(ns: ns, record: .object(r))
+                // A document's copy keeps its file reference (the same file, a second item).
+                if case .object(let src)? = s.item, let attachment = src["attachment"], case .object(var w) = stored {
+                    w["attachment"] = attachment
+                    stored = .object(w)
+                }
                 records[s.itemID] = stored
                 applied += 1
                 meta[s.itemID] = try live(stored, vv: s.vv)

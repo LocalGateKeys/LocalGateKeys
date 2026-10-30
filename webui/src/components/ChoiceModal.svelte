@@ -1,5 +1,6 @@
 <script>
   /** Two prompt kinds from Python: pick one account ("choose"), or confirm with an optional "remember" box. */
+  import { t } from '../lib/i18n.svelte.js';
   import Button from './Button.svelte';
 
   let { request, onanswer, guardMs = 0 } = $props();
@@ -39,8 +40,8 @@
       <label class="remember"><input type="checkbox" bind:checked={remember} /> {request.remember_label}</label>
     {/if}
     <footer>
-      <Button label="Cancel" onclick={cancel} />
-      <Button label={choosing ? 'Use this account' : 'Fill'} variant="primary" disabled={!ready || (choosing && !picked)} onclick={accept} />
+      <Button label={t('common.cancel')} onclick={cancel} />
+      <Button label={choosing ? t('choiceModal.useAccount') : t('choiceModal.fill')} variant="primary" disabled={!ready || (choosing && !picked)} onclick={accept} />
     </footer>
   </div>
 </div>

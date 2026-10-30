@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>安全 | LocalGateKeys</title>
+  <meta name="description" content="LocalGateKeys 如何保护您的保管库，以及它无法防范什么。">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/zh-hans/security">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/security">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/security">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/security">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/security">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/security">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/security">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/security">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/security">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/security">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/security">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/security">
+  <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../brand/icon-256.png">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">跳到正文</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../zh-hans/index.html">
+        <img src="../brand/icon.svg" alt="" width="36" height="36">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav aria-label="主导航">
+        <ul class="nav">
+          <li><a href="../zh-hans/features.html">功能</a></li>
+          <li><a href="../zh-hans/pricing.html">价格</a></li>
+          <li><a href="../zh-hans/security.html" aria-current="page">安全</a></li>
+          <li><a href="../zh-hans/get-started.html">入门</a></li>
+          <li><a href="../zh-hans/help.html">指南</a></li>
+          <li><a href="../zh-hans/download.html">下载</a></li>
+          <li><a href="../zh-hans/support.html">支持</a></li>
+          <li><a href="../buy.html">购买 Pro</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>安全模型，通俗讲解</h1>
+  <p class="lead">LocalGateKeys 旨在保护什么，以及它无法保护什么。</p>
+</div>
+
+<div class="wrap page-body">
+  <div class="prose">
+    <h2>保管库如何加密</h2>
+    <p>一个随机的 256 位密钥用来加密保管库。该密钥从不按原样存储；每种解锁方式都会各自将其包裹（加密），因此更改密码不需要重新加密所有内容，从其他保管库复制来的包裹会被拒绝。</p>
+  </div>
+  <dl class="spec">
+    <dt>保管库加密</dt><dd>AES-256-GCM，每次保存都使用全新的随机 nonce</dd>
+    <dt>主密码</dt><dd>Argon2id，64 MiB 内存，3 轮，并行度 4，每个包裹使用随机盐值</dd>
+    <dt>恢复短语</dt><dd>可选的 24 词 BIP39 短语（256 位），通过 HKDF-SHA256 扩展</dd>
+    <dt>Windows Hello</dt><dd>包裹保管库密钥，绝不包裹主密码</dd>
+    <dt>备份和传输</dt><dd>Argon2id 和 AES-256-GCM，参数存储在经过认证的头部中</dd>
+    <dt>设备同步</dt><dd>一个随机的群组密钥，通过 X25519 和 HKDF-SHA256 交给每台设备；对于云文件夹，还会由您的同步密码通过 Argon2id 再次包裹；每条记录都用 AES-256-GCM 密封，并绑定到其项目、版本和密钥纪元；每个设备文件都绑定到写入它的设备</dd>
+    <dt>通行密钥</dt><dd>ES256 (P-256) 密钥保存在加密的保管库中；应用根据浏览器报告的来源构造签名数据，绝不根据页面构造</dd>
+    <dt>写入磁盘</dt><dd>先写临时文件，刷新，再原子替换，因此崩溃不会留下写了一半的保管库</dd>
+  </dl>
+
+  <div class="ledger">
+    <section aria-labelledby="protects">
+      <h2 id="protects">设计用于防范</h2>
+      <ul>
+        <li>复制了您的保管库文件或备份，但不知道主密码的人</li>
+        <li>网站获取为另一个网站保存的登录项或通行密钥</li>
+        <li>您电脑上的其他程序在没有会话密钥的情况下与 LocalGateKeys 通信，而该密钥只交给它自己的浏览器辅助程序</li>
+        <li>填充在绑定之后被替换、更新或更改的桌面应用</li>
+        <li>密码以未加密形式存放在磁盘上</li>
+        <li>表单在没有您参与的情况下被提交</li>
+        <li>您的云服务商读取已同步的数据：它只存储密文</li>
+      </ul>
+    </section>
+    <section class="not" aria-labelledby="not-protects">
+      <h2 id="not-protects">无法防范</h2>
+      <ul>
+        <li>已经在您电脑上运行的恶意软件，或任何拥有管理员控制权的人</li>
+        <li>被入侵的浏览器、Windows 系统或依赖项</li>
+        <li>您有意向其填入密码的网站</li>
+        <li>在保管库解锁期间使用您电脑的人</li>
+        <li>在显示攻击者控制内容的正规应用内部进行的网络钓鱼</li>
+        <li>在没有恢复短语的情况下，丢失了保管库、备份和主密码：任何人，包括我们，都无法打开它</li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="prose">
+    <h2>LocalGateKeys 绝不会做的事</h2>
+    <p>有些填充密码的方式与间谍软件无法区分，因此在设计上就被排除。LocalGateKeys 不包含：</p>
+    <ul>
+      <li>键盘钩子或按键记录</li>
+      <li>剪贴板监视</li>
+      <li>通过读取屏幕或 OCR 来查找凭据</li>
+      <li>扫描其他程序的内存</li>
+      <li>解密您浏览器中保存的密码数据库</li>
+      <li>向其他程序或游戏注入代码</li>
+      <li>提交并非由您发起的登录</li>
+    </ul>
+
+    <h2>坦诚谈网络</h2>
+    <p>没有 LocalGateKeys 账户，也没有保存保管库的服务器。应用只在以下情况下连接互联网：</p>
+    <ul>
+      <li><strong>更新检查。</strong>当您选择“检查更新”时，应用会下载一个小文件，并用内置于应用的密钥验证其签名。它绝不会自行下载或运行安装程序。</li>
+      <li><strong>许可证吊销列表。</strong>每次检查更新时，应用还会下载一份已退款许可证的签名列表，并在您的电脑上用它核对您的许可证。它不会发送任何有关您许可证的信息。</li>
+      <li><strong>网站图标。</strong>为了显示网站图标，应用会从该网站自己的地址下载。不会发送用户名、密码或保管库数据，但每次下载都会让该网站以及任何监视网络的人知道，您的保管库在那里有账户。此项默认关闭，只有在您于“设置”中开启“显示网站图标”时才会发生；严格离线模式会阻止它。</li>
+      <li><strong>泄露检查（如果您开启）。</strong>当您启动检查时，应用会把每个密码 SHA-1 哈希的前五个字符发送给 Have I Been Pwned。该服务能看到您的 IP 地址，但绝不会看到密码、完整哈希、用户名或网站。</li>
+      <li><strong>同步（如果您设置）。</strong>在家庭网络中，设备之间直接通信。通过云文件夹时，由您的云盘应用负责上传。</li>
+    </ul>
+    <p>严格离线模式默认开启。它会阻止后台互联网请求、网站图标和泄露检查，检查更新前会先询问您。<a href="../legal/privacy.html">隐私政策</a>准确列出了您检查更新时我们的服务器能看到什么。</p>
+
+    <h2>已知限制</h2>
+    <ul>
+      <li>主密码一进入应用就会被放入可擦除的缓冲区，并在需要它的操作结束时被擦除。您输入密码的页面运行在 Microsoft Edge WebView2 中，从该页面到应用的传递会产生一份短暂存在的副本；应用无法擦除这两份副本。</li>
+      <li>摄像头解锁只是便利性检查，并非经过认证的、能防范照片或面具的保护。Windows Hello 是更强的选择。</li>
+      <li>Windows 应用填充不适用于以管理员身份运行的程序、自绘的游戏界面，或无法验证的嵌入式网页视图。</li>
+      <li>保管库能检测到被回滚到较旧的副本。如果您使用同步，您的其他设备也会记住保管库有多新，因此同时删除保管库及其锚点文件会在下次同步时被发现（目前适用于 Windows 电脑；iPhone、Mac 和 Android 应用随后跟进）。没有同步时，能同时替换这两个文件的人仍可绕过这项检查。</li>
+      <li>通行密钥只在 Chrome 和 Edge 中可用，并且只针对页面本身：在另一网站框架内的登录使用浏览器自带的通行密钥对话框。如果您批准新通行密钥后网站取消了操作，该通行密钥可能仍留在您的保管库中；请在应用中删除它。</li>
+    </ul>
+
+    <h2>报告漏洞</h2>
+    <p>请发邮件到 <a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>。<a href="../legal/vulnerability-disclosure.html">漏洞披露政策</a>说明了适用范围、我们的响应速度，以及如何致谢研究人员。</p>
+  </div>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand">LocalGateKeys</p>
+        <p>一款 Windows 密码管理器，把您的保管库保存在您自己的设备上。</p>
+        <p class="quiet">本网站不设置 Cookie，不运行统计分析，也不加载其他公司的任何内容。</p>
+      </div>
+      <nav aria-label="产品">
+        <h2>产品</h2>
+        <ul>
+          <li><a href="../zh-hans/features.html">功能</a></li>
+          <li><a href="../zh-hans/pricing.html">价格</a></li>
+          <li><a href="../zh-hans/download.html">下载</a></li>
+          <li><a href="../zh-hans/licence.html">您的 Pro 许可证</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="帮助">
+        <h2>帮助</h2>
+        <ul>
+          <li><a href="../zh-hans/help.html">用户指南</a></li>
+          <li><a href="../zh-hans/support.html">支持与常见问题</a></li>
+          <li><a href="../zh-hans/security.html">安全</a></li>
+          <li><a href="../legal/vulnerability-disclosure.html">报告漏洞</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="法律">
+        <h2>法律</h2>
+        <p class="quiet">这些文件以英文提供，以英文版本为准并具有约束力。</p>
+        <ul>
+          <li><a href="../legal/eula.html">许可协议</a></li>
+          <li><a href="../legal/privacy.html">隐私政策</a></li>
+          <li><a href="../legal/terms-of-sale.html">销售条款</a></li>
+          <li><a href="../legal/refunds.html">退款政策</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base">
+      <p>&copy; 2026 Ilias Pelekas。联系方式：<a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows 是 Microsoft 公司集团的商标。Chrome 是 Google LLC 的商标。</p>
+      <p class="lang-switch" role="navigation" aria-label="语言"><a href="../security.html" hreflang="en" lang="en">English</a> · <a href="../es/security.html" hreflang="es" lang="es">Español</a> · <a href="../it/security.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/security.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/security.html" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a> · <a href="../ja/security.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/security.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/security.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/security.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/security.html" hreflang="nl" lang="nl">Nederlands</a></p>
+    </div>
+  </footer>
+</body>
+</html>

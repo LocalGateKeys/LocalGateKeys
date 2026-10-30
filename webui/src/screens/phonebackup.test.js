@@ -23,7 +23,7 @@ describe('Restore phone backup', () => {
   it('menu hides Restore phone backup until a phone app writes backups', () => {
     render(ImportExportMenu, { onpick: vi.fn(), onclose: vi.fn() });
     expect(screen.queryByRole('menuitem', { name: /Restore phone backup…/ })).toBeNull();
-    expect(screen.getAllByRole('menuitem')).toHaveLength(3);
+    expect(screen.getAllByRole('menuitem')).toHaveLength(4); // import, export, transfer, incoming shares
   });
 
   it('menu offers Restore phone backup when enabled', async () => {

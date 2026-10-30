@@ -53,6 +53,7 @@ from . import (
     totp_uri_from_secret,
 )
 from ._source import iso_timestamp, parse_timestamp, read_source_bytes
+from ..i18n import t
 
 SIGNATURE_1 = 0x9AA2D903
 SIGNATURE_2 = 0xB54BFB67
@@ -347,7 +348,7 @@ def _parse_header(data: bytes) -> _Header:
     if sig1 != SIGNATURE_1 or sig2 not in (SIGNATURE_2, SIGNATURE_2_KDB1, SIGNATURE_2_PRERELEASE):
         raise KdbxError("Not a KeePass KDBX database")
     if sig2 == SIGNATURE_2_KDB1:
-        raise KdbxError("KeePass 1.x (.kdb) databases are not supported; export from KeePass 2 as .kdbx")
+        raise KdbxError(t("kdbx.keepass1XKdbDatabases"))
     if major not in (3, 4):
         raise KdbxError(f"Unsupported KDBX version {major}.{minor}")
     fields: dict[int, bytes] = {}
@@ -370,7 +371,7 @@ def _parse_header(data: bytes) -> _Header:
     if cipher not in CIPHER_NAMES:
         raise KdbxError("Unsupported outer cipher")
     if cipher == CIPHER_TWOFISH:
-        raise KdbxError("Twofish-encrypted databases are not supported; change the cipher to AES or ChaCha20 in KeePass")
+        raise KdbxError(t("kdbx.twofishEncryptedDatabasesAreNot"))
     compression = fields.get(3, b"")
     if len(compression) != 4:
         raise KdbxError("KDBX header is missing the compression flag")
@@ -485,7 +486,7 @@ def _composite_key(password: str | None, key_material: bytes | None) -> bytes:
     if key_material:
         parts += key_material
     if not parts:
-        raise KdbxPasswordError("A password or key file is required")
+        raise KdbxPasswordError(t("kdbx.aPasswordOrKeyFile"))
     return hashlib.sha256(parts).digest()
 
 
@@ -538,7 +539,7 @@ def _decrypt(cipher_id: bytes, key: bytes, iv: bytes, data: bytes) -> bytes:
         try:
             return unpadder.update(padded) + unpadder.finalize()
         except ValueError as exc:
-            raise KdbxPasswordError("Wrong password or corrupted database") from exc
+            raise KdbxPasswordError(t("kdbx.wrongPasswordOrCorruptedDatabase")) from exc
     decryptor = _cipher(cipher_id, key, iv).decryptor()
     return decryptor.update(data) + decryptor.finalize()
 
@@ -565,7 +566,7 @@ def _read_hmac_blocks(data: bytes, pos: int, hmac_base: bytes) -> bytes:
         block = data[pos:pos + size]
         pos += size
         if not hmac.compare_digest(_block_hmac(hmac_base, index, block), expected):
-            raise KdbxIntegrityError("HMAC verification failed: wrong password or corrupted data")
+            raise KdbxIntegrityError(t("kdbx.hmacVerificationFailedWrongPassword"))
         if size == 0:
             break
         out += block
@@ -982,7 +983,7 @@ def read_kdbx(source: Path | str | bytes, password: str | None, *, keyfile: byte
             raise KdbxIntegrityError("KDBX header hash mismatch: the file is corrupted")
         expected = hmac.new(_hmac_block_key(hmac_base, 0xFFFFFFFFFFFFFFFF), header.raw, hashlib.sha256).digest()
         if not hmac.compare_digest(expected, data[pos + 32:pos + 64]):
-            raise KdbxPasswordError("Wrong password or key file (header HMAC mismatch)")
+            raise KdbxPasswordError(t("kdbx.wrongPasswordOrKeyFile"))
         ciphertext = _read_hmac_blocks(data, pos + 64, hmac_base)
         plain = _decrypt(header.cipher, master, header.iv, ciphertext)
         if header.compress:
@@ -994,7 +995,7 @@ def read_kdbx(source: Path | str | bytes, password: str | None, *, keyfile: byte
         ciphertext = data[header.end:]
         plain = _decrypt(header.cipher, master, header.iv, ciphertext)
         if len(plain) < 32 or not hmac.compare_digest(plain[:32], header.stream_start):
-            raise KdbxPasswordError("Wrong password or key file (stream start mismatch)")
+            raise KdbxPasswordError(t("kdbx.wrongPasswordOrKeyFile2"))
         xml_bytes = _read_hashed_blocks(plain[32:])
         if header.compress:
             xml_bytes = _gunzip(xml_bytes)
@@ -1105,11 +1106,11 @@ def records_from_database(database: KdbxDatabase) -> ImportResult:
         result.records.append(entry_to_record(entry, source_row=index))
     recycled = database.recycle_bin_entry_count()
     if recycled:
-        result.diagnostics.append(f"{recycled} entries in the KeePass Recycle Bin were not imported.")
+        result.diagnostics.append(t("kdbx.entriesInTheKeepassRecycle", recycled=recycled))
     if history_count:
-        result.diagnostics.append(f"{history_count} historical entry versions were not imported (only current values are kept).")
+        result.diagnostics.append(t("kdbx.historicalEntryVersionsWereNot", history_count=history_count))
     if binary_entries:
-        result.diagnostics.append(f"{binary_entries} entries have attachments that were not imported.")
+        result.diagnostics.append(t("kdbx.entriesHaveAttachmentsThatWere", binary_entries=binary_entries))
     result.records = enforce_record_limit(result.records)
     return result
 

@@ -1,5 +1,7 @@
 package app.localgatekeys.android.sync
 
+import app.localgatekeys.core.lan.BlobFetch
+import app.localgatekeys.core.sync.AttachmentRef
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
@@ -7,6 +9,7 @@ import android.net.NetworkCapabilities
 import app.localgatekeys.core.engine.ItemState
 import app.localgatekeys.core.group.GroupKey
 import app.localgatekeys.core.lan.DeviceIdentity
+import app.localgatekeys.core.lan.Discovery
 import app.localgatekeys.core.lan.Enrollment
 import app.localgatekeys.core.lan.HelloCounterSource
 import app.localgatekeys.core.lan.LanAddress
@@ -14,8 +17,12 @@ import app.localgatekeys.core.lan.LanClient
 import app.localgatekeys.core.lan.LanConnection
 import app.localgatekeys.core.lan.LanConnector
 import app.localgatekeys.core.lan.LanEndpoint
+import app.localgatekeys.core.lan.LanExchange
+import app.localgatekeys.core.lan.LanPublish
 import app.localgatekeys.core.lan.LanPeerNotAnswering
+import app.localgatekeys.core.lan.LanSyncException
 import app.localgatekeys.core.lan.LanTransport
+import app.localgatekeys.core.lan.LanTransportException
 import app.localgatekeys.core.lan.PinnedPeer
 import app.localgatekeys.core.primitives.RandomSource
 import app.localgatekeys.core.primitives.UnixClock
@@ -140,8 +147,8 @@ class SocketEnroller(private val dialer: LanDialer) {
 }
 
 /**
- * TCP to a literal LAN address over a non-blocking [SocketChannel]. No discovery (the desktop does not advertise): the
- * address comes from the scanned QR offer and is pinned with the peer. [timeoutMs] is the connection's one deadline
+ * TCP to a literal LAN address over a non-blocking [SocketChannel]. The address comes from the scanned QR offer and is
+ * pinned with the peer (or from discovery, [SocketLanTransport.exchangeViewsFindingHost]); no DNS lookup is made. [timeoutMs] is the connection's one deadline
  * (Ruling 17: connect plus every send and read, desktop `DEFAULT_SOCKET_TIMEOUT = 5.0`); an enrollment dial, once
  * connected, gives its request and reply [enrollReplyMs] (Ruling 17 amended, desktop `ENROLL_REPLY_SECONDS`). [bind] runs on the
  * unconnected channel (the app binds it to the Wi-Fi network, [WifiNetworkBinder]); [route] turns the endpoint into the
@@ -327,6 +334,9 @@ class SocketLanTransport(
     val timeoutMs: Int = ChannelLanDialer.DEFAULT_TIMEOUT_MS,
     val enrollReplyMs: Int = ChannelLanDialer.DEFAULT_ENROLL_REPLY_MS,
     private val dialer: LanDialer = ChannelLanDialer(timeoutMs, enrollReplyMs),
+    /** Finds the host when its pinned address does not answer; null: no discovery. */
+    private val browser: ServiceBrowser? = null,
+    val browseMs: Long = DEFAULT_BROWSE_MS,
 ) : LanTransporting {
     override fun exchangeViews(
         peer: PinnedPeer,
@@ -339,11 +349,90 @@ class SocketLanTransport(
         return client.sync(peer, localStates, ownCounter, PairedLanConnector(peer, dialer))
     }
 
+    /**
+     * The pinned address first. When it does not answer (connect refused or timed out, or no hello: nothing was sent),
+     * browse [Discovery.SERVICE_TYPE] for [browseMs] and dial each announcement with today's or yesterday's tag for
+     * this host, at a LAN address, at most [Discovery.MAX_CANDIDATES], with the normal handshake. A candidate whose
+     * hello fails the pinned keys (or that does not answer) is skipped. Nothing found: the pinned failure is thrown.
+     */
+    override fun exchangeViewsFindingHost(
+        peer: PinnedPeer,
+        identity: DeviceIdentity,
+        groupKey: GroupKey,
+        localStates: List<ItemState>,
+        ownCounter: Long,
+        onMoved: (LanEndpoint) -> Unit,
+    ): List<ItemState> = exchangeWitnessing(peer, identity, groupKey, localStates, ownCounter, null, onMoved).states
+
+    /** [exchangeViewsFindingHost] with rollback witnesses ([LanClient.exchange]). */
+    override fun exchangeWitnessing(
+        peer: PinnedPeer,
+        identity: DeviceIdentity,
+        groupKey: GroupKey,
+        localStates: List<ItemState>,
+        ownCounter: Long,
+        publish: LanPublish?,
+        onMoved: (LanEndpoint) -> Unit,
+    ): LanExchange {
+        val client = LanClient(identity, groupKey, counters, random, clock)
+        try {
+            return client.exchange(peer, localStates, ownCounter, PairedLanConnector(peer, dialer), publish)
+        } catch (e: LanPeerNotAnswering) {
+            val b = browser ?: throw e
+            if (Thread.currentThread().isInterrupted) throw cancelledError()
+            val found = try {
+                b.browse(Discovery.SERVICE_TYPE, browseMs)
+            } catch (x: LanSocketException) {
+                if (x.kind == LanFailure.CANCELLED) throw x
+                throw e
+            } catch (x: Exception) {
+                throw e
+            }
+            val accepted = Discovery.acceptedTags(groupKey, peer.deviceId, clock.now)
+            for (candidate in Discovery.candidates(found, accepted, peer.endpoint)) {
+                if (Thread.currentThread().isInterrupted) throw cancelledError()
+                val moved = peer.copy(endpoint = candidate)
+                try {
+                    val result = client.exchange(moved, localStates, ownCounter, PairedLanConnector(moved, dialer), publish)
+                    onMoved(candidate)
+                    return result
+                } catch (x: LanPeerNotAnswering) {
+                    continue
+                } catch (x: LanTransportException) {
+                    continue // not the paired host: its hello failed the pinned keys
+                } catch (x: LanSyncException) {
+                    // An unsigned version refusal proves nothing about who answered.
+                    if (x.reason == "peer-update-needed" || x.reason == "lan-update-needed") continue
+                    throw x
+                } catch (x: LanSocketException) {
+                    if (x.kind == LanFailure.CANCELLED || Thread.currentThread().isInterrupted) throw x
+                    continue
+                }
+            }
+            throw e
+        }
+    }
+
+    private fun cancelledError() = LanSocketException("cancelled", LanFailure.CANCELLED)
+
+    override fun fetchBlobs(
+        peer: PinnedPeer,
+        identity: DeviceIdentity,
+        groupKey: GroupKey,
+        refs: List<AttachmentRef>,
+        probe: Boolean,
+    ): BlobFetch = LanClient(identity, groupKey, counters, random, clock).fetchBlobs(peer, PairedLanConnector(peer, dialer), refs, probe)
+
     override fun enroll(endpoint: LanEndpoint, request: ByteArray, onConnected: () -> Unit): ByteArray =
         SocketEnroller(dialer).enroll(endpoint, request, onConnected)
 
     /** Never shows the counters, keys or frames. */
     override fun toString(): String = "SocketLanTransport(timeoutMs=$timeoutMs)"
+
+    companion object {
+        /** Plan 2026-10-29-sync-ip-change: browse for up to 3 s when the pinned address fails. */
+        const val DEFAULT_BROWSE_MS = 3_000L
+    }
 }
 
 /**

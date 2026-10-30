@@ -1,0 +1,51 @@
+{
+  "format": "firefox",
+  "input": "tests/vectors/import/_inputs/firefox_fallback.csv",
+  "python_format": "firefox-csv",
+  "result": {
+    "diagnostics": [],
+    "records": [
+      {
+        "card": {},
+        "created": 1700000000,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": 1700000100,
+        "notes": "",
+        "password": "pw",
+        "source_row": 2,
+        "tags": [],
+        "title": "form.example.com",
+        "totp_uri": "",
+        "urls": [
+          "https://form.example.com"
+        ],
+        "username": "alex"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 3,
+        "tags": [],
+        "title": "x.example.com",
+        "totp_uri": "",
+        "urls": [
+          "https://x.example.com"
+        ],
+        "username": ""
+      }
+    ],
+    "source_format": "firefox-csv"
+  }
+}

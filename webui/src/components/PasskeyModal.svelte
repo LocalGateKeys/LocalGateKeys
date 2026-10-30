@@ -1,5 +1,6 @@
 <script>
   /** Passkey save / sign-in approval, for a request from the browser extension. Copy comes from Python. */
+  import { t } from '../lib/i18n.svelte.js';
   import Button from './Button.svelte';
 
   let { request, onanswer, guardMs = 0 } = $props();
@@ -32,7 +33,7 @@
     <h2>{text.title}</h2>
     <p class="body">{text.body}</p>
     {#if many}
-      <div class="group accounts" role="radiogroup" aria-label="Accounts">
+      <div class="group accounts" role="radiogroup" aria-label={t('passkeyModal.accounts')}>
         {#each request.accounts as a (a.item_id)}
           <label><input type="radio" name="passkey-account" value={a.item_id} bind:group={picked} /> {a.title || a.user_name}</label>
         {/each}

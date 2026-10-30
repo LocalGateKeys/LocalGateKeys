@@ -1,5 +1,6 @@
 package app.localgatekeys.android.ui.sync
 
+import app.localgatekeys.android.i18n.appTxt
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -71,7 +72,7 @@ class SyncScreenStatusTest {
             slots = slots, folders = FolderOpening.UNAVAILABLE, lan = lan,
             random = SystemRandomSource(), clock = clock, licenseKeys = emptyMap(),
         )
-        return SyncCoordinator(store, deps, scope)
+        return SyncCoordinator(store, deps, scope, appTxt())
     }
 
     @Test fun not_joined_says_so_and_offers_no_sync_now() {

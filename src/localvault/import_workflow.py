@@ -57,9 +57,10 @@ from .item_schema import (
     ItemSchemaError,
     validate_card_fields,
 )
-from .origin import OriginError, canonicalize_origin, origin_of
+from .origin import OriginError, canonicalize_origin, normalize_url, origin_of
 from .totp import TotpError, parse_otpauth_uri
 from .vault import ItemLimitReached, VaultError, VaultLockedError, free_item_slots
+from .i18n import t
 
 MAX_IMPORT_ROWS = MAX_RECORDS
 MASK = "********"
@@ -93,17 +94,17 @@ def _read_source(path: Path) -> tuple[bytes, str]:
     path = Path(path)
     try:
         if path.stat().st_size > MAX_ARCHIVE_BYTES:
-            raise ImportWorkflowError("Import file exceeds 64 MiB")
+            raise ImportWorkflowError(t("importWorkflow.importFileExceeds64Mib"))
         with path.open("rb") as handle:
             data = read_bounded(handle, MAX_ARCHIVE_BYTES)
     except ImportWorkflowError:
         raise
     except OSError as exc:
-        raise ImportWorkflowError("Could not read the import source") from exc
+        raise ImportWorkflowError(t("importWorkflow.couldNotReadTheImport")) from exc
     if len(data) > MAX_ARCHIVE_BYTES:
-        raise ImportWorkflowError("Import file exceeds 64 MiB")
+        raise ImportWorkflowError(t("importWorkflow.importFileExceeds64Mib"))
     if len(data) > MAX_SOURCE_BYTES and data[:2] != b"PK":
-        raise ImportWorkflowError("Import file exceeds 8 MiB; only zip exports may be larger")
+        raise ImportWorkflowError(t("importWorkflow.importFileExceeds8Mib"))
     return data, hashlib.sha256(data).hexdigest()
 
 
@@ -160,7 +161,7 @@ def inspect_source(path: Path | str, *, source_format: str | None = None) -> Sou
     detection = detect_format(path, data)
     fmt = source_format or detection.format
     if fmt not in SUPPORTED_FORMATS:
-        raise ImportWorkflowError(f"Unsupported import format {fmt!r}")
+        raise ImportWorkflowError(t("importWorkflow.unsupportedImportFormat", fmt=fmt))
     fields, mapping, unmapped, row_count = detection.fields, (), (), 0
     issues: list[str] = []
     if fmt in CSV_FORMATS:
@@ -171,7 +172,7 @@ def inspect_source(path: Path | str, *, source_format: str | None = None) -> Sou
         issues.extend(result.diagnostics)
         result.wipe()
     if row_count > MAX_IMPORT_ROWS:
-        raise ImportWorkflowError(f"At most {MAX_IMPORT_ROWS:,} records per import")
+        raise ImportWorkflowError(t("importWorkflow.atMostRecordsPerImport", MAX_IMPORT_ROWS=MAX_IMPORT_ROWS))
     return SourceInspection(path, fmt, digest, len(data), fields, mapping, unmapped, row_count, tuple(issues),
                             needs_password=fmt in PASSWORD_FORMATS)
 
@@ -231,9 +232,38 @@ def _first_origin(record: ImportedRecord) -> str:
     return ""
 
 
+def _web_page(value: str, origin: str) -> str:
+    """The full page address of an imported website URL, or "" when it is just the site.
+
+    Same rules as ``_web_url`` (bare hosts get ``https://``, public ``http://``
+    becomes ``https://``); the result is ``normalize_url`` (no fragment) and is
+    kept only when it has a path or query beyond ``origin``.
+    """
+    text = str(value).strip()
+    if "://" not in text:
+        text = "https://" + text
+    if text[:7].casefold() == "http://" and not origin.startswith("http://"):
+        text = "https://" + text.split("://", 1)[1]
+    try:
+        page = normalize_url(text)
+        if canonical_origin_for(origin_of(page)) != origin:
+            return ""
+    except (ValueError, OriginError):
+        return ""
+    return "" if page in (origin, origin + "/") else page
+
+
 def _web_rows(record: ImportedRecord) -> tuple[str, list[dict[str, str]], list[str], bool]:
-    """Split ``record.urls`` into (primary origin, URL rows, non-web URLs, any upgraded)."""
+    """Split ``record.urls`` into (primary origin, URL rows, non-web URLs, any upgraded).
+
+    Every website gives an ``exact_origin`` row (these come first, so
+    ``urls[0]`` is the primary origin and matching is unchanged).  A URL with
+    a page path also gives a ``starts_with`` row after them that keeps the
+    full address; it matches only pages its own exact-origin row already
+    matches, so autofill is neither broader nor narrower.
+    """
     rows: list[dict[str, str]] = []
+    pages: list[dict[str, str]] = []
     other: list[str] = []
     upgraded_any = False
     for url in record.urls:
@@ -245,9 +275,13 @@ def _web_rows(record: ImportedRecord) -> tuple[str, list[dict[str, str]], list[s
         row = {"url": origin, "match": "exact_origin"}
         if row not in rows:
             rows.append(row)
+        page = _web_page(url, origin)
+        if page and {"url": page, "match": "starts_with"} not in pages:
+            pages.append({"url": page, "match": "starts_with"})
     if len(rows) > _MAX_WEB_URLS:
         other.extend(row["url"] for row in rows[_MAX_WEB_URLS:])
         rows = rows[:_MAX_WEB_URLS]
+    rows.extend(pages[:_MAX_WEB_URLS - len(rows)])
     return (rows[0]["url"] if rows else ""), rows, other, upgraded_any
 
 
@@ -273,8 +307,7 @@ def _fit_notes(record: ImportedRecord, number: int, issues: list[str], limit: in
         overflow = overflow[_MAX_FIELD_VALUE:]
         part += 1
     if overflow:
-        issues.append(f"Row {number}: notes are longer than the vault allows; the last {len(overflow):,} "
-                      "characters were not imported.")
+        issues.append(t("importWorkflow.rowNotesAreLongerThan", number=number, v2=len(overflow)))
 
 
 def _fit_fields(record: ImportedRecord, number: int, issues: list[str]) -> None:
@@ -284,7 +317,7 @@ def _fit_fields(record: ImportedRecord, number: int, issues: list[str]) -> None:
         name = str(field_value.get("name", ""))[:_MAX_FIELD_NAME]
         value = str(field_value.get("value", ""))
         if len(value) > _MAX_FIELD_VALUE:
-            issues.append(f"Row {number}: custom field {name!r} was shortened to {_MAX_FIELD_VALUE:,} characters.")
+            issues.append(t("importWorkflow.rowCustomFieldWasShortened", number=number, name=name, _MAX_FIELD_VALUE=_MAX_FIELD_VALUE))
             value = value[:_MAX_FIELD_VALUE]
         clean.append({**field_value, "name": name, "value": value})
     record.custom_fields = clean
@@ -521,8 +554,9 @@ class ImportRowPlan:
             parts.append(f"{len(self.record.identity)} identity fields")
         if self.record.card:
             parts.append("card details")
-        if len(self.web_urls) > 1:
-            parts.append(f"{len(self.web_urls)} websites")
+        sites = sum(1 for row in self.web_urls if row.get("match") == "exact_origin")
+        if sites > 1:
+            parts.append(f"{sites} websites")
         if self.extra is not None:
             parts.append("extra details note")
         if self.record.tags:
@@ -551,10 +585,10 @@ def normalise_records(records: Iterable[ImportedRecord]) -> tuple[list[ImportRow
         if not isinstance(record, ImportedRecord):
             raise ImportWorkflowError("Import sources must yield ImportedRecord objects")
         if len(rows) >= MAX_IMPORT_ROWS:
-            raise ImportWorkflowError(f"At most {MAX_IMPORT_ROWS:,} records per import")
+            raise ImportWorkflowError(t("importWorkflow.atMostRecordsPerImport", MAX_IMPORT_ROWS=MAX_IMPORT_ROWS))
         number = record.source_row if record.source_row is not None else index
         if _has_null(record):
-            issues.append(f"Row {number}: null characters in fields; skipped.")
+            issues.append(t("importWorkflow.rowNullCharactersInFields", number=number))
             continue
         if record.folder:
             record.folder = record.folder.replace("\\", "/").strip("/ ")
@@ -564,14 +598,14 @@ def normalise_records(records: Iterable[ImportedRecord]) -> tuple[list[ImportRow
             origin, web_rows, other_urls, upgraded = _web_rows(record)
             reason = ""
             if not origin:
-                reason = "has no website address" if not record.urls else "has no usable website address"
+                reason = "importWorkflow.rowLoginHasNoWebsite" if not record.urls else "importWorkflow.rowLoginHasNoUsableWebsite"
             elif not record.password:
-                reason = "has no password"
+                reason = "importWorkflow.rowLoginHasNoPassword"
             elif len(record.password) > 4096 or len(record.username) > 512:
-                issues.append(f"Row {number}: password or username is longer than the vault allows; skipped.")
+                issues.append(t("importWorkflow.rowPasswordOrUsernameIs", number=number))
                 continue
             if reason:
-                issues.append(f"Row {number}: login {reason}; imported as a secure note.")
+                issues.append(t(reason, number=number))
                 note = _login_as_note(record, number)
                 _fit_notes(note, number, issues)
                 rows.append(ImportRowPlan(number, "note", note, decision="add"))
@@ -582,9 +616,9 @@ def normalise_records(records: Iterable[ImportedRecord]) -> tuple[list[ImportRow
                 # A URL with embedded credentials stays hidden like a password.
                 hidden = "@" in url.split("://", 1)[-1].split("/", 1)[0]
                 if not _add_field(record, "Other website or app", url, hidden=hidden):
-                    issues.append(f"Row {number}: too many custom fields; an extra address was not imported.")
+                    issues.append(t("importWorkflow.rowTooManyCustomFields", number=number))
             if record.totp_uri and totp_dict(record.totp_uri) is None:
-                issues.append(f"Row {number}: one-time password secret is not valid; kept as a hidden custom field.")
+                issues.append(t("importWorkflow.rowOneTimePasswordSecret", number=number))
                 _add_field(record, "One-time password (unrecognised)", record.totp_uri, hidden=True)
                 record.totp_uri = ""
             folder_tag = _folder_tag(record.folder)
@@ -599,11 +633,10 @@ def normalise_records(records: Iterable[ImportedRecord]) -> tuple[list[ImportRow
                 row.status = "duplicate"
                 if password == record.password:
                     row.decision = "skip"
-                    issues.append(f"Row {number}: same account as row {first}; skipped.")
+                    issues.append(t("importWorkflow.rowSameAccountAsRow", number=number, first=first))
                 else:
                     row.decision = "keep_both"
-                    issues.append(f"Row {number}: same website and username as row {first} but a different password; "
-                                  "it will be kept as a secure note copy (choose Skip to drop it).")
+                    issues.append(t("importWorkflow.rowSameWebsiteAndUsername", number=number, first=first))
             else:
                 seen[key] = (number, record.password)
             rows.append(row)
@@ -613,8 +646,7 @@ def normalise_records(records: Iterable[ImportedRecord]) -> tuple[list[ImportRow
                 try:
                     card_payload(record)
                 except ItemSchemaError as exc:
-                    issues.append(f"Row {number}: card details could not be stored as a payment card ({exc}); "
-                                  "imported as a secure note.")
+                    issues.append(t("importWorkflow.rowCardDetailsCouldNot", number=number, exc=exc))
                     note = _card_as_note(record, number)
                     _fit_notes(note, number, issues)
                     rows.append(ImportRowPlan(number, "note", note, decision="add"))
@@ -640,8 +672,7 @@ def normalise_records(records: Iterable[ImportedRecord]) -> tuple[list[ImportRow
                 total += len(value)
             if extra_fields:
                 names = ", ".join(sorted({item["name"].casefold() for item in extra_fields}))
-                issues.append(f"Row {number}: identity values without a matching identity field ({names}) were kept "
-                              "in an 'extra details' secure note.")
+                issues.append(t("importWorkflow.rowIdentityValuesWithoutA", number=number, names=names))
             record.identity = kept
             record.title = _title(record, number)
             row = ImportRowPlan(number, "identity", record, decision="add")
@@ -666,8 +697,7 @@ def normalise_records(records: Iterable[ImportedRecord]) -> tuple[list[ImportRow
             _fit_fields(row.extra, row.row, issues)
     if upgraded_rows:
         shown = ", ".join(str(number) for number in upgraded_rows[:10]) + (" ..." if len(upgraded_rows) > 10 else "")
-        issues.append(f"{len(upgraded_rows)} login(s) used plain http:// addresses and were saved for https:// "
-                      f"(rows {shown}); LocalGateKeys only fills passwords over HTTPS.")
+        issues.append(t("importWorkflow.loginsUsedPlainHttp", count=len(upgraded_rows), shown=shown))
     return rows, issues
 
 
@@ -761,9 +791,9 @@ class ImportPlan:
         limited = sum(1 for row in self.rows if row.limited)
         if not limited:
             slots = self.free_slots
-            return f"{slots} free slot{'' if slots == 1 else 's'} left on the free plan"
+            return t("importWorkflow.freeSlotsLeft", count=slots)
         imported = sum(1 for row in self.rows if row.decision != "skip" and not row.limited)
-        return f"{imported} will be imported on the free plan; {limited} need Pro"
+        return t("importWorkflow.willBeImportedOnFree", imported=imported, limited=limited)
 
     def limit_summary(self) -> dict[str, Any]:
         """``item_limit`` and the limited rows, in the shape ``transfer_ui.notify_item_limit`` reads."""
@@ -808,7 +838,7 @@ class ImportPlan:
 
     def review(self) -> ImportPlan:
         if self.cancelled:
-            raise ImportCancelled("Import plan was cancelled")
+            raise ImportCancelled(t("importWorkflow.importPlanWasCancelled"))
         self.reviewed = True
         return self
 
@@ -912,15 +942,14 @@ def _keep_totp_as_fields(session: Any, rows: list[ImportRowPlan]) -> list[str]:
             kept += 1
     if not kept:
         return []
-    return [f"Two-factor codes need LocalGateKeys Pro: {kept} key{'' if kept == 1 else 's'} "
-            "kept as hidden custom fields."]
+    return [t("importWorkflow.twoFactorKeysKeptHidden", count=kept)]
 
 
 def plan_records(session: Any, records: Iterable[ImportedRecord], *, source: SourceInspection | None = None,
                  diagnostics: Iterable[str] = ()) -> ImportPlan:
     """Plan an in-memory record list against the unlocked ``session``."""
     if not getattr(session, "is_unlocked", False):
-        raise VaultLockedError("Vault is locked")
+        raise VaultLockedError(t("controller.vaultIsLocked"))
     rows, issues = normalise_records(records)
     # Per-row messages are capped (first 50 plus "and N more") so a crafted
     # source cannot push thousands of strings into the review screen.
@@ -945,7 +974,7 @@ def build_import_plan(session: Any, path: Path | str, *, password: str | None = 
     :class:`ImportFormatError` for malformed input.
     """
     if not getattr(session, "is_unlocked", False):
-        raise VaultLockedError("Vault is locked")
+        raise VaultLockedError(t("controller.vaultIsLocked"))
     path = Path(path)
     source = inspect_source(path, source_format=source_format)
     result: ImportResult = load_records(path, password=password, keyfile=keyfile, source_format=source.source_format,
@@ -971,7 +1000,7 @@ def _revalidate_source(plan: ImportPlan) -> None:
         return
     _data, digest = _read_source(plan.source_path)
     if digest != plan.source_hash:
-        raise ImportWorkflowError("Import source changed after review")
+        raise ImportWorkflowError(t("importWorkflow.importSourceChangedAfterReview"))
 
 
 class _Collections:
@@ -1007,7 +1036,7 @@ class _Collections:
 def _create_item(session: Any, record: ImportedRecord, collections: _Collections) -> None:
     items = getattr(session, "items", None)
     if items is None:
-        raise ImportWorkflowError("This vault cannot store notes, cards or identities")
+        raise ImportWorkflowError(t("importWorkflow.thisVaultCannotStoreNotes"))
     collection_ids = collections.ids_for(record.folder)
     tags = record.tags
     if record.folder and not collection_ids:
@@ -1034,7 +1063,7 @@ def _apply_login(session: Any, item: ImportRowPlan, collections: _Collections) -
     target = matches[0] if len(matches) == 1 else None
     if item.decision == "add":
         if matches:
-            raise ImportWorkflowError("Import target changed after review")
+            raise ImportWorkflowError(t("importWorkflow.importTargetChangedAfterReview"))
         totp = totp_dict(record.totp_uri)
         create = getattr(session, "create_web_login", None)
         if create is not None and getattr(session, "items", None) is not None:
@@ -1049,9 +1078,9 @@ def _apply_login(session: Any, item: ImportRowPlan, collections: _Collections) -
                                 totp=totp, custom_fields=record.custom_fields)
         return True
     if target is None or target.get("id") != item.target_id:
-        raise ImportWorkflowError("Import target changed after review")
+        raise ImportWorkflowError(t("importWorkflow.importTargetChangedAfterReview"))
     if item.target_revision != _target_digest(target):
-        raise ImportWorkflowError("Import target revision changed after review")
+        raise ImportWorkflowError(t("importWorkflow.importTargetRevisionChangedAfter"))
     fields = item.field_decisions
     label = record.title if fields.get("label") == "import" else None
     password = record.password if fields.get("password") == "import" else None
@@ -1081,7 +1110,7 @@ def _apply_item(session: Any, item: ImportRowPlan, collections: _Collections) ->
     record = item.record
     items = getattr(session, "items", None)
     if items is None:
-        raise ImportWorkflowError("This vault cannot store notes, cards or identities")
+        raise ImportWorkflowError(t("importWorkflow.thisVaultCannotStoreNotes"))
     if item.decision in {"add", "keep_both"}:
         _create_item(session, record, collections)
         if item.extra is not None:
@@ -1089,9 +1118,9 @@ def _apply_item(session: Any, item: ImportRowPlan, collections: _Collections) ->
         return True
     target = items.get_item(item.target_id or "", include_protected=True)
     if target is None or target.get("kind") != record.kind:
-        raise ImportWorkflowError("Import target changed after review")
+        raise ImportWorkflowError(t("importWorkflow.importTargetChangedAfterReview"))
     if item.target_revision != _item_digest(target):
-        raise ImportWorkflowError("Import target revision changed after review")
+        raise ImportWorkflowError(t("importWorkflow.importTargetRevisionChangedAfter"))
     fields = item.field_decisions
     title = record.title if fields.get("label") == "import" else None
     details = fields.get("details") == "import"
@@ -1128,7 +1157,7 @@ def free_slots_note(session: Any) -> str:
     slots = free_item_slots(session)
     if slots is None:
         return ""
-    return f"{slots} free slot{'' if slots == 1 else 's'} left on the free plan"
+    return t("importWorkflow.freeSlotsLeft", count=slots)
 
 
 def apply_import_plan(session: Any, plan: ImportPlan, *, cancel: Callable[[], bool] | None = None) -> int:
@@ -1141,19 +1170,19 @@ def apply_import_plan(session: Any, plan: ImportPlan, *, cancel: Callable[[], bo
     if not isinstance(plan, ImportPlan):
         raise TypeError("plan must be an ImportPlan")
     if not getattr(session, "is_unlocked", False):
-        raise VaultLockedError("Vault is locked")
+        raise VaultLockedError(t("controller.vaultIsLocked"))
     if plan.applied:
-        raise ImportWorkflowError("Import plan has already been applied")
+        raise ImportWorkflowError(t("importWorkflow.importPlanHasAlreadyBeen"))
     if plan.cancelled:
-        raise ImportCancelled("Import plan was not approved")
+        raise ImportCancelled(t("importWorkflow.importPlanWasNotApproved"))
     if not plan.reviewed:
-        raise ImportWorkflowError("Import plan must be reviewed before applying")
+        raise ImportWorkflowError(t("importWorkflow.importPlanMustBeReviewed"))
     if _profile_generation(session) != plan.profile_generation:
         raise ImportWorkflowError("Vault profile changed after review")
     _revalidate_source(plan)
     if _cancelled(plan, cancel):
         plan.cancel()
-        raise ImportCancelled("Import was cancelled")
+        raise ImportCancelled(t("importWorkflow.importWasCancelled"))
 
     # Guard the whole plan up front so a drifted count never leaves a partial import.
     check = getattr(session, "_check_can_create", None)
@@ -1169,7 +1198,7 @@ def apply_import_plan(session: Any, plan: ImportPlan, *, cancel: Callable[[], bo
         with session.transaction():
             for item in plan.rows:
                 if _cancelled(plan, cancel):
-                    raise ImportCancelled("Import was cancelled")
+                    raise ImportCancelled(t("importWorkflow.importWasCancelled"))
                 if item.decision == "skip" or item.limited:
                     continue
                 if item.decision not in DECISIONS:
@@ -1182,7 +1211,7 @@ def apply_import_plan(session: Any, plan: ImportPlan, *, cancel: Callable[[], bo
                 except ImportWorkflowError:
                     raise
                 except (VaultError, ItemSchemaError, ValueError) as exc:
-                    raise ImportWorkflowError(f"Row {item.row}: {exc}") from exc
+                    raise ImportWorkflowError(t("importWorkflow.row", row=item.row, exc=exc)) from exc
                 count += int(written)
     except ImportCancelled:
         plan.cancel()

@@ -1,5 +1,6 @@
 package app.localgatekeys.android.vault
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.unlock.MemoryItemStore
 import app.localgatekeys.core.sync.ItemStore
 import app.localgatekeys.core.sync.StoreChange
@@ -21,26 +22,26 @@ class VaultGroupAndModelTest {
             k("d", "desktop", 7), k("b", "bank_account", 3), k("i", "identity", 2), k("p", "passkey", 8),
         )
         val groups = VaultGroup.groups(items)
-        assertEquals(listOf("Logins", "Cards and notes", "Other"), groups.map { it.first })
+        assertEquals(listOf("Logins", "Cards and notes", "Other"), groups.map { EnglishTxt().s(it.first) })
         assertEquals(listOf("d", "w1"), groups[0].second.map { it.id })
         assertEquals(listOf("n", "c", "b", "i"), groups[1].second.map { it.id })
         assertEquals(listOf("o", "p"), groups[2].second.map { it.id })
     }
 
     @Test fun empty_groups_are_left_out() {
-        assertEquals(listOf("Other"), VaultGroup.groups(itemsOf(k("o", "wifi", 1))).map { it.first })
+        assertEquals(listOf("Other"), VaultGroup.groups(itemsOf(k("o", "wifi", 1))).map { EnglishTxt().s(it.first) })
         assertTrue(VaultGroup.groups(emptyList()).isEmpty())
     }
 
     @Test fun the_four_logins_of_the_test_data_form_one_group_each() {
         val groups = VaultGroup.groups(itemsOf(webLogin, deskLogin, note, card))
-        assertEquals(listOf("Logins", "Cards and notes"), groups.map { it.first })
+        assertEquals(listOf("Logins", "Cards and notes"), groups.map { EnglishTxt().s(it.first) })
         assertEquals(listOf("w1", "d1"), groups[0].second.map { it.id })
         assertEquals(listOf("c1", "n1"), groups[1].second.map { it.id })
     }
 
     @Test fun list_model_loads_and_filters() {
-        val m = VaultListModel(MemoryItemStore(snapshot(listOf(webLogin, note))))
+        val m = VaultListModel(MemoryItemStore(snapshot(listOf(webLogin, note))), EnglishTxt())
         assertNull(m.snapshot)
         m.reload()
         assertEquals(listOf("w1", "n1"), m.visibleItems.map { it.id })
@@ -56,7 +57,7 @@ class VaultGroupAndModelTest {
 
     @Test fun a_filter_that_no_longer_has_items_falls_back_to_all() {
         val store = MemoryItemStore(snapshot(listOf(webLogin, note)))
-        val m = VaultListModel(store)
+        val m = VaultListModel(store, EnglishTxt())
         m.reload()
         m.filter.value = VaultFilter.Kind("note")
         store.snapshot = snapshot(listOf(webLogin))
@@ -70,7 +71,7 @@ class VaultGroupAndModelTest {
         val m = VaultListModel(object : ItemStore {
             override fun load(): StoreSnapshot = if (fail) throw IllegalStateException("locked") else inner.load()
             override fun commit(change: StoreChange) = inner.commit(change)
-        })
+        }, EnglishTxt())
         m.reload()
         fail = true
         m.reload()
@@ -88,7 +89,7 @@ class VaultGroupAndModelTest {
         val m = VaultListModel(object : ItemStore {
             override fun load(): StoreSnapshot = if (fail) throw IllegalStateException("locked") else inner.load()
             override fun commit(change: StoreChange) = inner.commit(change)
-        }, onLoad = { loaded += it })
+        }, EnglishTxt(), onLoad = { loaded += it })
         m.reload()
         m.reload() // the same items: the licence states may still have changed, so Pro hears of every load
         assertEquals(2, loaded.size)
@@ -99,7 +100,7 @@ class VaultGroupAndModelTest {
     }
 
     @Test fun live_count_follows_the_free_plan_rules() {
-        val m = VaultListModel(MemoryItemStore(snapshot(listOf(webLogin, note, card), deleted = setOf("c1"))))
+        val m = VaultListModel(MemoryItemStore(snapshot(listOf(webLogin, note, card), deleted = setOf("c1"))), EnglishTxt())
         m.reload()
         assertEquals(2, m.liveCount.value)
         assertEquals(2, m.items.value.size)
@@ -123,7 +124,7 @@ class VaultGroupAndModelTest {
                 return current
             }
             override fun commit(change: StoreChange) = error("read only")
-        })
+        }, EnglishTxt())
         val slow = Thread { m.reload() }
         slow.start()
         firstInside.await()
@@ -143,7 +144,7 @@ class VaultGroupAndModelTest {
         val a = k("a", "web", 1).let { Obj(it.fields + ("totp" to rec("secret" to s("JBSWY3DPEHPK3PXP")))) }
         val b = k("b", "note", 9).let { Obj(it.fields + ("totp" to rec("secret" to s("JBSWY3DPEHPK3PXP")))) }
         val c = k("c", "web", 5).let { Obj(it.fields + ("totp" to rec("secret" to s("JBSWY3DPEHPK3PXP")))) }
-        assertEquals(listOf("b", "c", "a"), CodesRow.items(itemsOf(a, c, b), true).map { it.id })
+        assertEquals(listOf("b", "c", "a"), CodesRow.items(itemsOf(a, c, b), true, EnglishTxt()).map { it.id })
     }
 
     @Test fun to_string_never_shows_secrets() {

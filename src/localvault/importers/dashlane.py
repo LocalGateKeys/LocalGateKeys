@@ -12,6 +12,7 @@ import zipfile
 import zlib
 from collections.abc import Callable, Mapping
 from pathlib import Path
+from ..i18n import t
 
 from . import (
     ImportedRecord,
@@ -172,7 +173,7 @@ def _load_text(text: str, result: ImportResult, *, name: str = "") -> None:
     layout = classify_header(header)
     if not layout:
         if name:
-            result.diagnostics.append(f"{name}: columns not recognised; skipped.")
+            result.diagnostics.append(t("dashlane.columnsNotRecognisedSkipped", name=name))
             return
         layout = "credentials"
     offset = len(result.records)
@@ -209,11 +210,11 @@ def load_dashlane_zip(source: Path | str | bytes) -> ImportResult:
                     continue
                 if info.file_size > MAX_ZIP_MEMBER_BYTES or info.flag_bits & 0x1 \
                         or info.compress_type not in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED):
-                    raise DashlaneError(f"{name} inside the zip is too large, encrypted or unsupported")
+                    raise DashlaneError(t("dashlane.insideTheZipIsToo", name=name))
                 with archive.open(info) as handle:
                     raw = read_bounded(handle, MAX_ZIP_MEMBER_BYTES)
                 if len(raw) > MAX_ZIP_MEMBER_BYTES:
-                    raise DashlaneError(f"{name} inside the zip is too large")
+                    raise DashlaneError(t("dashlane.insideTheZipIsToo2", name=name))
                 found = True
                 if raw.strip():
                     _load_text(decode_text(raw), result, name=name)
@@ -222,9 +223,9 @@ def load_dashlane_zip(source: Path | str | bytes) -> ImportResult:
         raise
     except (zipfile.BadZipFile, zipfile.LargeZipFile, RuntimeError, NotImplementedError, OSError, EOFError,
             ValueError, zlib.error) as exc:
-        raise DashlaneError("The Dashlane archive is corrupted or unsupported") from exc
+        raise DashlaneError(t("dashlane.theDashlaneArchiveIsCorrupted")) from exc
     if not found:
-        raise DashlaneError("The zip archive does not contain Dashlane CSV files (credentials.csv, securenotes.csv, ...)")
+        raise DashlaneError(t("dashlane.theZipArchiveDoesNot"))
     result.records = enforce_record_limit(result.records)
     return result
 

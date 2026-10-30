@@ -24,6 +24,7 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
+from localvault.i18n import t
 from localvault.importers import ImporterError, bitwarden, detect, kdbx, onepassword
 from localvault.sync import (
     AuthenticationError,
@@ -448,7 +449,7 @@ def test_csv_export_carries_the_formula_injection_warning() -> None:
     # Values stay byte-exact for the destination password manager...
     assert '=HYPERLINK(' in rendered
     # ...so the defence is the mandatory warning shown before a CSV export.
-    assert ExportWarning.SPREADSHEET in ExportWarning.for_format("csv", include_totp=False)
+    assert t(ExportWarning.SPREADSHEET) in ExportWarning.for_format("csv", include_totp=False)
 
 
 # --------------------------------------------------------------------------- follow-up hardening (info items)

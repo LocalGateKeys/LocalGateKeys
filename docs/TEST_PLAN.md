@@ -40,9 +40,12 @@ node --check browser-extension/login-safety.js
 node --check browser-extension/background.js
 node --check browser-extension/content.js
 node --check browser-extension/popup.js
+node --check browser-extension/webauthn-page.js
+node --check browser-extension/webauthn-bridge.js
+node --check browser-extension/background-safari.js
 ```
 
-### Browser extension unit tests (Node 24, no browser needed)
+### Browser extension unit tests (Node 22 in CI, no browser needed)
 
 ```text
 npm install      # dev-only: jsdom; node_modules is gitignored
@@ -90,6 +93,14 @@ npm test         # node --test tests/*.cjs tests/extension/*.test.cjs
   `ping` without `session_id` not resetting an open fill, and the page `url`
   (fragment stripped) sent with `begin_browser`/`get_browser` with the account
   picker labelling `host` / `base_domain` / `starts_with` matches.
+- `tests/extension/webauthn-page.test.cjs`, `background-passkey.test.cjs` —
+  passkey wrapper and bridge: `publicKey` create/get relayed and resolved,
+  conditional and non-`publicKey` calls and insecure contexts left to the
+  browser, fallback with the original options, DOMException mapping, abort,
+  secret-named CustomEvent channel (first hello only, no window messages),
+  native-looking wrapper, jittered floor on state-revealing answers; service
+  worker requires `passkey_protocol: 1`, refuses spoofed origins and
+  oversized options, and falls back on an inactive tab.
 - `tests/extension/heuristics.test.cjs` — localized sign-in/logout/failure
   dictionaries (en, pl, de, fr, es, it, pt, nl, el) and boundary semantics.
 - `tests/extension/firefox-manifest.test.cjs` — manifest invariants and the
@@ -250,15 +261,18 @@ If no editable controls are exposed, record the result as **unsupported by safe 
 
 ## 5. Vault robustness tests before production work
 
-Not yet implemented; required next:
+Implemented: seeded mutation fuzzing of the vault, backup, transfer, pipe-frame,
+otpauth-migration and importer parsers (`tests/fuzz/`), property tests for vault,
+backup, frames, importers, origin and sync (`tests/props/`), backup and recovery
+round trips (`tests/test_backup*.py`, `tests/test_recovery.py`), and generation-anchor
+rollback detection (`tests/test_vault_v3.py`).
 
-- fuzz malformed JSON, base64, nonce, KDF, and payload fields
+Still required:
+
 - simulate interrupted writes and disk-full conditions
-- backup and recovery round trips
 - very large vault performance and size limits
 - Unicode normalization and international-domain cases
 - concurrent writer rejection/locking
-- downgrade/rollback detection
 - crash dump and swap/pagefile secret exposure analysis
 
 ## 6. Security regression gates

@@ -1,5 +1,6 @@
 package app.localgatekeys.android.generator
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.detail.FakeClipboardSink
 import app.localgatekeys.android.detail.SecretClipboard
 import app.localgatekeys.android.editor.CountingStore
@@ -36,7 +37,7 @@ class GeneratorModelTest {
     private var wordlist = PassphraseWordlist.packaged
 
     private fun model(random: RandomSource = StepRandom()) =
-        GeneratorModel(GeneratorDefaults(settings), random, clipboard, wordlist, post = { mainQueue.addLast(it) })
+        GeneratorModel(GeneratorDefaults(settings), random, clipboard, wordlist, post = { mainQueue.addLast(it) }, t = EnglishTxt())
 
     @Test fun start_generates_from_saved_options() {
         val saved = GeneratorOptions(length = 31, symbols = false)

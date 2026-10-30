@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Task 12: only the plain document copies made to share or photograph (cacheDir/open-documents). -->
+<paths>
+    <cache-path name="open-documents" path="open-documents/" />
+</paths>

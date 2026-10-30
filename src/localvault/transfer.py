@@ -26,6 +26,7 @@ from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from .vault import DEFAULT_KDF, MAX_KDF_MEMORY_KIB, MIN_KDF_MEMORY_KIB, free_item_slots
+from .i18n import t
 
 TRANSFER_FORMAT = "localgatekeys-selective-transfer"
 TRANSFER_VERSION = 1
@@ -89,9 +90,9 @@ def _check_cancel(cancel: Callable[[], bool] | Any | None) -> None:
     try:
         value = cancel.is_set() if hasattr(cancel, "is_set") else (cancel() if callable(cancel) else bool(cancel))
     except Exception as exc:
-        raise TransferCancelled("Transfer operation was cancelled") from exc
+        raise TransferCancelled(t("transfer.transferOperationWasCancelled")) from exc
     if value:
-        raise TransferCancelled("Transfer operation was cancelled")
+        raise TransferCancelled(t("transfer.transferOperationWasCancelled"))
 
 
 def _kdf_parameters(kdf: Any) -> dict[str, int | str]:
@@ -122,7 +123,7 @@ def _new_kdf(kdf_overrides: Mapping[str, int] | None) -> dict[str, int | str]:
 
 def _derive_key(password: str, salt: bytes, kdf: Mapping[str, Any]) -> bytes:
     if not isinstance(password, str) or not MIN_TRANSFER_PASSWORD_LENGTH <= len(password) <= MAX_TRANSFER_PASSWORD_LENGTH:
-        raise TransferError(f"Transfer password must contain at least {MIN_TRANSFER_PASSWORD_LENGTH} characters")
+        raise TransferError(t("transfer.transferPasswordMustContainAt", MIN_TRANSFER_PASSWORD_LENGTH=MIN_TRANSFER_PASSWORD_LENGTH))
     if len(salt) != 16:
         raise TransferError("Transfer KDF salt is malformed")
     parameters = _kdf_parameters(kdf)
@@ -205,11 +206,11 @@ def _read_package(source: Path) -> dict[str, Any]:
         # that _canonical() later cannot re-encode.
         envelope = json.loads(raw.decode("utf-8"))
     except (TypeError, ValueError, json.JSONDecodeError, RecursionError) as exc:
-        raise TransferError("Transfer package is not valid JSON") from exc
+        raise TransferError(t("transfer.transferPackageIsNotValid")) from exc
     if not isinstance(envelope, dict):
         raise TransferError("Transfer package header must be an object")
     if envelope.get("format") != TRANSFER_FORMAT or envelope.get("version") != TRANSFER_VERSION:
-        raise TransferError("Unsupported transfer package format")
+        raise TransferError(t("transfer.unsupportedTransferPackageFormat"))
     manifest = envelope.get("manifest")
     if not isinstance(manifest, dict) or len(_canonical(manifest)) > MAX_TRANSFER_MANIFEST_BYTES:
         raise TransferError("Transfer manifest is malformed or too large")
@@ -288,7 +289,7 @@ def _sanitize_credential(entry: Mapping[str, Any]) -> dict[str, Any]:
     result = copy.deepcopy(dict(entry))
     kind = result.get("kind")
     if kind not in {"web", "desktop"}:
-        raise TransferError("Only web and desktop credentials can be transferred")
+        raise TransferError(t("transfer.onlyWebAndDesktopCredentials"))
     policy = result.get("policy")
     if not isinstance(policy, dict):
         policy = {}
@@ -459,7 +460,7 @@ def _select_records(
             else:
                 selected_entries.append(_sanitize_credential(record))
     if not selected_items and not selected_entries:
-        raise TransferError("Selection contains no transferable records")
+        raise TransferError(t("transfer.selectionContainsNoTransferableRecords"))
 
     selected_item_ids = {item["id"] for item in selected_items}
     for item in selected_items:

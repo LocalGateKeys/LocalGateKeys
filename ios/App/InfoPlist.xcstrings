@@ -1,0 +1,204 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSCameraUsageDescription" : {
+      "comment" : "Camera permission prompt.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scannen Sie den Kopplungs-QR-Code Ihres PCs, um dessen Sync-Gruppe beizutreten, sowie die 2FA-Einrichtungs-QR-Codes von Websites."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan the pairing QR code your PC shows to join its sync group, and the 2FA setup QR codes websites show."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escanea el código QR de emparejamiento que muestra tu PC para unirte a su grupo de sincronización, y los códigos QR de configuración 2FA que muestran los sitios web."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scansiona il codice QR di associazione che mostra il tuo PC per unirti al suo gruppo di sincronizzazione, e i codici QR di configurazione 2FA mostrati dai siti web."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PCに表示されるペアリング用QRコードをスキャンして同期グループに参加したり、ウェブサイトが表示する2FA設定用のQRコードをスキャンしたりするために使用します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사용자의 PC에 표시되는 페어링 QR 코드를 스캔하여 동기화 그룹에 참여하거나, 웹사이트에 표시되는 2FA 설정 QR 코드를 스캔합니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan de koppel-QR-code die je pc toont om je bij de synchronisatiegroep aan te sluiten, en de QR-codes voor het instellen van 2FA die websites tonen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeskanuj kod QR parowania pokazywany przez komputer, aby dołączyć do jego grupy synchronizacji, oraz kody QR konfiguracji 2FA pokazywane przez witryny."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escaneie o QR code de pareamento que seu PC mostra para entrar no grupo de sincronização dele e os QR codes de configuração 2FA que os sites mostram."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "扫描您的 PC 显示的配对二维码以加入其同步群组，并扫描网站显示的 2FA 设置二维码。"
+          }
+        }
+      }
+    },
+    "NSFaceIDUsageDescription" : {
+      "comment" : "Face ID permission prompt (iPhone app).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entsperren Sie Ihren Tresor mit Face ID."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock your vault with Face ID."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquea tu bóveda con Face ID."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sblocca la tua cassaforte con Face ID."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Face IDで保管庫のロックを解除します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Face ID로 보관함의 잠금을 해제합니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ontgrendel je kluis met Face ID."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odblokuj sejf za pomocą Face ID."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloqueie seu cofre com o Face ID."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 Face ID 解锁您的保管库。"
+          }
+        }
+      }
+    },
+    "NSLocalNetworkUsageDescription" : {
+      "comment" : "Local Network permission prompt.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisieren Sie über Ihr Heim-WLAN mit dem PC, den Sie gekoppelt haben."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync with the PC you paired, over your home Wi-Fi."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincroniza con el PC que emparejaste, mediante tu Wi-Fi doméstica."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza con il PC che hai associato, tramite il Wi-Fi di casa."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ペアリングしたPCと、自宅のWi-Fi経由で同期します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "집 Wi-Fi를 통해 페어링한 PC와 동기화합니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniseer via je wifi-thuisnetwerk met de pc die je hebt gekoppeld."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizuj ze sparowanym komputerem przez domową sieć Wi-Fi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronize com o PC que você pareou, pelo Wi-Fi de casa."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过家庭 Wi-Fi 与您配对的 PC 同步。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

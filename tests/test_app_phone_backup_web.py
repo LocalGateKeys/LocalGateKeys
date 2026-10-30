@@ -251,7 +251,7 @@ def test_quarantine_only_restore_says_nothing_was_restored(env, monkeypatch):
     monkeypatch.setattr(phone_backup_web, "restore",
                         lambda *a, **k: RestoreReport(0, 0, 0, 0, ("bad-peer-record",), skipped=1))
     done = env.service.commit(token, handle)
-    assert done["status"] == "Nothing was restored: 1 items this version cannot read were skipped."
+    assert done["status"] == "Nothing was restored: 1 item this version cannot read was skipped."
     assert done["changed"] is False
 
 
@@ -264,9 +264,9 @@ def test_unreadable_records_are_announced_in_the_preview(env):
     chosen = env.service.choose()
     preview = env.service.preview(chosen["handle"], BACKUP_PW)
     assert preview["lines"][0] == "1 new items"
-    assert "1 items this version cannot read will be skipped" in preview["lines"]
+    assert "1 item this version cannot read will be skipped" in preview["lines"]
     done = env.service.commit(preview["token"], chosen["handle"])
-    assert done["status"] == "Phone backup restored. 1 items this version cannot read were skipped."
+    assert done["status"] == "Phone backup restored. 1 item this version cannot read was skipped."
     assert env.controller.session.live_item_count() == 1
 
 

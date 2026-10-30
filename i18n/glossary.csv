@@ -1,0 +1,13 @@
+term,en,es,it,pl,zh-Hans,ja,de,pt-BR,ko,nl
+vault,vault,bóveda,cassaforte|casseforti,sejf,保管库,保管庫,Tresor,cofre,보관함,kluis
+master password,master password,contraseña maestra|contraseñas maestras,password principale|password principali,główn,主密码,マスターパスワード,Master-Passwort|Master-Passwörter,senha mestra|senhas mestras,마스터 비밀번호,hoofdwachtwoord
+passkey,passkey,clave de acceso|claves de acceso,passkey,klucz dostępu|klucza dostępu|kluczy dostępu|klucze dostępu|kluczem dostępu|kluczu dostępu|kluczom dostępu,通行密钥,パスキー,Passkey,chave de acesso|chaves de acesso,패스키,passkey
+recovery phrase,recovery phrase,frase de recuperación|frases de recuperación,frase di recupero|frasi di recupero,odzyskiwani,恢复短语,リカバリーフレーズ,Wiederherstellungsphrase,frase de recuperação|frases de recuperação,복구 문구,herstelzin
+2FA code,2FA code,código 2FA|códigos 2FA,codice 2FA|codici 2FA,2FA,2FA 验证码|验证码,2段階認証|2FAコード,2FA-Code,código 2FA|códigos 2FA,2FA 코드,2FA-code
+sync,sync,sincroniz|sync,sincroniz|sync,synchroniz|sync,同步,同期,synchronis|sync,sincroniz|sync,동기화,synchronis|sync
+backup,backup,copia de seguridad|copias de seguridad,backup|copia di sicurezza|copie di sicurezza,zapasow,备份,バックアップ,Backup|Sicherung,backup|cópia de segurança|cópias de segurança,백업,back-up|backup
+licence,licence,licencia,licenza|licenze,licenc,许可证|授权,ライセンス,Lizenz,licença,라이선스,licentie
+item,item,elemento|elementos,elemento|elementi,element,项目,項目,Eintrag|Einträge,item|itens,항목,item
+login,login,inicio de sesión|inicios de sesión,accesso|accessi,login|logowani,登录,ログイン|サインイン,Anmeld|Login,login,로그인,login|inlog
+unlock,unlock,desbloque,sblocc,odblok,解锁,ロック解除|アンロック,entsperr,desbloque,잠금 해제,ontgrendel
+lock,lock,bloque,blocc,zablok|blokad,锁定,ロック,sperr,bloque,잠금|잠겼|잠겨|잠긴|잠기|잠김,vergrendel

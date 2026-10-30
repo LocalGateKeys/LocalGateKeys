@@ -1,6 +1,7 @@
 <script>
   /** Live 2FA codes for every login, above the list: click one to copy it. */
   import { call, on } from '../lib/api.js';
+  import { formatNumber, t } from '../lib/i18n.svelte.js';
   import { notice, okOrToast, toast } from '../lib/toast.js';
   import ItemTile from './ItemTile.svelte';
 
@@ -43,28 +44,28 @@
 
   async function copy(entry) {
     const result = await call('item_copy', entry.ref, 'totp');
-    if (okOrToast(result, 'Not copied')) notice(result);
+    if (okOrToast(result, t('home.notCopied'))) notice(result);
   }
 
   const shown = $derived(expanded ? codes : codes.slice(0, COLLAPSED));
 </script>
 
 {#if codes.length}
-  <section class="codes" aria-label="One-time codes">
+  <section class="codes" aria-label={t('codesCard.title')}>
     <div class="head">
-      <span class="title">One-time codes</span>
+      <span class="title">{t('codesCard.title')}</span>
       {#if codes.length > COLLAPSED}
-        <button class="link" onclick={() => (expanded = !expanded)}>{expanded ? 'Show fewer' : `Show all ${codes.length}`}</button>
+        <button class="link" onclick={() => (expanded = !expanded)}>{expanded ? t('codesCard.showFewer') : t('codesCard.showAll', { count: formatNumber(codes.length) })}</button>
       {/if}
     </div>
     <div class="grid">
       {#each shown as entry (entry.ref.id)}
-        <button class="code-tile group" aria-label={`Copy 2FA code for ${entry.title}`} onclick={() => copy(entry)}>
+        <button class="code-tile group" aria-label={t('codesCard.copyFor', { title: entry.title })} onclick={() => copy(entry)}>
           <ItemTile kind={entry.ref.kind} origin={entry.origin} icon={entry.icon} size={28} />
           <span class="text">
             <span class="name">{entry.title}</span>
             {#if entry.hidden}
-              <span class="sub muted">Hidden · click to copy</span>
+              <span class="sub muted">{t('codesCard.hiddenCopy')}</span>
             {:else if entry.error}
               <span class="sub muted">{entry.error}</span>
             {:else}
@@ -73,7 +74,7 @@
           </span>
           {#if entry.code}
             {@const fraction = left(entry) / (entry.period || 30)}
-            <svg class="ring" width="18" height="18" aria-label={`Refreshes in ${left(entry)} s`}>
+            <svg class="ring" width="18" height="18" aria-label={t('codesCard.refreshesIn', { seconds: formatNumber(left(entry)) })}>
               <circle cx="9" cy="9" r="7.5" fill="none" stroke="var(--separator)" stroke-width="2" />
               <circle cx="9" cy="9" r="7.5" fill="none" stroke={left(entry) <= 5 ? 'var(--warning)' : 'var(--success)'} stroke-width="2"
                 stroke-linecap="round" stroke-dasharray="47.1" stroke-dashoffset={47.1 - fraction * 47.1} transform="rotate(-90 9 9)" />

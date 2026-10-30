@@ -11,9 +11,11 @@ from contextlib import ExitStack
 from typing import Any, Protocol
 from urllib.parse import urlsplit
 
+from .. import i18n
 from ..secret_text import SecretText
 from ..version import APP_VERSION
 from .result import ApiError, fail, guarded, ok
+from ..i18n import t
 
 MAX_PASSWORD_LENGTH = 1024
 
@@ -28,7 +30,7 @@ class WindowOps(Protocol):
 
 def _text(value: Any, name: str, limit: int) -> str:
     if not isinstance(value, str) or len(value) > limit:
-        raise ApiError("invalid", f"Invalid {name}.")
+        raise ApiError("invalid", t("bridge.invalid", name=name))
     return value
 
 
@@ -39,7 +41,7 @@ def _secret(value: Any, name: str, limit: int = MAX_PASSWORD_LENGTH) -> SecretTe
         return SecretText.from_str(text)
     except ValueError:
         # Unencodable text (a lone surrogate): a fixed message that never echoes the value.
-        raise ApiError("invalid", f"Invalid {name}.") from None
+        raise ApiError("invalid", t("bridge.invalid", name=name)) from None
 
 
 def _optional_text(value: Any, name: str, limit: int) -> str | None:
@@ -51,25 +53,25 @@ def _ref(value: Any) -> dict[str, str]:
     if (not isinstance(value, dict) or set(value) != {"source", "id", "kind"}
             or value.get("source") not in ("credential", "typed")
             or not all(isinstance(value[k], str) and 0 < len(value[k]) <= 128 for k in ("id", "kind"))):
-        raise ApiError("invalid", "Invalid item.")
+        raise ApiError("invalid", t("bridge.invalidItem"))
     return {"source": value["source"], "id": value["id"], "kind": value["kind"]}
 
 
 def _ids(value: Any) -> list[str]:
     if not isinstance(value, list) or len(value) > 5000 or not all(isinstance(v, str) and 0 < len(v) <= 128 for v in value):
-        raise ApiError("invalid", "Invalid selection.")
+        raise ApiError("invalid", t("bridge.invalidSelection"))
     return list(value)
 
 
 def _int(value: Any, name: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
-        raise ApiError("invalid", f"Invalid {name}.")
+        raise ApiError("invalid", t("bridge.invalid", name=name))
     return value
 
 
 def _dict(value: Any, name: str) -> dict[str, Any]:
     if not isinstance(value, dict) or len(value) > 64:
-        raise ApiError("invalid", f"Invalid {name}.")
+        raise ApiError("invalid", t("bridge.invalid", name=name))
     return value
 
 
@@ -77,13 +79,13 @@ class _NoDialogs:
     """Used when no window exists (tests, headless): every file dialog is unavailable."""
 
     def open_file(self, title: str, file_types: tuple[str, ...] | None = None) -> Any:
-        raise ApiError("unavailable", "File dialogs are not available here.")
+        raise ApiError("unavailable", t("error.dialogsUnavailable"))
 
     def save_file(self, title: str, name: str) -> Any:
-        raise ApiError("unavailable", "File dialogs are not available here.")
+        raise ApiError("unavailable", t("error.dialogsUnavailable"))
 
     def choose_folder(self, title: str) -> Any:
-        raise ApiError("unavailable", "File dialogs are not available here.")
+        raise ApiError("unavailable", t("error.dialogsUnavailable"))
 
 
 class Api:
@@ -114,9 +116,14 @@ class Api:
         self._documents = DocumentService(controller, port, dialogs or _NoDialogs())
         self._trash = TrashService(controller, port)
         self._extras = LoginExtrasService(controller, port, self._editor)
+        from ..app.qr_accounts import QrAccountsService
         from ..app.qr_import import QrImportService
 
-        self._qr = QrImportService(controller, self._editor, self._extras, emit=controller._bus.emit)
+        self._qr_accounts = QrAccountsService(
+            controller, self._editor, port,
+            generate=lambda: generate_from_preferences(controller.settings.generator_preferences))
+        self._qr = QrImportService(controller, self._editor, self._extras, emit=controller._bus.emit,
+                                   accounts=self._qr_accounts)
         self._dialogs = dialogs or _NoDialogs()
         self._security = None
         self._stage4()
@@ -164,6 +171,11 @@ class Api:
     def modal_answer(self, request_id: Any, value: Any = None) -> dict[str, Any]:
         return ok(accepted=bool(self._port.answer(_text(request_id, "request", 64), value)))
 
+    # ---------------------------------------------------------------- language
+    @guarded
+    def i18n_bundle(self) -> dict[str, Any]:
+        return ok(lang=i18n.current(), messages=i18n.catalog())
+
     # ---------------------------------------------------------------- window
     @guarded
     def window_theme_sync(self) -> dict[str, Any]:
@@ -192,7 +204,7 @@ class Api:
         text = _text(url, "link", 2048)
         parts = urlsplit(text)
         if parts.scheme not in ("http", "https") or not parts.netloc:
-            return fail("invalid", "Only web links can be opened.")
+            return fail("invalid", t("bridge.onlyWebLinksCanBe"))
         webbrowser.open(text)
         return ok()
 
@@ -205,6 +217,14 @@ class Api:
     def items_list(self, filter_kind: Any = None, chip: Any = None, query: Any = "") -> dict[str, Any]:
         return ok(**self._home.items(_optional_text(filter_kind, "filter", 256), _optional_text(chip, "chip", 32),
                                      _text(query or "", "search", 512)))
+
+    @guarded
+    def items_sort_set(self, option: Any = None, favorites_first: Any = True) -> dict[str, Any]:
+        return ok(**self._home.set_sort(option, favorites_first))
+
+    @guarded
+    def import_card_dismiss(self) -> dict[str, Any]:
+        return ok(**self._home.dismiss_import_card())
 
     @guarded
     def quick_search(self, query: Any = "", kind: Any = "") -> dict[str, Any]:
@@ -275,7 +295,7 @@ class Api:
     def login_regenerate(self, draft_id: Any, chip: Any) -> dict[str, Any]:
         chip = _text(chip, "chip", 16)
         if chip not in ("Passphrase", "Random", "PIN"):
-            raise ApiError("invalid", "Invalid chip.")
+            raise ApiError("invalid", t("bridge.invalidChip"))
         return ok(**self._editor.regenerate(_text(draft_id, "editor", 64), chip))
 
     @guarded
@@ -413,6 +433,12 @@ class Api:
         return ok(**self._extras.history_copy(_ref(ref), _int(index, "row"), _int(changed_at, "row")))
 
     @guarded
+    def history_restore(self, ref: Any, index: Any, changed_at: Any) -> dict[str, Any]:
+        result = self._extras.history_restore(_ref(ref), _int(index, "row"), _int(changed_at, "row"))
+        self._changed()
+        return ok(**result)
+
+    @guarded
     def recovery_count(self, ref: Any) -> dict[str, Any]:
         return ok(**self._extras.recovery_count(_ref(ref)))
 
@@ -423,7 +449,7 @@ class Api:
     @guarded
     def recovery_save(self, ref: Any, codes: Any) -> dict[str, Any]:
         if not isinstance(codes, list) or len(codes) > 100 or not all(isinstance(c, str) and len(c) <= 512 for c in codes):
-            raise ApiError("invalid", "At most 100 recovery codes of up to 512 characters.")
+            raise ApiError("invalid", t("bridge.atMost100RecoveryCodes"))
         return ok(**self._extras.recovery_codes_save(_ref(ref), codes))
 
     @guarded
@@ -437,12 +463,12 @@ class Api:
     @guarded
     def fields_save(self, ref: Any, fields: Any, removed: Any = None) -> dict[str, Any]:
         if not isinstance(fields, list) or len(fields) > 50 or not all(isinstance(f, dict) for f in fields):
-            raise ApiError("invalid", "At most 50 custom fields")
+            raise ApiError("invalid", t("bridge.atMost50CustomFields"))
         removed = [] if removed is None else removed
         if not isinstance(removed, list) or len(removed) > 50:
-            raise ApiError("invalid", "Invalid removed fields.")
+            raise ApiError("invalid", t("bridge.invalidRemovedFields"))
         return ok(**self._extras.custom_fields_save(_ref(ref), fields,
-                                                    removed=[_int(i, "removed field") for i in removed]))
+                                                    removed=[_int(i, t("bridge.removedField")) for i in removed]))
 
     @guarded
     def policy_get(self, ref: Any) -> dict[str, Any]:
@@ -468,6 +494,29 @@ class Api:
     @guarded
     def qr_scan_camera(self, draft_id: Any) -> dict[str, Any]:
         return ok(**self._qr.scan_camera(_text(draft_id, "editor", 64)))
+
+    # The Scan sheet: a QR code without an open editor (picture file, pasted snip, dropped file or webcam).
+    @guarded
+    def qr_sheet_scan_image(self, image: Any, token: Any = None) -> dict[str, Any]:
+        return ok(**self._qr.sheet_scan_image(_text(image, "image", 17 * 1024 * 1024),
+                                              None if token is None else _text(token, "scan", 64)))
+
+    @guarded
+    def qr_sheet_scan_camera(self, token: Any = None) -> dict[str, Any]:
+        return ok(**self._qr.sheet_scan_camera(None if token is None else _text(token, "scan", 64)))
+
+    @guarded
+    def qr_sheet_open(self, token: Any, index: Any, target: Any = None) -> dict[str, Any]:
+        return ok(**self._qr_accounts.open(_text(token, "scan", 64), _int(index, "account"),
+                                           None if not target else _text(target, "login", 128)))
+
+    @guarded
+    def qr_sheet_add(self, token: Any, choices: Any) -> dict[str, Any]:
+        return ok(**self._qr_accounts.add(_text(token, "scan", 64), choices))
+
+    @guarded
+    def qr_sheet_discard(self, token: Any) -> dict[str, Any]:
+        return ok(**self._qr_accounts.discard(_text(token, "scan", 64)))
 
     @guarded
     def qr_cancel(self) -> dict[str, Any]:
@@ -527,6 +576,9 @@ class Api:
         self._imports = ImportService(self._controller, self._port, self._dialogs, bus)
         self._exports = ExportService(self._controller, self._port, self._dialogs)
         self._transfer = TransferService(self._controller, self._port, self._dialogs)
+        from ..app.share_web import ShareService
+
+        self._share = ShareService(self._controller, self._port, self._dialogs)
         from ..app.phone_backup_web import PhoneBackupService
 
         self._phone_backup = PhoneBackupService(self._controller, self._port, self._dialogs,
@@ -553,7 +605,7 @@ class Api:
     @guarded
     def security_set(self, key: Any, value: Any) -> dict[str, Any]:
         if not isinstance(value, bool):
-            raise ApiError("invalid", "Invalid switch value.")
+            raise ApiError("invalid", t("bridge.invalidSwitchValue"))
         return ok(**self._security.set_setting(_text(key, "setting", 64), value))
 
     @guarded
@@ -579,7 +631,7 @@ class Api:
             new_secret = owned.enter_context(_secret(new, "password"))
             confirmation = owned.enter_context(_secret(confirm, "password"))
             return ok(**self._master.change(current_secret, new_secret, confirmation,
-                                            _optional_text(phrase, "recovery phrase", 1024)))
+                                            _optional_text(phrase, t("bridge.recoveryPhrase"), 1024)))
 
     # ---------------------------------------------------------------- backups
     @guarded
@@ -603,7 +655,7 @@ class Api:
 
     @guarded
     def backup_restore(self, name: Any, backup_password: Any, vault_password: Any) -> dict[str, Any]:
-        name_text = _text(name, "profile name", 128)
+        name_text = _text(name, t("bridge.profileName"), 128)
         with ExitStack() as owned:
             backup_secret = owned.enter_context(_secret(backup_password, "password"))
             vault_secret = owned.enter_context(_secret(vault_password, "password"))
@@ -637,7 +689,7 @@ class Api:
     @guarded
     def phrase_confirm(self, token: Any, answers: Any) -> dict[str, Any]:
         if not isinstance(answers, list) or len(answers) > 24 or not all(isinstance(a, str) and len(a) <= 64 for a in answers):
-            raise ApiError("invalid", "Invalid words.")
+            raise ApiError("invalid", t("bridge.invalidWords"))
         return ok(**self._recovery.phrase_confirm(_text(token, "card", 64), answers))
 
     @guarded
@@ -646,7 +698,7 @@ class Api:
 
     @guarded
     def vault_recover(self, phrase: Any, new: Any, confirm: Any) -> dict[str, Any]:
-        phrase_text = _text(phrase, "recovery phrase", 1024)
+        phrase_text = _text(phrase, t("bridge.recoveryPhrase"), 1024)
         with ExitStack() as owned:
             new_secret = owned.enter_context(_secret(new, "password"))
             confirmation = owned.enter_context(_secret(confirm, "password"))
@@ -676,7 +728,7 @@ class Api:
     @guarded
     def hello_auto_start(self, value: Any) -> dict[str, Any]:
         if not isinstance(value, bool):
-            raise ApiError("invalid", "Invalid switch value.")
+            raise ApiError("invalid", t("bridge.invalidSwitchValue"))
         return ok(**self._hello.set_auto_start(value))
 
     @guarded
@@ -729,7 +781,7 @@ class Api:
     @guarded
     def settings_set(self, key: Any, value: Any) -> dict[str, Any]:
         if not isinstance(value, (bool, int, str)) or (isinstance(value, str) and len(value) > 1024):
-            raise ApiError("invalid", "That value cannot be used.")
+            raise ApiError("invalid", t("settings.error.invalidValue"))
         key = _text(key, "setting", 64)
         result = self._settings.apply(key, value)
         if key == "appearance":
@@ -811,11 +863,11 @@ class Api:
 
     @guarded
     def profiles_create(self, name: Any) -> dict[str, Any]:
-        return ok(**self._profiles.create(_text(name, "profile name", 128)))
+        return ok(**self._profiles.create(_text(name, t("bridge.profileName"), 128)))
 
     @guarded
     def profiles_update(self, profile_id: Any, name: Any = None, color: Any = None) -> dict[str, Any]:
-        return ok(**self._profiles.update(_text(profile_id, "profile", 128), name=_optional_text(name, "profile name", 128),
+        return ok(**self._profiles.update(_text(profile_id, "profile", 128), name=_optional_text(name, t("bridge.profileName"), 128),
                                           color=_optional_text(color, "colour", 16)))
 
     @guarded
@@ -861,6 +913,10 @@ class Api:
         return ok(**self._sync.view())
 
     @guarded
+    def sync_status(self) -> dict[str, Any]:
+        return ok(**self._sync.status_summary())
+
+    @guarded
     def sync_refresh(self) -> dict[str, Any]:
         return ok(**self._sync.refresh())
 
@@ -871,6 +927,14 @@ class Api:
     @guarded
     def sync_acknowledge_members(self) -> dict[str, Any]:
         return ok(**self._sync.acknowledge_members())
+
+    @guarded
+    def sync_acknowledge_rollback(self) -> dict[str, Any]:
+        return ok(**self._sync.acknowledge_rollback())
+
+    @guarded
+    def sync_dismiss_peer_rollback(self, device_id: str) -> dict[str, Any]:
+        return ok(**self._sync.dismiss_peer_rollback(device_id))
 
     @guarded
     def sync_choose_folder(self) -> dict[str, Any]:
@@ -946,7 +1010,7 @@ class Api:
         offer = _text(offer_id, "offer", 128)
         if decision is not None:
             if decision not in ("accept", "decline"):
-                raise ApiError("invalid", "Choose Accept or Decline.")
+                raise ApiError("invalid", t("bridge.chooseAcceptOrDecline"))
             self._sync.qr_decide(offer, decision == "accept")
         return ok(**self._sync.qr_poll(offer))
 
@@ -961,6 +1025,10 @@ class Api:
     @guarded
     def sync_join_qr(self, text: Any) -> dict[str, Any]:
         return ok(**self._sync.join_qr(_text(text, "code", 8192)))
+
+    @guarded
+    def sync_find_again_qr(self, text: Any) -> dict[str, Any]:
+        return ok(**self._sync.find_again_qr(_text(text, "code", 8192)))
 
     @guarded
     def sync_wifi_suggest(self) -> dict[str, Any]:
@@ -993,7 +1061,7 @@ class Api:
         if mapping is not None and (not isinstance(mapping, dict) or len(mapping) > 16
                                     or not all(isinstance(k, str) and isinstance(v, str) and len(v) <= 256
                                                for k, v in mapping.items())):
-            raise ApiError("invalid", "Invalid column choice.")
+            raise ApiError("invalid", t("bridge.invalidColumnChoice"))
         return ok(**self._imports.plan(_text(handle, "import", 64),
                                        _optional_text(password, "password", MAX_PASSWORD_LENGTH), mapping))
 
@@ -1005,7 +1073,7 @@ class Api:
     def import_decide(self, handle: Any, rows: Any, mode: Any) -> dict[str, Any]:
         if not isinstance(rows, list) or len(rows) > 100000 or not all(
                 isinstance(r, int) and not isinstance(r, bool) for r in rows):
-            raise ApiError("invalid", "Invalid selection.")
+            raise ApiError("invalid", t("bridge.invalidSelection"))
         return ok(**self._imports.decide(_text(handle, "import", 64), rows, _text(mode, "decision", 16)))
 
     @guarded
@@ -1072,6 +1140,54 @@ class Api:
     def transfer_cancel(self) -> dict[str, Any]:
         return ok(**self._transfer.cancel())
 
+    # ----------------------------------------------------------- share (UX 9)
+    @guarded
+    def share_start(self, ref: Any) -> dict[str, Any]:
+        return ok(**self._share.start(_ref(ref)))
+
+    @guarded
+    def share_save_file(self, handle: Any) -> dict[str, Any]:
+        return ok(**self._share.save_file(_text(handle, "share", 64)))
+
+    @guarded
+    def share_qr(self, handle: Any) -> dict[str, Any]:
+        return ok(**self._share.qr(_text(handle, "share", 64)))
+
+    @guarded
+    def share_cancel(self) -> dict[str, Any]:
+        return ok(**self._share.cancel())
+
+    @guarded
+    def share_receive_file(self) -> dict[str, Any]:
+        return ok(**self._share.receive_file())
+
+    @guarded
+    def share_receive_text(self, text: Any) -> dict[str, Any]:
+        return ok(**self._share.receive_text(_text(text, t("bridge.sharedItem"), 300 * 1024)))
+
+    @guarded
+    def share_receive_qr_image(self, image: Any) -> dict[str, Any]:
+        return ok(**self._share.receive_qr_image(_text(image, "image", 17 * 1024 * 1024)))
+
+    @guarded
+    def share_incoming(self) -> dict[str, Any]:
+        return ok(**self._share.incoming())
+
+    @guarded
+    def share_preview(self, package_id: Any, code: Any) -> dict[str, Any]:
+        return ok(**self._share.preview(_text(package_id, "item", 64), _text(code, "code", 200)))
+
+    @guarded
+    def share_save(self, package_id: Any, code: Any, mode: Any = "keep") -> dict[str, Any]:
+        result = self._share.save(_text(package_id, "item", 64), _text(code, "code", 200), _text(mode, "mode", 16))
+        if result.pop("changed", False):
+            self._changed()
+        return ok(**result)
+
+    @guarded
+    def share_reject(self, package_id: Any) -> dict[str, Any]:
+        return ok(**self._share.reject(_text(package_id, "item", 64)))
+
     # ---------------------------------------------------------- phone backup
     @guarded
     def phone_backup_choose(self) -> dict[str, Any]:
@@ -1098,7 +1214,7 @@ class Api:
     def legacy_import(self) -> dict[str, Any]:
         startup = self._controller.startup
         if startup is None:
-            raise ApiError("invalid", "There is nothing to import.")
+            raise ApiError("invalid", t("bridge.thereIsNothingToImport"))
         startup.import_legacy()
         return ok(**self._controller.state())
 
@@ -1106,7 +1222,7 @@ class Api:
     def legacy_fresh(self) -> dict[str, Any]:
         startup = self._controller.startup
         if startup is None:
-            raise ApiError("invalid", "There is nothing to decide.")
+            raise ApiError("invalid", t("bridge.thereIsNothingToDecide"))
         startup.fresh()
         return ok(**self._controller.state())
 
@@ -1163,12 +1279,28 @@ class Api:
         return ok(**self._onboarding.view())
 
     @guarded
-    def onboarding_perform(self, choice: Any = None) -> dict[str, Any]:
-        return ok(**self._onboarding.perform(choice if isinstance(choice, bool) else None))
+    def onboarding_card(self) -> dict[str, Any]:
+        return ok(**self._onboarding.card())
 
     @guarded
-    def onboarding_skip(self) -> dict[str, Any]:
-        return ok(**self._onboarding.skip())
+    def onboarding_perform(self, step: Any = None) -> dict[str, Any]:
+        return ok(**self._onboarding.perform(_text(step, "step", 32)))
+
+    @guarded
+    def onboarding_skip(self, step: Any = None) -> dict[str, Any]:
+        return ok(**self._onboarding.skip(_optional_text(step, "step", 32)))
+
+    @guarded
+    def onboarding_skip_all(self) -> dict[str, Any]:
+        return ok(**self._onboarding.skip_all())
+
+    @guarded
+    def onboarding_hide(self) -> dict[str, Any]:
+        return ok(**self._onboarding.hide())
+
+    @guarded
+    def onboarding_show(self) -> dict[str, Any]:
+        return ok(**self._onboarding.show_again())
 
     @guarded
     def onboarding_test_connection(self) -> dict[str, Any]:
@@ -1178,7 +1310,7 @@ class Api:
     def _desktop_service(self) -> Any:
         service = getattr(self, "_desktop", None)
         if service is None:
-            raise ApiError("unavailable", "Desktop fill is available in the Windows app.")
+            raise ApiError("unavailable", t("bridge.desktopFillIsAvailableIn"))
         return service
 
     @guarded
@@ -1229,6 +1361,7 @@ _NO_VAULT_LOCK = frozenset({
     "desktop_signin_scan", "desktop_signin_save", "desktop_web_warning_reset",
     # QR scans wait for the camera; they take the lock only to read and fill the editor.
     "qr_scan_image", "qr_scan_camera", "qr_cancel", "qr_switch_camera",
+    "qr_sheet_scan_image", "qr_sheet_scan_camera",
 })
 
 

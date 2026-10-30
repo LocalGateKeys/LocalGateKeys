@@ -17,7 +17,7 @@ public struct GlassStyle<S: InsettableShape>: ViewModifier {
             content
                 .background(Palette.glassFill, in: shape)
                 .overlay(shape.strokeBorder(Palette.glassBorder, lineWidth: highContrast ? 1.5 : 0.5))
-        } else if #available(iOS 26, *) {
+        } else if #available(iOS 26, macOS 26, *) {
             content
                 .glassEffect(.regular.interactive(), in: shape)
                 .overlay { if highContrast { shape.strokeBorder(Palette.glassBorder, lineWidth: 1.5) } }
@@ -42,7 +42,7 @@ public struct LGKGlassContainer<Content: View>: View {
         self.spacing = spacing; self.content = content()
     }
     public var body: some View {
-        if #available(iOS 26, *) {
+        if #available(iOS 26, macOS 26, *) {
             GlassEffectContainer(spacing: spacing) { content }
         } else {
             content

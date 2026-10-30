@@ -1,5 +1,9 @@
 import Foundation
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 /// Desktop `password_tools.GeneratorOptions`: same defaults and character sets.
 struct GeneratorOptions: Equatable, Sendable, Codable {
@@ -41,9 +45,17 @@ enum GeneratorError: Error, Equatable {
     case noGroups, emptyGroup(String), badSeparator
     var message: String {
         switch self {
-        case .noGroups: "Select at least one character group"
-        case .emptyGroup(let name): "No usable \(name) remain after exclusions"
-        case .badSeparator: "Separator must be one of: dash, space, dot, underscore or none"
+        case .noGroups: String(localized: "Select at least one character group")
+        case .emptyGroup(let name):
+            // `name` is the group's id (desktop wording); each group has its own sentence.
+            switch name {
+            case "lowercase letters": String(localized: "No usable lowercase letters remain after exclusions")
+            case "uppercase letters": String(localized: "No usable uppercase letters remain after exclusions")
+            case "digits": String(localized: "No usable digits remain after exclusions")
+            case "symbols": String(localized: "No usable symbols remain after exclusions")
+            default: String(localized: "No usable \(name) remain after exclusions")
+            }
+        case .badSeparator: String(localized: "Separator must be one of: dash, space, dot, underscore or none")
         }
     }
 }

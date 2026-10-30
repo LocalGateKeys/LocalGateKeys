@@ -29,13 +29,13 @@ final class PasskeyRenameModel {
     /// it once for this device. The same title writes nothing.
     func save() -> SaveResult {
         error = nil
-        guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { error = "Enter a name."; return .invalid }
+        guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { error = String(localized: "Enter a name."); return .invalid }
         guard title != original else { return .unchanged }
         do {
             var snap = try store.load()
             guard case .object(let w)? = snap.records[id], w["ns"] == .string(Namespace.item.rawValue),
                   case .object(var r)? = w["record"], r["kind"] == .string("passkey") else {
-                error = "This passkey is no longer on this iPhone."; return .failed
+                error = String(localized: "This passkey is no longer on this iPhone."); return .failed
             }
             r["title"] = .string(title)
             r["updated_at"] = .int(clock.now)
@@ -47,16 +47,16 @@ final class PasskeyRenameModel {
         } catch NormaliseError.rejected(let detail) {
             error = detail; return .invalid
         } catch {
-            self.error = "The passkey could not be saved on this device."; return .failed
+            self.error = String(localized: "The passkey could not be saved on this device."); return .failed
         }
     }
 
     func clearAlreadyRemoved() { alreadyRemoved = false }
 
     /// Removes the item and writes its tombstone, as for every other item (`EditorModel.delete`).
-    func delete() -> SaveResult {
-        let r = EditorModel.delete(id: id, store: store, clock: clock, background: background)
-        if r == .failed { error = "The passkey could not be deleted on this device." }
+    func delete(using move: ((String) -> SaveResult)? = nil) -> SaveResult {
+        let r = move?(id) ?? EditorModel.delete(id: id, store: store, clock: clock, background: background)
+        if r == .failed { error = String(localized: "The passkey could not be deleted on this device.") }
         alreadyRemoved = r == .unchanged
         return r
     }
@@ -67,6 +67,7 @@ struct PasskeyEditView: View {
     let onDone: (SaveResult) -> Void
     @State private var confirmDelete = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.phoneTrash) private var trash
 
     var body: some View {
         NavigationStack {
@@ -95,10 +96,14 @@ struct PasskeyEditView: View {
                     }
                 }
             }
-            .confirmationDialog("Delete this passkey?", isPresented: $confirmDelete, titleVisibility: .visible) {
+            // An alert with a visible Cancel, as for other items (tester feedback 1).
+            .alert("Delete this passkey?", isPresented: $confirmDelete) {
                 Button("Delete", role: .destructive) {
-                    if model.delete() == .saved { onDone(.saved); dismiss() }
+                    if model.delete(using: trash?.mover) == .saved {
+                        trash?.offerUndo(); onDone(.saved); dismiss()
+                    }
                 }
+                Button("Cancel", role: .cancel) {}
             } message: {
                 Text("You will no longer be able to sign in to this website with it.")
             }

@@ -1,6 +1,10 @@
 import Foundation
 import Observation
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 struct DetailField: Identifiable, Equatable, Sendable {
     let id: String
@@ -33,7 +37,7 @@ final class ItemDetailModel {
     private(set) var totp: TOTPState?
     private(set) var lastCopied: String?
 
-    @ObservationIgnored private let clipboard: SecretClipboard
+    @ObservationIgnored private let clipboard: any SecretCopying
     @ObservationIgnored private let clock: any UnixClock
     @ObservationIgnored private let totpSpec: (secret: String, algorithm: String, digits: Int, period: Int)?
 
@@ -41,17 +45,17 @@ final class ItemDetailModel {
 
     /// Desktop `PROTECTED_FIELD_LABELS`: the fields the editor masks.
     static let maskedPayloadFields: [String: [(String, String)]] = [
-        "card": [("number", "Card number"), ("cvv", "CVV"), ("pin", "PIN")],
-        "bank_account": [("account_number", "IBAN / account number"), ("pin", "PIN")],
-        "ssh_key": [("private_key", "Private key"), ("passphrase", "Passphrase")],
-        "api_key": [("key", "Key"), ("secret", "Secret")],
-        "wifi": [("password", "Password")],
-        "passkey": [("private_key", "Private key")],   // never shown: passkeys take the `passkeyFields` path
-        "license": [("license_value", "License key / serial")],
+        "card": [("number", String(localized: "Card number")), ("cvv", "CVV"), ("pin", "PIN")],
+        "bank_account": [("account_number", String(localized: "IBAN / account number")), ("pin", "PIN")],
+        "ssh_key": [("private_key", String(localized: "Private key")), ("passphrase", String(localized: "Passphrase"))],
+        "api_key": [("key", String(localized: "Key")), ("secret", String(localized: "Secret"))],
+        "wifi": [("password", String(localized: "Password"))],
+        "passkey": [("private_key", String(localized: "Private key"))],   // never shown: passkeys take the `passkeyFields` path
+        "license": [("license_value", String(localized: "License key / serial"))],
     ]
 
     /// `concealSecrets` false ("Hide passwords until tapped" off): protected fields start revealed.
-    init(item: VaultItem, clipboard: SecretClipboard, clock: any UnixClock, concealSecrets: Bool = true) {
+    init(item: VaultItem, clipboard: any SecretCopying, clock: any UnixClock, concealSecrets: Bool = true) {
         self.item = item; self.clipboard = clipboard; self.clock = clock
         fields = Self.fields(for: item)
         if !concealSecrets { revealed = Set(fields.filter(\.isSecret).map(\.id)) }
@@ -77,10 +81,10 @@ final class ItemDetailModel {
             if let value, !value.isEmpty { out.append(DetailField(id: id, label: label, value: value, isSecret: secret)) }
         }
         if item.isLogin {
-            add("username", "Username", item.username)
-            add("password", "Password", r["password"]?.stringValue, secret: true)
-            add("target", item.kind == "web" ? "Website" : "Application", item.target)
-            add("notes", "Notes", r["notes"]?.stringValue)
+            add("username", String(localized: "Username"), item.username)
+            add("password", String(localized: "Password"), r["password"]?.stringValue, secret: true)
+            add("target", item.kind == "web" ? String(localized: "Website") : String(localized: "Application"), item.target)
+            add("notes", String(localized: "Notes"), r["notes"]?.stringValue)
             return out
         }
         if item.kind == "passkey" { return passkeyFields(item) }
@@ -92,12 +96,12 @@ final class ItemDetailModel {
             switch payload[key] {
             case .bool(let b)?:
                 // A Wi-Fi network is shown as hidden only when it is; "Active" always says which.
-                if key != "hidden" || b { add(key, label(key), b ? "Yes" : "No") }
+                if key != "hidden" || b { add(key, label(key), b ? String(localized: "Yes") : String(localized: "No")) }
             case .int(let n)? where key == "amount_minor":
                 let code = payload["currency"]?.stringValue ?? "XXX"
-                if n != 0 || code != "XXX" { add(key, "Amount", Amount.display(minor: n, currency: code)) }
+                if n != 0 || code != "XXX" { add(key, String(localized: "Amount"), Amount.display(minor: n, currency: code)) }
             case .string(let v)? where key == "security":
-                add(key, "Security", EditorKind.choiceLabel(v))
+                add(key, String(localized: "Security"), EditorKind.choiceLabel(v))
             case .string(let v)? where dateKeys.contains(key):
                 add(key, label(key), Self.displayDate(v))
             default:
@@ -106,23 +110,34 @@ final class ItemDetailModel {
         }
         for (i, f) in (payload["fields"]?.arrayValue ?? []).enumerated() {
             guard case .object(let o) = f else { continue }
-            add("field-\(i)", o["name"]?.stringValue ?? "Field", o["value"]?.stringValue, secret: o["hidden"] == .bool(true))
+            add("field-\(i)", o["name"]?.stringValue ?? String(localized: "Field"), o["value"]?.stringValue, secret: o["hidden"] == .bool(true))
         }
         return out
     }
 
     /// Payload keys never listed: bookkeeping, or shown through another row (currency with the amount).
-    static let hiddenPayloadKeys: Set<String> = ["fields", "template_id", "document_ids", "last4", "number_format", "currency"]
+    static let hiddenPayloadKeys: Set<String> = ["fields", "template_id", "document_ids", "last4", "number_format", "currency",
+                                                 "attachment_id"]
     static let dateKeys: Set<String> = ["purchase_date", "expiration_date", "renewal_date", "expires"]
     static let labelOverrides: [String: String] = [
-        "url": "URL", "ssid": "Network name", "routing": "Routing number / BIC", "license_value": "License key",
-        "hidden": "Hidden network", "key_format": "Key format", "job_title": "Job title",
+        "url": "URL", "ssid": String(localized: "Network name"), "routing": String(localized: "Routing number / BIC"), "license_value": String(localized: "License key"),
+        "hidden": String(localized: "Hidden network"), "key_format": String(localized: "Key format"), "job_title": String(localized: "Job title"),
     ]
     static func label(_ key: String) -> String { labelOverrides[key] ?? VaultItem.kindLabel(key) }
 
+    /// `yyyy-MM-dd` in UTC (the editor's `OptionalDateField.formatter`).
+    static let isoDate: DateFormatter = {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
     /// "2026-12-31" in the person's date style; anything else (an ISO week date) as stored.
     static func displayDate(_ iso: String) -> String {
-        guard let d = OptionalDateField.formatter.date(from: iso), OptionalDateField.formatter.string(from: d) == iso else { return iso }
+        guard let d = isoDate.date(from: iso), isoDate.string(from: d) == iso else { return iso }
         let f = DateFormatter()
         f.dateStyle = .medium; f.timeStyle = .none
         f.timeZone = TimeZone(identifier: "UTC")
@@ -137,12 +152,12 @@ final class ItemDetailModel {
         func add(_ id: String, _ label: String, _ value: String?) {
             if let value, !value.isEmpty { out.append(DetailField(id: id, label: label, value: value, isSecret: false)) }
         }
-        add("relying_party_id", "Website", payload["relying_party_id"]?.stringValue)
-        add("user_name", "User", payload["user_name"]?.stringValue)
-        add("created", "Created", payload["created"]?.stringValue)
+        add("relying_party_id", String(localized: "Website"), payload["relying_party_id"]?.stringValue)
+        add("user_name", String(localized: "User"), payload["user_name"]?.stringValue)
+        add("created", String(localized: "Created"), payload["created"]?.stringValue)
         let usable = PasskeyRecord.from(.object(item.record), id: item.id)?.key != nil
-        add("status", "Status", usable ? "Can sign in" : "Backup only")
-        add("notes", "Notes", payload["notes"]?.stringValue)
+        add("status", String(localized: "Status"), usable ? String(localized: "Can sign in") : String(localized: "Backup only"))
+        add("notes", String(localized: "Notes"), payload["notes"]?.stringValue)
         return out
     }
 
@@ -163,7 +178,7 @@ final class ItemDetailModel {
     @discardableResult
     func copyTOTP() -> Bool {
         guard let code = totp?.code else { return false }
-        clipboard.copy(code); lastCopied = "Code"
+        clipboard.copy(code); lastCopied = String(localized: "Code")
         return true
     }
 

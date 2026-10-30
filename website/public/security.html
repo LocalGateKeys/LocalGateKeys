@@ -10,6 +10,17 @@
   <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/security">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/security">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/security">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/security">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/security">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/security">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/security">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/security">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/security">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/security">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/security">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/security">
   <link rel="icon" href="brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="brand/icon-256.png">
@@ -29,6 +40,7 @@
           <li><a href="pricing.html">Pricing</a></li>
           <li><a href="security.html" aria-current="page">Security</a></li>
           <li><a href="get-started.html">Get started</a></li>
+          <li><a href="help.html">Guide</a></li>
           <li><a href="download.html">Download</a></li>
           <li><a href="support.html">Support</a></li>
           <li><a href="buy.html">Buy Pro</a></li>
@@ -114,7 +126,7 @@
       <li>The master password is moved into a wipeable buffer as soon as it reaches the app and is erased when the operation that needed it finishes. The page you type it into runs in Microsoft Edge WebView2, and the hand-off from that page to the app makes a short-lived copy; neither copy can be erased by the app.</li>
       <li>The camera unlock is a convenience check, not certified protection against photos or masks. Windows Hello is the stronger choice.</li>
       <li>Windows app fill does not work with programs running as administrator, custom-drawn game interfaces, or embedded web views it cannot verify.</li>
-      <li>The vault detects being rolled back to an older copy, but an attacker who can delete both the vault and its local anchor file can defeat that check.</li>
+      <li>The vault detects being rolled back to an older copy. If you use sync, your other devices also remember how new your vault was, so deleting the vault and its anchor file together is caught at the next sync (Windows PCs for now; the iPhone, Mac and Android apps follow). Without sync, someone who can replace both files can still defeat the check.</li>
       <li>Passkeys work in Chrome and Edge only, and only for the page itself: a sign-in inside another site's frame uses the browser's own passkey dialog. If a site cancels after you approve a new passkey, the passkey may stay in your vault; delete it in the app.</li>
     </ul>
 
@@ -143,6 +155,7 @@
       <nav aria-label="Help">
         <h2>Help</h2>
         <ul>
+          <li><a href="help.html">User guide</a></li>
           <li><a href="support.html">Support and FAQ</a></li>
           <li><a href="security.html">Security</a></li>
           <li><a href="legal/vulnerability-disclosure.html">Report a vulnerability</a></li>
@@ -161,6 +174,7 @@
     <div class="wrap footer-base">
       <p>&copy; 2026 Ilias Pelekas. Contact: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
       <p>Windows is a trademark of the Microsoft group of companies. Chrome is a trademark of Google LLC.</p>
+      <p class="lang-switch" role="navigation" aria-label="Language"><a href="security.html" hreflang="en" lang="en" aria-current="true">English</a> · <a href="es/security.html" hreflang="es" lang="es">Español</a> · <a href="it/security.html" hreflang="it" lang="it">Italiano</a> · <a href="pl/security.html" hreflang="pl" lang="pl">Polski</a> · <a href="zh-hans/security.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="ja/security.html" hreflang="ja" lang="ja">日本語</a> · <a href="de/security.html" hreflang="de" lang="de">Deutsch</a> · <a href="pt-br/security.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="ko/security.html" hreflang="ko" lang="ko">한국어</a> · <a href="nl/security.html" hreflang="nl" lang="nl">Nederlands</a></p>
     </div>
   </footer>
 </body>

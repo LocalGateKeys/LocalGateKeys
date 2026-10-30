@@ -1,0 +1,9 @@
+{
+  "error": {
+    "message": "This Proton Pass export is PGP-encrypted, which LocalGateKeys cannot open. In Proton Pass choose Settings > Export, turn off 'Encrypt with PGP' and import the resulting .zip (or export as CSV).",
+    "type": "format"
+  },
+  "format": "protonPass",
+  "input": "tests/vectors/import/_inputs/proton_pgp.zip",
+  "python_format": "protonpass-json"
+}

@@ -38,10 +38,20 @@ from localvault import licensing, passkeys
 from localvault.item_schema import ItemSchemaError, validate_passkey_fields
 from localvault.origin import OriginError
 from localvault.sync import keyring as kr
+from localvault.sync import discovery
 from localvault.sync import engine as sync_engine
 from localvault.sync.engine import EngineError, ItemState, conflict_copy_id, implausible_vv, merge
 from localvault.sync.folder_transport import MAX_COUNTER_JUMP, MAX_FILE_COUNTER, counter_verdict
-from localvault.sync.group import MAGIC, SIG_LABEL, GroupKey, SyncFormatError, encode_view, sign_view, verify_view_signature
+from localvault.sync.group import (
+    MAGIC,
+    SIG_LABEL,
+    GroupKey,
+    SyncFormatError,
+    decode_view,
+    encode_view,
+    sign_view,
+    verify_view_signature,
+)
 from localvault.sync.lan_address import LAN_NETWORKS, is_lan_address
 from localvault.sync.lan_sync import (
     CHUNK_BYTES,
@@ -105,6 +115,7 @@ GENERATED_FILES = tuple(sorted((
     "devices/A.lgksync",
     "devices/B.lgksync",
     "devices/C.lgksync",
+    "discovery.json",
     "expected.json",
     "expected_merge.json",
     "hardening_cases.json",
@@ -143,6 +154,13 @@ GENERATED_FILES = tuple(sorted((
     "passkeys/registration.json",
     "schema_cases.json",
     "signatures/A.lgksig",
+    "witness/cases.json",
+    "witness/devices_v2/A.lgksync",
+    "witness/devices_v2/B.lgksync",
+    "witness/devices_v2/C.lgksync",
+    "witness/lan_witness_A.bin",
+    "witness/sidecar/A.lgksig",
+    "witness/sidecar/A.lgksync",
 )))
 
 
@@ -548,6 +566,155 @@ def encode_devices(gk1: GroupKey, states: dict[str, list[ItemState]]) -> dict[st
 
 
 DEVICES = ("A", "B", "C")
+
+# --- rollback witnesses (view format 2, 2026-10-29) --------------------------------------------
+
+#: Vault generation each device publishes, and what it has seen from its peers.
+WITNESS_GENERATIONS = {"A": 40, "B": 12, "C": 9}
+WITNESS_SEEN = {"A": {"B": 12}, "B": {"A": 40}, "C": {}}
+#: A's witness file next to the format-1 ``devices/A.lgksync`` (same counter 7).
+SIDECAR_WITNESS = {"B": 12, "C": 9}
+
+
+def _witness_ids(names: dict[str, int]) -> dict[str, int]:
+    return {DEVICE_IDS[n]: g for n, g in names.items()}
+
+
+def encode_devices_v2(gk1: GroupKey, states: dict[str, list[ItemState]]) -> dict[str, bytes]:
+    """The device views of ``devices/`` again, as format 2 (generation and witness in the header)."""
+    out = {}
+    for name in DEVICES:
+        counter, written = VIEW_HEADERS[name]
+        out[name] = encode_view(
+            gk1, DEVICE_IDS[name], counter, states[name], T0 + written,
+            vault_generation=WITNESS_GENERATIONS[name], witness=_witness_ids(WITNESS_SEEN[name]),
+            nonce_source=DetRand(f"view-v2|{name}"),
+        )
+    return out
+
+
+def _hand_header(gk: GroupKey, header: Any, label: str) -> bytes:
+    """A view file with *header* written as is (canonical JSON) over an empty record list."""
+    line = canonical_json(header)
+    nonce = DetRand(f"witness-case|{label}")(12)
+    return MAGIC + line + b"\n" + nonce + AESGCM(gk.file_key()).encrypt(nonce, b"[]", line)
+
+
+def witness_files(identities: dict[str, DeviceIdentity], gk1: GroupKey, view_a: bytes,
+                  states: dict[str, list[ItemState]]) -> dict[str, bytes]:
+    """``witness/*``: format-2 views, A's witness file and its signature, A's LAN witness message, cases."""
+    from localvault.sync import witness as wit
+
+    files = {f"witness/devices_v2/{n}.lgksync": raw for n, raw in encode_devices_v2(gk1, states).items()}
+    counter, written = VIEW_HEADERS["A"]
+    sidecar = encode_view(gk1, DEVICE_IDS["A"], counter, (), T0 + written,
+                          vault_generation=WITNESS_GENERATIONS["A"], witness=_witness_ids(SIDECAR_WITNESS),
+                          nonce_source=DetRand("witness|A"))
+    files["witness/sidecar/A.lgksync"] = sidecar
+    files["witness/sidecar/A.lgksig"] = sign_view(sidecar, identities["A"].signing_key)
+    lan_raw = encode_view(gk1, DEVICE_IDS["A"], 0, (), T0 + 1000, vault_generation=WITNESS_GENERATIONS["A"],
+                          witness=_witness_ids({"B": 12}), nonce_source=DetRand("witness|lan|A"))
+    files["witness/lan_witness_A.bin"] = encode_message({
+        "type": "witness", "group_id": gk1.group_id, "epoch": gk1.epoch,
+        "view": base64.b64encode(lan_raw).decode("ascii")})
+
+    a, b = DEVICE_IDS["A"], DEVICE_IDS["B"]
+    base = {"format": 2, "group_id": gk1.group_id, "device_id": a, "epoch": 1, "counter": 7,
+            "written_at": T0 + 900, "vault_generation": 40, "witness": {b: 12}}
+    header_inputs = [
+        ("valid", base),
+        ("valid, empty witness", {**base, "witness": {}}),
+        ("valid, 64 witness entries", {**base, "witness": {f"peer-{i:02}": i for i in range(64)}}),
+        ("valid, largest values", {**base, "vault_generation": 2**53 - 1, "witness": {b: 2**53 - 1}}),
+        ("65 witness entries", {**base, "witness": {f"peer-{i:02}": i for i in range(65)}}),
+        ("witness names the writer", {**base, "witness": {a: 1}}),
+        ("witness id not an identifier", {**base, "witness": {"bad id": 1}}),
+        ("witness value negative", {**base, "witness": {b: -1}}),
+        ("witness value 2**53", {**base, "witness": {b: 2**53}}),
+        ("witness value true", {**base, "witness": {b: True}}),
+        ("witness value 1.5", {**base, "witness": {b: 1.5}}),
+        ("witness is a list", {**base, "witness": []}),
+        ("generation negative", {**base, "vault_generation": -1}),
+        ("generation 2**53", {**base, "vault_generation": 2**53}),
+        ("generation true", {**base, "vault_generation": True}),
+        ("generation null", {**base, "vault_generation": None}),
+        ("no witness", {k: v for k, v in base.items() if k != "witness"}),
+        ("no generation", {k: v for k, v in base.items() if k != "vault_generation"}),
+        ("format 1 with the new fields", {**base, "format": 1}),
+        ("format 3", {**base, "format": 3}),
+        ("extra field", {**base, "x": 1}),
+    ]
+    headers = []
+    for name, header in header_inputs:
+        raw = _hand_header(gk1, header, name)
+        try:
+            decode_view(gk1, raw)
+            expected = "valid"
+        except SyncFormatError as exc:
+            expected = exc.reason
+        headers.append({"name": name, "file_b64": b64(raw), "expected": expected})
+
+    view_a1 = decode_view(gk1, view_a)
+
+    def side(label: str, **over: Any) -> bytes:
+        fields = {"device_id": a, "counter": counter, "states": (), "generation": 40}
+        fields.update(over)
+        return encode_view(gk1, fields["device_id"], fields["counter"], fields["states"], T0 + written,
+                           vault_generation=fields["generation"], witness={}, nonce_source=DetRand(label))
+
+    match_inputs = [
+        ("matches", side("m|ok")),
+        ("older counter", side("m|old", counter=counter - 1)),
+        ("newer counter", side("m|new", counter=counter + 1)),
+        ("another device", side("m|dev", device_id=b)),
+        ("holds a record", side("m|rec", states=states["A"][:1])),
+        ("format 1", encode_view(gk1, a, counter, (), T0 + written, nonce_source=DetRand("m|v1"))),
+    ]
+    matches = []
+    for name, raw in match_inputs:
+        obs = wit.observation(view_a1, decode_view(gk1, raw))
+        matches.append({"name": name, "witness_file_b64": b64(raw),
+                        "expected": None if obs is None else {"peer_id": obs.peer_id,
+                                                              "vault_generation": obs.vault_generation,
+                                                              "witness": dict(obs.witness)}})
+
+    check_inputs = [
+        ("peer moves forward", "A", 10, [("B", 51, {"A": 9})], {"B": 50}, 0),
+        ("peer equal", "A", 10, [("B", 50, {"A": 10})], {"B": 50}, 0),
+        ("peer goes backwards", "A", 10, [("B", 30, {})], {"B": 50}, 0),
+        ("first sight of a peer", "A", 10, [("B", 3, {})], {}, 0),
+        ("peer saw a newer copy of us", "A", 30, [("B", 5, {"A": 50})], {}, 0),
+        ("suspicion persists without views", "A", 31, [], {"B": 5}, 50),
+        ("suspicion is sticky after saves pass it", "A", 51, [("B", 6, {"A": 50})], {"B": 5}, 50),
+        ("highest suspicion is kept", "A", 1, [("B", 5, {"A": 40}), ("C", 5, {"A": 70})], {}, 60),
+        ("both at once", "A", 20, [("B", 4, {"A": 25})], {"B": 9}, 0),
+        ("own observation ignored", "A", 1, [("A", 0, {"A": 99})], {}, 0),
+    ]
+    checks = []
+    for name, own, gen, obs_in, remembered, suspected in check_inputs:
+        ids = {n: DEVICE_IDS[n] for n in DEVICES}
+        observations = [wit.Observation(ids[p], g, {ids[k]: v for k, v in wv.items()}) for p, g, wv in obs_in]
+        res = wit.check(ids[own], gen, observations, {ids[k]: v for k, v in remembered.items()}, suspected)
+        checks.append({
+            "name": name, "own_id": ids[own], "own_generation": gen,
+            "observations": [{"peer_id": o.peer_id, "vault_generation": o.vault_generation,
+                              "witness": dict(o.witness)} for o in observations],
+            "peer_generations": {ids[k]: v for k, v in remembered.items()}, "rollback_suspected": suspected,
+            "expected": {"issues": [[i.kind, i.detail] for i in res.issues],
+                         "peer_generations": res.peer_generations, "rollback_suspected": res.rollback_suspected,
+                         "capable": sorted(res.capable)},
+        })
+    files["witness/cases.json"] = dumps({
+        "constants": {"FORMAT_WITNESS": 2, "MAX_WITNESS": 64, "MAX_WITNESS_BYTES": 16384,
+                      "LAN_GENERATION_SLACK": 32},
+        "headers": headers,
+        "witness_file_matches": matches,
+        "checks": checks,
+        "note": "headers: decode each file with the epoch-1 group key; expected is valid or the reason. "
+                "witness_file_matches: the observation of devices/A.lgksync with each witness file (null = "
+                "none). checks: the pure witness rule (witness.check) on each input.",
+    })
+    return files
 
 
 # --- merge expectations --------------------------------------------------------------------------
@@ -1666,6 +1833,23 @@ def license_cases(private: ed25519.Ed25519PrivateKey, bundle: dict[str, Any]) ->
     return cases
 
 
+def discovery_file(identities: dict[str, DeviceIdentity], gk: GroupKey) -> bytes:
+    """Bonjour TXT tags (``sync/discovery.py``): host A at epoch 1, a few UTC days and a window."""
+    host = identities["A"].device_id
+    days = ["2026-10-29", "2026-10-30", "2026-12-31", "2027-01-01"]
+    now = T0 + 3600  # 2026-09-21T14:33:20Z
+    return dumps({
+        "_comment": "TEST ONLY. tag = base32(HMAC-SHA256(discovery_key, device_id|day)[:10]) lowercase, no padding.",
+        "group_id": gk.group_id, "epoch": gk.epoch, "group_key_b64": b64(gk.key), "host_device_id": host,
+        "discovery_key_b64": b64(discovery.discovery_key(gk)),
+        "tags": [{"day": d, "tag": discovery.tag(gk, host, d)} for d in days],
+        "window": {"now": now, "accepted": sorted(discovery.accepted_tags(gk, host, now))},
+        "txt": discovery.txt_record(gk, host, now),
+        "service_type": discovery.SERVICE_TYPE,
+        "instance_name_example": discovery.instance_name("3f9a"),
+    })
+
+
 def license_state_file() -> bytes:
     """A licence signed with the vectors' own TEST licence key and its sync state (ruling R1)."""
     private = ed25519.Ed25519PrivateKey.from_private_bytes(seed("licence-test-key"))
@@ -1754,11 +1938,12 @@ def schema_cases_file() -> bytes:
 # --- README --------------------------------------------------------------------------------------
 
 README = """\
-# Sync test vectors (desktop <-> iOS contract)
+# Sync test vectors (desktop <-> iOS, Mac and Android contract)
 
 Generated by `scripts/make_sync_vectors.py`; `tests/test_sync_vectors.py` regenerates them and
-requires byte-for-byte equality, so they only change when a format changes on purpose. The iOS
-app must decode, decrypt, verify and merge exactly these files. EVERY KEY HERE IS TEST ONLY.
+requires byte-for-byte equality, so they only change when a format changes on purpose. The iOS and Mac
+core (`ios/LGKCore`) and the Android core (`android/lgk-core`) must decode, decrypt, verify and merge
+exactly these files. "iOS test" below means a test of either core. EVERY KEY HERE IS TEST ONLY.
 
 Fixed facts: group id `{group}`; `T0 = {t0}` (all times are `T0 + n`); devices A, B, C are the
 Windows desk PC, a Windows laptop and an old tablet (see `identities.json`). Format rules live in
@@ -1795,6 +1980,24 @@ the docstrings of `src/localvault/sync/{{group,keyring,engine,pairing}}.py`. The
 | `normalise/entries.json`, `normalise/items.json` | Input/output tables of the desktop's record normaliser, one per namespace (see "Normalisation tables"). | Run your normaliser on each `input` and compare with `output`, or expect a rejection. |
 | `signatures/A.lgksig` | A's signature file for `devices/A.lgksync` (format: "View signature" block of `group.py`), signed with A's identity. | `verify_view_signature` with the decoded header of `devices/A.lgksync` returns A's `signing_public_b64`; re-signing gives the same bytes (Ed25519 is deterministic). |
 | `hardening_cases.json` | Audit 2026-10-24 bounds: `constants`; `vv` cases (`remote`, `local`, `known` -> `implausible_vv` result or null); `counters` cases (`counter`, `last` or null -> `counter_verdict` result or null); `signatures` cases (signature file text for `devices/A.lgksync` -> `valid`, `sig-malformed`, `sig-stale` or `sig-mismatch`). | Run your own rule on every case and compare. |
+| `witness/devices_v2/A.lgksync`, `B`, `C` | The views of `devices/` again in view format 2 (2026-10-29, "Format 2" block of `group.py`): same states, counters and `written_at`, plus `vault_generation` A 40, B 12, C 9 and `witness` A = (B: 12), B = (A: 40), C = empty. | Decode with the epoch-1 group key; the states equal those of `devices/`; compare `vault_generation` and `witness`. An app from before 2026-10-29 must NOT be given these (it rejects format 2 as `bad-header`). |
+| `witness/sidecar/A.lgksync`, `witness/sidecar/A.lgksig` | A's witness file for `devices/A.lgksync` (format 2, zero records, counter 7, generation 40, witness B: 12, C: 9) and A's signature of it (same "View signature" format). | Decode it, verify the signature with A's key, and take A's generation and witness from it because its group, device, epoch and counter equal those of `devices/A.lgksync`. |
+| `witness/lan_witness_A.bin` | A's LAN `witness` message (ASCII canonical JSON, no newline): `{{"type":"witness","group_id","epoch","view"}}`, `view` = base64 of a witness file with counter 0, generation 40 and witness B: 12. | `parse_message` equivalent accepts it; decode `view` with `expected_device_id` = A and at most 0 records. |
+| `witness/cases.json` | `headers`: format-2 header files (valid and every rejection) with the expected decode result; `witness_file_matches`: witness files that do or do not belong to `devices/A.lgksync`; `checks`: inputs and outputs of the witness rule; `constants`. | Run your decoder, your match rule and your check on every case and compare. |
+
+## Rollback witnesses (view format 2, 2026-10-29)
+
+Every device publishes its vault generation and the highest generation it has seen from each peer.
+Readers accept view format 1 and format 2 (exact key set per format). A writer uses format 2 only when
+every reader supports it: in a folder, when every other keyring member is in its `witness_peers`;
+over LAN, when that peer is. Until then it writes format 1 plus a witness file
+(`witness/<device_id>.lgksync` and `.lgksig` in the sync folder) or, over LAN, sends a `witness`
+message after the view exchange (an older responder answers `bad-message`, which is ignored). A
+peer is added to `witness_peers` when it shows a format-2 view, a valid witness file or a LAN
+`witness` message. The rule (`witness.check`): a peer generation below the remembered one is
+`peer-vault-rollback` (the remembered value never goes down); a peer's witness of this device above
+its own generation raises `rollback_suspected`, which is sticky and gives `vault-rollback` on every
+run until acknowledged. A view without a generation is not checked.
 
 The offer's `expires_at` is a plain JSON integer (`1790000120`, whole Unix seconds). It is embedded
 in the MAC'd and signed enrollment transcript, so floats are rejected everywhere (a float would
@@ -2061,6 +2264,18 @@ hooks; production code never passes them.
 in `ios/LGKCore`) and `tests/test_sync_from_ios.py` checks that the desktop accepts it.
 `from_android/` is the same for the Android core (`LGK_WRITE_FROM_ANDROID=1 android/gradlew -p android
 :lgk-core:test --tests "*FromAndroidTest*"`), checked by `tests/test_sync_from_android.py`.
+
+`discovery.json` pins the Bonjour TXT tag a host announces (`src/localvault/sync/discovery.py`): the
+discovery key for group key epoch 1, host A's tag on fixed UTC days, the today-and-yesterday window a
+client accepts, the TXT record and an instance name. Phones and the Mac must compute the same tags.
+
+`mac/` holds the Mac host-side vectors, made by other scripts: `host_offer.json` (the pairing offer
+the Mac shows as inviter) and `keyring_write.json` (the keyring writers with their random reads in
+Swift order) come from `scripts/gen_mac_sync_vectors.py`; `licence_text.json` (licence paste text
+and install links) from `scripts/gen_licence_text_vectors.py` (checked by
+`tests/test_licence_text_vectors.py`). `mac/from_mac/` is written by the Mac core
+(`LGK_WRITE_FROM_MAC=1 swift test --filter GroupCreateTests` in `ios/LGKCore`) and checked by
+`tests/test_sync_from_mac.py`.
 """
 
 
@@ -2288,12 +2503,14 @@ def generate(out: Path) -> None:
         "expected.json": expected_json(built, existing_expected(existing), unicode_password()),
         "canonical_json.json": canonical_json_file(),
         "license_state.json": license_state_file(),
+        "discovery.json": discovery_file(identities, gk1),
         "schema_cases.json": schema_cases_file(),
         "expected_merge.json": expected_merge_json(states),
     }
     for name, raw in devices.items():
         files[f"devices/{name}.lgksync"] = raw
     files["signatures/A.lgksig"], files["hardening_cases.json"] = hardening_cases(identities, devices["A"])
+    files.update(witness_files(identities, gk1, devices["A"], states))
     files.update(lan_files(identities, gk1))
     files.update(lan_session)
     files.update(normalise_files())

@@ -13,8 +13,11 @@ public enum SyncRunner {
     ///   for a newer wrapper schema; detail `<device>:<item>`); the rest of that view merges.
     /// * An apply that still fails gives `apply-failed`; nothing is applied but `ownStates` carries the local view.
     /// * A store that cannot be read for sync gives `local-data` and no `ownStates` (publish nothing).
+    /// * A received document (attachment sync) whose blob is not in `blobs` yet is quarantined as
+    ///   `attachment-missing`: it is never applied without its file, and the next run retries.
     public static func run(store: StoreSnapshot, views: [PeerView], device: String, now: Int64,
-                           licenseKeys: [String: [UInt8]] = [:], known: Set<String> = []) -> RunReport {
+                           licenseKeys: [String: [UInt8]] = [:], known: Set<String> = [],
+                           blobs: (any AttachmentBlobStore)? = nil) -> RunReport {
         var report = RunReport()
         let local: (states: [String: ItemState], meta: [String: SyncMeta], skipped: [String: String])
         do {
@@ -35,11 +38,11 @@ public enum SyncRunner {
             return kept.count == view.states.count ? view : PeerView(deviceID: view.deviceID, states: kept)
         }
         let fold = Engine.fold(local: local.states, views: plausible, ownDeviceID: device) { state in
-            check(state, licenseKeys: licenseKeys)
+            check(state, licenseKeys: licenseKeys, blobs: blobs)
         }
         for dev in fold.badViews { report.issues.append(SyncIssue("bad-peer-data", dev)) }
         for q in fold.quarantined {
-            let kind = q.reason == "update-needed" ? "update-needed" : "bad-peer-record"
+            let kind = ["update-needed", "attachment-missing"].contains(q.reason) ? q.reason : "bad-peer-record"
             report.issues.append(SyncIssue(kind, "\(q.device):\(q.item)"))
         }
         let applied: SyncMeta.ApplyResult
@@ -77,7 +80,7 @@ public enum SyncRunner {
     }
 
     /// The bridge's refusal for a state the fold wants to store, or nil (plays desktop `apply`'s per-record check).
-    static func check(_ state: ItemState, licenseKeys: [String: [UInt8]]) -> String? {
+    static func check(_ state: ItemState, licenseKeys: [String: [UInt8]], blobs: (any AttachmentBlobStore)? = nil) -> String? {
         guard !state.deleted, let item = state.item else { return nil }
         let isCopy: Bool
         if case .object(let o) = item {
@@ -90,6 +93,7 @@ public enum SyncRunner {
         }
         do {
             _ = try Wrapper.unwrap(state, isCopy: isCopy, licenseKeys: licenseKeys)
+            if let ref = AttachmentDocuments.ref(of: item), blobs?.has(ref.blob) != true { return "attachment-missing" }
             return nil
         } catch let e as RecordError {
             return e.reason ?? "bad-remote"

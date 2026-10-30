@@ -1,0 +1,291 @@
+{
+  "encrypted": false,
+  "vaults": {
+    "s1": {
+      "name": "Personal",
+      "items": [
+        {
+          "itemId": "Login",
+          "state": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700000500,
+          "data": {
+            "type": "login",
+            "metadata": {
+              "name": "Login",
+              "note": "Login note"
+            },
+            "content": {
+              "itemEmail": "a@example.com",
+              "itemUsername": "alex",
+              "password": "pw",
+              "urls": [
+                "https://a.example.com",
+                "",
+                null
+              ],
+              "totpUri": "",
+              "passkeys": [
+                {
+                  "k": 1
+                }
+              ]
+            },
+            "extraFields": [
+              {
+                "fieldName": "Second TOTP",
+                "type": "totp",
+                "data": {
+                  "totpUri": "JBSWY3DPEHPK3PXP"
+                }
+              },
+              {
+                "fieldName": "Third TOTP",
+                "type": "totp",
+                "data": {
+                  "totpUri": "otpauth://totp/x?secret=AA"
+                }
+              },
+              {
+                "fieldName": "Hidden",
+                "type": "hidden",
+                "data": {
+                  "content": "h"
+                }
+              },
+              {
+                "fieldName": "",
+                "type": "text",
+                "data": {
+                  "content": "nameless"
+                }
+              },
+              {
+                "fieldName": "When",
+                "type": "timestamp",
+                "data": {
+                  "timestamp": "2024-01-01"
+                }
+              }
+            ]
+          },
+          "pinned": true
+        },
+        {
+          "itemId": "Email only",
+          "state": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700000500,
+          "data": {
+            "type": "login",
+            "metadata": {
+              "name": "Email only",
+              "note": "Email only note"
+            },
+            "content": {
+              "itemEmail": "e@example.com",
+              "password": "pw2",
+              "urls": []
+            }
+          }
+        },
+        {
+          "itemId": "Card",
+          "state": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700000500,
+          "data": {
+            "type": "creditCard",
+            "metadata": {
+              "name": "Card",
+              "note": "Card note"
+            },
+            "content": {
+              "cardholderName": "Alex",
+              "number": "4111111111111111",
+              "verificationNumber": "123",
+              "pin": "0000",
+              "expirationDate": "2027-01"
+            }
+          }
+        },
+        {
+          "itemId": "Odd card",
+          "state": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700000500,
+          "data": {
+            "type": "creditCard",
+            "metadata": {
+              "name": "Odd card",
+              "note": "Odd card note"
+            },
+            "content": {
+              "number": "5555",
+              "expirationDate": "soon"
+            }
+          }
+        },
+        {
+          "itemId": "Me",
+          "state": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700000500,
+          "data": {
+            "type": "identity",
+            "metadata": {
+              "name": "Me",
+              "note": "Me note"
+            },
+            "content": {
+              "firstName": "Alex",
+              "lastName": "Example",
+              "email": "a@example.com",
+              "socialSecurityNumber": "000",
+              "birthdate": "1990-01-01",
+              "extraPersonalDetails": [
+                {
+                  "fieldName": "Nick",
+                  "type": "text",
+                  "data": {
+                    "content": "Al"
+                  }
+                }
+              ],
+              "extraSections": [
+                {
+                  "sectionName": "More",
+                  "sectionFields": [
+                    {
+                      "fieldName": "Pet",
+                      "type": "text",
+                      "data": {
+                        "content": "Cat"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "itemId": "Full",
+          "state": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700000500,
+          "data": {
+            "type": "identity",
+            "metadata": {
+              "name": "Full",
+              "note": "Full note"
+            },
+            "content": {
+              "fullName": "Alex Q Example",
+              "firstName": "Alex"
+            }
+          }
+        }
+      ]
+    },
+    "s2": {
+      "name": "Other",
+      "items": [
+        {
+          "itemId": "Alias",
+          "state": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700000500,
+          "data": {
+            "type": "alias",
+            "metadata": {
+              "name": "Alias",
+              "note": "Alias note"
+            },
+            "content": {}
+          },
+          "aliasEmail": "x@alias.test"
+        },
+        {
+          "itemId": "Key",
+          "state": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700000500,
+          "data": {
+            "type": "sshKey",
+            "metadata": {
+              "name": "Key",
+              "note": "Key note"
+            },
+            "content": {
+              "privateKey": "priv",
+              "publicKey": "pub"
+            }
+          }
+        },
+        {
+          "itemId": "Home Wi-Fi",
+          "state": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700000500,
+          "data": {
+            "type": "wifi",
+            "metadata": {
+              "name": "Home Wi-Fi",
+              "note": "Home Wi-Fi note"
+            },
+            "content": {
+              "ssid": "Net",
+              "password": "wifipw",
+              "security": "WPA2"
+            }
+          }
+        },
+        {
+          "itemId": "Custom",
+          "state": 1,
+          "createTime": 1700000000,
+          "modifyTime": 1700000500,
+          "data": {
+            "type": "custom",
+            "metadata": {
+              "name": "Custom",
+              "note": "Custom note"
+            },
+            "content": {
+              "sections": [
+                {
+                  "sectionFields": [
+                    {
+                      "fieldName": "Code",
+                      "type": "hidden",
+                      "data": {
+                        "content": "c0de"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "itemId": "Trashed",
+          "state": 2,
+          "createTime": 1700000000,
+          "modifyTime": 1700000500,
+          "data": {
+            "type": "note",
+            "metadata": {
+              "name": "Trashed",
+              "note": "Trashed note"
+            },
+            "content": {}
+          }
+        },
+        "bad"
+      ]
+    },
+    "s3": "not a vault"
+  }
+}

@@ -1,6 +1,7 @@
 <script>
   /** Encrypted transfer packages: choose scope or package, preview, then commit explicitly. */
   import ErrorLogLink from './ErrorLogLink.svelte';
+  import { t } from '../lib/i18n.svelte.js';
   import { call } from '../lib/api.js';
   import { okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
@@ -56,50 +57,50 @@
   }
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label="Encrypted transfer">
+<div class="sheet glass" role="dialog" aria-label={t('transferSheet.title')}>
   <header>
-    <h2>{info?.title ?? 'Encrypted transfer'}</h2>
-    <button class="close" aria-label="Close" onclick={onclose}>✕</button>
+    <h2>{info?.title ?? t('transferSheet.title')}</h2>
+    <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
   {#if info}
     <p class="muted">{info.intro}</p>
-    <div class="seg" role="radiogroup" aria-label="Direction">
-      <button role="radio" aria-checked={mode === 'export'} class:on={mode === 'export'} onclick={() => { mode = 'export'; reset(); }}>Export a package</button>
-      <button role="radio" aria-checked={mode === 'import'} class:on={mode === 'import'} onclick={() => { mode = 'import'; reset(); }}>Import a package</button>
+    <div class="seg" role="radiogroup" aria-label={t('transferSheet.direction')}>
+      <button role="radio" aria-checked={mode === 'export'} class:on={mode === 'export'} onclick={() => { mode = 'export'; reset(); }}>{t('transferSheet.exportTab')}</button>
+      <button role="radio" aria-checked={mode === 'import'} class:on={mode === 'import'} onclick={() => { mode = 'import'; reset(); }}>{t('transferSheet.importTab')}</button>
     </div>
     {#if mode === 'export'}
       <p class="muted">{info.scope_note}</p>
       <div class="group">
-        <label class="row"><span>Item or credential IDs</span><input bind:value={scope.ids} oninput={invalidate} /></label>
-        <label class="row"><span>Kinds (for example web, note)</span><input bind:value={scope.kinds} oninput={invalidate} /></label>
-        <label class="row"><span>Tags</span><input bind:value={scope.tags} oninput={invalidate} /></label>
-        <label class="row"><input type="checkbox" bind:checked={scope.favorite} onchange={invalidate} /> Favorites only</label>
-        <label class="row"><input type="checkbox" bind:checked={scope.include_attachments} onchange={invalidate} /> Include attachments and dependencies</label>
+        <label class="row"><span>{t('transferSheet.ids')}</span><input bind:value={scope.ids} oninput={invalidate} /></label>
+        <label class="row"><span>{t('transferSheet.kinds')}</span><input bind:value={scope.kinds} oninput={invalidate} /></label>
+        <label class="row"><span>{t('transferSheet.tags')}</span><input bind:value={scope.tags} oninput={invalidate} /></label>
+        <label class="row"><input type="checkbox" bind:checked={scope.favorite} onchange={invalidate} /> {t('transferSheet.favoritesOnly')}</label>
+        <label class="row"><input type="checkbox" bind:checked={scope.include_attachments} onchange={invalidate} /> {t('transferSheet.includeAttachments')}</label>
       </div>
     {:else}
       <div class="group">
-        <label class="row"><span>Conflicts</span>
-          <select aria-label="Conflicts" bind:value={policy} onchange={invalidate}>{#each info.policies as p (p)}<option value={p}>{p}</option>{/each}</select>
+        <label class="row"><span>{t('transferSheet.conflicts')}</span>
+          <select aria-label={t('transferSheet.conflicts')} bind:value={policy} onchange={invalidate}>{#each info.policies as p (p)}<option value={p}>{p}</option>{/each}</select>
         </label>
-        <label class="row"><input type="checkbox" bind:checked={allowReplace} onchange={invalidate} /> Allow replace</label>
+        <label class="row"><input type="checkbox" bind:checked={allowReplace} onchange={invalidate} /> {t('transferSheet.allowReplace')}</label>
       </div>
     {/if}
     <div class="pathrow">
-      <span class="path">{pkg?.path ?? 'No package chosen'}</span>
-      <Button label="Choose…" onclick={choose} />
-      {#if mode === 'import'}<Button label="Inspect" disabled={!pkg} onclick={inspect} />{/if}
+      <span class="path">{pkg?.path ?? t('transferSheet.noPackage')}</span>
+      <Button label={t('transferSheet.choose')} onclick={choose} />
+      {#if mode === 'import'}<Button label={t('transferSheet.inspect')} disabled={!pkg} onclick={inspect} />{/if}
     </div>
     <div class="group">
-      <Field label="Transfer password" type="password" bind:value={pw} oninput={invalidate} autocomplete="new-password" />
-      {#if mode === 'export'}<Field label="Confirm password (export)" type="password" bind:value={pw2} autocomplete="new-password" />{/if}
+      <Field label={t('transferSheet.password')} type="password" bind:value={pw} oninput={invalidate} autocomplete="new-password" />
+      {#if mode === 'export'}<Field label={t('transferSheet.confirmPassword')} type="password" bind:value={pw2} autocomplete="new-password" />{/if}
     </div>
-    {#if lines.length}<pre class="group summary" aria-label="Preview">{lines.join('\n')}</pre>{/if}
+    {#if lines.length}<pre class="group summary" aria-label={t('common.preview')}>{lines.join('\n')}</pre>{/if}
     <p class="muted" role="status">{status}</p>
     {#if error}<p class="error" role="alert">{error}<ErrorLogLink text={error} /></p>{/if}
     <footer>
-      <Button label="Cancel" onclick={() => { call('transfer_cancel'); invalidate(); pw = ''; pw2 = ''; status = 'The pending transfer was cancelled before commit.'; }} />
-      <Button label="Preview" busy={busy && !preview} disabled={!pkg || !pw} onclick={doPreview} />
-      <Button label={mode === 'export' ? 'Write package' : 'Import package'} variant="primary" busy={busy && !!preview} busyLabel="Committing…" disabled={!preview} onclick={commit} />
+      <Button label={t('common.cancel')} onclick={() => { call('transfer_cancel'); invalidate(); pw = ''; pw2 = ''; status = t('transferSheet.cancelled'); }} />
+      <Button label={t('common.preview')} busy={busy && !preview} disabled={!pkg || !pw} onclick={doPreview} />
+      <Button label={mode === 'export' ? t('transferSheet.writePackage') : t('transferSheet.importPackage')} variant="primary" busy={busy && !!preview} busyLabel={t('transferSheet.committing')} disabled={!preview} onclick={commit} />
     </footer>
   {/if}
 </div>

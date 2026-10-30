@@ -29,6 +29,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from .item_schema import MAX_ATTACHMENT_NAME, ItemSchemaError, new_item, validate_attachment_records
 from .vault import VaultError, VaultLockedError, _aesgcm_decrypt, require_pro_feature
+from .i18n import t
 
 MAX_ATTACHMENT_SIZE = 25 * 1024 * 1024
 MAX_ATTACHMENT_QUOTA = 1024 * 1024 * 1024
@@ -176,9 +177,7 @@ OPENABLE_SUFFIXES = frozenset({
     ".mp4", ".mov", ".webm", ".mkv", ".avi", ".m4v",
 })
 OPEN_NOT_ALLOWED_TEXT = (
-    "LocalGateKeys only opens documents, images, audio and video directly (for example PDF, Word, Excel, "
-    "PowerPoint, text, JPG or MP4). Files of this type could run code when opened, so use Save a copy… "
-    "and open the copy yourself if you trust it."
+    "attachments.localgatekeysOnlyOpensDocumentsImages"
 )
 # Mark-of-the-Web: the opened copy counts as from the Internet zone, so Office
 # Protected View, SmartScreen and similar checks treat it as untrusted.
@@ -186,8 +185,7 @@ _ZONE_IDENTIFIER = "[ZoneTransfer]\r\nZoneId=3\r\n"
 # Types that may carry macros: opened only when the copy carries the mark.
 MOTW_REQUIRED_SUFFIXES = frozenset({".doc", ".xls", ".ppt"})
 MOTW_MISSING_TEXT = (
-    "Windows could not mark this copy as coming from the Internet (the drive may not support it), so Office "
-    "would open it without Protected View. Use Save a copy… and open the copy yourself if you trust it."
+    "attachments.windowsCouldNotMarkThis"
 )
 # Device names Windows reserves in any folder, with any extension and with
 # trailing spaces before the extension ("NUL .pdf"); the superscript-digit
@@ -376,7 +374,7 @@ class AttachmentStore:
         try:
             initial = source.stat()
             if initial.st_size > MAX_ATTACHMENT_SIZE:
-                raise AttachmentError("Attachment exceeds the 25 MiB limit")
+                raise AttachmentError(t("attachments.attachmentExceedsThe25Mib"))
             chunks: list[bytes] = []
             total = 0
             with source.open("rb") as handle:
@@ -387,7 +385,7 @@ class AttachmentStore:
                         break
                     total += len(chunk)
                     if total > MAX_ATTACHMENT_SIZE:
-                        raise AttachmentError("Attachment exceeds the 25 MiB limit")
+                        raise AttachmentError(t("attachments.attachmentExceedsThe25Mib"))
                     chunks.append(chunk)
             final = source.stat()
             if final.st_size != initial.st_size or final.st_mtime_ns != initial.st_mtime_ns:
@@ -578,13 +576,13 @@ class AttachmentStore:
 
         destination = Path(destination)
         if destination.exists() and not overwrite:
-            raise AttachmentError("Destination already exists")
+            raise AttachmentError(t("attachments.destinationAlreadyExists"))
         plaintext = self._read_buffer(attachment_id, cancel=cancel)
         try:
             _check_cancel(cancel)
             atomic_write(destination, plaintext, overwrite=overwrite, restrict=True, prepare=mark_of_the_web)
         except ExportError as exc:
-            message = "Destination already exists" if "already exists" in str(exc) else "Could not export attachment"
+            message = t("attachments.destinationAlreadyExists") if "already exists" in str(exc) else t("attachments.couldNotExportAttachment")
             raise AttachmentError(message) from exc
         finally:
             _zero(plaintext)
@@ -601,7 +599,7 @@ class AttachmentStore:
         record = self._record_for_id(attachment_id)
         name = _open_copy_name(record["name"])
         if not can_open_externally(name):
-            raise AttachmentError(OPEN_NOT_ALLOWED_TEXT)
+            raise AttachmentError(t(OPEN_NOT_ALLOWED_TEXT))
         plaintext = self._read_buffer(record["id"], cancel=cancel)
         folder = open_copies_dir(self.root.parent) / secrets.token_hex(8)
         destination = folder / name
@@ -614,7 +612,7 @@ class AttachmentStore:
                 os.fsync(handle.fileno())
             marked = mark_of_the_web(destination)
             if not marked and Path(name).suffix.lower() in MOTW_REQUIRED_SUFFIXES:
-                raise AttachmentError(MOTW_MISSING_TEXT)
+                raise AttachmentError(t(MOTW_MISSING_TEXT))
         except (AttachmentError, OSError) as exc:
             destination.unlink(missing_ok=True)
             try:
@@ -623,11 +621,70 @@ class AttachmentStore:
                 pass
             if isinstance(exc, AttachmentError):
                 raise
-            raise AttachmentError("Could not prepare the document for opening") from exc
+            raise AttachmentError(t("attachments.couldNotPrepareTheDocument")) from exc
         finally:
             _zero(plaintext)
         self._record("attachment.open", item_id=None, count=1)
         return destination
+
+    def export_sync_blob(self, attachment_id: str) -> tuple[dict[str, Any], bytes]:
+        """The sync reference and sealed blob for one attachment (``sync/attachment_sync.py``).
+
+        The blob is deterministic for an attachment, so every export (and every
+        device holding it) gives the same blob id and nothing unchanged is resent.
+        """
+        from .sync.attachment_sync import AttachmentRef, seal_blob
+
+        record = self._record_for_id(attachment_id)
+        plaintext = self._read_buffer(record["id"])
+        key = bytearray(_b64d(record["key"]))
+        try:
+            blob = seal_blob(bytes(key), record["id"], bytes(plaintext))
+        finally:
+            _zero(plaintext)
+            _zero(key)
+        return AttachmentRef.for_blob(record, blob).to_dict(), blob
+
+    def import_sync_blob(self, ref: Any, blob: bytes) -> bool:
+        """Verify a synced blob against its reference and store it; False when already present.
+
+        A tampered blob (wrong content address, failed authentication, wrong
+        size or digest) raises ``AttachmentError`` and stores nothing.  An id
+        already present with other metadata is refused (ids are immutable).
+        """
+        from .sync.attachment_sync import AttachmentRef, AttachmentSyncError, open_blob
+
+        try:
+            ref = ref if isinstance(ref, AttachmentRef) else AttachmentRef.from_value(ref)
+            data = open_blob(blob, ref)
+        except AttachmentSyncError as exc:
+            raise AttachmentError(f"Synced attachment refused ({exc.reason})") from None
+        record = ref.catalog_record()
+        with self._lock:
+            payload = self._payload()
+            existing = next((row for row in self._records(payload) if row["id"] == ref.attachment_id), None)
+            if existing is not None:
+                if existing != record:
+                    raise AttachmentError("Synced attachment conflicts with a local one")
+                if _is_regular_file(self._path(ref.attachment_id)):
+                    return False
+            if self.usage_bytes() + len(data) + 8 * 1024 > self.quota_bytes:
+                raise AttachmentError("Attachment quota exceeded")
+            store_id = self._store_id(payload)
+            path = self._path(ref.attachment_id)
+            if not _is_regular_file(path):
+                self._write_blob(ref.attachment_id, data, store_id=store_id, key=ref.key, cancel=None)
+            if existing is None:
+                payload.setdefault("attachments", []).append(record)
+                try:
+                    self._records(payload)
+                    self.session.save()
+                except BaseException:
+                    payload["attachments"] = [row for row in payload.get("attachments", [])
+                                               if row.get("id") != ref.attachment_id]
+                    raise
+            self._record("attachment.sync", item_id=None, count=1)
+            return True
 
     def referenced_ids(self, payload: dict[str, Any] | None = None) -> set[str]:
         payload = payload or self._payload()
@@ -815,7 +872,7 @@ class DocumentService:
         """Open a temporary decrypted copy in the default app for its file type."""
         if launcher is None:
             if os.name != "nt":
-                raise AttachmentError("Opening documents in other apps is only available on Windows")
+                raise AttachmentError(t("attachments.openingDocumentsInOtherApps"))
             from . import open_copy_watch
 
             # Opens the default app and deletes the copy as soon as that app is done with it.
@@ -830,8 +887,7 @@ class DocumentService:
             except OSError:
                 pass
             raise AttachmentError(
-                "Windows could not open this file. It may have no app set up for its type; "
-                "use Save a copy… instead.") from exc
+                t("attachments.windowsCouldNotOpenThis")) from exc
         return path
 
     def delete(self, item_id: str) -> bool:
@@ -967,12 +1023,12 @@ class DocumentPreviewService:
 
         if mime == "application/pdf" or suffix == ".pdf":
             if len(data) > MAX_PREVIEW_BINARY_BYTES or not data.startswith(b"%PDF-"):
-                return self._metadata_only(record, "PDF header or size is invalid")
+                return self._metadata_only(record, t("attachments.pdfHeaderOrSizeIs"))
             if _pdf_has_active_content(data):
-                return self._metadata_only(record, "PDF contains active content", safe=False)
+                return self._metadata_only(record, t("attachments.pdfContainsActiveContent"), safe=False)
             pages = data.count(b"/Type /Page") + data.count(b"/Type/Page")
             if pages > MAX_PREVIEW_PDF_PAGES:
-                return self._metadata_only(record, "PDF page count exceeds safe bounds", pages=pages)
+                return self._metadata_only(record, t("attachments.pdfPageCountExceedsSafe"), pages=pages)
             return self._metadata_only(record, "PDF renderer unavailable", pages=pages)
 
         return self._metadata_only(record, "file type is not safely previewable")

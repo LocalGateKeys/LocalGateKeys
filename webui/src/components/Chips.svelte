@@ -1,14 +1,16 @@
 <script>
   /** "All" plus the attention / no-2FA / expiring chips that have items. */
+  import { formatNumber, t } from '../lib/i18n.svelte.js';
+
   let { counts = {}, active = null, onselect } = $props();
-  const LABELS = { attention: 'Needs attention', no2fa: 'No 2FA', expiring: 'Expiring' };
+  const LABELS = { attention: 'chips.attention', no2fa: 'chips.no2fa', expiring: 'chips.expiring' };
 </script>
 
-<div class="chips" role="group" aria-label="Quick filters">
-  <button class:on={!active} onclick={() => onselect(null)}>All</button>
+<div class="chips" role="group" aria-label={t('chips.quickFilters')}>
+  <button class:on={!active} onclick={() => onselect(null)}>{t('chips.all')}</button>
   {#each Object.keys(LABELS) as key (key)}
     {#if counts[key] > 0}
-      <button class:on={active === key} onclick={() => onselect(key)}>{LABELS[key]} · {counts[key]}</button>
+      <button class:on={active === key} onclick={() => onselect(key)}>{t(LABELS[key])} · {formatNumber(counts[key])}</button>
     {/if}
   {/each}
 </div>

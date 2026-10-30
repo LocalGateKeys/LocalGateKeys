@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>보안 | LocalGateKeys</title>
+  <meta name="description" content="LocalGateKeys가 보관함을 보호하는 방법과 보호하지 못하는 것을 설명합니다.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/ko/security">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/security">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/security">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/security">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/security">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/security">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/security">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/security">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/security">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/security">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/security">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/security">
+  <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../brand/icon-256.png">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">본문으로 건너뛰기</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../ko/index.html">
+        <img src="../brand/icon.svg" alt="" width="36" height="36">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav aria-label="메인">
+        <ul class="nav">
+          <li><a href="../ko/features.html">기능</a></li>
+          <li><a href="../ko/pricing.html">가격</a></li>
+          <li><a href="../ko/security.html" aria-current="page">보안</a></li>
+          <li><a href="../ko/get-started.html">시작하기</a></li>
+          <li><a href="../ko/help.html">가이드</a></li>
+          <li><a href="../ko/download.html">다운로드</a></li>
+          <li><a href="../ko/support.html">지원</a></li>
+          <li><a href="../buy.html">Pro 구매</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>보안 모델, 쉬운 말로</h1>
+  <p class="lead">LocalGateKeys가 보호하도록 설계된 것과 보호할 수 없는 것.</p>
+</div>
+
+<div class="wrap page-body">
+  <div class="prose">
+    <h2>보관함이 암호화되는 방식</h2>
+    <p>무작위 256비트 키가 보관함을 암호화합니다. 이 키는 그대로 저장되지 않고, 잠금을 해제할 수 있는 각 방법마다 따로 래핑(암호화)됩니다. 그래서 비밀번호를 바꿔도 모든 것을 다시 암호화할 필요가 없으며, 다른 보관함에서 복사한 래퍼는 거부됩니다.</p>
+  </div>
+  <dl class="spec">
+    <dt>보관함 암호화</dt><dd>저장할 때마다 새로운 무작위 nonce를 사용하는 AES-256-GCM</dd>
+    <dt>마스터 비밀번호</dt><dd>Argon2id, 메모리 64 MiB, 3회 반복, 병렬도 4, 래퍼마다 무작위 솔트</dd>
+    <dt>복구 문구</dt><dd>선택 사항인 24단어 BIP39 문구(256비트), HKDF-SHA256으로 확장</dd>
+    <dt>Windows Hello</dt><dd>마스터 비밀번호가 아니라 보관함 키를 래핑</dd>
+    <dt>백업 및 전송</dt><dd>인증된 헤더에 매개변수가 저장되는 Argon2id와 AES-256-GCM</dd>
+    <dt>기기 동기화</dt><dd>X25519와 HKDF-SHA256으로 각 기기에 전달되는 무작위 그룹 키이며, 클라우드 폴더의 경우 동기화 비밀번호로도 Argon2id를 통해 래핑됩니다. 모든 레코드는 AES-256-GCM으로 봉인되고 항목, 버전, 키 에포크에 묶이며, 모든 기기 파일은 그것을 쓴 기기에 묶입니다</dd>
+    <dt>패스키</dt><dd>암호화된 보관함 안에 보관되는 ES256(P-256) 키. 앱은 페이지가 아니라 브라우저가 보고한 출처로 서명 데이터를 만듭니다</dd>
+    <dt>디스크에 쓰기</dt><dd>임시 파일에 쓰고, 플러시한 다음, 원자적으로 교체하므로 충돌이 나도 반쪽짜리 보관함이 남지 않습니다</dd>
+  </dl>
+
+  <div class="ledger">
+    <section aria-labelledby="protects">
+      <h2 id="protects">다음으로부터 보호하도록 설계됨</h2>
+      <ul>
+        <li>마스터 비밀번호를 모른 채 보관함 파일이나 백업을 복사한 사람</li>
+        <li>다른 웹사이트에 저장된 로그인이나 패스키를 얻어 가는 웹사이트</li>
+        <li>자체 브라우저 도우미에게 전달하는 세션 비밀 없이 LocalGateKeys와 통신하는 PC의 다른 프로그램</li>
+        <li>바인딩한 이후 교체, 업데이트 또는 변경된 데스크톱 앱 채우기</li>
+        <li>암호화되지 않은 채 디스크에 놓여 있는 비밀번호</li>
+        <li>내가 모르는 사이에 제출되는 양식</li>
+        <li>클라우드 제공업체가 동기화된 데이터를 읽는 것: 암호문만 저장합니다</li>
+      </ul>
+    </section>
+    <section class="not" aria-labelledby="not-protects">
+      <h2 id="not-protects">보호할 수 없는 것</h2>
+      <ul>
+        <li>이미 PC에서 실행 중인 악성 코드 또는 관리자 권한을 가진 사람</li>
+        <li>침해된 브라우저, Windows 설치 또는 종속 구성 요소</li>
+        <li>비밀번호를 일부러 채워 넣은 웹사이트</li>
+        <li>보관함이 잠금 해제된 동안 PC를 사용하는 사람</li>
+        <li>공격자가 제어하는 콘텐츠를 보여 주는 정상 앱 내부의 피싱</li>
+        <li>복구 문구 없이 보관함, 백업, 마스터 비밀번호를 모두 잃은 경우: 저희를 포함해 누구도 열 수 없습니다</li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="prose">
+    <h2>LocalGateKeys가 절대 하지 않는 일</h2>
+    <p>비밀번호를 채우는 일부 방식은 스파이웨어와 구별할 수 없으므로 설계상 배제했습니다. LocalGateKeys에는 다음이 없습니다:</p>
+    <ul>
+      <li>키보드 후크 또는 키 입력 기록</li>
+      <li>클립보드 모니터링</li>
+      <li>자격 증명을 찾기 위한 화면 읽기 또는 OCR</li>
+      <li>다른 프로그램의 메모리 검색</li>
+      <li>브라우저에 저장된 비밀번호 데이터베이스의 복호화</li>
+      <li>다른 프로그램이나 게임에 대한 코드 주입</li>
+      <li>내가 시작하지 않은 로그인의 제출</li>
+    </ul>
+
+    <h2>네트워크에 대해 솔직하게</h2>
+    <p>LocalGateKeys 계정도, 보관함을 보관하는 서버도 없습니다. 앱이 인터넷에 연결되는 경우는 다음뿐입니다:</p>
+    <ul>
+      <li><strong>업데이트 확인.</strong> 업데이트 확인을 선택하면 앱이 작은 파일 하나를 다운로드하고 앱에 내장된 키로 서명을 검증합니다. 설치 관리자를 스스로 다운로드하거나 실행하지 않습니다.</li>
+      <li><strong>라이선스 취소 목록.</strong> 업데이트를 확인할 때마다 앱은 환불된 라이선스의 서명된 목록을 다운로드하고 PC에서 내 라이선스를 그 목록과 대조합니다. 라이선스에 대한 정보는 아무것도 보내지 않습니다.</li>
+      <li><strong>웹사이트 아이콘.</strong> 사이트의 아이콘을 표시하기 위해 앱은 해당 사이트 자체 주소에서 아이콘을 다운로드합니다. 사용자 이름, 비밀번호, 보관함 데이터는 전송되지 않지만, 각 다운로드는 그 사이트와 네트워크를 지켜보는 누구에게나 내 보관함에 그곳 계정이 있다는 사실을 알려 줍니다. 기본적으로 꺼져 있으며 설정에서 "웹사이트 아이콘 표시"를 켠 경우에만 발생하고, 엄격한 오프라인 모드에서는 차단됩니다.</li>
+      <li><strong>유출 확인(켠 경우).</strong> 확인을 시작하면 앱은 각 비밀번호의 SHA-1 해시 첫 다섯 글자를 Have I Been Pwned에 전송합니다. 이 서비스는 IP 주소를 볼 수 있지만 비밀번호, 전체 해시, 사용자 이름, 웹사이트는 절대 볼 수 없습니다.</li>
+      <li><strong>동기화(설정한 경우).</strong> 집 네트워크에서는 기기끼리 직접 통신합니다. 클라우드 폴더를 통할 때는 클라우드 드라이브 앱이 업로드를 처리합니다.</li>
+    </ul>
+    <p>엄격한 오프라인 모드는 기본적으로 켜져 있습니다. 백그라운드 인터넷 요청, 웹사이트 아이콘, 유출 확인을 차단하며, 업데이트 확인은 먼저 사용자에게 묻습니다. 업데이트를 확인할 때 저희 서버가 무엇을 보는지는 <a href="../legal/privacy.html">개인정보 처리방침</a>에 정확히 나와 있습니다.</p>
+
+    <h2>알려진 한계</h2>
+    <ul>
+      <li>마스터 비밀번호는 앱에 도달하는 즉시 지울 수 있는 버퍼로 옮겨지며, 필요로 했던 작업이 끝나면 지워집니다. 비밀번호를 입력하는 페이지는 Microsoft Edge WebView2에서 실행되고, 그 페이지에서 앱으로 넘기는 과정에서 단기 사본이 만들어집니다. 두 사본 모두 앱이 지울 수 없습니다.</li>
+      <li>카메라 잠금 해제는 편의 확인일 뿐이며 사진이나 마스크에 대한 인증된 보호가 아닙니다. Windows Hello가 더 강력한 선택입니다.</li>
+      <li>Windows 앱 채우기는 관리자 권한으로 실행되는 프로그램, 직접 그려 낸 게임 인터페이스, 검증할 수 없는 내장 웹 뷰에서는 작동하지 않습니다.</li>
+      <li>보관함은 이전 사본으로 되돌려지는 것을 감지합니다. 동기화를 사용하면 다른 기기도 보관함이 얼마나 최신이었는지 기억하므로, 보관함과 앵커 파일을 함께 삭제하면 다음 동기화 때 발견됩니다(현재는 Windows PC만 해당하며, iPhone, Mac, Android 앱이 뒤따릅니다). 동기화가 없으면 두 파일을 모두 교체할 수 있는 사람은 이 확인을 여전히 무력화할 수 있습니다.</li>
+      <li>패스키는 Chrome과 Edge에서만, 그리고 페이지 자체에서만 작동합니다. 다른 사이트의 프레임 안에서의 로그인은 브라우저 자체의 패스키 대화 상자를 사용합니다. 새 패스키를 승인한 후 사이트가 취소하면 패스키가 보관함에 남아 있을 수 있으므로 앱에서 삭제하세요.</li>
+    </ul>
+
+    <h2>취약점 신고</h2>
+    <p><a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>로 이메일을 보내 주세요. <a href="../legal/vulnerability-disclosure.html">취약점 공개 정책</a>에 대상 범위, 응답 속도, 연구자에 대한 크레딧 방식이 설명되어 있습니다.</p>
+  </div>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand">LocalGateKeys</p>
+        <p>보관함을 내 기기에 보관하는 Windows용 비밀번호 관리자입니다.</p>
+        <p class="quiet">이 사이트는 쿠키를 설정하지 않고, 분석을 실행하지 않으며, 다른 회사의 어떤 것도 불러오지 않습니다.</p>
+      </div>
+      <nav aria-label="제품">
+        <h2>제품</h2>
+        <ul>
+          <li><a href="../ko/features.html">기능</a></li>
+          <li><a href="../ko/pricing.html">가격</a></li>
+          <li><a href="../ko/download.html">다운로드</a></li>
+          <li><a href="../ko/licence.html">내 Pro 라이선스</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="도움말">
+        <h2>도움말</h2>
+        <ul>
+          <li><a href="../ko/help.html">사용자 가이드</a></li>
+          <li><a href="../ko/support.html">지원 및 FAQ</a></li>
+          <li><a href="../ko/security.html">보안</a></li>
+          <li><a href="../legal/vulnerability-disclosure.html">취약점 신고</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="법률">
+        <h2>법률</h2>
+        <p class="quiet">이 문서는 영어로 작성되어 있으며, 적용되고 구속력을 갖는 것은 영어본입니다.</p>
+        <ul>
+          <li><a href="../legal/eula.html">라이선스 계약</a></li>
+          <li><a href="../legal/privacy.html">개인정보 처리방침</a></li>
+          <li><a href="../legal/terms-of-sale.html">판매 약관</a></li>
+          <li><a href="../legal/refunds.html">환불 정책</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base">
+      <p>&copy; 2026 Ilias Pelekas. 문의: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows는 Microsoft 그룹 회사들의 상표입니다. Chrome은 Google LLC의 상표입니다.</p>
+      <p class="lang-switch" role="navigation" aria-label="언어"><a href="../security.html" hreflang="en" lang="en">English</a> · <a href="../es/security.html" hreflang="es" lang="es">Español</a> · <a href="../it/security.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/security.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/security.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../ja/security.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/security.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/security.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/security.html" hreflang="ko" lang="ko" aria-current="true">한국어</a> · <a href="../nl/security.html" hreflang="nl" lang="nl">Nederlands</a></p>
+    </div>
+  </footer>
+</body>
+</html>

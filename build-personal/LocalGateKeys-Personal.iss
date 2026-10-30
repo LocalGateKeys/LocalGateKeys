@@ -6,6 +6,7 @@
 ; build-personal\LocalGateKeys-Personal.generated.iss, so this file stays portable.
 
 [Setup]
+ChangesAssociations=yes
 AppId={{31F3995E-BE92-4AF6-AD15-73F835E67ED7}
 AppName={#AppName}
 AppVersion={#AppVersion}
@@ -58,6 +59,11 @@ Root: HKCU; Subkey: "Software\Classes\localgatekeys"; ValueType: string; ValueNa
 Root: HKCU; Subkey: "Software\Classes\localgatekeys"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
 Root: HKCU; Subkey: "Software\Classes\localgatekeys\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: """{app}\LocalGateKeys.exe"",0"
 Root: HKCU; Subkey: "Software\Classes\localgatekeys\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\LocalGateKeys.exe"" ""%1"""
+; Shared items (.lgkshare) open in the app; the share inbox checks them and still asks for the six-word code.
+Root: HKCU; Subkey: "Software\Classes\.lgkshare"; ValueType: string; ValueName: ""; ValueData: "LocalGateKeys.Share"; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\LocalGateKeys.Share"; ValueType: string; ValueName: ""; ValueData: "LocalGateKeys shared item"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\LocalGateKeys.Share\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: """{app}\LocalGateKeys.exe"",0"
+Root: HKCU; Subkey: "Software\Classes\LocalGateKeys.Share\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\LocalGateKeys.exe"" ""%1"""
 
 [Run]
 Filename: "{app}\LocalGateKeys.exe"; Parameters: "--repair-browser-bridge"; Flags: runhidden waituntilterminated

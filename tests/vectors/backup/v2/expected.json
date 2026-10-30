@@ -1,0 +1,194 @@
+{
+  "attachment_ids": [
+    "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+    "3f2b8c1e-5a4d-4e7f-9b1a-2c3d4e5f6a7b"
+  ],
+  "backup_password": "fixture backup password 2026",
+  "created_at": 1793000000,
+  "full_sha256": "d69e1b1b9d05af752c4d08f74210949d1715cdf3d201358e274936228c786f17",
+  "kdf": {
+    "memory_cost_kib": 8192,
+    "parallelism": 1,
+    "time_cost": 1
+  },
+  "legacy_vault_ids": {
+    "vault_v1.json": [
+      "9967b8fe-2fef-47ef-bbe5-75eec218a2de",
+      "ac750b43-7b75-4e17-8cdd-1b9422ef7121"
+    ],
+    "vault_v2.json": [
+      "9967b8fe-2fef-47ef-bbe5-75eec218a2de",
+      "ac750b43-7b75-4e17-8cdd-1b9422ef7121",
+      "ae24ea03-c08a-4d3e-be15-418236693239",
+      "e6641964-c71d-4203-b180-042d52df4f6b"
+    ]
+  },
+  "manifest": {
+    "created_at": 1793000000,
+    "entries": [
+      {
+        "kind": "vault",
+        "member": "data/00000000.bin",
+        "sha256": "4de81beb5f1960422cef91a8f625ce0a3efa1425656fc4d90353926a6182d9bf",
+        "size": 3264,
+        "target": "vault.json"
+      },
+      {
+        "kind": "settings",
+        "member": "data/00000001.bin",
+        "sha256": "88e62ade92103c4ea551f3e0af0adea9b44fcc745aeae71c928080aa181d5e44",
+        "size": 1356,
+        "target": "settings.json"
+      },
+      {
+        "kind": "generation",
+        "member": "data/00000002.bin",
+        "sha256": "71929a278dc0b03d6231aef2ce0d39bfd69ea447455b918f039048edf6c7eef2",
+        "size": 182,
+        "target": "generation.json"
+      },
+      {
+        "attachment_id": "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+        "kind": "attachment",
+        "member": "data/00000003.bin",
+        "sha256": "e7e85e4adb4453902f65e13210fedbe5b8c449988aae808f9217dbca3023521b",
+        "sidecar_size": 41,
+        "size": 224,
+        "target": "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d.blob"
+      },
+      {
+        "attachment_id": "3f2b8c1e-5a4d-4e7f-9b1a-2c3d4e5f6a7b",
+        "kind": "attachment",
+        "member": "data/00000004.bin",
+        "sha256": "18e6fbfca4dc87998fc50fd205e33717080f89c2c33449fda82f209bd4e5a68f",
+        "sidecar_size": 40,
+        "size": 223,
+        "target": "3f2b8c1e-5a4d-4e7f-9b1a-2c3d4e5f6a7b.blob"
+      }
+    ],
+    "profile_name": "Fixture profile",
+    "version": 2
+  },
+  "master_password": "fixture master password 2026",
+  "note": "TEST ONLY: every password and key here is published. inputs/ are the files export_full_backup read.",
+  "profile_name": "Fixture profile",
+  "random_hex": "57ef4f1739f7d5fd61477eb08b5dadee9ab46812acb0b8ba0ae0aa9c9b26454503405418b7319c4294dd6f7ab7fc535f0c5affa8a5dcb2da0479758c076009a230f68b923704bf0582c6b7a99708f313d890b7d05020ac1e",
+  "records": [
+    {
+      "created_at": 1792996400,
+      "custom_fields": [],
+      "favorite": false,
+      "id": "9967b8fe-2fef-47ef-bbe5-75eec218a2de",
+      "kind": "web",
+      "label": "Mail",
+      "notes": "Main inbox",
+      "password": "Correct-Horse-1",
+      "policy": {
+        "fill": "click",
+        "require_master_password": false,
+        "save_prompts": true,
+        "sign_in": "inherit"
+      },
+      "recovery_codes": [],
+      "scope": {
+        "origin": "https://mail.example.com",
+        "urls": [
+          {
+            "match": "exact_origin",
+            "url": "https://mail.example.com"
+          }
+        ]
+      },
+      "tags": [
+        "personal"
+      ],
+      "totp": null,
+      "updated_at": 1792996400,
+      "username": "alex@example.com"
+    },
+    {
+      "created_at": 1792996400,
+      "custom_fields": [],
+      "favorite": false,
+      "id": "ac750b43-7b75-4e17-8cdd-1b9422ef7121",
+      "kind": "web",
+      "label": "Bank — current",
+      "notes": "",
+      "password": "Ünïcode-pässword-2",
+      "policy": {
+        "fill": "click",
+        "require_master_password": false,
+        "save_prompts": true,
+        "sign_in": "inherit"
+      },
+      "recovery_codes": [],
+      "scope": {
+        "origin": "https://bank.example.org",
+        "urls": [
+          {
+            "match": "exact_origin",
+            "url": "https://bank.example.org"
+          }
+        ]
+      },
+      "tags": [],
+      "totp": null,
+      "updated_at": 1792996400,
+      "username": "alex"
+    },
+    {
+      "collection_ids": [],
+      "created_at": 1792996400,
+      "favorite": false,
+      "id": "ae24ea03-c08a-4d3e-be15-418236693239",
+      "kind": "note",
+      "payload": {
+        "body": "Wi-Fi: example-net\nsecond line",
+        "fields": [],
+        "template_id": null
+      },
+      "revision": 1,
+      "tags": [],
+      "title": "Router",
+      "updated_at": 1792996400
+    },
+    {
+      "collection_ids": [],
+      "created_at": 1792996400,
+      "favorite": false,
+      "id": "e6641964-c71d-4203-b180-042d52df4f6b",
+      "kind": "card",
+      "payload": {
+        "billing_address_id": "",
+        "brand": "visa",
+        "cardholder": "Alex Example",
+        "cvv": "",
+        "expiry": "01/30",
+        "last4": "1111",
+        "notes": "",
+        "number": "4111111111111111",
+        "pin": "",
+        "template_id": null
+      },
+      "revision": 1,
+      "tags": [],
+      "title": "Visa",
+      "updated_at": 1792996400
+    }
+  ],
+  "rejected": {
+    "bad_kdf.lgkfull": "Unsupported backup encryption parameters",
+    "bad_version.lgkfull": "Unsupported full backup format",
+    "deflated.lgkfull": "Full backup compression or ZIP encryption is unsupported",
+    "duplicate_name.lgkfull": "Full backup contains an unsafe archive member",
+    "encrypted_flag.lgkfull": "Full backup compression or ZIP encryption is unsupported",
+    "full.lgkfull with a wrong password": "Wrong backup password or modified full backup",
+    "missing_member.lgkfull": "Full backup members do not match its manifest",
+    "short_manifest.lgkfull": "Full backup manifest is truncated",
+    "tampered_header.lgkfull": "Wrong backup password or modified full backup",
+    "tampered_member.lgkfull": "Wrong backup password or modified full backup",
+    "traversal.lgkfull": "Full backup contains an unsafe archive member",
+    "truncated.lgkfull": "Could not read full backup",
+    "unexpected_member.lgkfull": "Full backup members do not match its manifest"
+  }
+}

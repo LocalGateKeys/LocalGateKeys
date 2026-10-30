@@ -1,5 +1,6 @@
 package app.localgatekeys.android.generator
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.generator.GeneratorOptions.Mode
 import app.localgatekeys.android.generator.GeneratorStrength.Level
 import org.junit.Assert.assertEquals
@@ -18,7 +19,7 @@ class GeneratorStrengthTest {
         assertEquals(Level.STRONG, GeneratorStrength.level(bits = 70.0))
         assertEquals(Level.STRONG, GeneratorStrength.level(bits = 99.99))
         assertEquals(Level.VERY_STRONG, GeneratorStrength.level(bits = 100.0))
-        assertEquals(listOf("Weak", "Fair", "Strong", "Very strong"), Level.entries.map { it.label })
+        assertEquals(listOf("Weak", "Fair", "Strong", "Very strong"), Level.entries.map { EnglishTxt().s(it.label) })
         assertEquals(listOf(1, 2, 3, 4), Level.entries.map { it.segments })
     }
 
@@ -96,8 +97,8 @@ class GeneratorStrengthTest {
     }
 
     @Test fun settings_summary_names_the_strength() {
-        assertEquals("Password, 20 characters", GeneratorOptions().summary)
-        assertEquals("Passphrase, 6 words", GeneratorOptions(mode = Mode.PASSPHRASE).summary)
+        assertEquals("Password, 20 characters", GeneratorOptions().summary(EnglishTxt()))
+        assertEquals("Passphrase, 6 words", GeneratorOptions(mode = Mode.PASSPHRASE).summary(EnglishTxt()))
         assertEquals(
             "the default list size is used when none is given",
             Level.VERY_STRONG, GeneratorStrength.level(GeneratorOptions()),

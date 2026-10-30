@@ -1,7 +1,10 @@
 package app.localgatekeys.android.vault
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.Txt
 import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.records.Namespace
+import app.localgatekeys.core.records.Origin
 import app.localgatekeys.core.sync.StoreSnapshot
 import java.net.URI
 
@@ -51,24 +54,25 @@ data class VaultItem(
     val tags: List<String>,
     val favorite: Boolean,
     val updatedAt: Long,
+    /** `created_at`; 0 when missing (the sort rule's missing timestamp). */
+    val createdAt: Long = 0L,
     val record: Map<String, JsonValue>,
 ) {
     /** Never shows the record: it holds passwords and two-factor secrets. */
     override fun toString(): String = "VaultItem(id=$id, kind=$kind)"
 
-    val kindLabel: String get() = kindLabel(kind)
+    fun kindLabel(t: Txt): String = kindLabel(kind, t)
     val isLogin: Boolean get() = kind == "web" || kind == "desktop"
 
     /** `totp` is an object with a `secret`. */
     val hasTotp: Boolean get() = record["totp"].objectOrNull()?.containsKey("secret") == true
 
     /** The list subtitle: username, else the card's masked last four, else the target, else the kind. */
-    val listSubtitle: String
-        get() = when {
-            username.isNotEmpty() -> username
-            cardSummary != null -> cardSummary
-            else -> target.ifEmpty { kindLabel }
-        }
+    fun listSubtitle(t: Txt): String = when {
+        username.isNotEmpty() -> username
+        cardSummary != null -> cardSummary
+        else -> target.ifEmpty { kindLabel(t) }
+    }
 
     /** A login's password, or a Wi-Fi network's; null when empty or the kind has none. */
     val copyablePassword: String?
@@ -82,7 +86,7 @@ data class VaultItem(
     val openableUrl: String?
         get() {
             val raw = when (kind) {
-                "web" -> record["scope"].objectOrNull()?.get("origin").stringOrNull()
+                "web" -> pageAddress(record["scope"].objectOrNull())
                 "bookmark" -> record["payload"].objectOrNull()?.get("url").stringOrNull()
                 else -> null
             } ?: return null
@@ -92,6 +96,23 @@ data class VaultItem(
         }
 
     companion object {
+        /**
+         * Desktop `web_page_address`: a web login's origin, or the first `starts_with` row on that same origin (an
+         * imported full page address, 2026-10-29). Display and Open website only; matching uses every row.
+         */
+        fun pageAddress(scope: Map<String, JsonValue>?): String? {
+            val origin = scope?.get("origin").stringOrNull() ?: return null
+            val rows = (scope?.get("urls") as? JsonValue.Arr)?.items ?: return origin
+            for (row in rows) {
+                val o = row.objectOrNull() ?: continue
+                if (o["match"].stringOrNull() != "starts_with") continue
+                val url = o["url"].stringOrNull() ?: continue
+                val same = try { Origin.originOf(url) == origin } catch (e: Exception) { false }
+                if (same) return url
+            }
+            return origin
+        }
+
         /** Live records of the snapshot: no tombstones, no licence states, nothing without a record and a kind. */
         fun items(snapshot: StoreSnapshot): List<VaultItem> = snapshot.records.mapNotNull { (id, wrapper) ->
             if (snapshot.meta[id]?.deleted == true) return@mapNotNull null
@@ -121,6 +142,7 @@ data class VaultItem(
                 tags = r["tags"].listOrNull()?.mapNotNull { it.stringOrNull() } ?: emptyList(),
                 favorite = r["favorite"] == JsonValue.Bool(true),
                 updatedAt = (r["updated_at"] as? JsonValue.Int)?.v ?: 0L,
+                createdAt = (r["created_at"] as? JsonValue.Int)?.v ?: 0L,
                 record = r,
             )
         }
@@ -135,16 +157,20 @@ data class VaultItem(
             return out
         }
 
-        private val kindLabelOverrides = mapOf(
-            "web" to "Website login", "desktop" to "Desktop login", "card" to "Payment card", "bank_account" to "Bank account",
-            "ssh_key" to "SSH key", "api_key" to "API key", "wifi" to "Wi-Fi network", "passkey" to "Passkey",
+        private val kindLabelIds = mapOf(
+            "web" to R.string.new_item_web, "desktop" to R.string.kind_desktop, "card" to R.string.new_item_card,
+            "bank_account" to R.string.new_item_bank_account, "ssh_key" to R.string.new_item_ssh_key, "api_key" to R.string.new_item_api_key,
+            "wifi" to R.string.new_item_wifi, "passkey" to R.string.new_item_passkey, "note" to R.string.kind_note,
+            "identity" to R.string.new_item_identity, "purchase" to R.string.new_item_purchase, "subscription" to R.string.new_item_subscription,
+            "warranty" to R.string.new_item_warranty, "license" to R.string.new_item_license, "bookmark" to R.string.new_item_bookmark,
+            "document" to R.string.detail_pane_document,
         )
 
-        /** `agent.py` `kind_label`. */
-        fun kindLabel(kind: String): String {
-            kindLabelOverrides[kind]?.let { return it }
+        /** `agent.py` `kind_label`; a kind this version does not know shows its raw name capitalised. */
+        fun kindLabel(kind: String, t: Txt): String {
+            kindLabelIds[kind]?.let { return t.s(it) }
             val s = kind.replace('_', ' ').trim { it == ' ' || it == '\t' }
-            if (s.isEmpty()) return "Item"
+            if (s.isEmpty()) return t.s(R.string.kind_unknown)
             return capitalized(s)
         }
 

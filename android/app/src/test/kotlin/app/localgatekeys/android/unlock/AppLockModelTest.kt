@@ -1,5 +1,7 @@
 package app.localgatekeys.android.unlock
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.EnglishTxt
 import androidx.biometric.BiometricPrompt
 import app.localgatekeys.android.detail.FakeClipboardSink
 import app.localgatekeys.android.detail.SecretClipboard
@@ -50,7 +52,7 @@ class AppLockModelTest {
         clipboard = SecretClipboard(sink, settings, clipScheduler, clock).also { it.focusChanged(true) }
     }
 
-    private fun makeModel() = AppLockModel(unlocker, clock, scheduler, settings, clipboard, eraser)
+    private fun makeModel() = AppLockModel(unlocker, clock, scheduler, settings, clipboard, eraser, t = EnglishTxt())
 
     private fun unlocked(): AppLockModel = runBlocking {
         val m = makeModel()
@@ -119,7 +121,7 @@ class AppLockModelTest {
 
     private val screenOff = FakeScreenOff()
 
-    private fun pickerModel() = AppLockModel(unlocker, clock, scheduler, settings, clipboard, eraser, screenOff = screenOff)
+    private fun pickerModel() = AppLockModel(unlocker, clock, scheduler, settings, clipboard, eraser, screenOff = screenOff, t = EnglishTxt())
 
     private fun pickerUnlocked(): AppLockModel = runBlocking {
         val m = pickerModel()
@@ -187,7 +189,7 @@ class AppLockModelTest {
     @Test fun cap_is_measured_on_elapsed_time_not_the_wall_clock() = runBlocking {
         settings.idleLock = IdleLock.NEVER
         var elapsed = 5_000_000L
-        val m = AppLockModel(unlocker, clock, scheduler, settings, clipboard, eraser, screenOff = screenOff, elapsedMillis = { elapsed })
+        val m = AppLockModel(unlocker, clock, scheduler, settings, clipboard, eraser, screenOff = screenOff, elapsedMillis = { elapsed }, t = EnglishTxt())
         m.sceneBecameActive()
         m.willOpenSystemScreen(); m.didEnterBackground()
         clock.now -= 3600 // the wall clock was set back an hour
@@ -397,7 +399,7 @@ class AppLockModelTest {
         }
         assertEquals("locked before anything else runs", State.LOCKED, stateDuringWait)
         assertEquals(State.LOCKED, m.st()); assertNull(m.store)
-        assertEquals(VaultEraseFailure(listOf("local-key")).message, m.errorMessage.value)
+        assertEquals(VaultEraseFailure(listOf("local-key")).text(EnglishTxt()), m.errorMessage.value)
         m.unlock() // the retry fails again: stays locked, no unlock attempted
         assertEquals(State.LOCKED, m.st()); assertEquals(2, eraser.calls); assertEquals(1, unlocker.unlockCalls)
         m.unlock() // the retry succeeds, then the unlock runs (a first run)
@@ -416,7 +418,7 @@ class AppLockModelTest {
         m.eraseAndLock()
         assertTrue(settings.erasePending)
         // Relaunch: a new model over the same preferences.
-        val relaunched = AppLockModel(unlocker, clock, scheduler, AppSettings(defaults), clipboard, eraser)
+        val relaunched = AppLockModel(unlocker, clock, scheduler, AppSettings(defaults), clipboard, eraser, t = EnglishTxt())
         relaunched.unlock()
         assertEquals("retried before unlocking", 2, eraser.calls)
         assertFalse(settings.erasePending)
@@ -481,7 +483,7 @@ class AppLockModelTest {
     /** Below API 30 the screen-lock screen is its own activity and stops ours while the unlock is in flight. */
     @Test fun background_during_an_unlock_does_not_reprompt_on_return() = runBlocking {
         unlocker.error = AuthenticationException(BiometricPrompt.ERROR_USER_CANCELED)
-        val m = AppLockModel(unlocker, clock, scheduler, settings, clipboard, eraser, credentialScreenStopsApp = true)
+        val m = AppLockModel(unlocker, clock, scheduler, settings, clipboard, eraser, credentialScreenStopsApp = true, t = EnglishTxt())
         unlocker.duringUnlock = { m.didEnterBackground(); unlocker.succeed = false }
         m.sceneBecameActive() // launch: prompts; the credential screen stops the activity, then the person cancels
         unlocker.duringUnlock = null
@@ -528,13 +530,13 @@ class AppLockModelTest {
     @Test fun erase_flag_that_cannot_be_saved_erases_nothing() = runBlocking {
         val prefs = FlakyPrefs() // commit() updates memory, then the disk write fails
         val s = AppSettings(SharedPrefsStore(prefs))
-        val m = AppLockModel(unlocker, clock, scheduler, s, clipboard, eraser)
+        val m = AppLockModel(unlocker, clock, scheduler, s, clipboard, eraser, t = EnglishTxt())
         m.unlock()
         prefs.failCommit = { true }
         m.eraseAndLock()
         assertEquals(0, eraser.calls)
         assertEquals(State.LOCKED, m.st())
-        assertEquals(AppLockModel.ERASE_NOT_STARTED_MESSAGE, m.errorMessage.value)
+        assertEquals(EnglishTxt().s(AppLockModel.ERASE_NOT_STARTED_MESSAGE), m.errorMessage.value)
         assertFalse("rolled back in memory", s.erasePending)
         assertFalse("not on disk", prefs.disk.containsKey(AppSettings.Key.ERASE_PENDING))
         prefs.failCommit = { false }
@@ -547,12 +549,12 @@ class AppLockModelTest {
     @Test fun erase_whose_done_flag_cannot_be_saved_is_retried() = runBlocking {
         val prefs = FlakyPrefs()
         val s = AppSettings(SharedPrefsStore(prefs))
-        val m = AppLockModel(unlocker, clock, scheduler, s, clipboard, eraser)
+        val m = AppLockModel(unlocker, clock, scheduler, s, clipboard, eraser, t = EnglishTxt())
         m.unlock()
         prefs.failCommit = { changes -> changes[AppSettings.Key.ERASE_PENDING] == false }
         m.eraseAndLock()
         assertTrue(m.eraseFailed); assertTrue(m.offersStartFresh.value)
-        assertEquals(AppLockModel.ERASE_FAILED_MESSAGE, m.errorMessage.value)
+        assertEquals(EnglishTxt().s(AppLockModel.ERASE_FAILED_MESSAGE), m.errorMessage.value)
         assertTrue("still set in memory and on disk", s.erasePending && prefs.disk[AppSettings.Key.ERASE_PENDING] == true)
         val opens = unlocker.unlockCalls
         prefs.failCommit = { false }
@@ -568,14 +570,14 @@ class AppLockModelTest {
         val prefs = FlakyPrefs()
         val s = AppSettings(SharedPrefsStore(prefs))
         unlocker.succeed = false; unlocker.error = LocalStoreException(LocalStoreException.Kind.VAULT_WITHOUT_KEY)
-        val m = AppLockModel(unlocker, clock, scheduler, s, clipboard, eraser)
+        val m = AppLockModel(unlocker, clock, scheduler, s, clipboard, eraser, t = EnglishTxt())
         m.unlock()
         prefs.failCommit = { true }
         m.startFreshAnyway()
         assertEquals(0, eraser.calls)
         assertTrue(m.vaultUnreadable); assertTrue(m.offersStartFresh.value)
         assertFalse(s.erasePending)
-        assertEquals(AppLockModel.ERASE_NOT_STARTED_MESSAGE, m.errorMessage.value)
+        assertEquals(EnglishTxt().s(AppLockModel.ERASE_NOT_STARTED_MESSAGE), m.errorMessage.value)
         assertEquals(State.LOCKED, m.st())
         prefs.failCommit = { false }
         m.startFreshAnyway() // works once the flag can be saved
@@ -607,11 +609,11 @@ class AppLockModelTest {
     }
 
     @Test fun biometry_lockout_message() {
-        assertEquals(AppLockModel.BIOMETRY_LOCKOUT_MESSAGE, messageAfter(AuthenticationException(BiometricPrompt.ERROR_LOCKOUT)))
-        assertEquals(AppLockModel.BIOMETRY_LOCKOUT_MESSAGE, messageAfter(AuthenticationException(BiometricPrompt.ERROR_LOCKOUT_PERMANENT)))
+        assertEquals(EnglishTxt().s(AppLockModel.BIOMETRY_LOCKOUT_MESSAGE), messageAfter(AuthenticationException(BiometricPrompt.ERROR_LOCKOUT)))
+        assertEquals(EnglishTxt().s(AppLockModel.BIOMETRY_LOCKOUT_MESSAGE), messageAfter(AuthenticationException(BiometricPrompt.ERROR_LOCKOUT_PERMANENT)))
         assertEquals(
             "Your fingerprint, face or screen lock is locked after too many attempts. Lock and unlock your phone with its screen lock, then try again.",
-            AppLockModel.BIOMETRY_LOCKOUT_MESSAGE,
+            EnglishTxt().s(AppLockModel.BIOMETRY_LOCKOUT_MESSAGE),
         )
     }
 
@@ -650,7 +652,7 @@ class AppLockModelTest {
         settings.erasePending = true; eraser.failuresLeft = 99
         val m = makeModel(); m.unlock()
         assertTrue(m.eraseFailed); assertTrue(m.offersStartFresh.value); assertEquals(0, unlocker.unlockCalls)
-        assertEquals(VaultEraseFailure(listOf("local-key")).message, m.errorMessage.value)
+        assertEquals(VaultEraseFailure(listOf("local-key")).text(EnglishTxt()), m.errorMessage.value)
     }
 
     @Test fun start_fresh_anyway_clears_the_flag_and_the_next_unlock_opens() = runBlocking {
@@ -672,8 +674,8 @@ class AppLockModelTest {
         assertEquals(State.LOCKED, m.st())
         assertTrue(m.vaultUnreadable)
         assertTrue(m.offersStartFresh.value)
-        assertEquals(AppLockModel.VAULT_WITHOUT_KEY_MESSAGE, m.errorMessage.value)
-        assertTrue(AppLockModel.VAULT_WITHOUT_KEY_MESSAGE.contains("backup"))
+        assertEquals(EnglishTxt().s(AppLockModel.VAULT_WITHOUT_KEY_MESSAGE), m.errorMessage.value)
+        assertTrue(EnglishTxt().s(AppLockModel.VAULT_WITHOUT_KEY_MESSAGE).contains("backup"))
         assertFalse("nothing is erased until the person chooses Start fresh", settings.erasePending)
         assertEquals(0, eraser.calls)
 
@@ -696,7 +698,7 @@ class AppLockModelTest {
             unlocker.succeed = false; unlocker.error = error
             val m = makeModel(); m.unlock()
             assertEquals(error.toString(), State.LOCKED, m.st())
-            assertEquals(error.toString(), AppLockModel.VAULT_WITHOUT_KEY_MESSAGE, m.errorMessage.value)
+            assertEquals(error.toString(), EnglishTxt().s(AppLockModel.VAULT_WITHOUT_KEY_MESSAGE), m.errorMessage.value)
             assertTrue(error.toString(), m.vaultUnreadable)
             assertTrue(error.toString(), m.offersStartFresh.value)
             assertNull(m.store)
@@ -709,15 +711,15 @@ class AppLockModelTest {
         assertEquals(
             "This phone has vault files but not their key (for example after restoring a backup), so they cannot be opened. " +
                 "Start fresh to erase them and set up an empty vault, then sync with your PC to get your items back.",
-            AppLockModel.VAULT_WITHOUT_KEY_MESSAGE,
+            EnglishTxt().s(AppLockModel.VAULT_WITHOUT_KEY_MESSAGE),
         )
         assertEquals(
             "Start fresh anyway?\n\nLocalGateKeys deletes everything it can from this phone and opens a new, empty vault. " +
                 "Anything it could not delete stays on this phone but is no longer used. Your PC and the sync folder are not changed.",
-            AppLockModel.START_FRESH_CONFIRM_1,
+            EnglishTxt().s(AppLockModel.START_FRESH_CONFIRM_1),
         )
-        assertEquals("Are you sure? This cannot be undone. Start fresh now?", AppLockModel.START_FRESH_CONFIRM_2)
-        assertEquals("Unlock your vault", AppLockModel.UNLOCK_REASON)
+        assertEquals("Are you sure? This cannot be undone. Start fresh now?", EnglishTxt().s(AppLockModel.START_FRESH_CONFIRM_2))
+        assertEquals("Unlock your vault", EnglishTxt().s(R.string.unlock_reason))
     }
 
     @Test fun vault_without_key_start_fresh_that_fails_falls_back_to_the_erase_flow() = runBlocking {
@@ -727,7 +729,7 @@ class AppLockModelTest {
         m.startFreshAnyway()
         assertTrue("a failed erase is retried before the next unlock", settings.erasePending)
         assertTrue(m.eraseFailed); assertTrue(m.offersStartFresh.value)
-        assertEquals(VaultEraseFailure(listOf("local-key")).message, m.errorMessage.value)
+        assertEquals(VaultEraseFailure(listOf("local-key")).text(EnglishTxt()), m.errorMessage.value)
     }
 
     @Test fun start_fresh_is_not_offered_for_other_errors() = runBlocking {
@@ -746,9 +748,9 @@ class AppLockModelTest {
 
     @Test fun user_facing_text_never_names_platform_storage_or_a_passcode() {
         val texts = listOf(
-            AppLockModel.VAULT_WITHOUT_KEY_MESSAGE, AppLockModel.BIOMETRY_LOCKOUT_MESSAGE, AppLockModel.START_FRESH_CONFIRM_1,
-            AppLockModel.START_FRESH_CONFIRM_2, AppLockModel.ERASE_FAILED_MESSAGE, AppLockModel.ERASE_NOT_STARTED_MESSAGE,
-            VaultEraser.CONFIRM_TEXT_1, VaultEraser.CONFIRM_TEXT_2,
+            EnglishTxt().s(AppLockModel.VAULT_WITHOUT_KEY_MESSAGE), EnglishTxt().s(AppLockModel.BIOMETRY_LOCKOUT_MESSAGE), EnglishTxt().s(AppLockModel.START_FRESH_CONFIRM_1),
+            EnglishTxt().s(AppLockModel.START_FRESH_CONFIRM_2), EnglishTxt().s(AppLockModel.ERASE_FAILED_MESSAGE), EnglishTxt().s(AppLockModel.ERASE_NOT_STARTED_MESSAGE),
+            EnglishTxt().s(VaultEraser.CONFIRM_TEXT_1), EnglishTxt().s(VaultEraser.CONFIRM_TEXT_2),
         ) + (
             listOf<Throwable>(
                 AuthenticationException(BiometricPrompt.ERROR_NO_DEVICE_CREDENTIAL),
@@ -756,7 +758,7 @@ class AppLockModelTest {
                 AuthenticationException(BiometricPrompt.ERROR_HW_UNAVAILABLE),
             ) + VaultKeyException.Kind.entries.map { VaultKeyException(it) } +
                 LocalStoreException.Kind.entries.map { LocalStoreException(it) }
-            ).mapNotNull { AppLockModel.message(it) }
+            ).mapNotNull { AppLockModel.message(it, EnglishTxt()) }
         for (t in texts) {
             for (word in listOf("Keychain", "Keystore", "passcode", "iPhone", "Face ID")) {
                 assertFalse("'$word' in: $t", t.contains(word, ignoreCase = true))
@@ -767,7 +769,7 @@ class AppLockModelTest {
     @Test fun erase_failure_wording() {
         assertEquals(
             "The vault was not fully erased (could not delete: store files, local-key). Tap Unlock to try erasing again, or Start fresh anyway.",
-            VaultEraseFailure(listOf("store files", "local-key")).message,
+            VaultEraseFailure(listOf("store files", "local-key")).text(EnglishTxt()),
         )
     }
 }

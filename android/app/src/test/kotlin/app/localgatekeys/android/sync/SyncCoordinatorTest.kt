@@ -1,5 +1,7 @@
 package app.localgatekeys.android.sync
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.sync.SyncCoordinator.Phase
 import app.localgatekeys.android.sync.SyncCoordinator.Trigger
 import app.localgatekeys.android.unlock.TestClock
@@ -85,7 +87,7 @@ class SyncCoordinatorTest {
     private fun CoroutineScope.coordinator(store: ItemStore, deps: SyncDependencies = deps()): SyncCoordinator {
         val scope = CoroutineScope(coroutineContext.minusKey(Job) + SupervisorJob())
         scopes.add(scope)
-        return SyncCoordinator(store, deps, scope).also { created.add(it) }
+        return SyncCoordinator(store, deps, scope, EnglishTxt()).also { created.add(it) }
     }
 
     private fun deps(identity: DeviceIdentity? = null): SyncDependencies {
@@ -484,7 +486,7 @@ class SyncCoordinatorTest {
         repeat(5) { c.joinFolder("content://f/1", "nope nope nope") }
         val opens = folders.opened.size
         c.joinFolder("content://f/1", SyncVectors.PASSWORD)
-        assertEquals(SyncWording.PASSWORD_BACKOFF_TEXT, c.actionError.value)
+        assertEquals(EnglishTxt().s(R.string.sync_password_backoff), c.actionError.value)
         assertEquals(opens, folders.opened.size)
         clock.now += 30
         c.joinFolder("content://f/1", SyncVectors.PASSWORD)
@@ -837,7 +839,7 @@ class SyncCoordinatorTest {
         assertEquals("Sync was reset on this phone.", c.actionInfo.value)
         c.reset()
         assertEquals("There was nothing to reset.", c.actionInfo.value)
-        assertEquals("Are you sure? This cannot be undone. Reset sync on this phone now?", SyncWording.onPhone(SyncWording.RESET_TEXT_2))
+        assertEquals("Are you sure? This cannot be undone. Reset sync on this phone now?", EnglishTxt().s(SyncWording.RESET_TEXT_2))
     }
 
     /** Map rule: the hello counter is this device's own monotonic counter (kept); peer counters go with the pairing. */
@@ -868,9 +870,9 @@ class SyncCoordinatorTest {
         c.sync(Trigger.PULL_TO_REFRESH)
         assertEquals(listOf("local-data"), c.issues.value.map { it.kind })
         assertFalse(c.joinByQr(SyncVectors.qrText()))
-        assertEquals(SyncWording.STEP_FAILED_COPY, c.actionError.value)
+        assertEquals(EnglishTxt().s(R.string.sync_sync_could_not_finish_that), c.actionError.value)
         c.leave()
-        assertEquals(SyncWording.STEP_FAILED_COPY, c.actionError.value)
+        assertEquals(EnglishTxt().s(R.string.sync_sync_could_not_finish_that), c.actionError.value)
         assertEquals(Phase.IDLE, c.phase.value)
     }
 
@@ -1128,5 +1130,74 @@ class SyncCoordinatorTest {
         assertEquals(1, lan.maxConcurrent)
         assertEquals(base + 2, lan.exchanges)
         assertEquals(Phase.IDLE, c.phase.value)
+    }
+
+    // MARK: Find again (plan 2026-10-29-sync-ip-change, section 4)
+
+    @Test fun find_again_with_the_paired_pcs_qr_updates_only_the_address() = test {
+        lan.exchange = { emptyList() }
+        val store = LockedStore()
+        val c = qrJoined(store)
+        val pinned = slots.pairedPeer()!!
+        val old = pinned.copy(endpoint = LanEndpoint("192.168.77.9", 48201))
+        slots.setPairedPeer(old)
+        val before = store.snapshot.sync
+        val enrolls = lan.enrolls
+        assertTrue(c.actionError.value ?: "", c.findAgain(SyncVectors.qrText()))
+        val now = slots.pairedPeer()!!
+        assertEquals(pinned.endpoint, now.endpoint)
+        assertEquals(old.copy(endpoint = pinned.endpoint), now) // keys, device and group unchanged
+        assertEquals(enrolls, lan.enrolls) // no re-pairing
+        assertEquals(before?.groupId, store.snapshot.sync?.groupId)
+        assertEquals(before?.deviceId, store.snapshot.sync?.deviceId)
+        assertEquals(SyncWording(EnglishTxt()).foundAgainText(pinned.endpoint!!), c.actionInfo.value)
+        assertEquals(Phase.IDLE, c.phase.value)
+    }
+
+    @Test fun find_again_refuses_another_devices_qr_and_keeps_the_pin() = test {
+        lan.exchange = { emptyList() }
+        val store = LockedStore()
+        val c = qrJoined(store)
+        val other = SyncVectors.identity("C")
+        val pinned = slots.pairedPeer()!!
+        // Same device id and group, different keys: still another device.
+        val wrongKeys = pinned.copy(
+            signingPublic = other.signingPublicKey, exchangePublic = other.exchangePublicKey,
+            endpoint = LanEndpoint("192.168.77.9", 48201),
+        )
+        slots.setPairedPeer(wrongKeys)
+        assertFalse(c.findAgain(SyncVectors.qrText()))
+        assertEquals(wrongKeys, slots.pairedPeer())
+        assertEquals(SyncWording(EnglishTxt()).errorText("find-again-mismatch"), c.actionError.value)
+        assertFalse(c.findAgain("not a code"))
+        assertEquals(SyncWording(EnglishTxt()).errorText("bad-offer"), c.actionError.value)
+        assertEquals(wrongKeys, slots.pairedPeer())
+        assertEquals(Phase.IDLE, c.phase.value)
+    }
+
+    @Test fun address_from_offer_checks_every_key() {
+        val offer = PairingOffer.parseQr(SyncVectors.qrText())
+        val peer = offer.inviterPeer
+        assertEquals(offer.endpoint, SyncCoordinator.addressFromOffer(peer.copy(endpoint = null), SyncVectors.qrText()))
+        assertEquals(offer.endpoint, SyncCoordinator.addressFromOffer(peer, SyncVectors.qrText(), offer.expiresAt))
+        val expired = try {
+            SyncCoordinator.addressFromOffer(peer, SyncVectors.qrText(), offer.expiresAt + 1); null
+        } catch (e: SyncActionException) {
+            e.reason
+        }
+        assertEquals("offer-used-or-expired", expired)
+        val c = SyncVectors.identity("C")
+        val bads = listOf(
+            peer.copy(deviceId = c.deviceId), peer.copy(groupId = "other"),
+            peer.copy(signingPublic = c.signingPublicKey), peer.copy(exchangePublic = c.exchangePublicKey),
+        )
+        for (bad in bads) {
+            val e = try {
+                SyncCoordinator.addressFromOffer(bad, SyncVectors.qrText()); null
+            } catch (x: SyncActionException) {
+                x
+            }
+            assertEquals("find-again-mismatch", e?.reason)
+        }
     }
 }

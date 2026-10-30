@@ -229,14 +229,22 @@ def test_transfer_leaves_documents_and_the_items_that_need_them_out():
 # --- device sync ----------------------------------------------------------------------------
 
 
-def test_free_plan_builds_no_sync_service_and_explains_why(controller, tmp_path):
+def test_free_plan_builds_only_a_licence_only_sync_service_and_explains_why(controller, tmp_path):
     built = []
+
+    def factory(c, cb, **kw):
+        built.append(kw)
+        return SimpleNamespace(licence_only=kw.get("licence_only", False), on_unlock=lambda: None,
+                               stop=lambda: None)
+
     service = SyncWebService(controller, Port(), Bus(), SimpleNamespace(choose_folder=lambda t: None),
-                             factory=lambda c, cb: built.append(1))
+                             factory=factory)
     service.start()
-    assert built == [] and service.service is None
+    assert built == [{"licence_only": True}]
     view = service.view()
-    assert view["pro"] is False and "LocalGateKeys Pro" in view["pro_text"]
+    assert view["pro"] is False and view["licence_only"] is True and "LocalGateKeys Pro" in view["pro_text"]
+    # Without a service (it failed to start) the free plan still explains why.
+    service.stop()
     with pytest.raises(ApiError) as refused:
         service.sync_now()
     assert refused.value.code == "pro_required"
@@ -244,7 +252,9 @@ def test_free_plan_builds_no_sync_service_and_explains_why(controller, tmp_path)
 
 def test_sync_starts_and_stops_with_the_licence(controller, monkeypatch):
     class Fake:
-        stopped = False
+        def __init__(self, licence_only):
+            self.licence_only = licence_only
+            self.stopped = False
 
         def on_unlock(self):
             pass
@@ -252,17 +262,26 @@ def test_sync_starts_and_stops_with_the_licence(controller, monkeypatch):
         def stop(self):
             self.stopped = True
 
-    fake = Fake()
+    built = []
+
+    def factory(c, cb, *, licence_only=False):
+        built.append(Fake(licence_only))
+        return built[-1]
+
     service = SyncWebService(controller, Port(), Bus(), SimpleNamespace(choose_folder=lambda t: None),
-                             factory=lambda c, cb: fake)
+                             factory=factory)
     service.plan_changed()
-    assert service.service is None
+    assert service.service.licence_only is True  # free: licence-only sync
+    free = service.service
     controller.session.pro_features = frozenset({"sync", "totp", "attachments", "unlimited_items"})
     service.plan_changed()
-    assert service.service is fake
+    assert free.stopped and service.service.licence_only is False
+    full = service.service
+    service.plan_changed()
+    assert service.service is full and not full.stopped  # same plan: kept
     controller.session.pro_features = frozenset()
     service.plan_changed()
-    assert service.service is None and fake.stopped
+    assert full.stopped and service.service.licence_only is True
 
 
 def test_sync_view_while_locked_does_not_pitch_pro(controller):

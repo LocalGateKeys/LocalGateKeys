@@ -32,6 +32,8 @@ If either value is emptied again, the check is "not configured": in that state
 `updates.release_configuration()` returns `None`, nothing touches the network,
 and the UI reports *"Update checks are not configured yet."* Both values must be
 set for checks to run; either one missing fails closed to "not configured".
+MSIX builds (Microsoft Store or sideloaded package) are updated by their
+channel instead: the UI says who installs updates (`managed_update_channel()`).
 
 ## Manifest format
 
@@ -194,13 +196,15 @@ front of one R2 bucket. The Worker is read-only and serves exactly:
 | Path                          | R2 key                       | Caching                 |
 |-------------------------------|------------------------------|-------------------------|
 | `/stable.json`                | `stable.json`                | 5 minutes               |
+| `/revocations.json`           | `revocations.json`           | 5 minutes               |
 | `/releases/<x.y.z>/<file>`    | `releases/<x.y.z>/<file>`    | 1 year, `immutable`     |
 
 Everything else is 404, only GET/HEAD are allowed, query strings are
 rejected, it never redirects, and it refuses to serve a `stable.json` larger
 than the client's 64 KB cap. The Worker is not trusted for integrity: the
 signature in `stable.json` is, so a tampered Worker or bucket can only make
-checks fail. Tests: `tests/update-feed-worker.test.cjs` (part of `npm test`).
+checks fail. Releases older than the `MIN_RELEASE` var in `wrangler.jsonc`
+(now `0.4.7`) are no longer served; the objects stay in R2. Tests: `tests/update-feed-worker.test.cjs` (part of `npm test`).
 
 ### One-time setup
 
@@ -208,13 +212,13 @@ checks fail. Tests: `tests/update-feed-worker.test.cjs` (part of `npm test`).
 wrangler login                                   # opens the browser
 wrangler r2 bucket create localgatekeys-releases
 cd cloudflare\update-feed
-wrangler deploy                                  # prints https://lgk-updates.<account>.workers.dev
+wrangler deploy                                  # serves the custom domain in wrangler.jsonc
 ```
 
-Then set the client config (step 2 above) to the printed origin:
+Then set the client config (step 2 above) to that origin:
 
 ```python
-RELEASE_FEED_URL = "https://lgk-updates.<account>.workers.dev/stable.json"
+RELEASE_FEED_URL = "https://updates.localgatekeys.app/stable.json"
 ```
 
 The URL is compiled into every client, so do not rename the Worker or move
@@ -225,7 +229,7 @@ keeping the old origin alive until old clients have upgraded.
 
 1. Build the installer (`scripts/build_personal_installer.ps1`).
 2. Write the manifest with artifact URLs of the form
-   `https://lgk-updates.<account>.workers.dev/releases/<app_version>/<file>`
+   `https://updates.localgatekeys.app/releases/<app_version>/<file>`
    and `notes_url` pointing at the release notes (e.g. the GitHub release).
 3. Sign it (step 4) with a `--sequence` above the live one.
 4. Run `scripts/publish_release_feed.ps1` (add `-WhatIf` for a dry run). It
@@ -248,8 +252,10 @@ python scripts/sign_release_manifest.py revocations --key .\release-signing-key.
 wrangler r2 object put localgatekeys-releases/revocations.json --file .\revocations.json --content-type application/json --remote
 ```
 
+`.\scripts\publish_revocations.ps1 -IdsFile <ids> -Key <release key PEM>` does
+both steps (sign, verify, upload; `-NoUpload` or `-WhatIf` to stop short).
 `revoked.txt` has one licence id per line and must list every id that should
-stay revoked. See [LICENSING.md](LICENSING.md) for when and why.
+stay revoked. The client reads at most 1 MiB and 10,000 ids. See [LICENSING.md](LICENSING.md) for when and why.
 
 ## Key rotation
 

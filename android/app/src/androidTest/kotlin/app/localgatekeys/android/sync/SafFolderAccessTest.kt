@@ -1,5 +1,6 @@
 package app.localgatekeys.android.sync
 
+import app.localgatekeys.android.i18n.appTxt
 import android.net.Uri
 import android.os.Bundle
 import androidx.test.platform.app.InstrumentationRegistry
@@ -269,13 +270,13 @@ class SafFolderAccessTest {
         assertEquals(listOf("folder-missing"), report.issues.map { it.kind })
         assertEquals(
             "The sync folder is not available. Check that the cloud app is running and the folder exists.",
-            SyncWording.text(SyncIssue("folder-missing")),
+            SyncWording(appTxt()).text(SyncIssue("folder-missing")),
         )
         assertEquals(0, store.commits)
         // And the Sync tab asks to choose the folder again.
         val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
         try {
-            val c = withContext(Dispatchers.Main) { SyncCoordinator(store, deps, scope) }
+            val c = withContext(Dispatchers.Main) { SyncCoordinator(store, deps, scope, appTxt()) }
             c.refreshMembership()
             assertFalse(c.membership.value.hasFolderUri)
             withContext(Dispatchers.Main) { c.shutdown() }
@@ -298,7 +299,7 @@ class SafFolderAccessTest {
         )
         val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
         try {
-            val c = withContext(Dispatchers.Main) { SyncCoordinator(store, deps, scope) }
+            val c = withContext(Dispatchers.Main) { SyncCoordinator(store, deps, scope, appTxt()) }
             assertTrue(c.actionError.value ?: "", c.joinFolder(tree.toString(), "correct horse battery staple 42"))
             val state = store.snapshot.sync!!
             assertTrue(state.hasFolder)

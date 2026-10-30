@@ -13,11 +13,12 @@ from __future__ import annotations
 
 import base64
 import secrets
+import sys
 import threading
 import time
 from typing import Any, Callable
 
-from ..api.result import ApiError
+from ..api.result import ApiError, points_to_error_log
 from .sync_view import (
     _ACTION_LABELS,
     _ACTION_ORDER,
@@ -26,13 +27,18 @@ from .sync_view import (
     PASSWORD_ADVICE,
     RESET_TEXT_1,
     RESET_TEXT_2,
+    ISSUE_COPY,
+    ROLLBACK_CONFIRM_TEXT,
+    ROLLBACK_CONFIRM_TITLE,
     acknowledge_job,
+    acknowledge_rollback_job,
     add_folder_job,
     begin_pairing_job,
     check_sync_password,
     countdown_text,
     create_group_job,
     default_device_name,
+    dismiss_peer_rollback_job,
     enroll_job,
     error_text,
     folder_setup,
@@ -43,11 +49,14 @@ from .sync_view import (
     leave_text,
     local_ipv4_addresses,
     orphan_members,
+    refind_job,
     remove_lan_peer_job,
     remove_wifi_device_text,
     reset_result_text,
     rotate_job,
     rotation_intro,
+    rollback_issues,
+    rollback_view,
     rotation_plan,
     sanitize_name,
     short_id,
@@ -56,26 +65,19 @@ from .sync_view import (
     sync_view,
     validate_lan_endpoint,
 )
+from ..i18n import t
 
 JOB_TIMEOUT = 180.0
-CONFIRM_SYNC = "Confirm to sync passwords to another device"
-NOT_RUNNING = "Sync runs while the vault is unlocked on this PC. Unlock and try again."
-PRO_REQUIRED = ("Device sync is part of LocalGateKeys Pro. Everything already on this PC stays here and "
-                "keeps working; with Pro, sync resumes where it left off.")
-STOPPED = "Sync stopped (the vault locked). Unlock and try again."
-WIFI_INTRO = ("This PC's address and port on your home network. Other devices connect to it here. Only private "
-              "network addresses work.")
-PAIR_HINT = ("Phone and PC must be on the same Wi-Fi. If the phone can't connect, allow LocalGateKeys through "
-             "Windows Firewall on Private networks.")
-CHOOSE_ADDRESS = ("The saved address ({saved}) no longer belongs to this PC, and this PC has more than one "
-                  "network address. Choose the address of the Wi-Fi or Ethernet network your phone uses.")
-CHOOSE_KEEP = ("The saved address ({saved}) is on an adapter a phone usually cannot reach (a virtual adapter, a "
-               "direct cable, or a network without a router). Keep it only if your phone connects that way; "
-               "otherwise choose your Wi-Fi or Ethernet address.")
-CHOOSE_VIRTUAL = ("The saved address ({saved}) belongs to a virtual network adapter (for example VirtualBox, "
-                  "Hyper-V, WSL or a VPN), which a phone cannot reach. Choose the address of the Wi-Fi or "
-                  "Ethernet network your phone uses.")
-INTRO = ("Keep this vault in step on your phone and other PCs. Everything is encrypted before it leaves this PC.")
+CONFIRM_SYNC = "sync.confirmToSyncPasswordsTo"
+NOT_RUNNING = "syncPage.needsUnlock"
+PRO_REQUIRED = ("sync.deviceSyncIsPartOf")
+STOPPED = "sync.syncStoppedTheVaultLocked"
+WIFI_INTRO = ("sync.thisPcSAddressAnd")
+PAIR_HINT = ("sync.phoneAndPcMustBe")
+CHOOSE_ADDRESS = ("sync.theSavedAddressNoLonger")
+CHOOSE_KEEP = ("sync.theSavedAddressIsOn")
+CHOOSE_VIRTUAL = ("sync.theSavedAddressBelongsTo")
+INTRO = ("sync.keepThisVaultInStep")
 
 
 def _noop(session: Any, lease: Any, gate: Any) -> None:
@@ -87,10 +89,74 @@ def _split_endpoint(value: str) -> tuple[str, int]:
     return host.strip("[]"), int(port)
 
 
+def _announcer() -> Any:
+    if sys.platform != "win32":
+        return None
+    from ..sync.announce import Announcer
+
+    return Announcer()
+
+
+def _browser() -> Any:
+    """Finds a paired Wi-Fi host whose pinned address stopped answering (Windows DNS-SD)."""
+    if sys.platform != "win32":
+        return None
+    from ..sync.discovery_client import default_browser
+
+    return default_browser()
+
+
 def _probe_network() -> Any:
     from ..sync.lan_interfaces import probe_interfaces
 
     return probe_interfaces()
+
+
+class AddressFollower:
+    """The stored Wi-Fi endpoint, moved to this PC's new address when the old one is gone.
+
+    Probes the adapters at most every *min_interval* seconds (``route print`` is a process).
+    ``moved`` is ``(old, new)`` after a move, for the Sync page.
+    """
+
+    def __init__(self, settings: Any, *, probe: Callable[[], Any] = _probe_network,
+                 clock: Callable[[], float] = time.monotonic, min_interval: float = 30.0) -> None:
+        self._settings = settings
+        self._probe = probe
+        self._clock = clock
+        self._min_interval = min_interval
+        self._last: float | None = None
+        self._mu = threading.Lock()
+        self.moved: tuple[str, str] | None = None
+
+    def __call__(self) -> Any:
+        from ..sync.lan_interfaces import followed_endpoint
+
+        with self._mu:
+            value = getattr(self._settings, "sync_lan_endpoint", None)
+            if not isinstance(value, str) or ":" not in value:
+                return value
+            now = self._clock()
+            if self._last is not None and now - self._last < self._min_interval:
+                return value
+            self._last = now
+            try:
+                new = followed_endpoint(value, self._probe())
+            except Exception:  # noqa: BLE001 - a failed probe keeps the stored address
+                return value
+            if new is None or new == value:
+                return value
+            if getattr(self._settings, "sync_lan_endpoint_confirmed", "") == value:
+                self._settings.sync_lan_endpoint_confirmed = new
+            self._settings.sync_lan_endpoint = new
+            try:
+                self._settings.save()
+            except OSError as exc:  # kept in memory; saved with the next settings write
+                from ..error_log import log_exception
+
+                log_exception("sync-ui", exc)
+            self.moved = (value, new)
+            return new
 
 
 QR_MAX_CSS_PX = 260
@@ -125,16 +191,20 @@ def format_verification_code(code: Any) -> str:
     return f"{code[:3]} {code[3:]}"
 
 
+def synced_items_text(count: int) -> str:
+    """The toast after a sync that brought, changed or removed items."""
+    return t("sync.itemsUpdated", count=count)
+
+
 def not_listening_text(address: str, issue: Any) -> str:
     """Why no QR code is shown: nothing accepts connections on *address*."""
     kind = str(getattr(issue, "kind", "") or "lan-not-listening")
     detail = str(getattr(issue, "detail", "") or "")
     if kind == "listen-failed":
-        reason = f" Reason: {detail}." if detail else ""
-        return (f"Wi-Fi sync could not start listening on {address}, so no pairing code is shown.{reason} Check "
-                "the address under Turn on Wi-Fi sync, and that no other app uses that port.")
-    advice = issue_text(issue) if kind != "lan-not-listening" else "Try again in a moment."
-    return f"Wi-Fi sync is not listening on {address}, so no pairing code is shown. {advice}"
+        reason = t("sync.listenFailedReason", detail=detail) if detail else ""
+        return t("sync.listenFailed", address=address, reason=reason)
+    advice = issue_text(issue) if kind != "lan-not-listening" else t("sync.tryAgainInAMoment")
+    return t("sync.notListening", address=address, advice=advice)
 
 
 class VaultLockBarrier:
@@ -164,8 +234,11 @@ class VaultLockBarrier:
             token.release()
 
 
-def _default_factory(controller: Any, on_status: Callable[[Any, Any], None]) -> Any:
-    """The real service, built like ``AgentApp._start_sync_service`` (no UI barrier: there is no UI thread)."""
+def _default_factory(controller: Any, on_status: Callable[[Any, Any], None], *, licence_only: bool = False) -> Any:
+    """The real service, built like ``AgentApp._start_sync_service`` (no UI barrier: there is no UI thread).
+
+    *licence_only*: the free plan's service (``sync.service`` "Licence-only mode").
+    """
     from ..sync import service as sync_service
     from ..sync.install import load_or_create_install_id
 
@@ -179,10 +252,12 @@ def _default_factory(controller: Any, on_status: Callable[[Any, Any], None]) -> 
 
     owner: list[Any] = []
 
+    follower = AddressFollower(controller.settings)
+
     def endpoint() -> Any:
         from ..sync.transport import LANEndpoint
 
-        value = getattr(controller.settings, "sync_lan_endpoint", None)
+        value = follower()
         if not isinstance(value, str) or ":" not in value:
             return None
         host, _, port = value.rpartition(":")
@@ -194,11 +269,13 @@ def _default_factory(controller: Any, on_status: Callable[[Any, Any], None]) -> 
     service = sync_service.SyncService(
         session, check_lease, install_id=install_id,
         transports=[sync_service.FolderAdapter(install_id=install_id),
-                    sync_service.LanAdapter(install_id=install_id, endpoint=endpoint)],
+                    sync_service.LanAdapter(install_id=install_id, endpoint=endpoint, announcer=_announcer(),
+                                              browser=_browser())],
         scheduler=sync_service.ThreadScheduler(), gate=sync_service.SyncGate(VaultLockBarrier(controller.vault_lock)),
         post_result=lambda view: on_status(owner[0] if owner else None, view),
-        change_marker=lambda: sync_service.vault_change_marker(session))
+        change_marker=lambda: sync_service.vault_change_marker(session), licence_only=licence_only)
     owner.append(service)
+    service.address_follower = follower
     return service
 
 
@@ -225,6 +302,9 @@ class SyncWebService:
         self._busy = threading.Lock()
         self._busy_text = ""
         self._lock = threading.RLock()
+        # (kind, detail) rollback issues acknowledged or dismissed, hidden until a sync run reports anew.
+        self._rollback_hidden: set[tuple[str, str]] = set()
+        self._rollback_mark: Any = None
         from .secrets import SecretService
 
         self._auth = SecretService(controller, port)
@@ -244,12 +324,15 @@ class SyncWebService:
         allowed = getattr(self._controller.session, "pro_features", None)
         return allowed is None or "sync" in allowed
 
+    def licence_only(self) -> bool:
+        """Whether the running service (if any) is the free plan's licence-only one."""
+        return getattr(self.service, "licence_only", False) is True
+
     def plan_changed(self) -> None:
-        """Start or stop sync after the licence changed (installed, removed, restored)."""
-        if self.sync_allowed():
-            self.start()
-        else:
-            self.stop()
+        """Switch between full and licence-only sync after the licence changed (installed, removed, restored)."""
+        if self.service is not None and self.licence_only() == self.sync_allowed():
+            self.stop()  # the other mode: replaced below (a synced licence turns full sync on here)
+        self.start()
         self._bus.emit("sync.status", {})
 
     def start(self) -> None:
@@ -258,12 +341,14 @@ class SyncWebService:
         with self._lock:
             if self.service is not None or not self._controller.is_unlocked():
                 return
-            if not self.sync_allowed():
-                # Free plan: no sync round and no listener.  What earlier syncs
-                # brought stays in the vault; a Pro licence resumes sync.
-                return
             try:
-                service = self._factory(self._controller, self._status_changed)
+                if self.sync_allowed():
+                    service = self._factory(self._controller, self._status_changed)
+                else:
+                    # Free plan: a licence-only service.  It stores no item and publishes nothing; it
+                    # runs (and listens) only when asked, so a licence bought elsewhere can arrive.
+                    # What earlier syncs brought stays in the vault; a Pro licence resumes full sync.
+                    service = self._factory(self._controller, self._status_changed, licence_only=True)
             except Exception as exc:  # noqa: BLE001 - sync never blocks unlock
                 log_exception("sync-start", exc)
                 return
@@ -279,6 +364,8 @@ class SyncWebService:
             service, self.service = self.service, None
             self.status = None
             self._snapshot = None
+            self._rollback_hidden.clear()
+            self._rollback_mark = None
             self._folders.clear()
             self._offers.clear()
         if service is not None:
@@ -292,23 +379,70 @@ class SyncWebService:
             if source is None or source is not self.service:
                 return  # a stopped service (the vault locked, maybe unlocked again since)
             self.status = view
+            if self._rollback_hidden and self._run_mark(view) != self._rollback_mark:
+                self._rollback_hidden.clear()  # a newer run: show what it reports
         if getattr(view, "license_adopted", False) and self._on_licence is not None:
             self._on_licence()
         self._bus.emit("sync.status", {})
+        changed = getattr(view, "items_changed", 0)
+        if changed:
+            self._bus.emit("items.changed", {})  # the item list shows what sync brought without a relock
+            self._bus.emit("toast", {"kind": "info", "title": t("sync.synced"),
+                                     "message": synced_items_text(int(changed))})
+
+    # ------------------------------------------------------------ rollback
+    @staticmethod
+    def _run_mark(status: Any) -> Any:
+        """Identifies the last sync runs (each transport's last sync time and issues)."""
+        if status is None:
+            return None
+        return tuple((getattr(t, "name", None), getattr(t, "last_sync", None),
+                      tuple((i.kind, i.detail) for i in getattr(t, "issues", ()) or ()))
+                     for t in getattr(status, "transports", ()) or ())
+
+    def _hide_rollback(self, kind: str, detail: str) -> None:
+        with self._lock:
+            self._rollback_hidden.add((kind, detail))
+            self._rollback_mark = self._run_mark(self.status)
+
+
+    def acknowledge_rollback(self) -> dict[str, Any]:
+        """"This was me": keep this (restored) copy; asks first, then the master password or Windows Hello."""
+        self._service()
+        if not any(i.kind == "vault-rollback" for i in rollback_issues(self.status)):
+            return {"message": t("sync.thereIsNoWarningTo"), **self.view()}
+        if not self._port.confirm(t(ROLLBACK_CONFIRM_TITLE), t(ROLLBACK_CONFIRM_TEXT)):
+            raise ApiError("cancelled", t("error.cancelled"))
+        lease = self._controller.guard.lease()
+        self._auth.reauthenticate(t(ROLLBACK_CONFIRM_TITLE), lease, allow_hello=True)
+        self._controller.require_lease(lease)
+        self._run(acknowledge_rollback_job(), t("typedEditor.saving"))
+        self._hide_rollback("vault-rollback", "")
+        return {"message": t(ISSUE_COPY["rollback-acknowledged"]), **self.refresh()}
+
+    def dismiss_peer_rollback(self, device_id: str) -> dict[str, Any]:
+        """Dismiss ``peer-vault-rollback`` for one device: its older copy is accepted from now on."""
+        self._service()
+        if not isinstance(device_id, str) or not any(
+                i.kind == "peer-vault-rollback" and i.detail == device_id for i in rollback_issues(self.status)):
+            raise ApiError("invalid", t("sync.thatWarningIsNoLonger"))
+        self._run(dismiss_peer_rollback_job(device_id), t("typedEditor.saving"))
+        self._hide_rollback("peer-vault-rollback", device_id)
+        return self.refresh()
 
     # ----------------------------------------------------------------- jobs
     def _service(self) -> Any:
         service = self.service
         if service is None:
             if self._controller.is_unlocked() and not self.sync_allowed():
-                raise ApiError("pro_required", PRO_REQUIRED)
-            raise ApiError("unavailable", NOT_RUNNING)
+                raise ApiError("pro_required", t(PRO_REQUIRED))
+            raise ApiError("unavailable", t(NOT_RUNNING))
         return service
 
     def _run(self, job: Callable[[Any, Any, Any], Any], busy: str, *, run_after: bool = False) -> Any:
         service = self._service()
         if not self._busy.acquire(blocking=False):
-            raise ApiError("busy", "Another sync action is still running.")
+            raise ApiError("busy", t("sync.anotherSyncActionIsStill"))
         self._busy_text = busy
         self._bus.emit("sync.status", {})
         done = threading.Event()
@@ -333,17 +467,16 @@ class SyncWebService:
             accepted = (service.submit(job, on_done, run_after=True) if run_after
                         else service.submit(job, on_done))
             if not accepted:
-                raise ApiError("stopped", STOPPED)
+                raise ApiError("stopped", t(STOPPED))
             if not done.wait(self._timeout):
                 with state_lock:
                     if not done.is_set():
                         box["waiting"] = False
                         handed_over = True  # on_done releases busy when the job ends
                 if handed_over:
-                    raise ApiError("timeout", "This sync action is still running. Its result shows here when it "
-                                              "finishes; do not repeat it.")
+                    raise ApiError("timeout", t("sync.thisSyncActionIsStill"))
             if service is not self.service:
-                raise ApiError("stopped", STOPPED)  # the vault locked meanwhile: drop the result
+                raise ApiError("stopped", t(STOPPED))  # the vault locked meanwhile: drop the result
             error = box.get("error")
             if error is not None:
                 if not isinstance(getattr(error, "reason", None), str):
@@ -374,37 +507,53 @@ class SyncWebService:
         def issue(item: Any) -> dict[str, Any] | None:
             if item is None:
                 return None
-            text = item.text + (" If that does not help, use Reset sync on this PC below." if item.reset_offered
+            text = item.text + (t("sync.ifThatDoesNotHelp") if item.reset_offered
                                 else "")
-            return {"kind": item.kind, "severity": item.severity, "text": text}
+            shown = {"kind": item.kind, "severity": item.severity, "text": text}
+            if points_to_error_log(text):
+                shown["error_log"] = True
+            return shown
 
         def card(c: Any) -> dict[str, Any]:
             return {
                 "key": c.key, "title": c.title, "state": c.state, "state_text": c.state_text,
                 "last_sync_text": c.last_sync_text, "banner": issue(c.banner), "hint": c.hint,
-                "members_heading": "Devices" if c.key == "folder" else "Paired devices",
+                "members_heading": t("sync.devices") if c.key == "folder" else t("sync.pairedDevices"),
                 "members": [{"id": m.device_id, "name": m.name, "detail": m.detail, "is_self": m.is_self,
                              "removable": m.removable} for m in c.members],
                 "issues": [issue(i) for i in c.issues[1:]],
-                "actions": [{"id": a, "label": _ACTION_LABELS[a], "primary": a in _PRIMARY}
+                "actions": [{"id": a, "label": t(_ACTION_LABELS[a]), "primary": a in _PRIMARY}
                             for a in _ACTION_ORDER if a in c.actions],
             }
 
-        status_line = self._busy_text or ("Syncing now…" if view.running else "")
+        status_line = self._busy_text or (t("sync.syncingNow") if view.running else "")
         if view.conflicts_text:
             status_line = f"{status_line}  ·  {view.conflicts_text}" if status_line else view.conflicts_text
-        return {"intro": INTRO, "status_line": status_line, "banner": issue(view.banner),
-                "cards": [card(view.wifi), card(view.folder)], "skipped": list(view.skipped),
+        wifi = card(view.wifi)
+        moved = getattr(getattr(self.service, "address_follower", None), "moved", None)
+        if moved and moved[1] == endpoint:
+            wifi["hint"] = t("sync.addressChanged", address=moved[1])
+        if getattr(self.service, "lan_announcement", "off") == "public-network":
+            wifi["hint"] = (t("sync.windowsTreatsThisNetworkAs"))
+        return {"intro": t(INTRO), "status_line": status_line, "banner": issue(view.banner),
+                "cards": [wifi, card(view.folder)],
+                "rollback": rollback_view(self.status, self._snapshot, hidden=set(self._rollback_hidden)), "skipped": list(view.skipped),
                 "available": self.service is not None, "busy": bool(self._busy_text),
-                "advice": PASSWORD_ADVICE, "pro": self.sync_allowed() or not self._controller.is_unlocked(),
-                "pro_text": PRO_REQUIRED}
+                "advice": t(PASSWORD_ADVICE), "pro": self.sync_allowed() or not self._controller.is_unlocked(),
+                "pro_text": t(PRO_REQUIRED), "licence_only": self.licence_only()}
+
+    def status_summary(self) -> dict[str, Any]:
+        """The sidebar pill and the Sync status sheet (UX plan workstream 6)."""
+        from .sync_status import summarize
+
+        return summarize(self.view(), self.status, self._snapshot, now=time.time())
 
     # --------------------------------------------------------------- inputs
     def choose_folder(self) -> dict[str, Any]:
         self._service()
-        folder = self._dialogs.choose_folder("Choose the sync folder")
+        folder = self._dialogs.choose_folder(t("sync.chooseTheSyncFolder"))
         if not folder:
-            raise ApiError("cancelled", "No folder was chosen.")
+            raise ApiError("cancelled", t("error.noFolderChosen"))
         token = secrets.token_urlsafe(12)
         self._folders[token] = str(folder)
         return {"token": token, "path": str(folder)}
@@ -412,7 +561,7 @@ class SyncWebService:
     def _folder(self, token: str) -> str:
         folder = self._folders.pop(str(token or ""), None)
         if not folder:
-            raise ApiError("invalid", "Choose the sync folder first.")
+            raise ApiError("invalid", t("sync.chooseTheSyncFolderFirst"))
         return folder
 
     @staticmethod
@@ -433,7 +582,7 @@ class SyncWebService:
         vault lock), so the prompt never waits inside the sync gate.
         """
         lease = self._controller.guard.lease()
-        self._auth.reauthenticate(CONFIRM_SYNC, lease, allow_hello=False)
+        self._auth.reauthenticate(t(CONFIRM_SYNC), lease, allow_hello=False)
         self._controller.require_lease(lease)
 
     # -------------------------------------------------------------- actions
@@ -449,40 +598,39 @@ class SyncWebService:
             self._require_strong(password, confirm)
             self._confirm_handover()
             self._run(create_group_job(folder, password, default_device_name(), service.install_id),
-                      "Creating the sync group…", run_after=True)
+                      t("sync.creatingTheSyncGroup"), run_after=True)
         finally:
             password = confirm = ""
-        return {"message": "Sync group created. Join it from your other devices with the same folder and sync "
-                           "password.", **self.refresh()}
+        return {"message": t("sync.syncGroupCreatedJoinIt"), **self.refresh()}
 
     def join(self, token: str, password: str) -> dict[str, Any]:
         service = self._service()
         folder = self._folder(token)
         if not password:
-            raise ApiError("invalid", "Enter the sync password.")
+            raise ApiError("invalid", t("sync.enterTheSyncPassword"))
         try:
             self._confirm_handover()  # this PC's items are merged into the folder for the group's devices
-            self._run(join_folder_job(folder, password, default_device_name(), service.install_id), "Joining…",
+            self._run(join_folder_job(folder, password, default_device_name(), service.install_id), t("sync.joining"),
                       run_after=True)
         finally:
             password = ""
-        return {"message": "This PC joined the sync group.", **self.refresh()}
+        return {"message": t("sync.thisPcJoinedTheSync"), **self.refresh()}
 
     def folder_setup(self, action: str, token: str, password: str, confirm: str) -> dict[str, Any]:
         service = self._service()
         setup = folder_setup(action)
         if setup is None:
-            raise ApiError("invalid", "Unknown sync action.")
+            raise ApiError("invalid", t("sync.unknownSyncAction"))
         folder = self._folder(token)
         try:
             if setup.confirm_twice:
                 self._require_strong(password, confirm)
             elif not password:
-                raise ApiError("invalid", "Enter the sync password.")
+                raise ApiError("invalid", t("sync.enterTheSyncPassword"))
             fresh_key = action == "add-folder" and bool(getattr(self._snapshot, "lan_removed", False))
-            if fresh_key and not self._port.confirm("New sync key", lan_removed_folder_text(self._snapshot)):
+            if fresh_key and not self._port.confirm(t("sync.newSyncKey"), lan_removed_folder_text(self._snapshot)):
                 # Audit M9: a removed Wi-Fi device still holds the group key; the folder gets a new one.
-                raise ApiError("cancelled", "Cancelled.")
+                raise ApiError("cancelled", t("error.cancelled"))
             self._confirm_handover()
             job = (add_folder_job(folder, password, default_device_name(), service.install_id, True) if fresh_key
                    else setup.job(folder, password, default_device_name(), service.install_id))
@@ -494,7 +642,7 @@ class SyncWebService:
     def setup_text(self, action: str) -> dict[str, Any]:
         setup = folder_setup(action)
         if setup is None:
-            raise ApiError("invalid", "Unknown sync action.")
+            raise ApiError("invalid", t("sync.unknownSyncAction"))
         return {"title": setup.title, "intro": setup.intro, "confirm_twice": bool(setup.confirm_twice)}
 
     def _rotate(self, password: str, confirm: str, remove: tuple[str, ...], done_text: str, *,
@@ -510,18 +658,18 @@ class SyncWebService:
             plan = rotation_plan(self._snapshot, removing=remove)
             if plan.text:
                 text = f"{lead}\n\n{plan.text}" if lead else plan.text
-                if not self._port.confirm("Change sync password" if not remove else "Remove device?", text):
-                    raise ApiError("cancelled", "Cancelled.")
-            elif lead and not self._port.confirm("Remove device?", lead):
-                raise ApiError("cancelled", "Cancelled.")
+                if not self._port.confirm(t("sync.changeSyncPassword2") if not remove else t("sync.removeDevice"), text):
+                    raise ApiError("cancelled", t("error.cancelled"))
+            elif lead and not self._port.confirm(t("sync.removeDevice"), lead):
+                raise ApiError("cancelled", t("error.cancelled"))
             self._run(rotate_job(password, remove, service.install_id, service.lan_transport, plan.keep),
-                      "Changing the sync password…", run_after=True)
+                      t("sync.changingTheSyncPassword"), run_after=True)
         finally:
             password = confirm = ""
         return {"message": done_text, **self.refresh()}
 
     def rotation_text(self) -> dict[str, Any]:
-        return {"title": "Change sync password", "intro": rotation_intro(self._snapshot)}
+        return {"title": t("sync.changeSyncPassword2"), "intro": rotation_intro(self._snapshot)}
 
     def acknowledge_members(self) -> dict[str, Any]:
         """Confirm the devices shown as added by another device (``member-added``)."""
@@ -529,17 +677,16 @@ class SyncWebService:
         group = self._snapshot
         ids = tuple(getattr(group, "unacked", ()) or ())
         if not ids:
-            return {"message": "There are no new devices to confirm.", **self.refresh()}
+            return {"message": t("sync.thereAreNoNewDevices"), **self.refresh()}
         names = group.names() if hasattr(group, "names") else {}
         shown = ", ".join(sanitize_name(names.get(d) or short_id(d)) for d in ids)
-        if not self._port.confirm("Confirm devices", f"Are these your devices?\n\n{shown}\n\nThey keep syncing and "
-                                                     "get the new key when the sync password changes."):
-            raise ApiError("cancelled", "Cancelled.")
-        self._run(acknowledge_job(ids, service.install_id), "Saving…")
-        return {"message": f"Confirmed: {shown}.", **self.refresh()}
+        if not self._port.confirm(t("sync.confirmDevices"), t("sync.areTheseYourDevices", shown=shown)):
+            raise ApiError("cancelled", t("error.cancelled"))
+        self._run(acknowledge_job(ids, service.install_id), t("typedEditor.saving"))
+        return {"message": t("sync.confirmedList", shown=shown), **self.refresh()}
 
     def change_password(self, password: str, confirm: str) -> dict[str, Any]:
-        return self._rotate(password, confirm, (), "The sync password was changed.")
+        return self._rotate(password, confirm, (), t("sync.theSyncPasswordWasChanged"))
 
     def _members(self, card: str) -> list[Any]:
         endpoint = getattr(self._controller.settings, "sync_lan_endpoint", "")
@@ -557,24 +704,22 @@ class SyncWebService:
         service = self._service()
         member = next((m for m in self._members(card) if m.device_id == device_id), None)
         if member is None:
-            raise ApiError("invalid", "That device is no longer in this sync group.")
+            raise ApiError("invalid", t("sync.thatDeviceIsNoLonger"))
         name = member.name
         if self._snapshot is not None and getattr(self._snapshot, "folder_path", None):
             self._require_strong(password, confirm)
-            return self._rotate(password, confirm, (device_id,), f"{name} was removed from sync.",
-                                lead=f"Remove {name} from sync?\n\nThe sync password changes, so {name} cannot read "
-                                     "anything new. It keeps what it already has. If the device was lost, also sign "
-                                     "it out of your cloud account.")
-        if not self._port.confirm("Remove device?", remove_wifi_device_text(name)):
-            raise ApiError("cancelled", "Cancelled.")
-        self._run(remove_lan_peer_job(device_id, service.install_id, service.lan_transport), "Removing…")
-        return {"message": f"{name} was removed from Wi-Fi sync on this PC. Remove it on your other PCs too.",
+            return self._rotate(password, confirm, (device_id,), t("sync.deviceRemovedFromSync", name=name),
+                                lead=t("sync.removeDeviceFromSync", name=name))
+        if not self._port.confirm(t("sync.removeDevice"), remove_wifi_device_text(name)):
+            raise ApiError("cancelled", t("error.cancelled"))
+        self._run(remove_lan_peer_job(device_id, service.install_id, service.lan_transport), t("sync.removing"))
+        return {"message": t("sync.deviceRemovedFromWifi", name=name),
                 **self.refresh()}
 
     def orphans(self) -> dict[str, Any]:
         orphans = orphan_members(self._snapshot, now=time.time())
         if not orphans:
-            return {"devices": [], "message": "Every device in this sync group has a recent sync file."}
+            return {"devices": [], "message": t("sync.everyDeviceInThisSync")}
         return {"devices": [{"id": m.device_id, "name": m.name, "detail": m.detail} for m in orphans],
                 "intro": rotation_intro(self._snapshot)}
 
@@ -582,35 +727,35 @@ class SyncWebService:
         orphans = orphan_members(self._snapshot, now=time.time())
         chosen = [m for m in orphans if m.device_id in set(ids or ())]
         if not chosen:
-            raise ApiError("invalid", "Choose at least one device.")
+            raise ApiError("invalid", t("sync.chooseAtLeastOneDevice"))
         names = ", ".join(m.name for m in chosen)
-        return self._rotate(password, confirm, tuple(m.device_id for m in chosen), f"Removed: {names}.",
-                            lead=f"Remove {names} from sync?")
+        return self._rotate(password, confirm, tuple(m.device_id for m in chosen), t("sync.removedList", names=names),
+                            lead=t("sync.removeListFromSync", names=names))
 
     def leave(self) -> dict[str, Any]:
         service = self._service()
-        if not self._port.confirm("Leave sync", leave_text(self._snapshot)):
-            raise ApiError("cancelled", "Cancelled.")
-        self._run(leave_job(service.install_id), "Leaving…")
-        return {"message": "This PC left sync. Remove it on one of your other devices.", **self.refresh()}
+        if not self._port.confirm(t("sync.leaveSync2"), leave_text(self._snapshot)):
+            raise ApiError("cancelled", t("error.cancelled"))
+        self._run(leave_job(service.install_id), t("sync.leaving"))
+        return {"message": t("sync.thisPcLeftSyncRemove"), **self.refresh()}
 
     def reset(self) -> dict[str, Any]:
         service = self._service()
-        if not self._port.confirm("Reset sync on this PC", RESET_TEXT_1):
-            raise ApiError("cancelled", "Cancelled.")
-        if not self._port.confirm("Reset sync on this PC", RESET_TEXT_2):
-            raise ApiError("cancelled", "Cancelled.")
+        if not self._port.confirm(t("sync.resetSyncOnThisPc3"), t(RESET_TEXT_1)):
+            raise ApiError("cancelled", t("error.cancelled"))
+        if not self._port.confirm(t("sync.resetSyncOnThisPc3"), t(RESET_TEXT_2)):
+            raise ApiError("cancelled", t("error.cancelled"))
         if not self._busy.acquire(blocking=False):
-            raise ApiError("busy", "Another sync action is still running.")
+            raise ApiError("busy", t("sync.anotherSyncActionIsStill"))
         done = threading.Event()
         box: dict[str, Any] = {}
         try:
-            self._busy_text = "Resetting sync on this PC…"
+            self._busy_text = t("sync.resettingSyncOnThisPc")
             self._bus.emit("sync.status", {})
             if not service.reset(lambda cleared: (box.__setitem__("cleared", cleared), done.set())):
-                raise ApiError("stopped", STOPPED)
+                raise ApiError("stopped", t(STOPPED))
             if not done.wait(self._timeout):
-                raise ApiError("timeout", "Sync is taking too long. Try again in a moment.")
+                raise ApiError("timeout", t("sync.syncIsTakingTooLong"))
         finally:
             self._busy_text = ""
             self._busy.release()
@@ -661,7 +806,7 @@ class SyncWebService:
         if best is not None:
             fixed = f"{best.address}:{port}"
             self._save_endpoint(fixed)
-            return fixed, f"Wi-Fi sync now uses {fixed}: the saved address {host} no longer belongs to this PC.", None
+            return fixed, t("sync.wifiNowUses", address=fixed, host=host), None
         if not candidates:
             return value, "", None  # nothing better to offer: the listener check reports the failure
         return None, "", self._choose(value, candidates, port, saved_owned=False)
@@ -682,17 +827,17 @@ class SyncWebService:
         host = _split_endpoint(value)[0]
         if not saved_owned:
             return {"choose_address": True, "current": choices[0]["value"] if choices else value,
-                    "addresses": choices, "message": CHOOSE_ADDRESS.format(saved=host)}
-        saved = {"value": value, "label": f"{host} (saved)"}
+                    "addresses": choices, "message": t(CHOOSE_ADDRESS, saved=host)}
+        saved = {"value": value, "label": t("sync.addressSaved", host=host)}
         if saved_virtual and candidates:
             best = obvious_candidate(candidates) or candidates[0]
             best_value = f"{best.address}:{port}"
             ordered = [c for c in choices if c["value"] == best_value]
             ordered += [saved] + [c for c in choices if c["value"] != best_value]
             return {"choose_address": True, "current": best_value, "addresses": ordered,
-                    "message": CHOOSE_VIRTUAL.format(saved=host)}
+                    "message": t(CHOOSE_VIRTUAL, saved=host)}
         return {"choose_address": True, "current": value, "addresses": [saved, *choices],
-                "message": CHOOSE_KEEP.format(saved=host)}
+                "message": t(CHOOSE_KEEP, saved=host)}
 
     def qr_show(self) -> dict[str, Any]:
         from ..sync.pairing import offer_qr_payload, render_qr_png
@@ -708,12 +853,12 @@ class SyncWebService:
         for earlier in list(self._offers):
             self.qr_close(earlier)
         self._confirm_handover()  # a scanned code enrolls a new device that then receives every item
-        offer = self._run(begin_pairing_job(host, port, service.install_id), "Preparing a code…")
+        offer = self._run(begin_pairing_job(host, port, service.install_id), t("sync.preparingACode"))
         service.arm_enrollment(offer)
         listen_state = getattr(service, "lan_listen_state", None)
         if callable(listen_state):
             try:
-                self._run(_noop, "Preparing a code…")  # queued behind the arming job: the listener is settled now
+                self._run(_noop, t("sync.preparingACode"))  # queued behind the arming job: the listener is settled now
             except BaseException:
                 service.cancel_enrollment(offer.offer_id)
                 raise
@@ -730,7 +875,7 @@ class SyncWebService:
         return {"offer_id": offer.offer_id, "code": offer.code, "expires_at": float(offer.expires_at),
                 "image": "data:image/png;base64," + base64.b64encode(png).decode("ascii"),
                 "countdown": countdown_text(float(offer.expires_at) - time.time()),
-                "size": size, "modules": size // (scale // 2), "address": value, "hint": PAIR_HINT,
+                "size": size, "modules": size // (scale // 2), "address": value, "hint": t(PAIR_HINT),
                 "notice": notice}
 
     def qr_poll(self, offer_id: str) -> dict[str, Any]:
@@ -748,12 +893,12 @@ class SyncWebService:
             peer = getattr(service, "enrollment_peer", lambda _o: None)(offer_id)
             fingerprint = paired_fingerprint(getattr(peer, "fingerprint", ""))
             name = short_id(str(device_id))
-            detail = f" (key {fingerprint})" if fingerprint else ""
+            detail = t("sync.keyFingerprint", fingerprint=fingerprint) if fingerprint else ""
             return {"state": "paired", "device": {"id": str(device_id), "name": name, "fingerprint": fingerprint},
-                    "message": f"Paired: {name}{detail}. If you don't recognise it, choose Undo."}
+                    "message": t("sync.pairedDevice", name=name, detail=detail)}
         pending = getattr(service, "pending_enrollment", lambda _o: None)(offer_id)
         if pending is not None and pending.accepted is True:
-            return {"state": "adding", "message": f"Adding {pending.name}…"}
+            return {"state": "adding", "message": t("sync.addingDevice", name=pending.name)}
         if pending is not None and pending.accepted is None:
             # A device proved it scanned this code; it joins only after Accept here.
             code = format_verification_code(pending.code)
@@ -762,14 +907,14 @@ class SyncWebService:
                     "device": {"id": str(pending.peer.device_id), "name": pending.name, "fingerprint": fingerprint,
                                "code": code},
                     "seconds_left": int(pending.seconds_left()),
-                    "message": f"{pending.name} wants to join. Choose Accept only if it shows the code {code}."}
+                    "message": t("sync.wantsToJoin", name=pending.name, code=code)}
         if getattr(service, "enrollment_declined", lambda _o: False)(offer_id):
             offers.pop(offer_id, None)
-            return {"state": "declined", "message": "Declined. The device was not added. Show a new code to try again."}
+            return {"state": "declined", "message": t("sync.declinedTheDeviceWasNot")}
         left = float(offer.expires_at) - time.time()
         if left <= 0:
             offers.pop(offer_id, None)
-            return {"state": "expired", "countdown": "Expired"}
+            return {"state": "expired", "countdown": t("sync.expired")}
         return {"state": "waiting", "countdown": countdown_text(left)}
 
     def qr_decide(self, offer_id: str, accept: bool) -> dict[str, Any]:
@@ -778,15 +923,15 @@ class SyncWebService:
         if offer_id not in self._offers or service is None:
             return {"state": "closed"}
         if not service.decide_enrollment(offer_id, bool(accept)):
-            raise ApiError("invalid", "That request is no longer waiting. Show a new code to try again.")
+            raise ApiError("invalid", t("sync.thatRequestIsNoLonger"))
         return {}
 
     def qr_copy(self, offer_id: str) -> dict[str, Any]:
         entry = self._offers.get(offer_id)
         if entry is None or self.service is None or float(entry[0].expires_at) <= time.time():
-            raise ApiError("invalid", "This pairing code has closed.")
+            raise ApiError("invalid", t("sync.thisPairingCodeHasClosed"))
         self._controller.clipboard.copy(entry[1])
-        return {"message": "Code text copied."}
+        return {"message": t("sync.codeTextCopied")}
 
     def qr_close(self, offer_id: str) -> dict[str, Any]:
         self._offers.pop(offer_id, None)
@@ -798,7 +943,7 @@ class SyncWebService:
     def join_qr(self, text: str) -> dict[str, Any]:
         service = self._service()
         if not str(text or "").strip():
-            raise ApiError("invalid", "Paste the code text from the other device.")
+            raise ApiError("invalid", t("sync.pasteTheCodeTextFrom"))
         endpoint = None
         value, _problem = validate_lan_endpoint(getattr(self._controller.settings, "sync_lan_endpoint", "") or "")
         if value is not None:
@@ -810,12 +955,19 @@ class SyncWebService:
 
         def show_code(code: str) -> None:
             # The other device shows the same code next to Accept; this text replaces "Pairing…" while it waits.
-            self._busy_text = (f"Code {format_verification_code(code)}. Choose Accept on the other device if it "
-                               "shows this code.")
+            self._busy_text = t("sync.verificationCode", code=format_verification_code(code))
             self._bus.emit("sync.status", {})
 
-        self._run(enroll_job(str(text).strip(), service.install_id, endpoint, on_code=show_code), "Pairing…")
-        return {"message": "This PC joined the other device's sync.", **self.refresh()}
+        self._run(enroll_job(str(text).strip(), service.install_id, endpoint, on_code=show_code), t("sync.pairing"))
+        return {"message": t("sync.thisPcJoinedTheOther"), **self.refresh()}
+
+    def find_again_qr(self, text: str) -> dict[str, Any]:
+        """"Find again": the QR text of an already paired device updates only its address (no re-pairing)."""
+        service = self._service()
+        if not str(text or "").strip():
+            raise ApiError("invalid", t("sync.pasteTheCodeTextFrom"))
+        self._run(refind_job(str(text).strip(), service.install_id), t("sync.findingTheOtherDevice"), run_after=True)
+        return {"message": t("sync.foundTheOtherDeviceSyncing"), **self.refresh()}
 
     # ---------------------------------------------------------------- Wi-Fi
     def wifi_suggest(self) -> dict[str, Any]:
@@ -834,7 +986,7 @@ class SyncWebService:
             suggestion = f"{(obvious_candidate(candidates) or candidates[0]).address}:{port}"
         else:
             suggestion = suggest_lan_endpoint(local_ipv4_addresses()) or f"192.168.1.2:{DEFAULT_LAN_PORT}"
-        return {"value": suggestion, "intro": WIFI_INTRO, "choices": choices}
+        return {"value": suggestion, "intro": t(WIFI_INTRO), "choices": choices}
 
     def _save_endpoint(self, value: str, *, confirmed: bool = False) -> dict[str, Any]:
         settings = self._controller.settings
@@ -847,9 +999,9 @@ class SyncWebService:
             from ..error_log import log_exception
 
             log_exception("sync-ui", exc)
-            raise ApiError("invalid", "The setting could not be saved.") from None
+            raise ApiError("invalid", t("settings.error.notSaved")) from None
         if self.service is not None:
-            self._run(_noop, "Updating Wi-Fi sync…")  # the listener follows the setting
+            self._run(_noop, t("sync.updatingWiFiSync"))  # the listener follows the setting
         return self.view()
 
     def wifi_enable(self, text: str) -> dict[str, Any]:
@@ -872,7 +1024,7 @@ class SyncWebService:
     def _firewall_target(self) -> tuple[int, str]:
         value, _problem = validate_lan_endpoint(getattr(self._controller.settings, "sync_lan_endpoint", "") or "")
         if value is None:
-            raise ApiError("invalid", "Turn on Wi-Fi sync first.")
+            raise ApiError("invalid", t("sync.turnOnWiFiSync2"))
         host, port = _split_endpoint(value)
         snapshot, _candidates = self._candidates()
         from ..sync.lan_interfaces import same_address
@@ -885,20 +1037,19 @@ class SyncWebService:
     def _firewall_view(status: Any) -> dict[str, Any]:
         profile = str(getattr(status, "profile", "") or "")
         shown = {"DomainAuthenticated": "Domain"}.get(profile, profile) or "Unknown"
+        shown_text = {"Public": t("sync.firewallProfile.public"), "Domain": t("sync.firewallProfile.domain"),
+                      "Private": t("sync.firewallProfile.private"),
+                      "Unknown": t("sync.firewallProfile.unknown")}.get(shown, shown)
         lines = []
         if shown == "Public":
-            lines.append("Windows treats this network as Public; set it to Private in Windows Settings › Network "
-                         "& internet if this is your home network. Other devices cannot connect until then.")
+            lines.append(t("sync.windowsTreatsThisNetworkAs2"))
         elif shown == "Domain":
-            lines.append("Windows treats this network as a work (Domain) network, where the Private rule does not "
-                         "apply. Ask your administrator to allow LocalGateKeys, or use your home network.")
+            lines.append(t("sync.windowsTreatsThisNetworkAs3"))
         blocked = str(getattr(status, "blocked_by", "") or "")
         if blocked:
-            lines.append(f"The Windows Firewall rule \u201c{blocked}\u201d blocks this program and wins over any "
-                         "allow rule. Remove it, or allow the app, in Windows Defender Firewall > Allow an app "
-                         "through firewall.")
+            lines.append(t("sync.firewallBlockedByRule", rule=blocked))
         supported = bool(getattr(status, "supported", False))
-        return {"supported": supported, "allowed": bool(getattr(status, "allowed", False)), "profile": shown,
+        return {"supported": supported, "allowed": bool(getattr(status, "allowed", False)), "profile": shown_text,
                 "can_allow": supported and shown not in ("Public", "Domain") and not blocked,
                 "advice": " ".join(lines), "detail": str(getattr(status, "detail", "") or "")}
 
@@ -912,10 +1063,10 @@ class SyncWebService:
         port, interface = self._firewall_target()
         before = firewall.firewall_status(port, interface=interface)
         if not getattr(before, "supported", False):
-            raise ApiError("unavailable", "Windows Firewall settings are only available on Windows.")
+            raise ApiError("unavailable", t("sync.windowsFirewallSettingsAreOnly"))
         view = self._firewall_view(before)
         if not view["can_allow"]:
-            raise ApiError("invalid", view["advice"] or "Windows Firewall cannot be changed for this network.")
+            raise ApiError("invalid", view["advice"] or t("sync.windowsFirewallCannotBeChanged"))
         result = firewall.allow_inbound(port, status=before)
         if result.cancelled:
             raise ApiError("cancelled", result.message)
@@ -923,7 +1074,6 @@ class SyncWebService:
             raise ApiError("firewall_failed", result.message)
         after = self._firewall_view(firewall.firewall_status(port, interface=interface))
         if not after["allowed"]:
-            message = ("The rule was added, but Windows Firewall still does not allow LocalGateKeys on this "
-                       "network. " + after["advice"]).strip()
+            message = (t("sync.theRuleWasAddedBut") + " " + after["advice"]).strip()
             return {"message": message, **after}
         return {"message": result.message, **after}

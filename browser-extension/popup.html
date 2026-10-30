@@ -250,62 +250,62 @@
         <img src="icons/icon48.png" class="logo" alt="" />
         <div>
           <h1>LocalGateKeys</h1>
-          <div class="tagline">Your keys. Your control.</div>
+          <div class="tagline" data-i18n="popup_tagline">Your keys. Your control.</div>
         </div>
-        <span class="privacy-mark">LOCAL VAULT</span>
+        <span class="privacy-mark" data-i18n="popup_local_vault">LOCAL VAULT</span>
       </header>
 
       <section class="site-card" aria-labelledby="site-label">
         <div class="site-topline">
-          <p id="site-label" class="section-label">Current site</p>
-          <span class="section-label">THIS PAGE</span>
+          <p id="site-label" class="section-label" data-i18n="popup_current_site">Current site</p>
+          <span class="section-label" data-i18n="popup_this_page">THIS PAGE</span>
         </div>
-        <div id="site" class="site-origin" aria-live="polite">Checking this page…</div>
-        <p id="site-hint" class="site-hint">Actions stay on this page and require your choice.</p>
+        <div id="site" class="site-origin" aria-live="polite" data-i18n="popup_checking_page">Checking this page…</div>
+        <p id="site-hint" class="site-hint" data-i18n="popup_site_hint">Actions stay on this page and require your choice.</p>
       </section>
 
       <section id="connection-card" class="connection-card" data-state="checking" aria-labelledby="connection-title">
         <span class="connection-indicator" aria-hidden="true"></span>
         <div class="connection-copy">
-          <div id="connection-title" class="connection-title" aria-live="polite">Checking connection…</div>
-          <div id="connection-description" class="connection-description" aria-live="polite">Contacting LocalGateKeys without unlocking your vault.</div>
+          <div id="connection-title" class="connection-title" aria-live="polite" data-i18n="popup_checking_connection">Checking connection…</div>
+          <div id="connection-description" class="connection-description" aria-live="polite" data-i18n="popup_checking_connection_desc">Contacting LocalGateKeys without unlocking your vault.</div>
         </div>
-        <button id="connection" class="connection-refresh" type="button" aria-label="Refresh connection status" title="Refresh connection status">↻</button>
+        <button id="connection" class="connection-refresh" type="button" aria-label="Refresh connection status" title="Refresh connection status" data-i18n-aria-label="popup_refresh_connection" data-i18n-title="popup_refresh_connection">↻</button>
       </section>
 
       <section aria-labelledby="actions-label">
         <div class="actions-heading">
-          <p id="actions-label" class="section-label">Quick actions</p>
-          <span class="shortcut-hint">MANUAL BY DESIGN</span>
+          <p id="actions-label" class="section-label" data-i18n="popup_quick_actions">Quick actions</p>
+          <span class="shortcut-hint" data-i18n="popup_manual_by_design">MANUAL BY DESIGN</span>
         </div>
         <div class="actions">
           <button id="fill" class="action primary" type="button" disabled>
-            <span class="action-title">Fill login</span>
-            <span class="action-description">Choose a saved login for this page</span>
+            <span class="action-title" data-i18n="popup_fill_login">Fill login</span>
+            <span class="action-description" data-i18n="popup_fill_login_desc">Choose a saved login for this page</span>
           </button>
           <button id="identity" class="action" type="button" disabled>
-            <span class="action-title">Fill identity</span>
-            <span class="action-description">Review contact fields before filling</span>
+            <span class="action-title" data-i18n="popup_fill_identity">Fill identity</span>
+            <span class="action-description" data-i18n="popup_fill_identity_desc">Review contact fields before filling</span>
           </button>
           <button id="card" class="action" type="button" disabled>
-            <span class="action-title">Fill card…</span>
-            <span class="action-description">Pick a card, tick fields, confirm in the app</span>
+            <span class="action-title" data-i18n="popup_fill_card">Fill card…</span>
+            <span class="action-description" data-i18n="popup_fill_card_desc">Pick a card, tick fields, confirm in the app</span>
           </button>
           <div class="secondary-actions">
             <button id="save" class="action" type="button" disabled>
-              <span class="action-title">Save login</span>
-              <span class="action-description">Save these login fields</span>
+              <span class="action-title" data-i18n="popup_save_login">Save login</span>
+              <span class="action-description" data-i18n="popup_save_login_desc">Save these login fields</span>
             </button>
             <button id="generate" class="action" type="button" disabled>
-              <span class="action-title">Generate password</span>
-              <span class="action-description">Create a password for sign-up</span>
+              <span class="action-title" data-i18n="popup_generate_password">Generate password</span>
+              <span class="action-description" data-i18n="popup_generate_password_desc">Create a password for sign-up</span>
             </button>
           </div>
           <button id="automatic" class="automatic-toggle" type="button" aria-pressed="false" aria-describedby="automatic-hint" disabled>
             <span class="toggle-track" aria-hidden="true"></span>
             <span class="automatic-copy">
-              <span id="automatic-label" class="automatic-label">Turn off save prompts on this site</span>
-              <span id="automatic-hint" class="automatic-hint">On: you're asked after a successful sign-in here</span>
+              <span id="automatic-label" class="automatic-label" data-i18n="popup_auto_turn_off">Turn off save prompts on this site</span>
+              <span id="automatic-hint" class="automatic-hint" data-i18n="popup_auto_on_hint">On: you're asked after a successful sign-in here</span>
             </span>
           </button>
         </div>
@@ -313,7 +313,7 @@
 
       <div id="status" class="status-message" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
-      <footer class="footer"><span class="footer-mark" aria-hidden="true">◆</span><span>Encrypted locally on this device</span></footer>
+      <footer class="footer"><span class="footer-mark" aria-hidden="true">◆</span><span data-i18n="popup_footer">Encrypted locally on this device</span></footer>
     </main>
     <script src="api.js"></script>
     <script src="popup.js"></script>

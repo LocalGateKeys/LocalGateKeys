@@ -222,7 +222,7 @@ def test_commit_result_text_reports_the_limited_rows(case_dir: Path) -> None:
     plan.review()
     written = apply_import_plan(session, plan)
     text = import_summary_text(plan, written)
-    assert "2 record(s) written." in text
+    assert "2 records written." in text
     assert "2 will be imported on the free plan; 2 need Pro." in text
     offered: list[ItemLimitReached] = []
     assert notify_item_limit(offered.append, plan.limit_summary()) is True

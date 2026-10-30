@@ -25,15 +25,15 @@ struct SafariReviewSheet: View {
                             .accessibilityAddTraits(selected.contains(item.id) ? .isSelected : [])
                     }
                 } footer: {
-                    Text("Saved from Safari since you last opened LocalGateKeys. Only the logins you keep selected are saved; the others are deleted.")
+                    Text(SafariReviewCopy.footer)
                 }
             }
-            .navigationTitle("Save from Safari?")
+            .navigationTitle(SafariReviewCopy.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Decide later") { onLater() } }
+                ToolbarItem(placement: .cancellationAction) { Button(SafariReviewCopy.later) { onLater() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(selected.isEmpty ? "Delete all" : "Save \(selected.count)") { onSave(selected) }
+                    Button(SafariReviewCopy.save(selected.count)) { onSave(selected) }
                 }
             }
         }
@@ -58,9 +58,5 @@ struct SafariReviewSheet: View {
         }
     }
 
-    /// "New login · https://accounts.example.com" or "Updates the saved password · ...": the full origin, so a
-    /// look-alike host is visible.
-    static func detail(_ item: SafariPendingSave) -> String {
-        (item.change == .new ? "New login" : "Updates the saved password") + " \u{00B7} " + item.origin
-    }
+    static func detail(_ item: SafariPendingSave) -> String { SafariReviewCopy.detail(item) }
 }

@@ -68,6 +68,7 @@ if (Want "python") {
     }
     Step "python: ruff (advisory)" $Root { & $Python -m ruff check src tests scripts --quiet --statistics } -Advisory
     Step "python: mypy (advisory)" $Root { & $Python -m mypy } -Advisory
+    Step "python: i18n catalogs" $Root { & $Python scripts/i18n_check.py }
     Step "python: pytest" $Root { & $Python -m pytest -q -p no:cacheprovider }
 }
 

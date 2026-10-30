@@ -17,6 +17,7 @@ from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from .config import atomic_write_json
+from .i18n import t
 from .vault import (
     VaultSession,
     _read_vault_header,
@@ -24,8 +25,11 @@ from .vault import (
     unlock_context_for_header,
 )
 from .windows_hello import (
+    NTE_INVALID_PARAMETER,
+    OAEP_HASHES,
     HelloCancelled,
     HelloError,
+    NativeError,
     WindowsHello,
     native_operation,
     validate_record_id,
@@ -38,9 +42,8 @@ FIELDS = {"version", "scheme", "profile", "context", "id", "wrapped_secret", "no
 # Added when a v2 vault was upgraded to format v3: the sidecar keeps its
 # original authenticated ``context`` (part of the AEAD) and additionally
 # records the v3 unlock context it is valid for.
-OPTIONAL_FIELDS = {"unlock_context"}
-STALE_MESSAGE = ("The vault password or header changed (or the vault format was upgraded without this setup). "
-                 "Use your master password and set up Hello again.")
+OPTIONAL_FIELDS = {"unlock_context", "oaep"}
+STALE_MESSAGE_KEY = "hello.error.stale"
 
 
 def envelope_path(vault_path: Path) -> Path:
@@ -49,7 +52,7 @@ def envelope_path(vault_path: Path) -> Path:
 
 def _cancel_check(event: threading.Event) -> None:
     if event.is_set():
-        raise HelloCancelled("Windows Hello was cancelled. No unlock was accepted.")
+        raise HelloCancelled(t("hello.error.cancelledNoUnlock"))
 
 
 def _encode(value: bytes | bytearray) -> str:
@@ -65,7 +68,7 @@ def _decode(value: Any, size: int) -> bytes:
             raise ValueError
         return decoded
     except (ValueError, TypeError) as exc:
-        raise HelloError("The local Windows Hello setup is damaged. Use your master password.") from exc
+        raise HelloError(t("hello.error.localDamaged")) from exc
 
 
 def _context(record: dict[str, Any]) -> bytes:
@@ -88,6 +91,8 @@ def _read_record(path: Path) -> dict[str, Any]:
     if not isinstance(record, dict) or not FIELDS <= set(record) or set(record) - FIELDS - OPTIONAL_FIELDS:
         raise ValueError
     if type(record["version"]) is not int or record["version"] != 1 or record["scheme"] != SCHEME:
+        raise ValueError
+    if "oaep" in record and record["oaep"] not in OAEP_HASHES:
         raise ValueError
     for name in ("context", "unlock_context"):
         if name in record and (not isinstance(record[name], str) or not re.fullmatch(r"[0-9a-f]{64}", record[name])):
@@ -122,8 +127,7 @@ def _load(path: Path, profile_id: str) -> dict[str, Any]:
             raise ValueError
         return record
     except (OSError, ValueError, TypeError, KeyError, HelloError) as exc:
-        raise HelloError("Windows Hello is not set up for this profile, or its local setup is damaged. "
-                         "Unlock with your master password and open Security settings.") from exc
+        raise HelloError(t("hello.error.notSetUp")) from exc
 
 
 def has_envelope(path: Path, profile_id: str) -> bool:
@@ -165,17 +169,27 @@ def prepare_enrollment(profile_id: str, context: str, hwnd: int, cancelled: thre
             provider.create(record_id, hwnd)
             created = True
             _cancel_check(cancelled)
-            wrapped = provider.wrap(record_id, secret)
+            oaep_hash = OAEP_HASHES[0]
+            try:
+                wrapped = provider.wrap(record_id, secret)
+            except NativeError as exc:
+                if exc.code != NTE_INVALID_PARAMETER:
+                    raise
+                oaep_hash = OAEP_HASHES[1]
+                wrapped = provider.wrap(record_id, secret, oaep_hash)
             # Exercise a real, freshly verified private-key operation before opt-in.
-            recovered = provider.unwrap(record_id, wrapped, hwnd)
+            recovered = (provider.unwrap(record_id, wrapped, hwnd) if oaep_hash == OAEP_HASHES[0]
+                         else provider.unwrap(record_id, wrapped, hwnd, oaep_hash))
             try:
                 _cancel_check(cancelled)
                 if not secrets.compare_digest(secret, recovered):
-                    raise HelloError("Windows Hello key verification failed. Setup was not enabled.")
+                    raise HelloError(t("hello.error.verifyFailed"))
             finally:
                 wipe(recovered)
             record = {"version": 1, "scheme": SCHEME, "profile": profile_id,
                       "context": context, "id": record_id, "wrapped_secret": _encode(wrapped)}
+            if oaep_hash != OAEP_HASHES[0]:
+                record["oaep"] = oaep_hash
             return PreparedEnrollment(record, secret, provider)
         except BaseException:
             wipe(secret)
@@ -190,9 +204,9 @@ def prepare_enrollment(profile_id: str, context: str, hwnd: int, cancelled: thre
 def commit_enrollment(session: VaultSession, prepared: PreparedEnrollment) -> None:
     """UI-thread commit after master-password reauthentication and lease checks."""
     if session.hello_binding():
-        raise HelloError("Remove the previous Windows Hello setup before enrolling again.")
+        raise HelloError(t("hello.error.removeFirst"))
     if not secrets.compare_digest(session.unlock_context(), prepared.record["context"]):
-        raise HelloError("The vault changed during enrollment. No setup was enabled.")
+        raise HelloError(t("hello.error.changedDuringEnroll"))
     record = dict(prepared.record)
     nonce, wrapped_key = session.wrap_unlock_key(prepared.secret, _context(record))
     record["nonce"], record["ciphertext"] = _encode(nonce), _encode(wrapped_key)
@@ -220,21 +234,23 @@ def unlock_with_hello(path: Path, profile_id: str, hwnd: int, cancelled: threadi
     header, _source = _read_vault_header(path)
     expected_context = _effective_context(record)
     if not secrets.compare_digest(unlock_context_for_header(header), expected_context):
-        raise HelloError(STALE_MESSAGE)
+        raise HelloError(t(STALE_MESSAGE_KEY))
     secret = key = None
     session = None
     try:
         with native_operation():
             _cancel_check(cancelled)
-            secret = provider_factory().unwrap(record["id"], _decode(record["wrapped_secret"], 256), hwnd)
+            wrapped = _decode(record["wrapped_secret"], 256)
+            secret = (provider_factory().unwrap(record["id"], wrapped, hwnd, record["oaep"]) if "oaep" in record
+                      else provider_factory().unwrap(record["id"], wrapped, hwnd))
         _cancel_check(cancelled)
         if len(secret) != 32:
-            raise HelloError("Windows Hello returned invalid key material.")
+            raise HelloError(t("hello.error.invalidKeyMaterial"))
         try:
             key = bytearray(AESGCM(bytes(secret)).decrypt(_decode(record["nonce"], 12),
                                                        _decode(record["ciphertext"], 48), _context(record)))
         except InvalidTag as exc:
-            raise HelloError("Windows Hello setup could not be authenticated. Use your master password.") from exc
+            raise HelloError(t("hello.error.authFailed")) from exc
         _cancel_check(cancelled)
         session = _unlock_vault_with_key(path, key, expected_context=expected_context,
                                         expected_binding=record["id"], backup_dir=backup_dir,

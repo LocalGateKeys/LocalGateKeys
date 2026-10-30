@@ -1,13 +1,14 @@
 <script>
   /** Details of the selected item: reveal (auto-masked), copy, live 2FA, actions. */
   import { call, on } from '../lib/api.js';
+  import { formatNumber, t } from '../lib/i18n.svelte.js';
   import { notice, okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
   import ItemTile from './ItemTile.svelte';
   import LoginMore from './LoginMore.svelte';
 
   // icon: the list row's own icon (site or app), so the header matches the list.
-  let { selected = null, icon = null, onedit = undefined, onchanged = undefined } = $props();
+  let { selected = null, icon = null, onedit = undefined, onchanged = undefined, onshare = undefined } = $props();
 
   const MASK = '•'.repeat(12);
   let detail = $state(null);
@@ -62,14 +63,14 @@
   async function reveal() {
     if (revealed !== null) { hide(); return; }
     const result = await call('item_reveal', selected);
-    if (!okOrToast(result, 'Not revealed')) return;
+    if (!okOrToast(result, t('detailPane.notRevealed'))) return;
     revealed = result.password;
     maskTimer = setTimeout(hide, (result.mask_after ?? 30) * 1000);
   }
 
   async function copy(field) {
     const result = await call('item_copy', selected, field);
-    if (okOrToast(result, 'Not copied')) notice(result);
+    if (okOrToast(result, t('home.notCopied'))) notice(result);
   }
 
   async function favorite() {
@@ -79,17 +80,17 @@
 
   async function trash() {
     const result = await call('item_trash', selected);
-    if (okOrToast(result, 'Not moved to trash')) { notice(result); onchanged?.(); }
+    if (okOrToast(result, t('home.notTrashed'))) { notice(result); onchanged?.(); }
   }
 
   async function openWebsite() {
-    okOrToast(await call('item_open_website', selected), 'Website not opened');
+    okOrToast(await call('item_open_website', selected), t('home.websiteNotOpened'));
   }
 
   async function revealTyped(field) {
     if (typedRevealed[field] !== undefined) { const next = { ...typedRevealed }; delete next[field]; typedRevealed = next; return; }
     const result = await call('typed_reveal', selected, field);
-    if (!okOrToast(result, 'Not revealed')) return;
+    if (!okOrToast(result, t('detailPane.notRevealed'))) return;
     typedRevealed = { ...typedRevealed, [field]: result.value };
     clearTimeout(maskTimer);
     maskTimer = setTimeout(hide, (result.mask_after ?? 30) * 1000);
@@ -97,12 +98,12 @@
 
   async function copyTyped(field) {
     const result = await call('typed_copy', selected, field);
-    if (okOrToast(result, 'Not copied')) notice(result);
+    if (okOrToast(result, t('home.notCopied'))) notice(result);
   }
 
   async function documentAction(method) {
     const result = await call(method, selected);
-    if (!okOrToast(result, 'Document action stopped', () => documentAction(method))) return;
+    if (!okOrToast(result, t('detailPane.documentStopped'), () => documentAction(method))) return;
     if (method === 'doc_preview') preview = result;
     else if (result.message) toast(result.message);
   }
@@ -110,9 +111,9 @@
   const ring = $derived(code && !code.error ? (code.remaining / (code.period || 30)) * 56.5 : 0);
 </script>
 
-<section class="detail" aria-label="Item details">
+<section class="detail" aria-label={t('detailPane.details')}>
   {#if !selected}
-    <p class="empty">Select an item to see its details</p>
+    <p class="empty">{t('detailPane.selectItem')}</p>
   {:else if error}
     <p class="empty">{error}</p>
   {:else if detail}
@@ -122,35 +123,36 @@
         <h2>{detail.title}</h2>
         <p class="sub">{detail.subtitle}</p>
       </div>
-      <button class="star" aria-label={detail.favorite ? 'Remove from favorites' : 'Add to favorites'} onclick={favorite}>{detail.favorite ? '★' : '☆'}</button>
-      {#if (detail.actions?.includes('edit') || selected.source === 'typed') && onedit}<Button label="Edit" onclick={() => onedit(selected)} />{/if}
-      {#if detail.actions?.includes('open_website')}<Button label="Open website" variant="primary" onclick={openWebsite} />{/if}
+      <button class="star" aria-label={detail.favorite ? t('detailPane.removeFavorite') : t('detailPane.addFavorite')} onclick={favorite}>{detail.favorite ? '★' : '☆'}</button>
+      {#if (detail.actions?.includes('edit') || selected.source === 'typed') && onedit}<Button label={t('detailPane.edit')} onclick={() => onedit(selected)} />{/if}
+      {#if onshare && !['passkey', 'document'].includes(selected.kind)}<Button label={t('detailPane.share')} onclick={() => onshare(selected)} />{/if}
+      {#if detail.actions?.includes('open_website')}<Button label={t('detailPane.openWebsite')} variant="primary" onclick={openWebsite} />{/if}
     </header>
 
     {#if selected.source !== 'typed' && detail.has_totp}
       <!-- The live code sits first, under the header, like the iPhone app. -->
-      <div class="section-label">One-time code</div>
+      <div class="section-label">{t('detailPane.oneTimeCode')}</div>
       <div class="group">
         <div class="field top-code">
           {#if detail.strict}
-            <button class="v muted text-left" onclick={() => copy('totp')}>Hidden · click to show</button>
+            <button class="v muted text-left" onclick={() => copy('totp')}>{t('detailPane.hiddenClick')}</button>
           {:else if code?.error}
             <span class="v muted">{code.error}</span>
           {:else if code}
-            <svg class="ring" width="24" height="24" viewBox="0 0 20 20" aria-label={`Refreshes in ${code.remaining} s`}>
+            <svg class="ring" width="24" height="24" viewBox="0 0 20 20" aria-label={t('detailPane.refreshesIn', { seconds: formatNumber(code.remaining) })}>
               <circle cx="10" cy="10" r="9" fill="none" stroke="var(--separator)" stroke-width="2" />
               <circle cx="10" cy="10" r="9" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round"
                 stroke-dasharray="56.5" stroke-dashoffset={56.5 - ring} transform="rotate(-90 10 10)" />
             </svg>
             <span class="v mono code">{code.code}</span>
-            <button class="icon accent" aria-label="Copy 2FA code" onclick={() => copy('totp')}>⧉</button>
+            <button class="icon accent" aria-label={t('detailPane.copyCode')} onclick={() => copy('totp')}>⧉</button>
           {/if}
         </div>
       </div>
     {/if}
 
     {#if selected.source === 'typed'}
-      <div class="section-label">Details</div>
+      <div class="section-label">{t('detailPane.detailsLabel')}</div>
       <div class="group">
         {#each detail.fields as field (field.name)}
           <div class="field">
@@ -160,53 +162,53 @@
               <span class="v" class:mono={typedRevealed[field.name] === undefined || detail.kind !== 'note'}
                 class:notes={typedRevealed[field.name] !== undefined && detail.kind === 'note'}>{typedRevealed[field.name] ?? (field.present ? MASK : '—')}</span>
               {#if field.present}
-                <button class="text-btn" aria-label={`${typedRevealed[field.name] !== undefined ? 'Hide' : 'Reveal'} ${field.name}`} onclick={() => revealTyped(field.name)}>{typedRevealed[field.name] !== undefined ? 'Hide' : 'Show'}</button>
-                <button class="icon accent" aria-label={`Copy ${field.name}`} onclick={() => copyTyped(field.name)}>⧉</button>
+                <button class="text-btn" aria-label={t(typedRevealed[field.name] !== undefined ? 'detailPane.hideField' : 'detailPane.revealField', { name: field.name })} onclick={() => revealTyped(field.name)}>{typedRevealed[field.name] !== undefined ? t('detailPane.hide') : t('detailPane.show')}</button>
+                <button class="icon accent" aria-label={t('detailPane.copyField', { name: field.name })} onclick={() => copyTyped(field.name)}>⧉</button>
               {/if}
             {:else}
-              <span class="v notes">{field.value === true ? 'Yes' : field.value === false ? 'No' : field.value}</span>
+              <span class="v notes">{field.value === true ? t('detailPane.yes') : field.value === false ? t('detailPane.no') : field.value}</span>
             {/if}
           </div>
         {:else}
-          <div class="field"><span class="v muted">No details saved.</span></div>
+          <div class="field"><span class="v muted">{t('detailPane.noDetails')}</span></div>
         {/each}
       </div>
       {#if detail.document}
-        <div class="section-label">Document</div>
+        <div class="section-label">{t('detailPane.document')}</div>
         <div class="group">
-          <div class="field"><span class="v">{detail.document.error ?? `${detail.document.name} · ${detail.document.mime} · ${(detail.document.size ?? 0).toLocaleString()} bytes`}</span></div>
+          <div class="field"><span class="v">{detail.document.error ?? t('detailPane.documentInfo', { name: detail.document.name, mime: detail.document.mime, size: t('detailPane.bytes', { count: detail.document.size ?? 0, number: formatNumber(detail.document.size ?? 0) }) })}</span></div>
           <div class="field doc-actions">
-            <Button label="Safe preview" onclick={() => documentAction('doc_preview')} />
-            <Button label="Open file" onclick={() => documentAction('doc_open')} />
-            <Button label="Save a copy…" onclick={() => documentAction('doc_save_copy')} />
-            <Button label="Replace file…" onclick={() => documentAction('doc_replace')} />
+            <Button label={t('detailPane.safePreview')} onclick={() => documentAction('doc_preview')} />
+            <Button label={t('detailPane.openFile')} onclick={() => documentAction('doc_open')} />
+            <Button label={t('detailPane.saveCopy')} onclick={() => documentAction('doc_save_copy')} />
+            <Button label={t('detailPane.replaceFile')} onclick={() => documentAction('doc_replace')} />
           </div>
           {#if preview}
-            <div class="field"><span class="v notes">{preview.kind === 'text' ? preview.content : `Metadata-only preview · ${preview.reason}`}</span></div>
+            <div class="field"><span class="v notes">{preview.kind === 'text' ? preview.content : t('detailPane.metadataPreview', { reason: preview.reason })}</span></div>
           {/if}
         </div>
       {/if}
     {:else}
-      <div class="section-label">Sign-in</div>
+      <div class="section-label">{t('detailPane.signIn')}</div>
       <div class="group">
         <div class="field">
-          <span class="k">Username</span><span class="v">{detail.username || '—'}</span>
-          {#if detail.username}<button class="icon" aria-label="Copy username" onclick={() => copy('username')}>⧉</button>{/if}
+          <span class="k">{t('detailPane.username')}</span><span class="v">{detail.username || '—'}</span>
+          {#if detail.username}<button class="icon" aria-label={t('detailPane.copyUsername')} onclick={() => copy('username')}>⧉</button>{/if}
         </div>
         <div class="field">
-          <span class="k">Password</span>
+          <span class="k">{t('detailPane.password')}</span>
           <span class="v mono">{revealed ?? MASK}</span>
-          <button class="text-btn" onclick={reveal}>{revealed !== null ? 'Hide' : 'Show'}</button>
-          <button class="icon accent" aria-label="Copy password" onclick={() => copy('password')}>⧉</button>
+          <button class="text-btn" onclick={reveal}>{revealed !== null ? t('detailPane.hide') : t('detailPane.show')}</button>
+          <button class="icon accent" aria-label={t('detailPane.copyPassword')} onclick={() => copy('password')}>⧉</button>
         </div>
       </div>
       {#if detail.target}
-        <div class="section-label">Website</div>
+        <div class="section-label">{t('detailPane.website')}</div>
         <div class="group"><div class="field"><span class="v link">{detail.target}</span></div></div>
       {/if}
       {#if detail.notes !== null}
-        <div class="section-label">Notes</div>
-        <div class="group"><div class="field"><span class="v notes">{detail.notes || 'No notes'}</span></div></div>
+        <div class="section-label">{t('detailPane.notes')}</div>
+        <div class="group"><div class="field"><span class="v notes">{detail.notes || t('detailPane.noNotes')}</span></div></div>
       {/if}
       <LoginMore {selected} />
     {/if}
@@ -214,7 +216,7 @@
     {#if detail.tags?.length}
       <div class="tags">{#each detail.tags as tag (tag)}<span class="tag">{tag}</span>{/each}</div>
     {/if}
-    <div class="footer"><Button label="Move to trash" variant="danger" onclick={trash} /></div>
+    <div class="footer"><Button label={t('detailPane.moveToTrash')} variant="danger" onclick={trash} /></div>
   {/if}
 </section>
 

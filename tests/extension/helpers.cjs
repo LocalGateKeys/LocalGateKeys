@@ -29,6 +29,7 @@ const MouseEventImpl = require("jsdom/lib/jsdom/living/generated/MouseEvent");
 const SubmitEventImpl = require("jsdom/lib/jsdom/living/generated/SubmitEvent");
 
 const { after } = require("node:test");
+const i18nStub = require("./i18n-stub.cjs");
 
 const EXT = path.join(__dirname, "..", "..", "browser-extension");
 // content.js arms intervals (status polling, banner expiry). Closing every
@@ -151,6 +152,7 @@ function createPage({
   const commandListeners = [];
   const storage = { automatic_save_blocked_origins: [...blockedOrigins] };
   const chrome = {
+    i18n: { getMessage: i18nStub.getMessage },
     runtime: {
       id: runtimeId,
       getURL: p => `chrome-extension://${runtimeId}/${p}`,

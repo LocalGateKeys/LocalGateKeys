@@ -27,11 +27,26 @@
   // Non-secret settings go in "vars" (never `secret put`); see README.md:
   //   PRODUCT_IDS (required: unset/empty makes every webhook 500), PROVIDER,
   //   ALLOW_TEST_MODE, SUPPORT_EMAIL
+  //   APPSTORE_BUNDLE_IDS (iPhone and Mac bundle id, ios/project.yml), APPSTORE_ALLOW_SANDBOX
+  //   ("1" only on test deployments), PLAY_ALLOW_TEST ("1" only on test deployments)
+  // Secrets (`wrangler secret put`): PLAY_SERVICE_ACCOUNT_JSON; optional App Store Server API
+  // key APPSTORE_API_ISSUER_ID, APPSTORE_API_KEY_ID, APPSTORE_API_PRIVATE_KEY (README, "Store purchases").
+  // Optional SALES_NTFY_TOPIC: a push to the owner's phone (ntfy app) for each store sale and refund
+  // (src/sales-alert.js; SALES_NTFY_SERVER var overrides https://ntfy.sh).
   // Paddle live product "LocalGateKeys Pro" (price pri_01m58y8e705ns678gmwpzfefwj, US$4.99 one-time).
   "vars": {
     "PROVIDER": "paddle",
     "PRODUCT_IDS": "pro_01m58y778xrg43pvvznfhy5k0d",
-    "SUPPORT_EMAIL": "support@localgatekeys.app"
+    "SUPPORT_EMAIL": "support@localgatekeys.app",
+    "APPSTORE_BUNDLE_IDS": "app.localgatekeys.app",
+    "APPSTORE_ALLOW_SANDBOX": "",
+    "PLAY_ALLOW_TEST": "",
+    // Audience of the Pub/Sub push subscription's OIDC token (README, "Google Play refunds").
+    "PLAY_PUSH_AUDIENCE": "https://licenses.localgatekeys.app/webhooks/play",
+    // Email of the service account the push subscription authenticates as. Empty: every push is 401.
+    "PLAY_PUSH_SERVICE_ACCOUNT": ""
   },
+  // Daily Play voided-purchases backstop for missed refund pushes.
+  "triggers": { "crons": ["0 4 * * *"] },
   "observability": { "enabled": true }
 }

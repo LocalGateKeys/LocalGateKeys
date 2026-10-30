@@ -10,6 +10,7 @@ import app.localgatekeys.core.json.Dialect
 import app.localgatekeys.core.json.JsonException
 import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.primitives.Identifier
+import app.localgatekeys.core.sync.AttachmentRef
 
 /**
  * Per-id sync metadata (desktop `payload["sync_meta"]["items"][id]`): what this device last published.
@@ -180,6 +181,7 @@ data class SyncMeta(
             device: String,
             now: Long,
             licenseKeys: Map<String, ByteArray>,
+            documents: ((AttachmentRef) -> Boolean)? = null,
         ): ApplyResult {
             checkCall(device, now)
             val all = outcome.upserts + outcome.deletes + outcome.copies
@@ -230,7 +232,7 @@ data class SyncMeta(
             for (s in outcome.upserts) {
                 if (s.itemId in stale) continue
                 blame(s.itemId) {
-                    val (ns, record) = Wrapper.unwrap(s, false, licenseKeys)
+                    val (ns, record) = Wrapper.unwrap(s, false, licenseKeys, documents)
                     if (ns == Namespace.LICENSE) {
                         val wrapper = Wrapper.make(Namespace.LICENSE, record)
                         val known = recs[s.itemId]
@@ -266,12 +268,15 @@ data class SyncMeta(
             for (s in outcome.copies) {
                 if (s.itemId in stale || recs[s.itemId] != null) continue
                 blame(s.itemId) {
-                    val (ns, record) = Wrapper.unwrap(s, true, licenseKeys)
+                    val (ns, record) = Wrapper.unwrap(s, true, licenseKeys, documents)
                     val r = LinkedHashMap((record as? JsonValue.Obj)?.fields ?: throw RecordException(null, null, "malformed copy"))
                     val field = if (ns == Namespace.ENTRY) "label" else "title"
                     val t = (r[field] as? JsonValue.Str)?.v
                     if (t != null) r[field] = JsonValue.Str(ConflictSuffix.apply(t, ConflictSuffix.LIMIT))
-                    val stored = Wrapper.make(ns, JsonValue.Obj(r))
+                    var stored = Wrapper.make(ns, JsonValue.Obj(r))
+                    // A document's copy keeps its file reference (same attachment, same file).
+                    val att = (s.item as? JsonValue.Obj)?.fields?.get("attachment")
+                    if (att != null) stored = JsonValue.Obj((stored as JsonValue.Obj).fields + ("attachment" to att))
                     recs[s.itemId] = stored
                     applied++
                     metaOut[s.itemId] = live(stored, s.vv)

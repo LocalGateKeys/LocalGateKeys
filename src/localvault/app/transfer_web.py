@@ -19,12 +19,12 @@ from typing import Any
 from ..api.result import ApiError
 from .transfer_controller import CONFLICT_POLICIES, TransferSelection, import_limit_lines, notify_item_limit, \
     summarize_manifest
+from ..i18n import t
 
-INTRO = ("Preview first. Packages stay encrypted and local; protected values are never shown here. Import commits only "
-         "after explicit confirmation.")
-SCOPE_NOTE = "Use comma-separated IDs, kinds, or tags. Protected values never enter the preview."
-DONE = "Transfer complete. The local package or destination vault is ready."
-FAILED = "The transfer did not complete. Correct the inputs and try again."
+INTRO = ("transferWeb.previewFirstPackagesStayEncrypted")
+SCOPE_NOTE = "transferWeb.useCommaSeparatedIdsKinds"
+DONE = "transferWeb.transferCompleteTheLocalPackage"
+FAILED = "transferWeb.theTransferDidNotComplete"
 
 
 def _split(value: Any) -> tuple[str, ...]:
@@ -54,34 +54,34 @@ class TransferService:
 
         controller = self._controller
         if not controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile first.")
+            raise ApiError("locked", t("error.lockedProfile"))
         lease = controller.guard.lease()
         controller.require_lease(lease)
         return TransferController(controller.session, lease=lease, guard=controller.guard,
                                   session_provider=lambda: controller.session)
 
     def info(self) -> dict[str, Any]:
-        offline = "Strict offline" if self._controller.settings.strict_offline_mode else "Local-only"
-        return {"title": f"Encrypted transfer · {offline}", "intro": INTRO, "scope_note": SCOPE_NOTE,
-                "policies": list(CONFLICT_POLICIES), "status": "Ready. Packages stay encrypted and local."}
+        offline = t("transferWeb.offlineStrict" if self._controller.settings.strict_offline_mode else "transferWeb.offlineLocal")
+        return {"title": t("transferWeb.encryptedTransfer", offline=offline), "intro": t(INTRO), "scope_note": t(SCOPE_NOTE),
+                "policies": list(CONFLICT_POLICIES), "status": t("transferWeb.readyPackagesStayEncryptedAnd")}
 
     # ---------------------------------------------------------------- paths
     def choose(self, mode: str) -> dict[str, Any]:
         if mode not in ("export", "import"):
-            raise ApiError("invalid", "Choose export or import.")
+            raise ApiError("invalid", t("transferWeb.chooseExportOrImport"))
         self._core()
         if mode == "export":
             # A package carries every selected secret, so export asks for the master password once per export,
             # before the file dialog (the handle is single-use: commit consumes it, a lock drops it). Strict
             # like reveal of a strict item: no Windows Hello, no routine grace window.
             lease = self._controller.guard.lease()
-            self._auth.reauthenticate("Confirm to export passwords", lease, allow_hello=False)
+            self._auth.reauthenticate(t("importExport.confirmToExportPasswords"), lease, allow_hello=False)
             self._controller.require_lease(lease)
-            chosen = self._dialogs.save_file("Export encrypted transfer package (.lgt)", "localgatekeys-transfer.lgt")
+            chosen = self._dialogs.save_file(t("transferWeb.exportEncryptedTransferPackageLgt"), "localgatekeys-transfer.lgt")
         else:
-            chosen = self._dialogs.open_file("Import encrypted transfer package (.lgt)")
+            chosen = self._dialogs.open_file(t("transferWeb.importEncryptedTransferPackageLgt"))
         if not chosen:
-            raise ApiError("cancelled", "No file was chosen.")
+            raise ApiError("cancelled", t("recovery.noFileWasChosen"))
         path = Path(chosen)
         if mode == "export" and path.suffix.lower() != ".lgt":
             path = path.with_suffix(".lgt")
@@ -92,7 +92,7 @@ class TransferService:
     def _path(self, handle: str, mode: str) -> Path:
         entry = self._paths.get(str(handle or ""))
         if entry is None or entry[0] != mode:
-            raise ApiError("invalid", "Choose a local package path")
+            raise ApiError("invalid", t("transferWeb.chooseALocalPackagePath"))
         return entry[1]
 
     # -------------------------------------------------------------- helpers
@@ -100,20 +100,18 @@ class TransferService:
     def _lines(summary: dict[str, Any], mode: str) -> list[str]:
         safe = summarize_manifest(summary.get("manifest", summary))
         lines = [
-            f"Records: {safe['record_count']} ({safe['item_count']} items, {safe['credential_count']} credentials)",
-            f"Attachments: {safe['attachment_count']} ({safe['attachment_bytes']} bytes)",
-            f"Dependencies: {len(safe['manifest'].get('collections', []))} collections",
-            "Kinds: " + (", ".join(f"{key}={value}" for key, value in sorted(safe["kind_counts"].items())) or "none"),
+            t("transferWeb.recordsLine", records=safe['record_count'], items=safe['item_count'], credentials=safe['credential_count']),
+            t("transferWeb.attachmentsLine", count=safe['attachment_count'], bytes=safe['attachment_bytes']),
+            t("transferWeb.dependenciesLine", count=len(safe['manifest'].get('collections', []))),
+            t("transferWeb.kindsLine", kinds=", ".join(f"{key}={value}" for key, value in sorted(safe["kind_counts"].items()))
+              or t("transferWeb.kindsNone")),
         ]
         if summary.get("operation") == "import" or mode == "import":
-            lines.append("Conflict outcomes: "
-                         f"add={len(summary.get('imported_ids', []))}, "
-                         f"skip={len(summary.get('skipped_ids', []))}, "
-                         f"copy={len(summary.get('copied_ids', []))}, "
-                         f"replace={len(summary.get('replaced_ids', []))}")
+            lines.append(t("transferWeb.conflictOutcomes", add=len(summary.get('imported_ids', [])), skip=len(summary.get('skipped_ids', [])),
+                         copy=len(summary.get('copied_ids', [])), replace=len(summary.get('replaced_ids', []))))
             lines.extend(import_limit_lines(summary))
             if summary.get("requires_confirmation"):
-                lines.append("No destination changes have been made; explicit commit is required.")
+                lines.append(t("transferWeb.noDestinationChangesHaveBeen"))
         return lines
 
     @staticmethod
@@ -128,8 +126,8 @@ class TransferService:
             self._port.show_upgrade(limit=exc.limit, message=str(exc), on_enter=lambda: None)
             return ApiError("item_limit", str(exc))
         if isinstance(exc, TransferCancelled):
-            return ApiError("cancelled", "Transfer cancelled before completion; no partial live change was published.")
-        return ApiError("transfer_failed", str(exc) or FAILED)
+            return ApiError("cancelled", t("transferWeb.transferCancelledBeforeCompletionNo"))
+        return ApiError("transfer_failed", str(exc) or t(FAILED))
 
     def _selection(self, scope: dict[str, Any]) -> Any:
         try:
@@ -138,7 +136,7 @@ class TransferService:
                 favorite=True if scope.get("favorite") is True else None,
                 include_attachments=scope.get("include_attachments", True) is not False)
         except (ValueError, TypeError) as exc:
-            raise ApiError("invalid", str(exc) or FAILED) from None
+            raise ApiError("invalid", str(exc) or t(FAILED)) from None
 
     # ------------------------------------------------------------ preview
     def _errors(self) -> tuple[type, ...]:
@@ -157,16 +155,16 @@ class TransferService:
         except self._errors() as exc:
             raise self._error(exc) from None
         return {"lines": self._lines(result, "inspect"),
-                "status": "Manifest metadata inspected. Enter the transfer password for a destination preview."}
+                "status": t("transferWeb.manifestMetadataInspectedEnterThe")}
 
     def preview(self, mode: str, handle: str, password: str, scope: dict[str, Any], policy: str,
                 allow_replace: bool) -> dict[str, Any]:
         core = self._core()
         path = self._path(handle, mode)
         if not password:
-            raise ApiError("invalid", "Enter the transfer password")
+            raise ApiError("invalid", t("transferWeb.enterTheTransferPassword"))
         if mode == "import" and policy not in CONFLICT_POLICIES:
-            raise ApiError("invalid", "Choose how conflicts are handled.")
+            raise ApiError("invalid", t("transferWeb.chooseHowConflictsAreHandled"))
         self._cancel.clear()
         try:
             if mode == "export":
@@ -185,7 +183,7 @@ class TransferService:
         self._previews[token] = {**inputs, "salt": salt, "digest": self._digest(salt, password)}
         password = ""
         return {"token": token, "lines": self._lines(preview, mode),
-                "status": "Preview is ready. Review the safe metadata, then commit explicitly."}
+                "status": t("transferWeb.previewIsReadyReviewThe")}
 
     def commit(self, token: str, mode: str, handle: str, password: str, confirm: str, scope: dict[str, Any],
                policy: str, allow_replace: bool) -> dict[str, Any]:
@@ -199,16 +197,16 @@ class TransferService:
                 self._paths.pop(str(handle or ""), None)
                 export_path = entry[1]
         if mode == "export" and password != confirm:
-            raise ApiError("invalid", "Transfer password confirmation does not match")
+            raise ApiError("invalid", t("transferWeb.transferPasswordConfirmationDoesNot"))
         preview = self._previews.pop(str(token or ""), None)
-        stale = ApiError("stale", "Inputs changed since preview. Run preview again before committing.")
+        stale = ApiError("stale", t("transferWeb.inputsChangedSincePreviewRun"))
         if preview is None or preview["mode"] != mode or preview["handle"] != handle:
             raise stale
         if not hmac.compare_digest(preview["digest"], self._digest(preview["salt"], password or "")):
             raise stale
         if mode == "export":
             if export_path is None:
-                raise ApiError("invalid", "Choose a local package path")
+                raise ApiError("invalid", t("transferWeb.chooseALocalPackagePath"))
             path = export_path
         else:
             path = self._path(handle, mode)
@@ -235,9 +233,9 @@ class TransferService:
         notify_item_limit(lambda limit: self._port.show_upgrade(limit=limit.limit, message=str(limit),
                                                                 on_enter=lambda: None), result)
         self._controller.touch()
-        return {"lines": self._lines(result, mode), "status": DONE, "changed": mode == "import"}
+        return {"lines": self._lines(result, mode), "status": t(DONE), "changed": mode == "import"}
 
     def cancel(self) -> dict[str, Any]:
         self._cancel.set()
         self._previews.clear()
-        return {"status": "The pending transfer was cancelled before commit."}
+        return {"status": t("transferSheet.cancelled")}

@@ -1,5 +1,6 @@
 package app.localgatekeys.android.pro
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.core.json.CanonicalJson
 import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.primitives.Base64Std
@@ -206,7 +207,7 @@ class ItemLimitTest {
     @Test fun totp_message_and_change_rule() {
         assertEquals(
             "Adding or changing two-factor codes needs LocalGateKeys Pro. Codes you already saved keep working.",
-            ProFeatures.totpMessage,
+            ProFeatures.totpMessage(EnglishTxt()),
         )
         val a = JsonValue.Str("a")
         val b = JsonValue.Str("b")

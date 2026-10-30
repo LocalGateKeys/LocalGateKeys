@@ -27,6 +27,7 @@ const SOURCE_DIR = __dirname;
 // Everything the extension loads at runtime besides manifest.json. assets/
 // (brand PNGs for docs) and the build scripts stay out of the store zip.
 const PACKAGE_FILES = Object.freeze([
+  "_locales/en/messages.json",
   "api.js",
   "background.js",
   "content.js",
@@ -66,6 +67,8 @@ function referencedFiles(manifest) {
     const html = fs.readFileSync(path.join(SOURCE_DIR, popup), "utf8");
     for (const match of html.matchAll(/\b(?:src|href)="([^":#?]+)"/g)) refs.add(match[1]);
   }
+  // __MSG_*__ in the manifest and tr() in the scripts read the default locale.
+  if (manifest.default_locale) refs.add(`_locales/${manifest.default_locale}/messages.json`);
   // background.js pulls in the namespace shim with importScripts on Chromium.
   refs.add("api.js");
   // background.js fetches the bundled site logos with runtime.getURL.

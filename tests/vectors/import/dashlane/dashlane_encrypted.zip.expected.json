@@ -1,0 +1,9 @@
+{
+  "error": {
+    "message": "credentials.csv inside the zip is too large, encrypted or unsupported",
+    "type": "format"
+  },
+  "format": "dashlane",
+  "input": "tests/vectors/import/_inputs/dashlane_encrypted.zip",
+  "python_format": "dashlane-zip"
+}

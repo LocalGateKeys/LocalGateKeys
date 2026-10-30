@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from ..i18n import t
 from ..app.catalog import (
     _summary_title,
     kind_label,
@@ -24,14 +25,22 @@ class Command:
     """
 
     id: str
-    title: str
-    subtitle: str
+    title_key: str  # a catalog key (or plain text); ``title`` is the text in the active language
+    subtitle_key: str
     group: Literal["Actions", "Settings", "Help"]
     method: str
     args: tuple = ()
     kwargs: tuple[tuple[str, object], ...] = ()
     keywords: tuple[str, ...] = ()
     requires_unlock: bool = True
+
+    @property
+    def title(self) -> str:
+        return t(self.title_key)
+
+    @property
+    def subtitle(self) -> str:
+        return t(self.subtitle_key)
 
 
 @dataclass(frozen=True)
@@ -47,72 +56,91 @@ def _c(id, title, subtitle, method, *, group="Actions", args=(), kwargs=(), keyw
     return Command(id, title, subtitle, group, method, args, kwargs, keywords, requires_unlock)
 
 
+GROUP_KEYS = {"Actions": "palette.group.actions", "Items": "palette.group.items",
+              "Settings": "palette.group.settings", "Help": "palette.group.help"}
+
+
+def group_label(group: str) -> str:
+    """The shown name of a palette group; the group id itself stays English."""
+    return t(GROUP_KEYS.get(group, group))
+
+
 _SETTINGS_SECTIONS = (
-    ("locking", "Locking", "Auto-lock and idle timeouts", ("lock", "timeout", "idle", "auto-lock")),
-    ("unlocking", "Unlocking", "Windows Hello, face and passkey unlock", ("hello", "face", "passkey", "biometric")),
-    ("privacy", "Privacy", "Clipboard and screen protection", ("clipboard", "screenshot")),
-    ("autofill", "Autofill", "Browser and desktop filling", ("fill", "browser", "extension")),
-    ("appearance", "Appearance", "Theme, density and text size", ("theme", "dark", "light", "density")),
-    ("backups", "Backups", "Backup folder and schedule", ("backup", "schedule", "folder")),
-    ("plan", "Plan & sync", "Licence, Pro and device sync", ("licence", "license", "pro", "upgrade", "sync")),
-    ("help", "Help & diagnostics", "Shortcuts, setup guide and error log", ("diagnostics", "log", "support")),
+    ("locking", "command.settings-locking.title", "command.settings-locking.subtitle", ("lock", "timeout", "idle", "auto-lock")),
+    ("unlocking", "command.settings-unlocking.title", "command.settings-unlocking.subtitle", ("hello", "face", "passkey", "biometric")),
+    ("privacy", "command.settings-privacy.title", "command.settings-privacy.subtitle", ("clipboard", "screenshot")),
+    ("autofill", "command.settings-autofill.title", "command.settings-autofill.subtitle", ("fill", "browser", "extension")),
+    ("appearance", "command.settings-appearance.title", "command.settings-appearance.subtitle", ("theme", "dark", "light", "density")),
+    ("backups", "command.settings-backups.title", "command.settings-backups.subtitle", ("backup", "schedule", "folder")),
+    ("plan", "command.settings-plan.title", "command.settings-plan.subtitle", ("licence", "license", "pro", "upgrade", "sync")),
+    ("help", "command.settings-help.title", "command.settings-help.subtitle", ("diagnostics", "log", "support")),
 )
 
 COMMANDS: tuple[Command, ...] = (
-    _c("backup-now", "Back up now", "Save an encrypted backup", "recovery_center_clicked",
+    _c("backup-now", "command.backup-now.title", "command.backup-now.subtitle", "recovery_center_clicked",
        kwargs=(("allow_locked", True),), keywords=("backup", "save"), requires_unlock=False),
-    _c("backup-verify", "Verify a backup", "Check that a backup opens", "recovery_center_clicked",
+    _c("backup-verify", "command.backup-verify.title", "command.backup-verify.subtitle", "recovery_center_clicked",
        kwargs=(("initial", "verify"),), keywords=("backup", "check")),
-    _c("backup-restore", "Restore from backup…", "Bring items back from a backup", "recovery_center_clicked",
+    _c("backup-restore", "command.backup-restore.title", "command.backup-restore.subtitle", "recovery_center_clicked",
        kwargs=(("initial", "restore"),), keywords=("backup", "recover")),
-    _c("recovery-kit", "Write recovery kit", "Print or save your recovery kit", "recovery_center_clicked",
+    _c("recovery-kit", "command.recovery-kit.title", "command.recovery-kit.subtitle", "recovery_center_clicked",
        kwargs=(("initial", "kit"),), keywords=("backup", "recover", "emergency")),
-    _c("generate-password", "Generate password", "Create a strong password", "password_generator_clicked",
+    _c("generate-password", "command.generate-password.title", "command.generate-password.subtitle", "password_generator_clicked",
        keywords=("passphrase", "random")),
-    _c("new-item", "New item", "Add a login, card, note or other item", "new_typed_item_clicked",
+    _c("scan-qr", "command.scan-qr.title", "command.scan-qr.subtitle", "scan_qr_clicked",
+       keywords=("2fa", "totp", "qr", "authenticator", "two-factor", "import", "photo", "image", "webcam")),
+    _c("new-item", "command.new-item.title", "command.new-item.subtitle", "new_typed_item_clicked",
        keywords=("add", "create", "login", "card", "note")),
-    _c("quick-access", "Quick access", "Open the quick access window", "quick_access_clicked",
+    _c("quick-access", "command.quick-access.title", "command.quick-access.subtitle", "quick_access_clicked",
        keywords=("fill", "launcher")),
-    _c("lock-now", "Lock now", "Lock the vault", "lock", keywords=("secure",)),
-    _c("emergency-lock", "Emergency lock", "Lock and clear sensitive state", "emergency_lock",
+    _c("lock-now", "command.lock-now.title", "command.lock-now.subtitle", "lock", keywords=("secure",)),
+    _c("emergency-lock", "command.emergency-lock.title", "command.emergency-lock.subtitle", "emergency_lock",
        keywords=("panic", "lock")),
-    _c("switch-profile", "Switch profile", "Open another vault profile", "profiles_clicked",
+    _c("switch-profile", "command.switch-profile.title", "command.switch-profile.subtitle", "profiles_clicked",
        keywords=("vault", "account"), requires_unlock=False),
-    _c("change-master", "Change master password", "Choose a new master password", "change_master_clicked",
+    _c("change-master", "command.change-master.title", "command.change-master.subtitle", "change_master_clicked",
        keywords=("passphrase", "credentials")),
-    _c("security-center", "Security center", "Weak, reused and 2FA-missing items", "security_health_clicked",
+    _c("security-center", "command.security-center.title", "command.security-center.subtitle", "security_health_clicked",
        keywords=("2fa", "health", "weak", "reused", "breach", "audit")),
-    _c("export", "Export vault", "Save your items to a file", "export_clicked", keywords=("csv", "download")),
-    _c("import", "Import items", "Bring in items from another manager", "import_clicked",
+    _c("security-check", "command.security-check.title", "command.security-check.subtitle", "security_health_clicked",
+       kwargs=(("initial", "health"),), keywords=("security", "check", "weak", "reused", "breach", "health")),
+    _c("export", "command.export.title", "command.export.subtitle", "export_clicked", keywords=("csv", "download")),
+    _c("import", "command.import.title", "command.import.subtitle", "import_clicked",
        keywords=("csv", "browser", "upload")),
-    _c("encrypted-transfer", "Encrypted transfer", "Move items to another device as an encrypted package",
+    _c("encrypted-transfer", "command.encrypted-transfer.title", "command.encrypted-transfer.subtitle",
        "transfer_clicked", keywords=("transfer", "device", "package", "migrate")),
-    _c("typed-items", "Typed items", "Cards, identities, notes and more", "typed_items_clicked",
+    _c("share-item", "command.share-item.title", "command.share-item.subtitle", "share_item_clicked",
+       keywords=("share", "send", "airdrop", "qr", "lgkshare")),
+    _c("receive-share", "command.receive-share.title", "command.receive-share.subtitle", "receive_share_clicked",
+       keywords=("share", "receive", "incoming", "lgkshare")),
+    _c("typed-items", "command.typed-items.title", "command.typed-items.subtitle", "typed_items_clicked",
        keywords=("cards", "identity", "notes")),
-    _c("reminders", "Reminders", "Expiring and overdue items", "reminders_clicked",
+    _c("reminders", "command.reminders.title", "command.reminders.subtitle", "reminders_clicked",
        keywords=("expiry", "due", "rotate")),
-    _c("trash", "Trash", "Recently deleted items", "trash_clicked", keywords=("deleted", "restore")),
-    _c("activity", "Activity", "Recent vault activity", "activity_clicked", keywords=("log", "history", "audit")),
-    _c("devices-sync", "Devices & connections", "Browser extension connection and diagnostics",
+    _c("trash", "command.trash.title", "command.trash.subtitle", "trash_clicked", keywords=("deleted", "restore")),
+    _c("activity", "command.activity.title", "command.activity.subtitle", "activity_clicked", keywords=("log", "history", "audit")),
+    _c("devices-sync", "command.devices-sync.title", "command.devices-sync.subtitle",
        "connections_clicked", keywords=("extension", "browser", "bridge")),
-    _c("sync-settings", "Sync", "Wi-Fi and cloud-folder sync between your devices", "sync_settings_clicked",
+    _c("sync-settings", "command.sync-settings.title", "command.sync-settings.subtitle", "sync_settings_clicked",
        keywords=("sync", "cloud", "folder", "wifi", "pair", "qr", "devices")),
-    _c("safe-workspace", "Safe workspace", "Open a protected workspace", "safe_workspace_clicked",
+    _c("sync-status", "command.sync-status.title", "command.sync-status.subtitle", "sync_settings_clicked",
+       kwargs=(("initial", "status"),), keywords=("sync", "devices", "last", "status")),
+    _c("safe-workspace", "command.safe-workspace.title", "command.safe-workspace.subtitle", "safe_workspace_clicked",
        keywords=("sandbox", "workspace")),
-    _c("check-updates", "Check for updates", "Look for a newer version", "check_updates_clicked",
+    _c("check-updates", "command.check-updates.title", "command.check-updates.subtitle", "check_updates_clicked",
        keywords=("upgrade", "version"), requires_unlock=False),
-    _c("settings", "Settings", "Open settings", "settings_clicked", group="Settings",
+    _c("settings", "command.settings.title", "command.settings.subtitle", "settings_clicked", group="Settings",
        keywords=("preferences", "options")),
     *(
         _c(f"settings-{name}", title, subtitle, "settings_clicked", group="Settings",
            kwargs=(("section", name),), keywords=("settings", *extra))
         for name, title, subtitle, extra in _SETTINGS_SECTIONS
     ),
-    _c("shortcuts", "Keyboard shortcuts", "See every shortcut", "show_shortcuts_clicked", group="Help",
+    _c("shortcuts", "command.shortcuts.title", "command.shortcuts.subtitle", "show_shortcuts_clicked", group="Help",
        keywords=("keys", "hotkeys", "help"), requires_unlock=False),
-    _c("setup-guide", "Setup guide", "Walk through first-run setup", "onboarding_clicked", group="Help",
-       keywords=("onboarding", "tour", "help"), requires_unlock=False),
-    _c("error-log", "Open error log", "Show the diagnostic log", "open_error_log_clicked", group="Help",
+    _c("show-setup", "command.show-setup.title", "command.show-setup.subtitle", "onboarding_clicked",
+       group="Help", keywords=("onboarding", "setup", "guide", "tour", "help"), requires_unlock=False),
+    _c("error-log", "command.error-log.title", "command.error-log.subtitle", "open_error_log_clicked", group="Help",
        keywords=("diagnostics", "debug", "help"), requires_unlock=False),
 )
 
@@ -127,7 +155,7 @@ def registered_section_commands() -> tuple[Command, ...]:
 
     built_in = {name for name, *_rest in _SETTINGS_SECTIONS}
     return tuple(
-        _c(f"settings-{item.key}", item.title, item.subtitle or "Settings", "settings_clicked",
+        _c(f"settings-{item.key}", item.title, item.subtitle or "command.settings.title", "settings_clicked",
            group="Settings", kwargs=(("section", item.key),), keywords=("settings", *item.keywords))
         for item in sections() if item.key not in built_in
     )

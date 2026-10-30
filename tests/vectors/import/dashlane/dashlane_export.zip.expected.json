@@ -1,0 +1,282 @@
+{
+  "format": "dashlane",
+  "input": "tests/vectors/import/_inputs/dashlane_export.zip",
+  "python_format": "dashlane-zip",
+  "result": {
+    "diagnostics": [],
+    "records": [
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Alternative username",
+            "value": "alex_example"
+          }
+        ],
+        "favorite": false,
+        "folder": "Travel",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "Frequent flyer account.",
+        "password": "dash-pass-1",
+        "source_row": null,
+        "tags": [],
+        "title": "Example Travel",
+        "totp_uri": "otpauth://totp/Travel:alex?secret=JBSWY3DPEHPK3PXP&issuer=Travel",
+        "urls": [
+          "https://travel.example.com"
+        ],
+        "username": "alex@example.com"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "Entertainment",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "dash-pass-2",
+        "source_row": null,
+        "tags": [],
+        "title": "Video",
+        "totp_uri": "",
+        "urls": [
+          "video.example.com"
+        ],
+        "username": "alex"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "Under the third plant pot.\nTell the neighbour if moved.",
+        "password": "",
+        "source_row": null,
+        "tags": [],
+        "title": "Spare key",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {
+          "cardholder": "Alex Example",
+          "cvv": "777",
+          "expiry": "11/2030",
+          "number": "5555555555554444"
+        },
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Issuing bank",
+            "value": "Example Bank"
+          },
+          {
+            "hidden": false,
+            "name": "Country",
+            "value": "GB"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "card",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": null,
+        "tags": [],
+        "title": "Groceries Mastercard",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Dashlane payment type",
+            "value": "bank"
+          },
+          {
+            "hidden": false,
+            "name": "Account holder",
+            "value": "Alex Example"
+          },
+          {
+            "hidden": true,
+            "name": "Account number",
+            "value": "00000000"
+          },
+          {
+            "hidden": true,
+            "name": "Routing number",
+            "value": "000000"
+          },
+          {
+            "hidden": false,
+            "name": "Bank",
+            "value": "Example Bank"
+          },
+          {
+            "hidden": false,
+            "name": "Country",
+            "value": "GB"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": null,
+        "tags": [],
+        "title": "Joint account",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Document type",
+            "value": "Passport"
+          },
+          {
+            "hidden": true,
+            "name": "Number",
+            "value": "000000000"
+          },
+          {
+            "hidden": false,
+            "name": "Name",
+            "value": "Alex Example"
+          },
+          {
+            "hidden": false,
+            "name": "Issue date",
+            "value": "2020-01-01"
+          },
+          {
+            "hidden": false,
+            "name": "Expiry date",
+            "value": "2030-01-01"
+          },
+          {
+            "hidden": false,
+            "name": "Place of issue",
+            "value": "GB"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": null,
+        "tags": [],
+        "title": "Passport - Alex Example",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Date of birth",
+            "value": "1990-01-01"
+          },
+          {
+            "hidden": false,
+            "name": "Place of birth",
+            "value": "Exampleton"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {
+          "family_name": "Example",
+          "given_name": "Alex",
+          "job_title": "Tester",
+          "middle_name": "Q",
+          "name": "Alex Q Example"
+        },
+        "kind": "identity",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": null,
+        "tags": [],
+        "title": "Me",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Recipient",
+            "value": "Alex Example"
+          },
+          {
+            "hidden": false,
+            "name": "Apartment",
+            "value": "2"
+          },
+          {
+            "hidden": true,
+            "name": "Door code",
+            "value": "4242"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {
+          "address_line1": "1 Example Road",
+          "city": "Exampleton",
+          "country": "GB",
+          "postal_code": "EX1 2PL",
+          "state": "Exampleshire"
+        },
+        "kind": "identity",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": null,
+        "tags": [],
+        "title": "Home",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      }
+    ],
+    "source_format": "dashlane-zip"
+  }
+}

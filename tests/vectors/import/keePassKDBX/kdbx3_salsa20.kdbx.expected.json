@@ -1,0 +1,136 @@
+{
+  "format": "keePassKDBX",
+  "input": "tests/vectors/import/_inputs/kdbx3_salsa20.kdbx",
+  "password": "kdbx fixture password",
+  "python_format": "kdbx",
+  "result": {
+    "diagnostics": [
+      "2 entries in the KeePass Recycle Bin were not imported.",
+      "2 historical entry versions were not imported (only current values are kept).",
+      "1 entries have attachments that were not imported."
+    ],
+    "records": [
+      {
+        "card": {},
+        "created": -62135596800,
+        "custom_fields": [
+          {
+            "hidden": true,
+            "name": "Protected",
+            "value": "c2VjcmV0IHZhbHVl"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": 1697418880,
+        "notes": "",
+        "password": "",
+        "source_row": 1,
+        "tags": [
+          "a",
+          "b",
+          "c"
+        ],
+        "title": "Key query",
+        "totp_uri": "otpauth://totp/Key%20query?secret=JBSWY3DPEHPK3PXP&digits=8&period=60&algorithm=SHA256",
+        "urls": [],
+        "username": "u1"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 2,
+        "tags": [],
+        "title": "Seed",
+        "totp_uri": "otpauth://totp/Seed?secret=JBSWY3DPEHPK3PXP&digits=8&period=60",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 3,
+        "tags": [],
+        "title": "Built-in",
+        "totp_uri": "otpauth://totp/Built-in?secret=JBSWY3DPEHPK3PXP&digits=7&period=45&algorithm=SHA512",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "just a note",
+        "password": "",
+        "source_row": 4,
+        "tags": [],
+        "title": "Hex only",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 5,
+        "tags": [],
+        "title": "Duplicate title",
+        "totp_uri": "otpauth://totp/Duplicate%20title?secret=JBSWY3DPEHPK3PXP",
+        "urls": [],
+        "username": ""
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "Work/Servers",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "",
+        "source_row": 6,
+        "tags": [],
+        "title": "Deep",
+        "totp_uri": "",
+        "urls": [
+          "https://deep.example.com"
+        ],
+        "username": ""
+      }
+    ],
+    "source_format": "kdbx"
+  }
+}

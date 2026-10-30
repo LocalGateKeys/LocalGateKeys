@@ -1,4 +1,6 @@
 package app.localgatekeys.android.ui.shell
+import app.localgatekeys.android.R
+import androidx.compose.ui.res.stringResource
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -50,9 +52,9 @@ fun FloatingTabBar(selection: RootTab, onSelect: (RootTab) -> Unit, modifier: Mo
             .selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        TabItem(RootTab.VAULT, "Vault", Icons.Filled.Lock, selection, onSelect)
-        TabItem(RootTab.SEARCH, "Search", Icons.Filled.Search, selection, onSelect)
-        TabItem(RootTab.SYNC, "Sync", Icons.Filled.Refresh, selection, onSelect)
+        TabItem(RootTab.VAULT, stringResource(R.string.tab_vault), Icons.Filled.Lock, selection, onSelect)
+        TabItem(RootTab.SEARCH, stringResource(R.string.tab_search), Icons.Filled.Search, selection, onSelect)
+        TabItem(RootTab.SYNC, stringResource(R.string.tab_sync), Icons.Filled.Refresh, selection, onSelect)
     }
 }
 

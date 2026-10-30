@@ -8,7 +8,7 @@ export default defineConfig({
   base: './',
   plugins: [svelte(), svelteTesting()],
   // The site-logo set lives with the Python assets (one copy for desktop and iOS).
-  server: { fs: { allow: ['.', '../src/localvault/assets/site_logos.json', '../src/localvault/assets/localgatekeys_mark.png'] } },
+  server: { fs: { allow: ['.', '../src/localvault/assets/site_logos.json', '../src/localvault/assets/localgatekeys_mark.png', '../src/localvault/assets/i18n'] } },
   build: {
     outDir: '../src/localvault/assets/ui',
     emptyOutDir: true,

@@ -1,5 +1,6 @@
 package app.localgatekeys.android.pro
 
+import app.localgatekeys.android.i18n.AndroidTxt
 import android.content.Intent
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
@@ -32,9 +33,9 @@ class PlayBillingNoStoreTest {
         val play = PlayBillingPurchases(port)
         assertEquals(ProOffer.Unavailable, play.offer())
         assertFalse(play.isEntitled())
-        val pro = ProModel(play, emptyMap())
+        val pro = ProModel(play, emptyMap(), txt = AndroidTxt(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.resources))
         pro.loadPrice()
         assertFalse(pro.canBuy)
-        assertEquals(ProModel.UNAVAILABLE_MESSAGE, pro.message)
+        assertEquals(pro.unavailableMessage, pro.message)
     }
 }

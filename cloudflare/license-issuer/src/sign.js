@@ -66,11 +66,17 @@ export async function fallbackTokenForOrder(orderKey, pkcs8Base64) {
 
 // The KV key that counts /recover attempts for one email. An HMAC (keyed like
 // the retrieval token, different label) so KV listings show no email addresses.
-export async function recoveryThrottleKey(email, pkcs8Base64) {
-  const keyBytes = await crypto.subtle.digest("SHA-256", encoder.encode(`lgk-recover-throttle-key:v1:${pkcs8Base64}`));
+export function recoveryThrottleKey(email, pkcs8Base64) {
+  return throttleKey("recover", email, pkcs8Base64);
+}
+
+// The same throttle key for another limiter (`kind`), e.g. "store-claim" per
+// client IP, so KV listings show no IP addresses either.
+export async function throttleKey(kind, value, pkcs8Base64) {
+  const keyBytes = await crypto.subtle.digest("SHA-256", encoder.encode(`lgk-${kind}-throttle-key:v1:${pkcs8Base64}`));
   const key = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const mac = await crypto.subtle.sign("HMAC", key, encoder.encode(`lgk-recover-throttle:v1:${email}`));
-  return `recover-throttle:${toBase64Url(new Uint8Array(mac))}`;
+  const mac = await crypto.subtle.sign("HMAC", key, encoder.encode(`lgk-${kind}-throttle:v1:${value}`));
+  return `${kind}-throttle:${toBase64Url(new Uint8Array(mac))}`;
 }
 
 export function addDays(isoDate, days) {

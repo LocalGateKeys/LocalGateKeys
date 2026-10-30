@@ -22,6 +22,7 @@ from ..shell.login_form import (
     UrlRow,
     draft_for_new_web,
     draft_from_detail,
+    display_label,
     effective_label,
     password_meta,
     save_kwargs,
@@ -37,6 +38,7 @@ from ..vault import (
     VaultError,
 )
 from .licence_view import pro_required
+from ..i18n import t
 
 CHIPS = ("Passphrase", "Random", "PIN")
 # The generator never makes passwords shorter than 8 characters, so a PIN is 8 digits.
@@ -61,7 +63,7 @@ def options_for_chip(chip: str, current: GeneratorOptions) -> GeneratorOptions:
             "min_digits": 1,
         })
     if chip != "Random":
-        raise ValueError(f"Unknown generator chip: {chip}")
+        raise ValueError(t("loginEditor.unknownGeneratorChip", chip=chip))
     base = current
     if _is_pin(current):
         defaults = GeneratorOptions()
@@ -116,14 +118,14 @@ class LoginEditorService:
 
     def _session(self) -> Any:
         if not self._controller.is_unlocked():
-            raise ApiError("locked", "Unlock this profile first.")
+            raise ApiError("locked", t("error.lockedProfile"))
         return self._controller.session
 
     def _get(self, draft_id: str) -> _Open:
         with self._lock:
             entry = self._drafts.get(draft_id)
         if entry is None:
-            raise ApiError("not_found", "This editor was closed. Open the login again.")
+            raise ApiError("not_found", t("loginEditor.thisEditorWasClosedOpen"))
         return entry
 
     # ----------------------------------------------------------------- open
@@ -135,20 +137,20 @@ class LoginEditorService:
     def open(self, ref: dict[str, Any]) -> dict[str, Any]:
         session = self._session()
         if ref.get("source") != "credential" or ref.get("kind") not in ("web", "desktop"):
-            raise ApiError("unsupported", "This editor edits logins.")
+            raise ApiError("unsupported", t("loginEditor.thisEditorEditsLogins"))
         lease = self._controller.guard.lease()
         # Read the token with the data it guards, before any prompt: a change made
         # while the prompt is open must make the later save fail with "changed".
         token = session.login_edit_token(ref["id"])
         detail = session.credential_detail(ref["id"])
         if detail is None:
-            raise ApiError("not_found", "This item no longer exists.")
+            raise ApiError("not_found", t("share.thisItemNoLongerExists"))
         try:
             # Desktop logins have no URL rows; save_login keeps their app binding.
             urls = session.item_service.web_urls(ref["id"]) if detail.get("kind") == "web" else []
             draft = draft_from_detail(detail, urls)
             if normalized_policy(detail.get("policy")).get("require_master_password"):
-                self._reauth.reauthenticate("Open sensitive credential", lease, allow_hello=False)
+                self._reauth.reauthenticate(t("loginExtras.openSensitiveCredential"), lease, allow_hello=False)
         finally:
             detail.clear()
         return self._register(draft, token)
@@ -247,7 +249,7 @@ class LoginEditorService:
             "kind": draft.kind,
             "is_new": draft.entry_id is None,
             "label": draft.label if draft.label_edited else "",
-            "label_hint": effective_label(draft),
+            "label_hint": display_label(draft),
             "urls": [{"url": row.url, "match": row.match} for row in draft.urls],
             "app_path": draft.app_path,
             "username": draft.username,
@@ -275,7 +277,7 @@ class LoginEditorService:
         entry = self._get(draft_id)
         draft = entry.draft
         if validate(draft):
-            raise ApiError("invalid", "Check the highlighted fields")
+            raise ApiError("invalid", t("loginEditor.checkTheHighlightedFields"))
         lease = self._controller.guard.lease()
         if draft.entry_id is not None and not normalized_policy(draft.policy).get("require_master_password"):
             # Turning "always ask for the master password" off needs the master password now (no Windows Hello),
@@ -288,7 +290,7 @@ class LoginEditorService:
                 if stored is not None:
                     stored.clear()
             if was_strict:
-                self._reauth.reauthenticate("Enter your master password to change this login's rules", lease,
+                self._reauth.reauthenticate(t("loginExtras.enterYourMasterPasswordTo7"), lease,
                                             allow_hello=False)
         try:
             kwargs = save_kwargs(draft)

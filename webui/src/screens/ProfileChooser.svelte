@@ -1,5 +1,6 @@
 <script>
   /** Pick which person's vault to open, or add a profile (an empty vault, created on the next screen). */
+  import { t } from '../lib/i18n.svelte.js';
   import ErrorLogLink from '../components/ErrorLogLink.svelte';
   import Button from '../components/Button.svelte';
   import Field from '../components/Field.svelte';
@@ -41,27 +42,27 @@
 
 <section class="chooser">
   <div class="card glass">
-    <h1>Who's using LocalGateKeys?</h1>
+    <h1>{t('profileChooser.title')}</h1>
     <Group>
       {#each profiles as profile (profile.id)}
-        <Row title={profile.name} subtitle={profile.active ? 'Current profile' : ''} onclick={() => choose(profile.id)}>
+        <Row title={profile.name} subtitle={profile.active ? t('profileChooser.current') : ''} onclick={() => choose(profile.id)}>
           {#snippet leading()}
             <span class="dot" style:background={profile.color} aria-hidden="true">{profile.name.slice(0, 1).toUpperCase()}</span>
           {/snippet}
         </Row>
       {/each}
       {#if !adding}
-        <Row title="Add profile" subtitle="A separate vault with its own master password" onclick={() => { adding = true; error = ''; }}>
+        <Row title={t('profileChooser.add')} subtitle={t('profileChooser.addHint')} onclick={() => { adding = true; error = ''; }}>
           {#snippet leading()}<span class="dot add" aria-hidden="true">+</span>{/snippet}
         </Row>
       {/if}
     </Group>
     {#if adding}
       <form class="add" onsubmit={add}>
-        <div class="group"><Field label="Profile name" bind:value={name} placeholder="Work" autofocus /></div>
+        <div class="group"><Field label={t('profileChooser.name')} bind:value={name} placeholder={t('profileChooser.namePlaceholder')} autofocus /></div>
         <div class="buttons">
-          <Button label="Cancel" onclick={() => { adding = false; name = ''; error = ''; }} />
-          <Button type="submit" variant="primary" label="Create profile" busy={busy} busyLabel="Creating…" disabled={!name.trim()} />
+          <Button label={t('common.cancel')} onclick={() => { adding = false; name = ''; error = ''; }} />
+          <Button type="submit" variant="primary" label={t('profileChooser.create')} busy={busy} busyLabel={t('common.creating')} disabled={!name.trim()} />
         </div>
       </form>
     {/if}

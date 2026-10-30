@@ -1,31 +1,33 @@
 package app.localgatekeys.android.vault
 
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.Txt
+import androidx.annotation.StringRes
 import app.localgatekeys.core.primitives.Casefold
 import app.localgatekeys.core.primitives.Scalars
 
 /** A type filter (desktop `FilterOption` without collections and smart views). */
 sealed interface VaultFilter {
-    val label: String
+    fun label(t: Txt): String
 
     fun matches(item: VaultItem): Boolean
 
     data object All : VaultFilter {
-        override val label = "All types"
+        override fun label(t: Txt): String = t.s(R.string.home_title_all_types)
         override fun matches(item: VaultItem) = true
     }
 
     data object Favorites : VaultFilter {
-        override val label = "Favorites"
+        override fun label(t: Txt): String = t.s(R.string.nav_vault_favorites)
         override fun matches(item: VaultItem) = item.favorite
     }
 
     data class Kind(val kind: String) : VaultFilter {
-        override val label: String
-            get() = when (kind) {
-                "web" -> "Browser"
-                "desktop" -> "Desktop"
-                else -> VaultItem.kindLabel(kind)
-            }
+        override fun label(t: Txt): String = when (kind) {
+            "web" -> t.s(R.string.filter_web)
+            "desktop" -> t.s(R.string.filter_desktop)
+            else -> VaultItem.kindLabel(kind, t)
+        }
 
         override fun matches(item: VaultItem) = item.kind == kind
     }
@@ -67,11 +69,11 @@ object VaultSearch {
         return out
     }
 
-    fun fields(item: VaultItem): Map<String, String> = mapOf(
+    fun fields(item: VaultItem, t: Txt): Map<String, String> = mapOf(
         "title" to casefold(item.title),
         "username" to casefold(item.username),
         "url" to casefold(item.target),
-        "kind" to casefold("${item.kind} ${item.kindLabel}"),
+        "kind" to casefold("${item.kind} ${item.kindLabel(t)}"),
         "tags" to casefold(item.tags.joinToString(" ")),
     )
 
@@ -124,19 +126,19 @@ object VaultSearch {
     }
 
     /** Matching items, best rank first, then most recently updated, then by id. An empty query keeps everything. */
-    fun rank(items: List<VaultItem>, query: String): List<VaultItem> {
+    fun rank(items: List<VaultItem>, query: String, t: Txt): List<VaultItem> {
         val tokens = parse(query)
         val ordered = items.sortedWith { a, b -> Scalars.compare(a.id, b.id) } // stable input order
         class Hit(val rank: Int, val negTime: Long, val index: Int, val item: VaultItem)
         val ranked = ArrayList<Hit>()
         for ((index, item) in ordered.withIndex()) {
-            val f = fields(item)
+            val f = fields(item, t)
             var r = RANK_EXACT
             var hit = true
             for ((field, token) in tokens) {
-                val t = tokenRank(f, field, token)
-                if (t == null) { hit = false; break }
-                r = maxOf(r, t)
+                val tr = tokenRank(f, field, token)
+                if (tr == null) { hit = false; break }
+                r = maxOf(r, tr)
             }
             if (hit) ranked.add(Hit(r, -item.updatedAt, index, item))
         }
@@ -144,14 +146,14 @@ object VaultSearch {
         return ranked.map { it.item }
     }
 
-    fun apply(items: List<VaultItem>, query: String, filter: VaultFilter): List<VaultItem> =
-        rank(items.filter { filter.matches(it) }, query)
+    fun apply(items: List<VaultItem>, query: String, filter: VaultFilter, t: Txt): List<VaultItem> =
+        rank(items.filter { filter.matches(it) }, query, t)
 
     /** Desktop `KIND_ORDER`: web, desktop, then the other kinds by label. */
-    fun filterOptions(items: List<VaultItem>): List<VaultFilter> {
+    fun filterOptions(items: List<VaultItem>, t: Txt): List<VaultFilter> {
         val present = items.map { it.kind }.toSet()
         val rest = (present - setOf("web", "desktop")).sortedWith { a, b ->
-            val c = Scalars.compare(casefold(VaultItem.kindLabel(a)), casefold(VaultItem.kindLabel(b)))
+            val c = Scalars.compare(casefold(VaultItem.kindLabel(a, t)), casefold(VaultItem.kindLabel(b, t)))
             if (c != 0) c else Scalars.compare(a, b)
         }
         return listOf<VaultFilter>(VaultFilter.All, VaultFilter.Favorites) +

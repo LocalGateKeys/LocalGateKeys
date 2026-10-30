@@ -21,6 +21,20 @@ protocol Unlocking: AnyObject {
     var keychain: (any KeychainVault)? { get }
     /// Drops the authenticated context so the next unlock asks again.
     func lock()
+
+    /// Task 7: the app password is on (no passcode route), and the Face ID shortcut is set up.
+    var passwordOn: Bool { get }
+    var biometricShortcut: Bool { get }
+    func unlock(password: String) async throws -> any ItemStore
+    /// The 24 words and the new app password to set.
+    func recover(phrase: String, newPassword: String) async throws -> any ItemStore
+}
+
+extension Unlocking {
+    var passwordOn: Bool { false }
+    var biometricShortcut: Bool { false }
+    func unlock(password: String) async throws -> any ItemStore { throw AppPasswordError.required }
+    func recover(phrase: String, newPassword: String) async throws -> any ItemStore { throw AppPasswordError.required }
 }
 
 /// Lock state for the whole app: unlock, lock on background after the chosen delay, lock after the
@@ -29,7 +43,7 @@ protocol Unlocking: AnyObject {
 @Observable
 final class AppLockModel {
     enum State: Equatable { case locked, unlocking, unlocked }
-    static let unlockReason = "Unlock your vault"
+    static let unlockReason = String(localized: "Unlock your vault")
 
     private(set) var state: State = .locked
     private(set) var store: (any ItemStore)?
@@ -39,6 +53,9 @@ final class AppLockModel {
     private(set) var eraseFailed = false
     /// The vault's files are here but their key is not (a restored backup): only Start fresh can help.
     private(set) var vaultUnreadable = false
+    /// Task 7: the unlock screen shows the app password field (and "Forgot app password?").
+    private(set) var needsPassword = false
+    var biometricShortcut: Bool { unlocker.biometricShortcut }
     /// The unlock screen shows "Start fresh anyway".
     var offersStartFresh: Bool { eraseFailed || vaultUnreadable }
 
@@ -76,56 +93,103 @@ final class AppLockModel {
             state = .locked
             guard !settings.erasePending else { return }
         }
+        if unlocker.passwordOn {
+            needsPassword = true
+            // No shortcut: no prompt at all; the password field is the only way in (never the passcode).
+            guard unlocker.biometricShortcut else { return }
+        } else {
+            needsPassword = false
+        }
+        await attempt { try await $0.unlock(reason: Self.unlockReason) }
+    }
+
+    /// Task 7: unlock with the typed app password.
+    func unlock(password: String) async {
+        guard state == .locked, !isErasing, !settings.erasePending else { return }
+        await attempt { try await $0.unlock(password: password) }
+    }
+
+    /// Task 7: "Forgot app password?" (the screen has already checked the new password's strength).
+    func recover(phrase: String, newPassword: String) async {
+        guard state == .locked, !isErasing, !settings.erasePending else { return }
+        await attempt { try await $0.recover(phrase: phrase, newPassword: newPassword) }
+    }
+
+    private func attempt(_ open: @MainActor (any Unlocking) async throws -> any ItemStore) async {
         state = .unlocking; errorMessage = nil; vaultUnreadable = false
         let started = generation
         do {
-            let opened = try await unlocker.unlock(reason: Self.unlockReason)
+            let opened = try await open(unlocker)
             guard generation == started, state == .unlocking else { unlocker.lock(); return }   // a lock won
             store = opened
             keychain = unlocker.keychain
             state = .unlocked
+            needsPassword = false
             noteActivity()
         } catch {
             guard generation == started else { return }
             state = .locked; store = nil; keychain = nil
             errorMessage = Self.message(for: error)
             vaultUnreadable = (error as? LocalStoreError) == .vaultWithoutKey
+            if unlocker.passwordOn || error is AppPasswordError { needsPassword = true }
         }
     }
 
-    static let vaultWithoutKeyMessage = "This iPhone has vault files but not their key (for example after restoring a backup), so they cannot be opened. Start fresh to erase them and set up an empty vault, then sync with your PC to get your items back."
+    static let wrongPasswordMessage = String(localized: "That app password is not right.")
+    static let wrongPhraseMessage = String(localized: "This recovery phrase does not belong to this vault.")
+    static let biometricChangedMessage = String(localized: "Your Face ID changed, so the Face ID shortcut was turned off. Type your app password.")
 
-    static let biometryLockoutMessage = "Face ID is locked after too many attempts. Lock and unlock your iPhone with its passcode, then try again."
+    static func waitMessage(_ seconds: Int64) -> String {
+        seconds >= 120 ? String(localized: "Too many wrong tries. Try again in \((seconds + 59) / 60) minutes.")
+            : String(localized: "Too many wrong tries. Try again in \(seconds) seconds.")
+    }
+
+    static let vaultWithoutKeyMessage = String(localized: "This iPhone has vault files but not their key (for example after restoring a backup), so they cannot be opened. Start fresh to erase them and set up an empty vault, then sync with your PC to get your items back.")
+
+    static let biometryLockoutMessage = String(localized: "Face ID is locked after too many attempts. Lock and unlock your iPhone with its passcode, then try again.")
 
     /// What the unlock screen says after a failed unlock; nil when the person cancelled (the Unlock button stays).
     static func message(for error: any Error) -> String? {
+        if let e = error as? AppPasswordError {
+            switch e {
+            case .required: return nil
+            case .wrongPassword: return wrongPasswordMessage
+            case .wrongPhrase: return wrongPhraseMessage
+            case .wait(let s): return waitMessage(s)
+            case .biometricChanged: return biometricChangedMessage
+            case .openAppFirst: return String(localized: "Open LocalGateKeys and unlock it with your app password first.")
+            case .corrupt: return String(localized: "The app password file on this iPhone is damaged, so neither the app password nor the recovery phrase can open it. Use Start fresh, then restore a backup if you have one.")
+            case .alreadyOn: return String(localized: "The app password is already on.")
+            }
+        }
+        if let e = error as? RecoveryPhraseError { return e.message }
         if let e = error as? LAError {
             switch e.code {
             case .userCancel, .systemCancel, .appCancel: return nil
-            case .passcodeNotSet: return "Set a device passcode in Settings to use LocalGateKeys."
+            case .passcodeNotSet: return String(localized: "Set a device passcode in Settings to use LocalGateKeys.")
             case .biometryLockout: return biometryLockoutMessage
-            default: return "Could not unlock (authentication error \(e.code.rawValue)). Try again."
+            default: return String(localized: "Could not unlock (authentication error \(e.code.rawValue)). Try again.")
             }
         }
         if let e = error as? KeychainVaultError {
             switch e {
-            case .status(let code): return "Could not read the vault key from the Keychain (error \(code)). Try again."
-            case .accessControl: return "Could not protect the vault key in the Keychain. Try again."
-            case .malformed(let slot): return "A Keychain item of the vault is damaged (\(slot.rawValue))."
+            case .status(let code): return String(localized: "Could not read the vault key from the Keychain (error \(code)). Try again.")
+            case .accessControl: return String(localized: "Could not protect the vault key in the Keychain. Try again.")
+            case .malformed(let slot): return String(localized: "A Keychain item of the vault is damaged (\(slot.rawValue)).")
             }
         }
         if let e = error as? LocalStoreError {
             switch e {
-            case .noContainer: return "The vault's storage on this iPhone is unavailable."
-            case .noLocalKey: return "The vault key is missing from this iPhone's Keychain."
-            case .badLocalKey: return "The vault key in this iPhone's Keychain is damaged."
+            case .noContainer: return String(localized: "The vault's storage on this iPhone is unavailable.")
+            case .noLocalKey: return String(localized: "The vault key is missing from this iPhone's Keychain.")
+            case .badLocalKey: return String(localized: "The vault key in this iPhone's Keychain is damaged.")
             case .vaultWithoutKey: return vaultWithoutKeyMessage
-            case .corrupt: return "The vault on this iPhone could not be read (damaged)."
-            case .io: return "The vault's files on this iPhone could not be read or written. Try again."
-            case .stale: return "Could not unlock. Try again."
+            case .corrupt: return String(localized: "The vault on this iPhone could not be read (damaged).")
+            case .io: return String(localized: "The vault's files on this iPhone could not be read or written. Try again.")
+            case .stale: return String(localized: "Could not unlock. Try again.")
             }
         }
-        return "Could not unlock. Try again."
+        return String(localized: "Could not unlock. Try again.")
     }
 
     /// The scene became active. Prompts only at launch and on return from the background; checks the lock
@@ -171,13 +235,13 @@ final class AppLockModel {
             errorMessage = nil; eraseFailed = false
         } catch {
             errorMessage = (error as? VaultEraseFailure)?.message
-                ?? "The vault was not fully erased. Tap Unlock to try erasing again, or Start fresh anyway."
+                ?? String(localized: "The vault was not fully erased. Tap Unlock to try erasing again, or Start fresh anyway.")
             eraseFailed = true
         }
     }
 
-    static let startFreshConfirm1 = "Start fresh anyway?\n\nLocalGateKeys deletes everything it can from this iPhone and opens a new, empty vault. Anything it could not delete stays on this iPhone but is no longer used. Your PC and the sync folder are not changed."
-    static let startFreshConfirm2 = "Are you sure? This cannot be undone. Start fresh now?"
+    static let startFreshConfirm1 = String(localized: "Start fresh anyway?\n\nLocalGateKeys deletes everything it can from this iPhone and opens a new, empty vault. Anything it could not delete stays on this iPhone but is no longer used. Your PC and the sync folder are not changed.")
+    static let startFreshConfirm2 = String(localized: "Are you sure? This cannot be undone. Start fresh now?")
 
     /// "Start fresh anyway" (after two confirmations): one more erase attempt, then the pending flag is
     /// cleared whatever it left behind, so the next unlock is a first run.

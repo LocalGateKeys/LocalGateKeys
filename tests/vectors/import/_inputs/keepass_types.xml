@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<KeePassFile>
+	<Meta>
+		<Generator>KeePassXC</Generator>
+		<RecycleBinUUID> YmluYmluYmluYmluYmluMA== </RecycleBinUUID>
+	</Meta>
+	<Root>
+		<Group>
+			<UUID>cm9vdA==</UUID>
+			<Name>Root</Name>
+			<Entry>
+				<Tags>a, b;c</Tags>
+				<Times><CreationTime>AAAAAAAAAAA=</CreationTime><LastModificationTime>gIW+3A4AAAA=</LastModificationTime></Times>
+				<String><Key>Title</Key><Value>Key query</Value></String>
+				<String><Key>UserName</Key><Value>u1</Value></String>
+				<String><Key>otp</Key><Value>key=JBSWY3DPEHPK3PXP&amp;size=8&amp;step=60&amp;otpHashMode=sha256</Value></String>
+				<String><Key>Protected</Key><Value Protected="True">c2VjcmV0IHZhbHVl</Value></String>
+				<String><Key>Empty</Key><Value/></String>
+			</Entry>
+			<Entry>
+				<String><Key>Title</Key><Value>Seed</Value></String>
+				<String><Key>TOTP Seed</Key><Value>JBSW Y3DP EHPK 3PXP</Value></String>
+				<String><Key>TOTP Settings</Key><Value>60;8</Value></String>
+			</Entry>
+			<Entry>
+				<String><Key>Title</Key><Value>Built-in</Value></String>
+				<String><Key>TimeOtp-Secret-Base32</Key><Value>JBSWY3DPEHPK3PXP</Value></String>
+				<String><Key>TimeOtp-Length</Key><Value>7</Value></String>
+				<String><Key>TimeOtp-Period</Key><Value>45</Value></String>
+				<String><Key>TimeOtp-Algorithm</Key><Value>HMAC-SHA-512</Value></String>
+			</Entry>
+			<Entry>
+				<String><Key>Title</Key><Value>Hex only</Value></String>
+				<String><Key>TimeOtp-Secret-Hex</Key><Value>48656c6c6f</Value></String>
+				<String><Key>Notes</Key><Value>just a note</Value></String>
+			</Entry>
+			<Entry>
+				<String><Key>Title</Key><Value>Bare secret</Value></String>
+				<String><Key>OTP</Key><Value>jbswy3dpehpk3pxp==</Value></String>
+				<String><Key>Title</Key><Value>Duplicate title</Value></String>
+			</Entry>
+			<Group>
+				<UUID>YmluYmluYmluYmluYmluMA==</UUID>
+				<Name>Recycle Bin</Name>
+				<Entry><String><Key>Title</Key><Value>Deleted</Value></String></Entry>
+				<Group><Name>Inner</Name><Entry><String><Key>Title</Key><Value>Deleted 2</Value></String></Entry></Group>
+			</Group>
+			<Group>
+				<Name> Work </Name>
+				<Group>
+					<Name>Servers</Name>
+					<Entry>
+						<String><Key>Title</Key><Value>Deep</Value></String>
+						<String><Key>URL</Key><Value>https://deep.example.com</Value></String>
+						<Binary><Key>a.txt</Key><Value Ref="0"/></Binary>
+						<History><Entry><String><Key>Title</Key><Value>Old</Value></String></Entry>
+						<Entry><String><Key>Title</Key><Value>Older</Value></String></Entry></History>
+					</Entry>
+				</Group>
+			</Group>
+		</Group>
+	</Root>
+</KeePassFile>

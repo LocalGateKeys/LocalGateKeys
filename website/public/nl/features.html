@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Functies | LocalGateKeys</title>
+  <meta name="description" content="Wat LocalGateKeys doet, per editie: versleutelde kluis, invullen in browser en op de desktop, passkeys, Windows Hello, 2FA-codes, imports, back-ups en synchronisatie tussen apparaten.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/nl/features">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/features">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/features">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/features">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/features">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/features">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/features">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/features">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/features">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/features">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/features">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/features">
+  <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../brand/icon-256.png">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">Naar de inhoud</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../nl/index.html">
+        <img src="../brand/icon.svg" alt="" width="36" height="36">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav aria-label="Hoofdmenu">
+        <ul class="nav">
+          <li><a href="../nl/features.html" aria-current="page">Functies</a></li>
+          <li><a href="../nl/pricing.html">Prijzen</a></li>
+          <li><a href="../nl/security.html">Beveiliging</a></li>
+          <li><a href="../nl/get-started.html">Aan de slag</a></li>
+          <li><a href="../nl/help.html">Handleiding</a></li>
+          <li><a href="../nl/download.html">Downloaden</a></li>
+          <li><a href="../nl/support.html">Support</a></li>
+          <li><a href="../buy.html">Pro kopen</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Alles wat het doet, en waar het dat doet</h1>
+  <p class="lead">Dit alles draait op je eigen apparaten. Free bevat tot 4 items; <a href="../nl/pricing.html">Pro</a> heft de limiet op en voegt synchronisatie, 2FA-codes en documenten toe.</p>
+</div>
+<div class="wrap">
+  <figure class="shot"><picture><source srcset="../screenshots/home-vault-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/home-vault-dark.webp" width="2880" height="1800" alt="De startpagina van LocalGateKeys: wachtwoordstatus, aankomende herinneringen, een kaart met eenmalige codes met live 2FA-codes en een lijst met logins met sitelogo's." loading="lazy" decoding="async"></picture><figcaption>Start: wachtwoordstatus, herinneringen, live 2FA-codes en je items. Demokluis met verzonnen accounts.</figcaption></figure>
+</div>
+
+<div class="wrap page-body">
+  <section class="feature-group" aria-labelledby="f-vault">
+    <h2 id="f-vault">De kluis</h2>
+    <dl>
+      <div><dt>Versleuteld op je schijf</dt><dd>Alles wat je opslaat wordt versleuteld met een sleutel die door je hoofdwachtwoord wordt beschermd, met Argon2id en AES-256-GCM. Ook namen, gebruikersnamen en websites zijn versleuteld, niet alleen wachtwoorden.</dd></div>
+      <div><dt>Meer dan wachtwoorden</dt><dd>Logins voor websites en desktop-apps, passkeys, betaalkaarten, bankrekeningen, identiteiten, beveiligde notities, documenten, SSH-sleutels, API-sleutels, wifi-netwerken, bladwijzers, softwarelicenties, abonnementen, garanties en aankopen, elk met eigen velden.</dd></div>
+      <div><dt>Documenten (Pro)</dt><dd>Bewaar bestanden zoals gescande documenten in de kluis, tot 25 MB per stuk. Elk bestand wordt met een eigen sleutel versleuteld. Je kunt een document bekijken, een kopie opslaan of het in een andere app openen.</dd></div>
+      <div><dt>2FA-codes (Pro)</dt><dd>Sla de installatiesleutel van een site op en LocalGateKeys toont de actuele code bovenaan de login en op een kaart Eenmalige codes op de startpagina. Codes volgen de TOTP-standaard (RFC 6238): 6 tot 8 cijfers, 15 tot 120 seconden, SHA-1, SHA-256 of SHA-512.</dd></div>
+      <div><dt>Een code toevoegen via een QR-code</dt><dd>Maak met Win+Shift+S een knipsel van de QR-code op de 2FA-instelpagina van de site en plak het, of houd de code voor je webcam. Een QR-code van een Google Authenticator-export werkt ook. De afbeelding wordt op je pc gelezen en nooit opgeslagen.</dd></div>
+      <div><dt>Wachtwoordgenerator</dt><dd>Willekeurige wachtwoorden van 8 tot 256 tekens, of wachtzinnen van 3 tot 16 woorden.</dd></div>
+      <div><dt>Wachtwoordstatus</dt><dd>Zie welke opgeslagen wachtwoorden zwak, hergebruikt of ouder dan een jaar zijn, of waarbij een 2FA-code ontbreekt. Controles op datalekken bij Have I Been Pwned staan uit tot je ze aanzet, draaien alleen als je ze start en sturen alleen vijf tekens van een hash, nooit het wachtwoord.</dd></div>
+      <div><dt>Sitelogo's en soortpictogrammen</dt><dd>Elk item toont het pictogram van de site, een ingebouwd logo voor bekende sites of een pictogram voor zijn soort, zodat je het in één oogopslag herkent.</dd></div>
+      <div><dt>Zoeken en verzamelingen</dt><dd>Vind items met een opdrachtenpalet (Ctrl+K), filterchips, favorieten en je eigen verzamelingen. Pijltoetsen, Enter en Ctrl+C werken in de itemlijst direct vanuit het zoekvak.</dd></div>
+      <div><dt>Prullenbak en ongedaan maken</dt><dd>Verwijderde items gaan naar de prullenbak, en het bericht dat dat bevestigt heeft een knop Ongedaan maken. De prullenbak leegt zichzelf na 30 dagen, of bewaart alles tot je hem zelf leegt.</dd></div>
+      <div><dt>Wachtwoordgeschiedenis</dt><dd>Als het wachtwoord van een login verandert, blijven de laatste vijf oude wachtwoorden bewaard in de versleutelde geschiedenis.</dd></div>
+    </dl>
+    <div class="shots">
+      <figure class="shot"><picture><source srcset="../screenshots/item-2fa-code-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/item-2fa-code-dark.webp" width="2880" height="1800" alt="Een GitHub-login geopend in LocalGateKeys, met bovenaan de actuele 2FA-code, daarna gebruikersnaam, verborgen wachtwoord, website, notities en herstelcodes." loading="lazy" decoding="async"></picture><figcaption>De actuele 2FA-code staat bovenaan de login.</figcaption></figure>
+      <figure class="shot"><picture><source srcset="../screenshots/generator-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/generator-dark.webp" width="2880" height="1800" alt="De wachtwoordgenerator met een willekeurig wachtwoord van 20 tekens en opties voor lengte, letters, cijfers en symbolen." loading="lazy" decoding="async"></picture><figcaption>De generator maakt willekeurige wachtwoorden of wachtzinnen.</figcaption></figure>
+      <figure class="shot"><picture><source srcset="../screenshots/security-center-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/security-center-dark.webp" width="2880" height="1800" alt="Het beveiligingscentrum met een score van 77 van de 100, met zwakke, hergebruikte, oude wachtwoorden en wachtwoorden zonder 2FA om na te lopen, plus controles op ontgrendelen en back-ups." loading="lazy" decoding="async"></picture><figcaption>Het beveiligingscentrum toont wat je eerst moet verhelpen.</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-move">
+    <h2 id="f-move">Binnenhalen en exporteren</h2>
+    <dl>
+      <div><dt>Importeren uit andere wachtwoordmanagers</dt><dd>Haal exports binnen uit 1Password, Bitwarden, LastPass, Dashlane, Proton Pass, KeePass en KeePassXC (ook <code>.kdbx</code>-bestanden), Chrome, Edge, Brave, Firefox en Safari, of uit een ander csv-bestand. Je controleert elk item voordat er iets wordt weggeschreven, en de import gaat nooit online.</dd></div>
+      <div><dt>Exporteren</dt><dd>Exporteer naar een versleuteld KeePass KDBX 4-bestand, of naar Bitwarden-compatibele csv of JSON, of KeePass XML. Elke export vraagt eerst om je hoofdwachtwoord.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-fill">
+    <h2 id="f-fill">Inloggegevens invullen</h2>
+    <dl>
+      <div><dt>Extensie voor Chrome en Edge</dt><dd>Vul logins in en sla ze op op websites, ook bij aanmeldingen die om gebruikersnaam en wachtwoord op aparte pagina's vragen. De extensie vraagt de app op je pc via een lokale hulpmodule om logins die bij precies die site horen. Ze vult ook 2FA-codes, adressen en betaalkaarten in.</dd></div>
+      <div><dt>Opslagvragen onder jouw controle</dt><dd>Nadat je bent ingelogd, biedt de extensie aan een nieuwe login op te slaan of een gewijzigd wachtwoord bij te werken. Je kunt de vraag voor elke site uitzetten via de werkbalkknop.</dd></div>
+      <div><dt>Jij start elke invulling</dt><dd>Er wordt niets ingevuld tot je een account kiest. Formulieren worden niet voor je verzonden, tenzij je "Aanmelden na invullen" aanzet in Instellingen, en dan alleen na een invulling die jij hebt gestart.</dd></div>
+      <div><dt>Passkeys</dt><dd>Als een website in Chrome of Edge een passkey aanbiedt, kan LocalGateKeys die in je kluis opslaan en je ermee inloggen. Je keurt elke passkey goed in de desktop-app, met Windows Hello of je hoofdwachtwoord, en het eigen passkey-venster van de browser is altijd één klik weg. De privésleutel verlaat de app nooit.</dd></div>
+      <div><dt>Windows-apps invullen</dt><dd>Vul aanmeldvensters van Windows-programma's in met een invulknop naast het wachtwoordveld of een sneltoets (Ctrl+Shift+Spatie). Elke app wordt eenmalig gekoppeld, en invullen wordt geweigerd als het programma, het venster of de velden sindsdien zijn veranderd.</dd></div>
+      <div><dt>Snelle toegang</dt><dd>Doorzoek je kluis en kopieer vanaf elke plek met een sneltoets (standaard Ctrl+Alt+K). Met Ctrl+Alt+L vergrendel je de kluis meteen.</dd></div>
+      <div><dt>Nooit keylogging</dt><dd>LocalGateKeys installeert geen toetsenbordhook, leest geen schermcontent om wachtwoorden te vinden en injecteert niets in andere programma's. Als een app geen echte aanmeldvelden beschikbaar stelt, wordt er niet ingevuld.</dd></div>
+    </dl>
+    <figure class="shot shot-small"><img src="../screenshots/browser-fill.webp" width="480" height="540" alt="Een aanmeldpagina met de LocalGateKeys-browserextensie die twee opgeslagen accounts voor die site aanbiedt." loading="lazy" decoding="async"><figcaption>De extensie biedt alleen de logins aan die voor de site waar je bent zijn opgeslagen.</figcaption></figure>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-unlock">
+    <h2 id="f-unlock">Ontgrendelen</h2>
+    <dl>
+      <div><dt>Hoofdwachtwoord</dt><dd>Minstens 12 tekens, nooit naar schijf geschreven. Het is het enige dat je kluis opent, en wij kunnen het niet resetten.</dd></div>
+      <div><dt>Windows Hello</dt><dd>Ontgrendel met je vingerafdruk, gezicht of pincode via Windows Hello, nadat je dat in LocalGateKeys hebt ingesteld.</dd></div>
+      <div><dt>Cameracontrole</dt><dd>Een optionele gezichtscontrole met de webcam voor pc's zonder Windows Hello. Het is een gemak, geen gecertificeerde bescherming tegen spoofing; kies Windows Hello als dat kan.</dd></div>
+      <div><dt>Herstelzin</dt><dd>Een optionele zin van 24 woorden die de kluis kan openen als je het hoofdwachtwoord vergeet. Hij wordt eenmaal getoond en nooit door de app bewaard.</dd></div>
+      <div><dt>Automatisch vergrendelen en klembord wissen</dt><dd>De kluis vergrendelt na een periode die je zelf kiest, en gekopieerde wachtwoorden worden van het klembord gewist. Alleen wat LocalGateKeys heeft gekopieerd wordt gewist.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-backup">
+    <h2 id="f-backup">Back-ups</h2>
+    <dl>
+      <div><dt>Geplande versleutelde back-ups</dt><dd>Dagelijks of wekelijks, op een tijdstip dat je instelt. Elke back-up is een compleet versleuteld bestand, na het schrijven gecontroleerd, met bijlagen erbij.</dd></div>
+      <div><dt>Extra kopie in een map naar keuze</dt><dd>Laat elke back-up kopiëren naar een map van OneDrive, Google Drive, Dropbox of Proton Drive, of ergens anders. Alleen versleutelde back-upbestanden worden gekopieerd, nooit de actieve kluis.</dd></div>
+      <div><dt>Versleutelde overdrachtspakketten</dt><dd>Verplaats geselecteerde items naar een andere kluis in een versleuteld bestand dat met een eigen wachtwoord is beschermd.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-sync">
+    <h2 id="f-sync">Synchronisatie tussen je apparaten (Pro)</h2>
+    <dl>
+      <div><dt>Via je wifi thuis</dt><dd>Koppel een pc eenmalig met een QR-code voor eenmalig gebruik (tussen pc's plak je de tekst ervan). Als beide zijn ontgrendeld en op hetzelfde netwerk zitten, wisselen ze wijzigingen rechtstreeks uit via een geauthenticeerde, versleutelde verbinding. Er gaat niets via internet.</dd></div>
+      <div><dt>Via je eigen cloudmap</dt><dd>Als je pc's zelden op hetzelfde netwerk zitten, synchroniseer dan via een map van OneDrive, Dropbox, Google Drive of iCloud Drive die je al gebruikt, beschermd door een synchronisatiewachtwoord. De aanbieder slaat alleen versleutelde bestanden op. Je kunt beide routes gebruiken.</dd></div>
+      <div><dt>Wat er synchroniseert</dt><dd>Logins voor websites en desktop-apps, en andere items zoals notities en bladwijzers. Verzamelingen, documenten en bijlagen synchroniseren nog niet. Bij bewerkingen op twee pc's tegelijk blijven beide versies behouden, en een verwijdering verplaatst het item op de andere pc's naar de prullenbak.</dd></div>
+      <div><dt>iPhone</dt><dd>De iPhone-app synchroniseert met je Windows-pc. <a href="https://apps.apple.com/app/id6825488435">Download hem in de App Store</a>.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-privacy">
+    <h2 id="f-privacy">Privacy</h2>
+    <dl>
+      <div><dt>Geen account</dt><dd>Je hoeft je nooit aan te melden of in te loggen. Een Pro-licentie is een sleutel die je zelf bewaart en die op je pc wordt gecontroleerd.</dd></div>
+      <div><dt>Geen telemetrie</dt><dd>De app verstuurt geen gebruiksgegevens, crashrapporten of analytics.</dd></div>
+      <div><dt>Strikte offlinemodus</dt><dd>Standaard aan. Blokkeert internetverzoeken op de achtergrond en controles op datalekken, en een updatecontrole vraagt eerst om toestemming.</dd></div>
+      <div><dt>Websitepictogrammen, jouw keuze</dt><dd>Om het pictogram van een site te tonen, downloadt de app het van die site. Daarmee weet de site dat je er een account hebt, en verder niets. Standaard uit: zet "Websitepictogrammen tonen" aan in Instellingen (de strikte offlinemodus moet uit staan).</dd></div>
+      <div><dt>Updatecontroles die jij start</dt><dd>Bij het controleren op updates wordt één klein ondertekend bestand gedownload. De app downloadt of installeert nooit zelf iets.</dd></div>
+    </dl>
+  </section>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand">LocalGateKeys</p>
+        <p>Een wachtwoordmanager voor Windows die je kluis op je eigen apparaten bewaart.</p>
+        <p class="quiet">Deze site plaatst geen cookies, gebruikt geen analytics en laadt niets van andere bedrijven.</p>
+      </div>
+      <nav aria-label="Product">
+        <h2>Product</h2>
+        <ul>
+          <li><a href="../nl/features.html">Functies</a></li>
+          <li><a href="../nl/pricing.html">Prijzen</a></li>
+          <li><a href="../nl/download.html">Downloaden</a></li>
+          <li><a href="../nl/licence.html">Je Pro-licentie</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Hulp">
+        <h2>Hulp</h2>
+        <ul>
+          <li><a href="../nl/help.html">Handleiding</a></li>
+          <li><a href="../nl/support.html">Support en veelgestelde vragen</a></li>
+          <li><a href="../nl/security.html">Beveiliging</a></li>
+          <li><a href="../legal/vulnerability-disclosure.html">Een kwetsbaarheid melden</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Juridisch">
+        <h2>Juridisch</h2>
+        <p class="quiet">Deze documenten zijn in het Engels, en de Engelse versie is van toepassing en bindend.</p>
+        <ul>
+          <li><a href="../legal/eula.html">Licentieovereenkomst</a></li>
+          <li><a href="../legal/privacy.html">Privacybeleid</a></li>
+          <li><a href="../legal/terms-of-sale.html">Verkoopvoorwaarden</a></li>
+          <li><a href="../legal/refunds.html">Terugbetalingsbeleid</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base">
+      <p>&copy; 2026 Ilias Pelekas. Contact: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows is een handelsmerk van de Microsoft-bedrijvengroep. Chrome is een handelsmerk van Google LLC.</p>
+      <p class="lang-switch" role="navigation" aria-label="Taal"><a href="../features.html" hreflang="en" lang="en">English</a> · <a href="../es/features.html" hreflang="es" lang="es">Español</a> · <a href="../it/features.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/features.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/features.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../ja/features.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/features.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/features.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/features.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/features.html" hreflang="nl" lang="nl" aria-current="true">Nederlands</a></p>
+    </div>
+  </footer>
+</body>
+</html>

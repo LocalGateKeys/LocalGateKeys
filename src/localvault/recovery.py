@@ -36,6 +36,7 @@ from .config import atomic_write_json
 from .secret_text import SecretText, secrets_match
 from .session_guard import StaleSession
 from .version import APP_VERSION
+from .i18n import t
 
 RECOVERY_KIT_FORMAT = "localgatekeys-recovery-kit"
 RECOVERY_KIT_VERSION = 1
@@ -58,32 +59,32 @@ def _local_path(value: Path | str, *, label: str) -> Path:
     try:
         raw = os.fspath(value)
     except TypeError as exc:
-        raise RecoveryError(f"{label} must be a local path") from exc
+        raise RecoveryError(t("recovery.mustBeALocalPath", label=label)) from exc
     if not isinstance(raw, str) or not raw.strip() or "\x00" in raw:
-        raise RecoveryError(f"{label} must be a local path")
+        raise RecoveryError(t("recovery.mustBeALocalPath", label=label))
     if raw.startswith(("\\\\", "//")) or "://" in raw:
-        raise RecoveryError(f"{label} must be a local, non-network path")
+        raise RecoveryError(t("recovery.mustBeALocalNon", label=label))
     try:
         return Path(raw).expanduser().absolute()
     except (OSError, RuntimeError, ValueError) as exc:
-        raise RecoveryError(f"{label} is not a usable local path") from exc
+        raise RecoveryError(t("recovery.isNotAUsableLocal", label=label)) from exc
 
 
 def _existing_parent(path: Path) -> Path:
     candidate = path.parent
     while not candidate.exists():
         if candidate == candidate.parent:
-            raise RecoveryError("Could not find a local destination directory")
+            raise RecoveryError(t("recovery.couldNotFindALocal"))
         candidate = candidate.parent
     if candidate.is_symlink() or not candidate.is_dir():
-        raise RecoveryError("Recovery destination must use a regular local directory")
+        raise RecoveryError(t("recovery.recoveryDestinationMustUseA"))
     return candidate
 
 
 def _regular_source(value: Path | str, *, label: str) -> Path:
     path = _local_path(value, label=label)
     if path.is_symlink() or not path.is_file():
-        raise RecoveryError(f"{label} must be a regular non-symlink file")
+        raise RecoveryError(t("recovery.mustBeARegularNon", label=label))
     return path
 
 
@@ -91,26 +92,26 @@ def _destination_file(value: Path | str, *, label: str, overwrite: bool = False)
     path = _local_path(value, label=label)
     _existing_parent(path)
     if path.exists() and (path.is_symlink() or path.is_dir()):
-        raise RecoveryError(f"{label} must be a regular file")
+        raise RecoveryError(t("recovery.mustBeARegularFile", label=label))
     if path.exists() and not overwrite:
-        raise RecoveryError(f"{label} already exists; choose a new destination")
+        raise RecoveryError(t("recovery.alreadyExistsChooseANew", label=label))
     return path
 
 
 def _destination_profile(value: Path | str) -> Path:
-    path = _local_path(value, label="Restore destination")
+    path = _local_path(value, label=t("recovery.restoreDestination"))
     if path.name in {"", ".", ".."}:
-        raise RecoveryError("Restore destination must name a new profile directory")
+        raise RecoveryError(t("recovery.restoreDestinationMustNameA"))
     _existing_parent(path)
     if path.exists():
         if path.is_symlink() or not path.is_dir():
-            raise RecoveryError("Restore destination must be a new local directory")
+            raise RecoveryError(t("recovery.restoreDestinationMustBeA"))
         try:
             if any(path.iterdir()):
-                raise RecoveryError("Restore destination already exists and is not empty")
+                raise RecoveryError(t("recovery.restoreDestinationAlreadyExistsAnd"))
         except OSError as exc:
-            raise RecoveryError("Could not inspect the restore destination") from exc
-        raise RecoveryError("Restore destination must not already exist")
+            raise RecoveryError(t("recovery.couldNotInspectTheRestore")) from exc
+        raise RecoveryError(t("recoveryCenter.restoreDestinationMustNotAlready"))
     return path
 
 
@@ -118,18 +119,18 @@ def _password(value: str | SecretText, *, label: str) -> str | SecretText:
     """A backup or vault master password, as ``str`` or the caller's ``SecretText`` (never converted to ``str``)."""
     count = value.char_count if isinstance(value, SecretText) else len(value) if isinstance(value, str) else -1
     if not 12 <= count <= 4096:
-        raise RecoveryError(f"{label} must contain at least 12 characters")
+        raise RecoveryError(t("recovery.mustContainAtLeast12", label=label))
     return value
 
 
 def _independent_passwords(backup_password: str | SecretText, vault_password: str | SecretText | None = None) -> None:
     if vault_password is not None and secrets_match(backup_password, vault_password):
-        raise RecoveryError("Use an independent backup password, not the vault master password")
+        raise RecoveryError(t("recovery.useAnIndependentBackupPassword"))
 
 
 def sha256_file(path: Path | str) -> str:
     """Return a bounded-stream SHA-256 digest for a local regular file."""
-    source = _regular_source(path, label="Checksum source")
+    source = _regular_source(path, label=t("recovery.checksumSource"))
     digest = hashlib.sha256()
     try:
         with source.open("rb") as handle:
@@ -139,7 +140,7 @@ def sha256_file(path: Path | str) -> str:
                     break
                 digest.update(chunk)
     except OSError as exc:
-        raise RecoveryError("Could not calculate the recovery checksum") from exc
+        raise RecoveryError(t("recovery.couldNotCalculateTheRecovery")) from exc
     return digest.hexdigest()
 
 
@@ -157,18 +158,18 @@ def _same_disk(first: Path, second: Path) -> bool:
 def check_disk_space(path: Path | str, *, required_bytes: int = 0, reserve_bytes: int = 0) -> dict[str, int | str]:
     """Check local free space without creating a destination or profile."""
     if type(required_bytes) is not int or required_bytes < 0:
-        raise RecoveryError("Required disk space must be a non-negative integer")
+        raise RecoveryError(t("recovery.requiredDiskSpaceMustBe"))
     if type(reserve_bytes) is not int or reserve_bytes < 0:
-        raise RecoveryError("Reserved disk space must be a non-negative integer")
-    target = _local_path(path, label="Disk-space path")
+        raise RecoveryError(t("recovery.reservedDiskSpaceMustBe"))
+    target = _local_path(path, label=t("recovery.diskSpacePath"))
     parent = _existing_parent(target if target.exists() and target.is_dir() else target)
     try:
         usage = shutil.disk_usage(parent)
     except OSError as exc:
-        raise RecoveryError("Could not inspect free space at the local destination") from exc
+        raise RecoveryError(t("recovery.couldNotInspectFreeSpace")) from exc
     needed = required_bytes + reserve_bytes
     if usage.free < needed:
-        raise RecoveryError("The selected recovery destination does not have enough free space")
+        raise RecoveryError(t("recovery.theSelectedRecoveryDestinationDoes"))
     return {
         "path": str(parent),
         "free_bytes": int(usage.free),
@@ -204,7 +205,7 @@ def _manifest_payload(backup: Path, *, inventory: Mapping[str, Any] | None = Non
 
 def _validate_digest(value: Any) -> str:
     if not isinstance(value, str) or len(value) != 64 or any(char not in "0123456789abcdefABCDEF" for char in value):
-        raise RecoveryError("Recovery checksum is malformed")
+        raise RecoveryError(t("recovery.recoveryChecksumIsMalformed"))
     return value.lower()
 
 
@@ -214,26 +215,26 @@ def verify_sha256_manifest(
 ) -> dict[str, Any]:
     """Verify a sidecar checksum manifest without decrypting the backup."""
     source = _regular_source(backup, label="Backup")
-    manifest_path = _regular_source(manifest or _manifest_path(source), label="Checksum manifest")
+    manifest_path = _regular_source(manifest or _manifest_path(source), label=t("recovery.checksumManifest"))
     try:
         raw = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        raise RecoveryError("The recovery checksum manifest is unreadable") from exc
+        raise RecoveryError(t("recovery.theRecoveryChecksumManifestIs")) from exc
     if not isinstance(raw, dict) or raw.get("format") != CHECKSUM_MANIFEST_FORMAT or raw.get("version") != CHECKSUM_MANIFEST_VERSION:
-        raise RecoveryError("Unsupported recovery checksum manifest")
+        raise RecoveryError(t("recovery.unsupportedRecoveryChecksumManifest"))
     record = raw.get("backup")
     if not isinstance(record, dict) or record.get("name") != source.name:
-        raise RecoveryError("Recovery checksum manifest does not describe this backup")
+        raise RecoveryError(t("recovery.recoveryChecksumManifestDoesNot"))
     try:
         expected_size = int(record["size"])
     except (KeyError, TypeError, ValueError) as exc:
-        raise RecoveryError("Recovery checksum manifest is malformed") from exc
+        raise RecoveryError(t("recovery.recoveryChecksumManifestIsMalformed")) from exc
     if expected_size != source.stat().st_size:
-        raise RecoveryError("The recovery backup checksum manifest does not match its file size")
+        raise RecoveryError(t("recovery.theRecoveryBackupChecksumManifest"))
     expected_digest = _validate_digest(record.get("sha256"))
     actual_digest = sha256_file(source)
     if actual_digest != expected_digest:
-        raise RecoveryError("The recovery backup checksum does not match its manifest")
+        raise RecoveryError(t("recovery.theRecoveryBackupChecksumDoes"))
     return {
         "verified": True,
         "backup": source.name,
@@ -284,15 +285,15 @@ def _safe_inventory(value: BackupInventory | Mapping[str, Any]) -> dict[str, Any
         }
         result = {key: value[key] for key in allowed if key in value}
     else:
-        raise RecoveryError("Backup inventory is malformed")
+        raise RecoveryError(t("recovery.backupInventoryIsMalformed"))
     if result.get("recovery_phrase_enrolled") is not None and not isinstance(result["recovery_phrase_enrolled"], bool):
-        raise RecoveryError("Backup inventory recovery-phrase flag is malformed")
+        raise RecoveryError(t("recovery.backupInventoryRecoveryPhraseFlag"))
     if "backup_sha256" in result:
         result["backup_sha256"] = _validate_digest(result["backup_sha256"])
     if "warnings" in result:
         warnings = result["warnings"]
         if not isinstance(warnings, (list, tuple)) or not all(isinstance(item, str) for item in warnings):
-            raise RecoveryError("Backup inventory warnings are malformed")
+            raise RecoveryError(t("recovery.backupInventoryWarningsAreMalformed"))
         result["warnings"] = list(warnings)
     return result
 
@@ -309,7 +310,7 @@ def _inventory_from_info(
     warnings: list[str] = []
     same_disk = bool(source_root and _same_disk(source_root, backup.parent))
     if same_disk:
-        warnings.append("The backup destination appears to be on the same disk as the live profile.")
+        warnings.append(t("recovery.theBackupDestinationAppearsTo"))
     return BackupInventory(
         version=int(info.get("version", FULL_BACKUP_VERSION)),
         path=str(backup),
@@ -382,17 +383,17 @@ def create_recovery_backup(
     reserve_bytes: int = 0,
 ) -> dict[str, Any]:
     """Create and immediately authenticate a full encrypted v2 recovery backup."""
-    backup_password = _password(backup_password, label="Backup password")
+    backup_password = _password(backup_password, label=t("backupPasswordSheet.title"))
     confirmation = backup_password_confirmation if backup_password_confirmation is not None else confirm_backup_password
     if confirmation is not None and not secrets_match(confirmation, backup_password):
-        raise RecoveryError("The backup password confirmation did not match")
+        raise RecoveryError(t("recovery.theBackupPasswordConfirmationDid"))
     if master_password is not None:
         vault_password = master_password if vault_password is None else vault_password
     if vault_password is not None:
-        _password(vault_password, label="Vault master password")
+        _password(vault_password, label=t("recovery.vaultMasterPassword"))
     _independent_passwords(backup_password, vault_password)
-    destination_path = _destination_file(destination, label="Recovery backup destination", overwrite=overwrite)
-    source_root = _local_path(profile_dir or (Path(vault_file).parent if vault_file is not None else destination_path.parent), label="Profile source")
+    destination_path = _destination_file(destination, label=t("recovery.recoveryBackupDestination"), overwrite=overwrite)
+    source_root = _local_path(profile_dir or (Path(vault_file).parent if vault_file is not None else destination_path.parent), label=t("recovery.profileSource"))
     if source_root == destination_path.parent:
         # This is allowed, but the Recovery Center must make the weak
         # availability property visible to the user.
@@ -405,11 +406,11 @@ def create_recovery_backup(
     disk = check_disk_space(destination_path, required_bytes=estimated, reserve_bytes=reserve_bytes)
     sidecar = _destination_file(
         manifest_path or _manifest_path(destination_path),
-        label="Checksum manifest destination",
+        label=t("recovery.checksumManifestDestination"),
         overwrite=True,
     )
     if sidecar == destination_path:
-        raise RecoveryError("Checksum manifest destination must be separate from the recovery backup")
+        raise RecoveryError(t("recovery.checksumManifestDestinationMustBe"))
     # Keep any existing good backup in place until the new archive has passed
     # authenticated preflight. export_full_backup publishes atomically to its
     # destination, so target a sibling staging file rather than the user's
@@ -469,7 +470,7 @@ def create_recovery_backup(
     except BackupError as exc:
         raise RecoveryError(str(exc)) from exc
     except (OSError, ValueError, TypeError) as exc:
-        raise RecoveryError("Could not create the recovery backup") from exc
+        raise RecoveryError(t("recovery.couldNotCreateTheRecovery")) from exc
     finally:
         staging_path.unlink(missing_ok=True)
 
@@ -485,10 +486,10 @@ def inspect_recovery_backup(
     progress: Callable[..., Any] | None = None,
 ) -> dict[str, Any]:
     """Return safe inventory metadata after authenticating the v2 container."""
-    backup = _regular_source(source, label="Recovery backup")
-    backup_password = _password(backup_password, label="Backup password")
+    backup = _regular_source(source, label=t("recovery.recoveryBackup"))
+    backup_password = _password(backup_password, label=t("backupPasswordSheet.title"))
     if vault_password is not None:
-        _password(vault_password, label="Vault master password")
+        _password(vault_password, label=t("recovery.vaultMasterPassword"))
     _independent_passwords(backup_password, vault_password)
     chosen_manifest = _manifest_path(backup) if manifest_path is None and _manifest_path(backup).exists() else manifest_path
     if chosen_manifest is not None:
@@ -537,15 +538,15 @@ def verify_recovery_backup(
     Only temporary encrypted staging data is used; the live profile is not
     opened, rewritten, or replaced.
     """
-    backup = _regular_source(source, label="Recovery backup")
-    backup_password = _password(backup_password, label="Backup password")
-    vault_password = _password(vault_password, label="Vault master password")
+    backup = _regular_source(source, label=t("recovery.recoveryBackup"))
+    backup_password = _password(backup_password, label=t("backupPasswordSheet.title"))
+    vault_password = _password(vault_password, label=t("recovery.vaultMasterPassword"))
     _independent_passwords(backup_password, vault_password)
     if expected_sha256 is not None:
         expected = _validate_digest(expected_sha256)
         actual = sha256_file(backup)
         if actual != expected:
-            raise RecoveryError("The recovery backup SHA-256 does not match the expected checksum")
+            raise RecoveryError(t("recovery.theRecoveryBackupSha256"))
     result = inspect_recovery_backup(
         backup,
         backup_password=backup_password,
@@ -572,14 +573,14 @@ def plan_restore_as_new_profile(
     progress: Callable[..., Any] | None = None,
 ) -> dict[str, Any]:
     """Authenticate and stage a restore preview without touching destination."""
-    backup = _regular_source(source, label="Recovery backup")
+    backup = _regular_source(source, label=t("recovery.recoveryBackup"))
     destination_path = _destination_profile(destination)
-    backup_password = _password(backup_password, label="Backup password")
-    vault_password = _password(vault_password, label="Vault master password")
+    backup_password = _password(backup_password, label=t("backupPasswordSheet.title"))
+    vault_password = _password(vault_password, label=t("recovery.vaultMasterPassword"))
     _independent_passwords(backup_password, vault_password)
     backup_sha256 = sha256_file(backup)
     if expected_sha256 is not None and backup_sha256 != _validate_digest(expected_sha256):
-        raise RecoveryError("The recovery backup SHA-256 does not match the expected checksum")
+        raise RecoveryError(t("recovery.theRecoveryBackupSha256"))
     chosen_manifest = manifest_path
     if chosen_manifest is None and _manifest_path(backup).exists():
         chosen_manifest = _manifest_path(backup)
@@ -601,8 +602,8 @@ def plan_restore_as_new_profile(
     except BackupError as exc:
         raise RecoveryError(str(exc)) from exc
     warnings = [
-        "Restore creates a new profile and never overwrites an existing profile.",
-        "Automatic sign-in, external checks, and machine trust bindings will be disabled after restore.",
+        t("recovery.restoreCreatesANewProfile"),
+        t("recovery.automaticSignInExternalChecks"),
     ]
     return {
         "operation": "restore",
@@ -701,8 +702,8 @@ def restore_as_new_profile(
             info = restore_full_backup(
                 backup,
                 profile_dir=stage,
-                backup_password=_password(backup_password, label="Backup password"),
-                vault_password=_password(vault_password, label="Vault master password"),
+                backup_password=_password(backup_password, label=t("backupPasswordSheet.title")),
+                vault_password=_password(vault_password, label=t("recovery.vaultMasterPassword")),
                 validate_vault_password=True,
                 validate_master_password=True,
                 replace=False,
@@ -716,7 +717,7 @@ def restore_as_new_profile(
             raise RecoveryError(str(exc)) from exc
         _sanitize_restored_profile(stage, vault_password)
         if destination_path.exists():
-            raise RecoveryError("Restore destination appeared while the restore was staged")
+            raise RecoveryError(t("recovery.restoreDestinationAppearedWhileThe"))
         os.rename(stage, destination_path)
         published = True
         result = dict(info)
@@ -736,7 +737,7 @@ def restore_as_new_profile(
     except Exception as exc:  # noqa: BLE001 - normalize isolated restore failures
         # The stage is disposable, so parser/schema/sanitization failures must
         # never escape as a successful restore or expose implementation detail.
-        raise RecoveryError("Could not finalize the restored profile safely") from exc
+        raise RecoveryError(t("recovery.couldNotFinalizeTheRestored")) from exc
     finally:
         if not published:
             shutil.rmtree(stage, ignore_errors=True)
@@ -781,12 +782,12 @@ def write_recovery_kit(
     overwrite: bool = False,
 ) -> dict[str, Any]:
     """Write a non-secret JSON recovery kit; passwords are never accepted or stored."""
-    backup_path = _regular_source(backup, label="Recovery backup")
-    destination_path = _destination_file(destination, label="Recovery-kit destination", overwrite=overwrite)
+    backup_path = _regular_source(backup, label=t("recovery.recoveryBackup"))
+    destination_path = _destination_file(destination, label=t("recovery.recoveryKitDestination"), overwrite=overwrite)
     if not isinstance(app_version, str) or not app_version.strip() or len(app_version) > 80:
-        raise RecoveryError("Application version is malformed")
+        raise RecoveryError(t("recovery.applicationVersionIsMalformed"))
     if restore_guide is not None and (not isinstance(restore_guide, str) or len(restore_guide) > 20_000):
-        raise RecoveryError("Recovery guide is malformed")
+        raise RecoveryError(t("recovery.recoveryGuideIsMalformed"))
     kit_inventory = _safe_inventory(inventory) if inventory is not None else {
         "version": FULL_BACKUP_VERSION,
         "path": backup_path.name,
@@ -802,13 +803,13 @@ def write_recovery_kit(
         "role": "encrypted-full-backup-v2",
     }]
     if kit_manifest is not None:
-        descriptor = _file_descriptor(kit_manifest, label="Checksum manifest")
+        descriptor = _file_descriptor(kit_manifest, label=t("recovery.checksumManifest"))
         if descriptor is not None:
             descriptor["role"] = "sha256-manifest"
             files.append(descriptor)
     for value, label, role in (
-        (extension_package, "Extension package", "browser-extension-package"),
-        (installer_package, "Installer package", "installer-package"),
+        (extension_package, t("recovery.extensionPackage"), "browser-extension-package"),
+        (installer_package, t("recovery.installerPackage"), "installer-package"),
     ):
         descriptor = _file_descriptor(value, label=label)
         if descriptor is not None:
@@ -832,17 +833,17 @@ def write_recovery_kit(
     try:
         atomic_write_json(destination_path, payload)
     except (OSError, TypeError, ValueError) as exc:
-        raise RecoveryError("Could not write the recovery kit") from exc
+        raise RecoveryError(t("recovery.couldNotWriteTheRecovery")) from exc
     return {"operation": "recovery-kit", "path": str(destination_path), "files": files, "committed": True}
 
 
 def plan_backup_rotation(directory: Path | str, *, keep: int = DEFAULT_ROTATION_COUNT) -> dict[str, Any]:
     """Return a non-mutating plan for retaining recent backups and orphan manifests."""
-    root = _local_path(directory, label="Backup directory")
+    root = _local_path(directory, label=t("recovery.backupDirectory"))
     if root.is_symlink() or not root.is_dir():
-        raise RecoveryError("Backup directory must be a regular local directory")
+        raise RecoveryError(t("recovery.backupDirectoryMustBeA"))
     if type(keep) is not int or not 1 <= keep <= 100:
-        raise RecoveryError("Backup rotation count must be between 1 and 100")
+        raise RecoveryError(t("recovery.backupRotationCountMustBe"))
     backups = sorted((path for path in root.glob("*.lgk") if path.is_file() and not path.is_symlink()), key=lambda path: path.stat().st_mtime, reverse=True)
     retained = backups[:keep]
     remove = backups[keep:]
@@ -887,7 +888,7 @@ class RecoveryService:
     """Profile-scoped facade used by the Recovery Center and tests."""
 
     def __init__(self, profile_dir: Path | str, *, profile_name: str | None = None) -> None:
-        self.profile_dir = _local_path(profile_dir, label="Profile source")
+        self.profile_dir = _local_path(profile_dir, label=t("recovery.profileSource"))
         self.profile_name = profile_name or self.profile_dir.name
         self.last_backup: dict[str, Any] | None = None
 
@@ -926,7 +927,7 @@ class RecoverySessionBinding:
                  require_lease: Callable[[Any], Any] | None = None,
                  session_provider: Callable[[], Any] | None = None) -> None:
         if session is None:
-            raise RecoveryError("An unlocked vault session is required")
+            raise RecoveryError(t("recovery.anUnlockedVaultSessionIs"))
         self._session = session
         self._session_provider = session_provider
         self._guard = guard
@@ -944,14 +945,14 @@ class RecoverySessionBinding:
     def current(self) -> Any:
         current = self._session_provider() if self._session_provider is not None else self._session
         if current is not self._session or self._path_of(current) != self._path or not bool(getattr(current, "is_unlocked", False)):
-            raise StaleSession("Vault is locked or the active profile changed. Start recovery again.")
+            raise StaleSession(t("recovery.vaultIsLockedOrThe"))
         if self._guard is not None:
             if self.lease is None or not callable(getattr(self._guard, "require", None)):
-                raise StaleSession("The recovery action has no valid session lease")
+                raise StaleSession(t("recovery.theRecoveryActionHasNo"))
             self._guard.require(self.lease)
         if self._require_lease_callback is not None:
             if self.lease is None:
-                raise StaleSession("The recovery action has no valid session lease")
+                raise StaleSession(t("recovery.theRecoveryActionHasNo"))
             self._require_lease_callback(self.lease)
         return current
 

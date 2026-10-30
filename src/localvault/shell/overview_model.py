@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
+from ..i18n import t
+
 
 @dataclass(frozen=True)
 class HealthOverview:
@@ -26,10 +28,11 @@ def health_overview(health: dict, breached_ids: set[str] | None = None) -> Healt
     attention = frozenset(weak | reused | (breached or set()))
     total = int(health.get("total", 0))
     if total <= 0:
-        score, label = None, "No logins yet"
+        score, label = None, t("overview.health.noLogins")
     else:
         score = round(100 * (total - len(attention)) / total)
-        label = "Good" if score >= 80 else "Fair" if score >= 50 else "Poor"
+        label = (t("overview.health.good") if score >= 80 else t("overview.health.fair") if score >= 50
+                 else t("overview.health.poor"))
     return HealthOverview(score, label, len(weak), len(reused), len(no_2fa),
                           None if breached is None else len(breached), attention, no_2fa)
 
@@ -49,18 +52,14 @@ def backup_status(backup_dir: Path, warning: str = "") -> BackupStatus:
     return BackupStatus(max(mtimes) if mtimes else None, len(mtimes), warning)
 
 
-def _plural(n: int, unit: str) -> str:
-    return f"{n} {unit}{'' if n == 1 else 's'}"
-
-
 def age_text(seconds: float) -> str:
     if seconds < 60:
-        return "just now"
+        return t("overview.age.justNow")
     if seconds < 3600:
-        return f"{_plural(int(seconds // 60), 'minute')} ago"
+        return t("overview.age.minutes", count=int(seconds // 60))
     if seconds < 86400:
-        return f"{_plural(int(seconds // 3600), 'hour')} ago"
-    return f"{_plural(int(seconds // 86400), 'day')} ago"
+        return t("overview.age.hours", count=int(seconds // 3600))
+    return t("overview.age.days", count=int(seconds // 86400))
 
 
 @dataclass(frozen=True)
@@ -93,6 +92,7 @@ def upcoming_lines(rows: list[dict], today: date, limit: int = 3) -> list[Remind
     lines: list[ReminderLine] = []
     for due, row in dated[:limit]:
         days = (due - today).days
-        meta = "overdue" if days < 0 else "today" if days == 0 else _plural(days, "day")
+        meta = (t("overview.due.overdue") if days < 0 else t("overview.due.today") if days == 0
+                else t("overview.due.days", count=days))
         lines.append(ReminderLine(f"{due.strftime('%b').upper()} {due.day}", str(row.get("label", "")), meta, days < 0))
     return lines

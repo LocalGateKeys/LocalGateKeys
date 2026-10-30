@@ -1,5 +1,6 @@
 package app.localgatekeys.android.ui.generator
 
+import app.localgatekeys.android.i18n.appTxt
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
@@ -49,6 +50,7 @@ class GeneratorSheetTest {
         val model = GeneratorModel(
             GeneratorDefaults(settings), SystemRandomSource(), SecretClipboard(NoSink, settings, NoTimers, clock),
             PassphraseWordlist.FALLBACK, post = { it() },
+            t = appTxt(),
         )
         rule.setContent {
             LgkTheme {

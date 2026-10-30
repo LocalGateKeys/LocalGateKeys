@@ -1,5 +1,6 @@
 package app.localgatekeys.android.unlock
 
+import app.localgatekeys.android.i18n.appTxt
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
@@ -115,7 +116,7 @@ class SystemUnlockDeviceTest {
         val unreadable = app.lock.vaultUnreadable
         assertTrue(
             lockDetail(),
-            (unreadable && app.lock.errorMessage.value == AppLockModel.VAULT_WITHOUT_KEY_MESSAGE && app.lock.offersStartFresh.value) ||
+            (unreadable && app.lock.errorMessage.value == appTxt().s(AppLockModel.VAULT_WITHOUT_KEY_MESSAGE) && app.lock.offersStartFresh.value) ||
                 app.lock.errorMessage.value == "Set a screen lock in Settings to use LocalGateKeys.",
         )
         assertTrue("the wrapped key is never replaced", app.dirs.wrappedKey.isFile)

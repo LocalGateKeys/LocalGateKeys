@@ -1,0 +1,40 @@
+{
+  "hkdf_info": "localgatekeys|recovery-key|v1",
+  "kind": "bip39-english-24",
+  "master_password": "fixture master password 2026",
+  "note": "TEST ONLY: the phrase and password here are published.",
+  "phrase": "autumn indoor truth spirit hospital tip crunch seek meadow modify believe first post case deny lemon odor caution issue heart ankle coyote powder history",
+  "records": [
+    {
+      "created_at": 1793000200,
+      "custom_fields": [],
+      "favorite": false,
+      "id": "851b53e5-7cc2-41aa-9a0b-f9138e9cb190",
+      "kind": "web",
+      "label": "Mail",
+      "notes": "",
+      "password": "Correct-Horse-1",
+      "policy": {
+        "fill": "click",
+        "require_master_password": false,
+        "save_prompts": true,
+        "sign_in": "inherit"
+      },
+      "recovery_codes": [],
+      "scope": {
+        "origin": "https://mail.example.com",
+        "urls": [
+          {
+            "match": "exact_origin",
+            "url": "https://mail.example.com"
+          }
+        ]
+      },
+      "tags": [],
+      "totp": null,
+      "updated_at": 1793000200,
+      "username": "alex@example.com"
+    }
+  ],
+  "vault": "{\"catalog\":\"localgatekeys-catalog\",\"catalog_version\":2,\"cipher\":{\"ciphertext\":\"O4tDWBOLN0LMjhU3g1TaAsQgU3llugCDp2LDVorpoMz6mcYxdgUzlS8OhCQdfGazs6s30HQHt2qeMcQ6ZCz+JEYrRHtn92C+wK5c/jUgg60s94UDrfpfjpFtB1iK5I3Wr7torJexLdjG7SEJFBs4gfTE8jxj4e7TLZ/3suKGBbcMb/DdFT1V81QOQvHE4u2OWkMne+nUNZonT6zN6iXWkY6BCSk1HYp0ZApNzEUtUHNKh+9h9wIkwE5hcFsq/AWGuLI2WKtnm9ZcUOGBSLsSMoYTybOVd0lHr52pLcCHVXQGNLa6KHuQZpnIeqa5KPll9QijMcYfXCWikNWCooCBjTvAQuJOhZj5CZeCpGDKU1Hlfk2uzhvyIpDvAsF27mM6UfxjaAUyQUeKrqmiQtlBRBvNVGRoWiP6RE6a7O1l/62r0+Y7YhttI4ZKD25NYAkU0HDbiw+gY07SM6iz4v1R8Fx+ZjFiWRt6aIrGpKMSIz+/SXvUHAo3HPehV1KR3HcvP5kLlqPIIPndJmL2bkO+DJJRFQnKafaY8lf+45HKug9Etr4nWY1gekTkR9DlZZiZixw5sGzUd7DmKDcmtTkOzhEqxZYpTTS3KzNmSI4Ayg1vnE7pU6HRm2mxT5pCt3ZKBwxN2FVKXp0BaUGWdIGCmm0E6AsjEwssv9oISy1B57Xv/6U8SefeeX2NgV3FJQ9wtEQZ1AeBTnXM0IHMcWI7awBSeAvn1c/a4L/gofp+lqaLVGBsAsnBI6im65dksJKu5GralH388mhnbLDwceZC0wXTB4OY3UIO03YGOuBc9uWevvqXPvUgeEsgyjw1YXwZVIF/3NTjpWIZ8RoWXHOZ2Hoz5asQ4zl/xM5FbJZaozf8desjpY9Jyr+tZ/J3yk5ymcruO+nZ7N1nlFhLNugXnKex5Ua0ZJ2Tdg4UWPaQTG2I21trnx5nYD5xUXdRqypZos6zUq0/S64MhyL/stsX7vcUYpzZvFRuZWf+NHKGzOVPQWxqHL/gxRL7q/nzJX5FfzSTvK2Eez0GTyFFCx5CuTe8hA47cR2gqbosN8A0WjMSzMPDqf7ehf3eeE6RFJRyBJogDftxjqe6FH5TZq7+9PRXEePvLDuYemSq2JuHWofOlAToVJEmEac9Du1Ue+vTP6IxtC6xq3VNDsK40ICfEcP8dB6AM6DwjIYO+0tRlGRx9iM=\",\"name\":\"aes-256-gcm\",\"nonce\":\"q70UOdR/q0OZS2Su\"},\"format\":\"localgatekeys-vault-v3\",\"generation\":3,\"kdf\":{\"hash_len\":32,\"memory_cost_kib\":8192,\"name\":\"argon2id\",\"parallelism\":1,\"salt\":\"RNkONoc4nXqX7+/Utz7yUA==\",\"time_cost\":1},\"key_generation\":1,\"vault_id\":\"1c991921d54a4f5ca72ca8efea4f7d30\",\"version\":3,\"wrappers\":{\"password\":{\"ciphertext\":\"/7+9iJWGd/GuVE46lWq9v3cubQwsJtSKAyr/Qu2iMOD/PZAYvh6bwrBsgyCo3NaB\",\"nonce\":\"oBJ7rPbTjAG+QNCi\"},\"recovery\":{\"ciphertext\":\"BmodKu62q9PopngneKbmOj6g0Uu4CnJN3MHddu3sJQtCqYRqVLaxphRi1sgAUcVW\",\"kind\":\"bip39-english-24\",\"nonce\":\"AoXYggsxMavPe3L7\",\"salt\":\"faF3RU9tue0OfW/PkfspGQ==\"}}}"
+}

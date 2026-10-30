@@ -6,6 +6,8 @@ Layout (inside the folder the user picks: OneDrive, Dropbox, iCloud Drive...)::
       keyring.lgkkeys              group keyring (``keyring.py``), atomic writes
       devices/<device_id>.lgksync  one sealed view per device (``group.py``)
       signatures/<device_id>.lgksig  the writer's Ed25519 signature of that view
+      witness/<device_id>.lgksync  witness file (format 2, no records) next to a format-1 view
+      witness/<device_id>.lgksig   the writer's signature of that witness file
 
 Each device writes only its own file and reads everyone else's.  The cloud
 provider sees ciphertext, file names (device ids), sizes and timestamps.
@@ -134,7 +136,30 @@ One run (``FolderSync.run_once``)
    An own file without a valid own signature is always rewritten.  A counter
    that cannot be incremented any more is ``counter-exhausted`` (nothing is
    written; never raises).
-9. Adopting a new epoch (here or by ``rotate_folder_group``) clears every
+9. Rollback witnesses (2026-10-29, ``witness.py``): every accepted peer view
+   that is format 2, or format 1 with a matching witness file (same device,
+   epoch and counter, zero records, signed by the key that signed the view),
+   is checked with ``witness.check`` against this vault's generation
+   (``session.generation``); the issues (``peer-vault-rollback``,
+   ``vault-rollback``) join the report and ``peer_generations``,
+   ``rollback_suspected`` and ``witness_peers`` are saved with ``last_seen``.
+   A missing, stale or bad witness file is skipped silently for one run (a
+   cloud client may upload it after the view); ``witness_counters`` records the
+   view counter of each peer's last witnessed view, and once a peer is in
+   ``witness_peers`` or has been witnessed before, a newer signed format-1 view
+   that still has no matching witness file on the next run is reported as
+   ``witness-missing`` (detail: the peer id), so deleting witness files cannot
+   switch detection off unnoticed.  Gating: the own view is written as format 2
+   only when every other member of the accepted keyring is in
+   ``witness_peers``; otherwise it is format 1 and a witness file (and its
+   signature) is written right after it, so older apps keep reading the
+   folder.  A format-1 own file without a matching witness file, or a file in
+   the other format than the gate asks for, is rewritten once; when the own
+   view is current and only its witness file is missing or bad, just the
+   witness file is written again (same counter, no state save).  A change of
+   generation alone never rewrites the own file (each write saves the vault,
+   which raises the generation again).
+10. Adopting a new epoch (here or by ``rotate_folder_group``) clears every
    peer's last-seen counter, digest and signing key: only members of the new
    epoch can write files for it, so a counter or key forged under the old key
    by a removed member stops mattering.
@@ -227,7 +252,11 @@ from .keyring import (
 )
 from .pairing import DeviceIdentity
 from .runner import RunReport, SyncIssue, run_merge
+from .attachment_flow import (folder_capable, import_missing, publish_folder_blobs, referenced_blobs,
+                              write_capability)
+from .attachment_sync import BlobFolder
 from .vault_bridge import (
+    publishable,
     _MAX_INT53,
     MAX_INSTALL_ID,
     MAX_MEMBERS_SEEN,
@@ -236,9 +265,13 @@ from .vault_bridge import (
     SyncGroupState,
     _check_lease,
     clear_sync_state,
+    licenses_in_views,
     load_sync_state,
     save_sync_state,
 )
+from .witness import Observation, observation, own_witness, prune, session_generation
+from .witness import check as witness_check
+from . import witness_memory
 
 SYNC_DIR_NAME = "LocalGateKeys Sync"
 KEYRING_NAME = "keyring.lgkkeys"
@@ -246,6 +279,9 @@ DEVICES_DIR_NAME = "devices"
 DEVICE_SUFFIX = ".lgksync"
 SIGNATURES_DIR_NAME = "signatures"
 SIGNATURE_SUFFIX = ".lgksig"
+WITNESS_DIR_NAME = "witness"
+#: A witness file holds no records; its header has at most 64 witness entries.
+MAX_WITNESS_BYTES = 16 * 1024
 #: Highest counter accepted from a device's file without a last-seen counter to compare with.
 MAX_FILE_COUNTER = 2**40
 #: Largest step above the last accepted counter of a device.
@@ -293,6 +329,12 @@ class PeerRead:
     digests: dict[str, str] = field(default_factory=dict)
     #: device id -> base64 signing key of every accepted view that carried a valid signature.
     signers: dict[str, str] = field(default_factory=dict)
+    #: Generations and witnesses published with the accepted views (``witness.observation``).
+    observations: tuple[Observation, ...] = ()
+    #: device id -> view counter of every accepted view that published a generation (format 2 or witness).
+    witnessed: dict[str, int] = field(default_factory=dict)
+    #: device id -> view counter of every accepted signed format-1 view without a matching witness file.
+    unwitnessed: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -305,6 +347,10 @@ class OwnFile:
     present: bool = False
     #: The file carries a valid signature by this device's own key.
     self_signed: bool = False
+    #: View format of the file (1 or 2), 0 when absent or unreadable.
+    format: int = 0
+    #: A format-1 file has a valid own-signed witness file for the same counter.
+    witnessed: bool = False
 
 
 def counter_verdict(counter: int, last: int | None) -> str | None:
@@ -454,6 +500,36 @@ class FolderSync:
         except (OSError, ValueError):
             return None
 
+    @property
+    def witness_dir(self) -> Path:
+        return self.sync_dir / WITNESS_DIR_NAME
+
+    def witness_file(self, device_id: str, suffix: str = DEVICE_SUFFIX) -> Path:
+        if not is_safe_device_id(device_id):
+            raise ValueError("unsafe device id")
+        name = f"{device_id}{suffix}"
+        path = self.witness_dir / name
+        if path.parent != self.witness_dir or path.name != name:
+            raise ValueError("witness file escapes the witness folder")
+        return path
+
+    def _read_witness(self, gk: GroupKey, view: View, signer: str) -> Observation | None:
+        """The observation of a format-1 *view* from its witness file, or None (missing, stale, bad)."""
+        dev = view.header["device_id"]
+        try:
+            path, sig_path = self.witness_file(dev), self.witness_file(dev, SIGNATURE_SUFFIX)
+            if path.is_symlink() or sig_path.is_symlink():
+                return None
+            raw = _read_bounded(path, MAX_WITNESS_BYTES)
+            sig = _read_bounded(sig_path, MAX_SIG_BYTES)
+            witness = decode_view(gk, raw, expected_device_id=dev, max_bytes=MAX_WITNESS_BYTES, max_records=0)
+            public = base64.b64encode(verify_view_signature(sig, raw, witness.header)).decode("ascii")
+        except (OSError, ValueError):  # SyncFormatError is a ValueError
+            return None
+        if public != signer:
+            return None
+        return observation(view, witness)
+
     def device_file(self, device_id: str) -> Path:
         """Path of *device_id*'s file; ValueError unless the id is a safe file name."""
         if not is_safe_device_id(device_id):
@@ -509,9 +585,12 @@ class FolderSync:
         return gk, ring
 
     def _trusted_keyring(
-        self, state: SyncGroupState
+        self, state: SyncGroupState, *, restore: bool = True
     ) -> tuple[list[SyncIssue], GroupKey | None, dict | None, bytes | None]:
-        """(issues, key, ring, ring bytes); key None means the run must stop."""
+        """(issues, key, ring, ring bytes); key None means the run must stop.
+
+        *restore* False (licence-only runs) never writes the stored keyring back.
+        """
         try:
             raw = self.read_keyring_bytes()
         except FileNotFoundError:
@@ -540,7 +619,7 @@ class FolderSync:
                 return [_REMOVED_OR_CONFLICT], None, None, None
             if exc.reason == "tampered" and self._competing_rotation(ring, trusted, state):
                 return [_ROTATION_CONFLICT], None, None, None
-            if kind in _RESTORE_KINDS and not (isinstance(epoch, int) and epoch > trusted.epoch):
+            if restore and kind in _RESTORE_KINDS and not (isinstance(epoch, int) and epoch > trusted.epoch):
                 restored = self._restore_keyring(state, trusted)
                 if restored is not None:
                     return [SyncIssue("keyring-restored", detail)], restored[0], restored[1], state.keyring
@@ -603,6 +682,9 @@ class FolderSync:
         seen: dict[str, int] = {}
         digs: dict[str, str] = {}
         signed: dict[str, str] = {}
+        observed: list[Observation] = []
+        witnessed: dict[str, int] = {}
+        unwitnessed: dict[str, int] = {}
         try:
             names = sorted(entry.name for entry in os.scandir(self.devices_dir))
         except FileNotFoundError:
@@ -655,9 +737,17 @@ class FolderSync:
                 issues.append(SyncIssue("stale-device", name))
                 continue
             views.append(view)
+            obs = observation(view)
+            if obs is None and isinstance(signer, str):
+                obs = self._read_witness(gk, view, signer)
+            if obs is not None:
+                observed.append(obs)
+                witnessed[dev] = counter
+            elif isinstance(signer, str):
+                unwitnessed[dev] = counter
         if ignored:
             issues.append(_ignored_issue(ignored))
-        return PeerRead(tuple(views), tuple(issues), seen, digs, signed)
+        return PeerRead(tuple(views), tuple(issues), seen, digs, signed, tuple(observed), witnessed, unwitnessed)
 
     def _check_signature(self, dev: str, name: str, raw: bytes, view: View, signers: Mapping[str, str],
                          paired_keys: Mapping[str, str], issues: list[SyncIssue]) -> str | bool | None:
@@ -685,16 +775,45 @@ class FolderSync:
         return False
 
     def write_own(self, gk: GroupKey, device_id: str, states: Iterable[ItemState], counter: int, *,
-                  now: int, signing_key: ed25519.Ed25519PrivateKey | None = None) -> None:
-        """Encode and atomically write this device's own file, then its signature (if *signing_key*)."""
+                  now: int, signing_key: ed25519.Ed25519PrivateKey | None = None,
+                  vault_generation: int | None = None, witness: Mapping[str, int] | None = None,
+                  inline: bool = False) -> None:
+        """Encode and atomically write this device's own file, then its signature (if *signing_key*).
+
+        With *vault_generation*: *inline* writes a format-2 view; otherwise the view stays format 1
+        and a signed witness file follows it (``witness/``).
+        """
         path = self.device_file(device_id)
-        raw = encode_view(gk, device_id, counter, states, now)
+        if vault_generation is not None and inline:
+            raw = encode_view(gk, device_id, counter, states, now, vault_generation=vault_generation,
+                              witness=witness or {})
+        else:
+            raw = encode_view(gk, device_id, counter, states, now)
         sig = sign_view(raw, signing_key) if signing_key is not None else None
+        side = None
+        if vault_generation is not None and not inline and signing_key is not None:
+            side_raw = encode_view(gk, device_id, counter, (), now, vault_generation=vault_generation,
+                                   witness=witness or {})
+            side = (side_raw, sign_view(side_raw, signing_key))
         self.devices_dir.mkdir(parents=True, exist_ok=True)
         _atomic_write(path, raw)
         if sig is not None:
             self.signatures_dir.mkdir(parents=True, exist_ok=True)
             _atomic_write(self.signature_file(device_id), sig)
+        if side is not None:
+            self._write_witness_pair(device_id, *side)
+
+    def write_witness(self, gk: GroupKey, device_id: str, counter: int, *, now: int,
+                      signing_key: ed25519.Ed25519PrivateKey, vault_generation: int,
+                      witness: Mapping[str, int]) -> None:
+        """Write only the signed witness file for the own view at *counter* (the view is unchanged)."""
+        raw = encode_view(gk, device_id, counter, (), now, vault_generation=vault_generation, witness=witness)
+        self._write_witness_pair(device_id, raw, sign_view(raw, signing_key))
+
+    def _write_witness_pair(self, device_id: str, raw: bytes, sig: bytes) -> None:
+        self.witness_dir.mkdir(parents=True, exist_ok=True)
+        _atomic_write(self.witness_file(device_id), raw)
+        _atomic_write(self.witness_file(device_id, SIGNATURE_SUFFIX), sig)
 
     def _sweep_own_temp_files(self, device_id: str) -> None:
         """Delete this device's leftover temp files (an earlier crash between write and replace)."""
@@ -740,13 +859,49 @@ class FolderSync:
                 self_signed = verify_view_signature(sig, raw, view.header) == state.identity().signing_public_key
             except SyncFormatError:
                 self_signed = False
+        fmt = view.format
+        witnessed = False
+        if fmt == 1 and self_signed:
+            own_key = base64.b64encode(state.identity().signing_public_key).decode("ascii")
+            witnessed = self._read_witness(gk, view, own_key) is not None
         if own_states is None:
-            return OwnFile(False, counter, stale, True, self_signed)
+            return OwnFile(False, counter, stale, True, self_signed, fmt, witnessed)
         needs = (view.states != own_states or counter != state.own_counter or not self_signed
                  or written_at < now - OWN_REFRESH_SECONDS)
-        return OwnFile(needs, counter, stale, True, self_signed)
+        return OwnFile(needs, counter, stale, True, self_signed, fmt, witnessed)
 
     # --- one run -----------------------------------------------------------------------
+
+    def licence_round(self, session: Any, lease: Any, *, now: int) -> RunReport:
+        """A licence-only run (free PC): read the peers' views, keep only the licences they carry.
+
+        Writes nothing at all: no own view, witness, signature or capability
+        file, no keyring restore, no document file import and no sync state;
+        the vault is not touched.  The service offers ``licenses`` to
+        ``licensing.adopt_synced_license``.  Because ``last_seen`` is never
+        advanced, every round reads every peer view again.
+        """
+        _check_lease(session, lease)
+        state = load_sync_state(session)
+        if state is None:
+            return RunReport(issues=(SyncIssue("not-joined"),))
+        if state.install_id != self.install_id:
+            return RunReport(issues=(SyncIssue("rejoin-required", "install-mismatch"),))
+        if not self._folder_exists():
+            return RunReport(issues=(SyncIssue("folder-missing", str(self.sync_dir)),))
+        issues, gk, ring, _raw = self._trusted_keyring(state, restore=False)
+        if gk is None or ring is None:
+            return RunReport(issues=tuple(issues) or (SyncIssue("keyring-corrupt"),))
+        current = _member_ids(ring)
+        known = set(state.members) if state.members_epoch == gk.epoch else set()
+        members = current if len(known | current) > MAX_MEMBERS_SEEN else known | current
+        ring_keys = {d: k for d, k in member_signing_keys(ring).items() if d != state.device_id}
+        peers = self.read_peers(gk, state.device_id, members, state.last_seen, state.peer_digests, now=now,
+                                signers={d: k for d, k in state.view_signers.items() if d != state.device_id},
+                                paired_keys=_paired_keys(state), keyring_keys=ring_keys)
+        issues.extend(peers.issues)
+        _check_lease(session, lease)
+        return RunReport(issues=tuple(issues), licenses=licenses_in_views(peers.views))
 
     def run_once(self, session: Any, lease: Any, *, now: int) -> RunReport:
         """One full folder sync; see the module docstring."""
@@ -805,8 +960,40 @@ class FolderSync:
                                 signers={d: k for d, k in state.view_signers.items() if d != state.device_id},
                                 paired_keys=_paired_keys(state), keyring_keys=ring_keys)
         issues.extend(peers.issues)
+        blobs = BlobFolder(self.sync_dir)
+        # Document files first: a document is applied only once its file was imported.
+        issues.extend(import_missing(session, lease, [s for v in peers.views for s in v.states],
+                                     lambda ref: blobs.read(ref.blob)))
         report = run_merge(session, lease, device_id=state.device_id, views=peers.views, now=now)
         issues.extend(report.issues)
+        _check_lease(session, lease)
+        own_generation = session_generation(session)
+        # The session's LAN checks may be ahead of the stored generations (lan_sync saves them throttled).
+        mem = witness_memory.memory(session, state.group_id, state.device_id)
+        checked = witness_check(state.device_id, own_generation, peers.observations if own_generation is not None
+                                else (), witness_memory.merged(state.peer_generations, mem),
+                                state.rollback_suspected)
+        issues.extend(checked.issues)
+        witness_keep = (members | {p.get("device_id") for p in state.lan_peers}) - {state.device_id}
+        peer_generations = prune(checked.peer_generations, witness_keep)
+        if mem is not None:
+            mem.generations = dict(peer_generations)
+        witness_peers = tuple(prune(dict.fromkeys((*state.witness_peers, *checked.capable), 0), witness_keep))
+        # A peer known to publish its generation (witness_peers, or a witness seen from it before)
+        # whose newer view comes without one: the witness file was deleted, damaged or withheld.
+        # One run of grace (the view was already there last run) covers a cloud client that
+        # uploads the witness file after the view.
+        known_witnessing = set(witness_peers) | set(state.witness_counters)
+        for dev, ctr in sorted(peers.unwitnessed.items()):
+            if (dev in known_witnessing and ctr > state.witness_counters.get(dev, -1)
+                    and state.last_seen.get(dev) == ctr):
+                issues.append(SyncIssue("witness-missing", dev))
+        witness_counters = {**state.witness_counters, **peers.witnessed}
+        witness_counters = {d: c for d, c in witness_counters.items() if d in witness_keep}
+        if len(witness_counters) > MAX_PEERS_SEEN:
+            witness_counters = dict(sorted(witness_counters.items())[:MAX_PEERS_SEEN])
+        others = current - {state.device_id}
+        inline = own_generation is not None and bool(others) and others <= set(witness_peers)
 
         identity = state.identity()
         own_key = base64.b64encode(identity.signing_public_key).decode("ascii")
@@ -818,11 +1005,28 @@ class FolderSync:
             last_seen = {d: c for d, c in last_seen.items() if d in members}
             digests = {d: h for d, h in digests.items() if d in members}
             signers = {d: k for d, k in signers.items() if d in members}
+        # Documents are published only when every other member wrote a valid signed capability file.
+        documents = all(folder_capable(self.sync_dir, gk, d, signers.get(d)) for d in others)
+        if report.own_states is not None:
+            report = dataclasses.replace(report, own_states=publishable(report.own_states, documents=documents))
         new_state = dataclasses.replace(state, last_seen=last_seen, peer_digests=digests,
                                         members_epoch=gk.epoch, members=tuple(sorted(members)),
-                                        keyring=ring_bytes, unacked_members=unacked, view_signers=signers)
+                                        keyring=ring_bytes, unacked_members=unacked, view_signers=signers,
+                                        peer_generations=peer_generations,
+                                        rollback_suspected=checked.rollback_suspected,
+                                        witness_peers=witness_peers, witness_counters=witness_counters)
+        # A peer whose newer view was accepted this run was synced with now (local only).
+        accepted = [d for d, c in peers.seen.items() if d != state.device_id and c > state.last_seen.get(d, -1)]
+        new_state = new_state.synced_with(accepted, int(now))
         own = self._own_file_status(gk, state, report.own_states, now)
         needs_write, file_counter = own.needs_write, own.counter
+        witness_only = False
+        if report.own_states is not None and own.present and (
+                (own.format == 1 and own_generation is not None and (inline or not own.witnessed)) or (own.format == 2 and not inline)):
+            if own.format == 1 and not inline and own.self_signed and own.counter == state.own_counter:
+                witness_only = not needs_write  # only the witness file is missing or bad: rewrite just it
+            else:
+                needs_write = True  # publish the witness once, in the form every member can read
         if own.stale:
             issues.append(SyncIssue("stale-self", "this device had not synced for over a year"))
         signed_before = state.view_signers.get(state.device_id) == own_key
@@ -851,14 +1055,36 @@ class FolderSync:
             save_sync_state(session, new_state)  # reserve the counter before writing
 
         wrote = False
+        try:
+            write_capability(self.sync_dir, gk, state.device_id, identity.signing_key, own_key, now=now)
+        except (OSError, ValueError) as exc:
+            issues.append(SyncIssue("write-failed", f"capability: {exc}"))
+        if needs_write and report.own_states is not None and documents:
+            issues.extend(publish_folder_blobs(session, blobs, report.own_states, now=now))  # before the view
+        if report.own_states is not None and others <= {v.header["device_id"] for v in peers.views}:
+            # Every member's view was read: a blob none of them references can go (after 7 days).
+            blobs.sweep(referenced_blobs([report.own_states, *(v.states for v in peers.views)]), now=now)
         if needs_write and report.own_states is not None:
             _check_lease(session, lease)
             try:
                 self.write_own(gk, state.device_id, report.own_states, counter, now=now,
-                               signing_key=identity.signing_key)
+                               signing_key=identity.signing_key,
+                               vault_generation=session_generation(session),
+                               witness=own_witness(new_state.peer_generations, witness_keep, state.device_id),
+                               inline=inline)
                 wrote = True
             except SyncFormatError as exc:
                 issues.append(SyncIssue("too-large", str(exc)))
+            except (OSError, ValueError) as exc:
+                issues.append(SyncIssue("write-failed", str(exc)))
+        elif witness_only and own_generation is not None:
+            # The view itself is current: write only its witness file (same counter), so a deleted
+            # witness costs one small write per run and never a counter bump or a vault save.
+            _check_lease(session, lease)
+            try:
+                self.write_witness(gk, state.device_id, file_counter, now=now, signing_key=identity.signing_key,
+                                   vault_generation=own_generation,
+                                   witness=own_witness(new_state.peer_generations, witness_keep, state.device_id))
             except (OSError, ValueError) as exc:
                 issues.append(SyncIssue("write-failed", str(exc)))
         return dataclasses.replace(report, issues=tuple(issues), wrote=wrote)
@@ -871,7 +1097,7 @@ def _epoch_reset(state: SyncGroupState) -> dict[str, Any]:
     member that the rotation removed no longer blocks anyone.  This device's own key stays.
     """
     own = {d: k for d, k in state.view_signers.items() if d == state.device_id}
-    return {"last_seen": {}, "peer_digests": {}, "view_signers": own}
+    return {"last_seen": {}, "peer_digests": {}, "view_signers": own, "witness_counters": {}}
 
 
 def _paired_keys(state: SyncGroupState) -> dict[str, str]:
@@ -1013,6 +1239,9 @@ def join_folder_group(root: Path | str, session: Any, lease: Any, password: str,
                 fs.device_file(state.device_id).unlink()
             with free(), contextlib.suppress(OSError, ValueError):
                 fs.signature_file(state.device_id).unlink()
+            for suffix in (DEVICE_SUFFIX, SIGNATURE_SUFFIX):
+                with free(), contextlib.suppress(OSError, ValueError):
+                    fs.witness_file(state.device_id, suffix).unlink()
     if not run:
         return RunReport()
     return fs.run_once(session, lease, now=_now(now))
@@ -1088,6 +1317,9 @@ def rotate_folder_group(root: Path | str, session: Any, lease: Any, new_password
                     fs.device_file(dev).unlink()
                 with contextlib.suppress(FileNotFoundError):
                     fs.signature_file(dev).unlink()
+                for suffix in (DEVICE_SUFFIX, SIGNATURE_SUFFIX):
+                    with contextlib.suppress(FileNotFoundError):
+                        fs.witness_file(dev, suffix).unlink()
     if not run:
         return RunReport()
     return fs.run_once(session, lease, now=_now(now))

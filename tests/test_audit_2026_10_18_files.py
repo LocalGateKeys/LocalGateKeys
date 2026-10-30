@@ -12,6 +12,7 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
+from localvault.i18n import t
 from localvault import distribution, licensing, open_copy_watch, updates
 from localvault.api.result import ApiError
 from localvault.app.controller import WebController
@@ -81,7 +82,7 @@ def test_blocked_type_is_refused_before_decrypting(vault, tmp_path, name):
     launched = []
     with pytest.raises(AttachmentError) as refused:
         vault.documents.open_externally(item_id, launcher=launched.append)
-    assert str(refused.value) == OPEN_NOT_ALLOWED_TEXT and "Save a copy" in OPEN_NOT_ALLOWED_TEXT
+    assert str(refused.value) == t(OPEN_NOT_ALLOWED_TEXT) and "Save a copy" in t(OPEN_NOT_ALLOWED_TEXT)
     root = tmp_path / OPEN_COPIES_DIR_NAME
     assert launched == [] and not (root.exists() and any(root.rglob("*")))
 
@@ -163,8 +164,8 @@ def test_webview_refuses_a_blocked_type_before_the_warning(tmp_path, monkeypatch
     settings.document_open_warning_seen = False
     with pytest.raises(ApiError) as refused:
         service.open_externally(ref)
-    assert refused.value.code == "unsupported_type" and refused.value.message == OPEN_NOT_ALLOWED_TEXT
-    assert OPEN_WARNING_TITLE not in port.asked and settings.document_open_warning_seen is False
+    assert refused.value.code == "unsupported_type" and refused.value.message == t(OPEN_NOT_ALLOWED_TEXT)
+    assert t(OPEN_WARNING_TITLE) not in port.asked and settings.document_open_warning_seen is False
     controller.lock()
 
 

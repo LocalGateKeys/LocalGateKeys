@@ -766,6 +766,44 @@ def test_revoked_device_ids_are_reserved_for_enrollment(session) -> None:
     assert responder.pairing.attempts == 1
 
 
+def test_responder_reports_each_merge_a_peer_started(session, monkeypatch) -> None:
+    _lan_group(session)
+    responder = lan.LanResponder(session, FakeLease(), install_id=INSTALL, clock=lambda: NOW)
+    served: list[RunReport] = []
+    responder.on_served = served.append
+    merged = RunReport(applied=2, own_states=())
+    replies = iter([({"type": "ack"}, None), ({"type": "error"}, RunReport(issues=(SyncIssue("x"),))),
+                    ({"type": "view"}, merged)])
+    monkeypatch.setattr(lan, "_serve", lambda *a, **kw: next(replies))
+    for _ in range(3):
+        responder(object(), b"")
+    assert served == [merged]  # only a request that reached the merge step counts as a sync
+
+
+def test_a_sync_the_phone_started_is_recorded_and_announced(session) -> None:
+    # A phone has no endpoint: it connects to this PC, so the PC's own runs never sync with it.
+    _lan_group(session)
+    FakeSyncTransport.instances.clear()
+    clock = FakeClock()
+    adapter = svc.LanAdapter(install_id=INSTALL, endpoint=lambda: ENDPOINT,
+                             transport_factory=FakeSyncTransport, clock=clock)
+    posted: list = []
+    service, _sched, worker = _service(session, [adapter], clock=clock, posted=posted)
+    service.on_unlock()
+    worker.drain()
+    assert service.status().transports[0].last_sync is None
+    posted.clear()
+    clock.now += 60
+    adapter.responder.on_served(RunReport(applied=1, own_states=()))
+    (view,) = posted
+    assert view.transports[0].last_sync == int(clock.now)
+    assert view.last_sync == int(clock.now)
+    assert view.items_changed == 1
+    posted.clear()
+    adapter.responder.on_served(RunReport(own_states=()))  # nothing new from the phone
+    assert posted[0].last_sync == int(clock.now) and not posted[0].items_changed
+
+
 # --- app integration -----------------------------------------------------------------------------
 
 

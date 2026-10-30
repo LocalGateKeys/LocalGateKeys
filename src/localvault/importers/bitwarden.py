@@ -22,6 +22,7 @@ from argon2.low_level import Type as _ArgonType
 from argon2.low_level import hash_secret_raw
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from ..i18n import t
 
 from . import (
     ImportedRecord,
@@ -56,9 +57,7 @@ MAX_ARGON2_PARALLELISM = 16
 TYPE_LOGIN, TYPE_NOTE, TYPE_CARD, TYPE_IDENTITY, TYPE_SSH_KEY = 1, 2, 3, 4, 5
 
 ACCOUNT_RESTRICTED_MESSAGE = (
-    "This Bitwarden export is encrypted with your Bitwarden account key, so only Bitwarden can open it. "
-    "In Bitwarden choose Export vault, then either File format 'JSON' (unencrypted) or "
-    "'.json (Encrypted)' with Export type 'Password protected', and enter that password here.")
+    "bitwarden.thisBitwardenExportIsEncrypted")
 
 _IDENTITY_MAP = {
     "firstName": "given_name", "middleName": "middle_name", "lastName": "family_name", "company": "company",
@@ -93,44 +92,44 @@ def derive_export_keys(password: str, document: Mapping[str, Any]) -> tuple[byte
     """Return (encryption key, MAC key) for a password-protected export."""
     salt = document.get("salt")
     if not isinstance(salt, str) or not salt:
-        raise BitwardenError("Encrypted export is missing its salt")
+        raise BitwardenError(t("bitwarden.encryptedExportIsMissingIts"))
     kdf_type = document.get("kdfType", 0)
     try:
         iterations = int(document.get("kdfIterations") or 0)
     except (TypeError, ValueError) as exc:
-        raise BitwardenError("Encrypted export KDF parameters are malformed") from exc
+        raise BitwardenError(t("bitwarden.encryptedExportKdfParametersAre")) from exc
     if kdf_type == 0:
         if not 1 <= iterations <= MAX_PBKDF2_ITERATIONS:
-            raise BitwardenError("Encrypted export iteration count is outside the supported range")
+            raise BitwardenError(t("bitwarden.encryptedExportIterationCountIs"))
         master = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), iterations, 32)
     elif kdf_type == 1:
         try:
             memory = int(document.get("kdfMemory") or 64)
             parallelism = int(document.get("kdfParallelism") or 4)
         except (TypeError, ValueError) as exc:
-            raise BitwardenError("Encrypted export KDF parameters are malformed") from exc
+            raise BitwardenError(t("bitwarden.encryptedExportKdfParametersAre")) from exc
         if not 1 <= iterations <= MAX_ARGON2_ITERATIONS or not 8 <= memory <= MAX_ARGON2_MEMORY_MIB or not 1 <= parallelism <= MAX_ARGON2_PARALLELISM:
-            raise BitwardenError("Encrypted export Argon2 parameters are outside the supported range")
+            raise BitwardenError(t("bitwarden.encryptedExportArgon2ParametersAre"))
         master = hash_secret_raw(password.encode("utf-8"), hashlib.sha256(salt.encode("utf-8")).digest(),
                                  time_cost=iterations, memory_cost=memory * 1024, parallelism=parallelism,
                                  hash_len=32, type=_ArgonType.ID)
     else:
-        raise BitwardenError("Unsupported Bitwarden KDF type")
+        raise BitwardenError(t("bitwarden.unsupportedBitwardenKdfType"))
     return _hkdf_expand(master, b"enc"), _hkdf_expand(master, b"mac")
 
 
 def _split_enc_string(value: Any) -> tuple[bytes, bytes, bytes]:
     if not isinstance(value, str) or not value.startswith("2."):
-        raise BitwardenError("Unsupported Bitwarden encryption string type")
+        raise BitwardenError(t("bitwarden.unsupportedBitwardenEncryptionStringType"))
     parts = value[2:].split("|")
     if len(parts) != 3:
-        raise BitwardenError("Bitwarden encryption string is malformed")
+        raise BitwardenError(t("bitwarden.bitwardenEncryptionStringIsMalformed"))
     try:
         iv, ciphertext, mac = (base64.b64decode(part, validate=True) for part in parts)
     except (ValueError, TypeError) as exc:
-        raise BitwardenError("Bitwarden encryption string is not valid Base64") from exc
+        raise BitwardenError(t("bitwarden.bitwardenEncryptionStringIsNot")) from exc
     if len(iv) != 16 or len(mac) != 32 or not ciphertext or len(ciphertext) % 16:
-        raise BitwardenError("Bitwarden encryption string has unexpected lengths")
+        raise BitwardenError(t("bitwarden.bitwardenEncryptionStringHasUnexpected"))
     return iv, ciphertext, mac
 
 
@@ -138,14 +137,14 @@ def decrypt_enc_string(value: Any, enc_key: bytes, mac_key: bytes) -> bytes:
     iv, ciphertext, mac = _split_enc_string(value)
     expected = hmac.new(mac_key, iv + ciphertext, hashlib.sha256).digest()
     if not hmac.compare_digest(expected, mac):
-        raise BitwardenPasswordError("Wrong password or corrupted export (MAC mismatch)")
+        raise BitwardenPasswordError(t("bitwarden.wrongPasswordOrCorruptedExport"))
     decryptor = Cipher(algorithms.AES(enc_key), modes.CBC(iv)).decryptor()
     padded = decryptor.update(ciphertext) + decryptor.finalize()
     unpadder = padding.PKCS7(128).unpadder()
     try:
         return unpadder.update(padded) + unpadder.finalize()
     except ValueError as exc:
-        raise BitwardenError("Encrypted export padding is invalid") from exc
+        raise BitwardenError(t("bitwarden.encryptedExportPaddingIsInvalid")) from exc
 
 
 def encrypt_enc_string(plaintext: bytes, enc_key: bytes, mac_key: bytes) -> str:
@@ -162,7 +161,7 @@ def encrypt_bitwarden_export(plain: Mapping[str, Any], password: str, *, kdf: st
                              iterations: int | None = None, memory: int = 64, parallelism: int = 4) -> dict[str, Any]:
     """Wrap an unencrypted export document in Bitwarden's password-protected envelope."""
     if not password:
-        raise BitwardenError("A password is required for a protected export")
+        raise BitwardenError(t("bitwarden.aPasswordIsRequiredFor"))
     document: dict[str, Any] = {
         "encrypted": True, "passwordProtected": True,
         "salt": base64.b64encode(os.urandom(16)).decode("ascii"),
@@ -183,9 +182,9 @@ def encrypt_bitwarden_export(plain: Mapping[str, Any], password: str, *, kdf: st
 
 def decrypt_bitwarden_export(document: Mapping[str, Any], password: str | None) -> dict[str, Any]:
     if not document.get("passwordProtected"):
-        raise BitwardenError(ACCOUNT_RESTRICTED_MESSAGE)
+        raise BitwardenError(t(ACCOUNT_RESTRICTED_MESSAGE))
     if not password:
-        raise ImportPasswordRequired("This Bitwarden export is password protected")
+        raise ImportPasswordRequired(t("bitwarden.thisBitwardenExportIsPassword"))
     enc_key, mac_key = derive_export_keys(password, document)
     if "encKeyValidation_DO_NOT_EDIT" in document:
         decrypt_enc_string(document["encKeyValidation_DO_NOT_EDIT"], enc_key, mac_key)
@@ -193,9 +192,9 @@ def decrypt_bitwarden_export(document: Mapping[str, Any], password: str | None) 
     try:
         inner = json.loads(raw.decode("utf-8"))
     except (ValueError, UnicodeDecodeError, RecursionError) as exc:
-        raise BitwardenError("Decrypted export is not valid JSON") from exc
+        raise BitwardenError(t("bitwarden.decryptedExportIsNotValid")) from exc
     if not isinstance(inner, dict):
-        raise BitwardenError("Decrypted export is not a Bitwarden document")
+        raise BitwardenError(t("bitwarden.decryptedExportIsNotA"))
     return inner
 
 
@@ -288,17 +287,17 @@ def _text(value: Any) -> str:
 def records_from_document(document: Mapping[str, Any], *, source_format: str) -> ImportResult:
     items = document.get("items")
     if not isinstance(items, list):
-        raise BitwardenError("Expected a Bitwarden JSON export with an 'items' list")
+        raise BitwardenError(t("bitwarden.expectedABitwardenJsonExport"))
     result = ImportResult(source_format)
     check_record_count(len(items))  # trashed and malformed items count too
     folders = _folder_names(document)
     passkeys = 0
     for index, item in enumerate(items, 1):
         if not isinstance(item, dict):
-            result.diagnostics.append(f"Item {index}: not an object; skipped.")
+            result.diagnostics.append(t("bitwarden.itemNotAnObjectSkipped", index=index))
             continue
         if item.get("deletedDate"):
-            result.diagnostics.append(f"Item {index}: in the Bitwarden trash; skipped.")
+            result.diagnostics.append(t("bitwarden.itemInTheBitwardenTrash", index=index))
             continue
         record = item_to_record(item, folders, source_row=index)
         if record is None:
@@ -308,15 +307,13 @@ def records_from_document(document: Mapping[str, Any], *, source_format: str) ->
                                     source_row=index)
             add_custom_field(record, "Bitwarden item type", item.get("type"))
             _custom_fields(item, record)
-            result.diagnostics.append(f"Item {index}: unknown Bitwarden item type {item.get('type')!r}; "
-                                      "imported as a secure note.")
+            result.diagnostics.append(t("bitwarden.itemUnknownBitwardenItemType", index=index, v2=item.get('type')))
         login = item.get("login")
         if isinstance(login, dict) and login.get("fido2Credentials"):
             passkeys += 1
         result.records.append(record)
     if passkeys:
-        result.diagnostics.append(f"{passkeys} login(s) have passkeys; Bitwarden does not export passkeys in a "
-                                  "form another manager can use, so only the password was imported.")
+        result.diagnostics.append(t("bitwarden.loginsHavePasskeys", count=passkeys))
     result.records = enforce_record_limit(result.records)
     return result
 
@@ -327,9 +324,9 @@ def parse_bitwarden_json(source: Path | str | bytes) -> dict[str, Any]:
         document = json.loads(decode_text(data))
     except (ValueError, RecursionError) as exc:
         # RecursionError: pathologically nested JSON must stay a format error.
-        raise BitwardenError("Invalid JSON") from exc
+        raise BitwardenError(t("bitwarden.invalidJson")) from exc
     if not isinstance(document, dict):
-        raise BitwardenError("Expected a Bitwarden JSON export object")
+        raise BitwardenError(t("bitwarden.expectedABitwardenJsonExport2"))
     return document
 
 
@@ -343,7 +340,7 @@ def load_bitwarden_json(source: Path | str | bytes, *, password: str | None = No
     if document.get("encrypted") is True and not document.get("passwordProtected"):
         # Account-restricted exports keep a plain items list whose strings are
         # all "2.xxx" EncStrings; importing them would create garbage items.
-        raise BitwardenError(ACCOUNT_RESTRICTED_MESSAGE)
+        raise BitwardenError(t(ACCOUNT_RESTRICTED_MESSAGE))
     if is_encrypted(document):
         inner = decrypt_bitwarden_export(document, password)
         return records_from_document(inner, source_format="bitwarden-encrypted-json")
@@ -380,7 +377,7 @@ def load_bitwarden_csv(source: Path | str | bytes) -> ImportResult:
             record = ImportedRecord(kind="login", username=pick(row, "login_username"), password=pick(row, "login_password"),
                                     urls=uris, totp_uri=totp_uri_from_secret(pick(row, "login_totp"), label=name), **base)
         else:
-            result.diagnostics.append(f"Row {number}: unsupported type {kind!r}; imported as a note.")
+            result.diagnostics.append(t("bitwarden.rowUnsupportedTypeImportedAs", number=number, kind=kind))
             record = ImportedRecord(kind="note", **base)
         _parse_fields_column(record, pick(row, "fields"))
         result.records.append(record)

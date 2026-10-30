@@ -1,0 +1,754 @@
+{
+  "bg_err_agent_access_denied": {
+    "message": "Windows hat den Zugriff auf die Bridge verweigert. Führen Sie den Browser und LocalGateKeys als derselbe Windows-Benutzer ohne Administratormodus aus und reparieren Sie dann die Bridge des aktuellen Benutzers."
+  },
+  "bg_err_agent_busy": {
+    "message": "Die Bridge ist ausgelastet. Beenden Sie alle offenen LocalGateKeys-Dialoge und versuchen Sie es erneut."
+  },
+  "bg_err_agent_connection_changed": {
+    "message": "Die Verbindung verweist auf eine andere App-Instanz. Starten Sie LocalGateKeys aus dem Repository neu, das zur Reparatur der Bridge verwendet wurde."
+  },
+  "bg_err_agent_connection_lost": {
+    "message": "Die lokale Bridge hat die Verbindung getrennt, bevor sie geantwortet hat. Reparieren Sie die Bridge, falls dies wiederholt auftritt. Es wurde kein automatischer neuer Versuch unternommen."
+  },
+  "bg_err_agent_offline": {
+    "message": "Der ältere Native Host konnte die App nicht erreichen. Wenn LocalGateKeys bereits geöffnet ist, aktualisieren Sie die Desktop-App, reparieren Sie die Bridge und starten Sie die App neu."
+  },
+  "bg_err_agent_state_invalid": {
+    "message": "Die gespeicherte Bridge-Verbindung ist ungültig oder veraltet. Beenden Sie LocalGateKeys vollständig, auch im Infobereich, und starten Sie die Kopie aus dem Repository neu."
+  },
+  "bg_err_agent_state_missing": {
+    "message": "Es wurde keine laufende Verbindung gefunden. Schließen Sie die Profilauswahl in LocalGateKeys ab. Wenn das Hauptfenster bereits geöffnet ist, starten Sie die App aus demselben Repository wie die Bridge neu."
+  },
+  "bg_err_agent_unavailable": {
+    "message": "Die App-Verbindung nimmt keine Anfragen an. Beenden Sie LocalGateKeys vollständig (auch im Infobereich) und starten Sie es dann aus dem Repository neu, das zur Reparatur der Bridge verwendet wurde."
+  },
+  "bg_err_bridge_dependencies_missing": {
+    "message": "Dem Native Host fehlen erforderliche Python-Pakete. Aktualisieren Sie die Repository-Umgebung und führen Sie dann scripts/repair_browser_bridge.ps1 aus."
+  },
+  "bg_err_bridge_internal_error": {
+    "message": "Bei der nativen Bridge ist ein Fehler aufgetreten. Führen Sie scripts/test_browser_bridge.ps1 aus und geben Sie den bereinigten Bericht weiter."
+  },
+  "bg_err_bridge_protocol_error": {
+    "message": "Die lokale Bridge hat eine ungültige Antwort zurückgegeben. Aktualisieren Sie alle Bridge-Dateien gemeinsam und starten Sie LocalGateKeys neu."
+  },
+  "bg_err_busy": {
+    "message": "Beenden Sie zuerst die offene LocalGateKeys-Abfrage."
+  },
+  "bg_err_caller_not_browser": {
+    "message": "LocalGateKeys akzeptiert nur Anfragen von einem Native Host, der von einem signierten Browser gestartet wurde. Starten Sie den Browser neu; wenn dies wiederholt auftritt, reparieren Sie die Bridge unter „Verbindungen“ in LocalGateKeys."
+  },
+  "bg_err_card_not_found": {
+    "message": "In diesem Profil ist keine Zahlungskarte gespeichert."
+  },
+  "bg_err_client_not_allowed": {
+    "message": "LocalGateKeys hat die Identität des Native Hosts abgelehnt. Beenden Sie die App, führen Sie scripts/repair_browser_bridge.ps1 aus dem Repository aus und starten Sie LocalGateKeys dann neu."
+  },
+  "bg_err_destination_changed": {
+    "message": "Die Seite oder der aktive Tab hat sich geändert. Klicken Sie erneut auf das Symbol im vorgesehenen Anmeldeformular."
+  },
+  "bg_err_gesture_nonce_invalid": {
+    "message": "Der Klick ist abgelaufen oder gehört zu einer anderen Seite. Klicken Sie erneut."
+  },
+  "bg_err_gesture_nonce_required": {
+    "message": "Aktualisieren Sie die Browser-Erweiterung: Diese Aktion benötigt eine neue Gesture-Nonce."
+  },
+  "bg_err_identity_not_found": {
+    "message": "In diesem Profil ist kein Identitätsprofil verfügbar."
+  },
+  "bg_err_integration_disabled": {
+    "message": "Die Browser-Integration ist in LocalGateKeys pausiert."
+  },
+  "bg_err_invalid_approval": {
+    "message": "Die Identitätsfreigabe ist ungültig oder abgelaufen. Beginnen Sie von vorn."
+  },
+  "bg_err_invalid_card_fields": {
+    "message": "Wählen Sie nur die geprüften Kartenfelder aus."
+  },
+  "bg_err_invalid_identity_fields": {
+    "message": "Wählen Sie nur die geprüften Kontakt- oder Adressfelder aus."
+  },
+  "bg_err_invalid_request": {
+    "message": "Die Identitätsanfrage wurde abgelehnt, weil sich der Seitenkontext geändert hat."
+  },
+  "bg_err_not_found": {
+    "message": "Für genau diese Website ist keine zulässige gespeicherte Anmeldung vorhanden. Speichern Sie eine Anmeldung oder prüfen Sie deren Ausfüllrichtlinie."
+  },
+  "bg_err_origin_mismatch": {
+    "message": "Der Seitenursprung hat sich geändert. Starten Sie das Ausfüllen der Identität erneut auf der vorgesehenen Seite."
+  },
+  "bg_err_rate_limited": {
+    "message": "Zu viele Passwortprüfungen von dieser Website in kurzer Zeit. Warten Sie eine Minute und versuchen Sie es erneut."
+  },
+  "bg_err_session_changed": {
+    "message": "Der Tresor wurde gesperrt, das Profil hat sich geändert oder diese Anfrage ist abgelaufen. Klicken Sie erneut auf das Symbol."
+  },
+  "bg_err_totp_not_found": {
+    "message": "Keine gespeicherte Anmeldung für genau diese Website hat einen 2FA-Einrichtungsschlüssel."
+  },
+  "bg_err_unauthorized": {
+    "message": "Das Bridge-Token passt nicht mehr zur App. Beenden Sie LocalGateKeys vollständig, starten Sie die Kopie aus dem Repository neu und laden Sie diese Seite neu."
+  },
+  "bg_err_unsupported_request": {
+    "message": "Diese Erweiterungsaktion wird von der aktuellen Bridge nicht unterstützt."
+  },
+  "bg_err_user_cancelled": {
+    "message": "Das Ausfüllen der Identität wurde abgebrochen, bevor ein Feld freigegeben wurde."
+  },
+  "bg_err_user_gesture_required": {
+    "message": "Starten Sie diese Aktion über die Erweiterung oder eine LocalGateKeys-Schaltfläche auf der Seite."
+  },
+  "bg_err_version_mismatch": {
+    "message": "Aktualisieren Sie die Erweiterung bzw. laden Sie sie neu und starten Sie LocalGateKeys neu. Ihre Versionen stimmen nicht überein."
+  },
+  "bg_full_notice": {
+    "message": "Ihr kostenloser Tresor ist voll. Wechseln Sie in LocalGateKeys auf Pro, um mehr zu speichern."
+  },
+  "bg_host_exited": {
+    "message": "Der Native Host wurde unerwartet beendet. Öffnen Sie in LocalGateKeys „Verbindungen“ für Diagnoseinformationen."
+  },
+  "bg_host_failed": {
+    "message": "Die Browserverbindung ist fehlgeschlagen. Öffnen Sie in LocalGateKeys „Verbindungen“."
+  },
+  "bg_host_forbidden": {
+    "message": "Die Erweiterungs-ID ist durch die Native-Host-Registrierung nicht zugelassen. Reparieren Sie die Bridge."
+  },
+  "bg_host_not_registered": {
+    "message": "Der Native Host ist nicht registriert. Reparieren Sie die Browserverbindung in LocalGateKeys."
+  },
+  "bg_not_waiting": {
+    "message": "Diese Anmeldung wartet nicht mehr darauf, gespeichert zu werden."
+  },
+  "bg_rate_limited": {
+    "message": "Zu viele Anmeldeprüfungen von dieser Website. Warten Sie eine Minute und versuchen Sie es erneut."
+  },
+  "bg_save_inbox_full": {
+    "message": "Zu viele Anmeldungen warten. Öffnen Sie LocalGateKeys, um sie zu importieren, und melden Sie sich dann erneut an, um sie zu speichern."
+  },
+  "bg_save_invalid": {
+    "message": "Diese Anmeldung konnte nicht gespeichert werden."
+  },
+  "bg_save_unavailable": {
+    "message": "Öffnen Sie LocalGateKeys und entsperren Sie es einmal, um das Speichern aus Safari zu aktivieren, und melden Sie sich dann erneut an, um zu speichern."
+  },
+  "bg_saved_notice": {
+    "message": "Gespeichert. Es erscheint in LocalGateKeys, sobald Sie es das nächste Mal öffnen."
+  },
+  "bg_timeout": {
+    "message": "Die LocalGateKeys-Bridge hat nicht geantwortet. Schließen Sie veraltete Desktop-Abfragen und versuchen Sie es erneut."
+  },
+  "content_autosignin_skipped": {
+    "message": "Ausgefüllt. Die automatische Anmeldung wurde übersprungen, weil dieses Formular nicht unterstützt wird oder mehrdeutig ist. Melden Sie sich manuell an."
+  },
+  "content_cancel": {
+    "message": "Abbrechen"
+  },
+  "content_card": {
+    "message": "Karte"
+  },
+  "content_card_approval_invalid": {
+    "message": "Die Kartenfreigabe war ungültig."
+  },
+  "content_card_brand": {
+    "message": "Kartenmarke"
+  },
+  "content_card_cvv": {
+    "message": "Sicherheitscode (CVV)"
+  },
+  "content_card_expiry": {
+    "message": "Ablaufdatum"
+  },
+  "content_card_expiry_month": {
+    "message": "Ablaufmonat"
+  },
+  "content_card_expiry_year": {
+    "message": "Ablaufjahr"
+  },
+  "content_card_name": {
+    "message": "Name des Karteninhabers"
+  },
+  "content_card_no_fields": {
+    "message": "Diese Karte hat keines der Felder dieses Zahlungsformulars."
+  },
+  "content_card_number": {
+    "message": "Kartennummer"
+  },
+  "content_card_origin": {
+    "message": "Karte: $CARD$\nUrsprung: $ORIGIN$",
+    "placeholders": {
+      "card": {
+        "content": "$1"
+      },
+      "origin": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_choose_account": {
+    "message": "Konto auswählen"
+  },
+  "content_choose_card": {
+    "message": "Karte auswählen"
+  },
+  "content_choose_card_fields": {
+    "message": "Kartenfelder auswählen"
+  },
+  "content_choose_identity": {
+    "message": "Identität auswählen"
+  },
+  "content_choose_identity_fields": {
+    "message": "Identitätsfelder auswählen"
+  },
+  "content_close": {
+    "message": "Schließen"
+  },
+  "content_confirm_in_app": {
+    "message": "Änderungen werden in der Desktop-App bestätigt."
+  },
+  "content_cvv_note": {
+    "message": "Der Sicherheitscode ist standardmäßig nicht angehakt; haken Sie ihn nur an, wenn diese Zahlung ihn benötigt."
+  },
+  "content_err_card_not_found": {
+    "message": "In diesem Profil ist keine Zahlungskarte gespeichert."
+  },
+  "content_err_fill_disabled": {
+    "message": "Das Ausfüllen ist für diese Anmeldung deaktiviert."
+  },
+  "content_err_generic": {
+    "message": "Diese Anfrage konnte nicht abgeschlossen werden. Öffnen Sie in LocalGateKeys „Verbindungen“."
+  },
+  "content_err_gesture_required": {
+    "message": "Starten Sie diese Aktion über die Erweiterung oder eine LocalGateKeys-Schaltfläche auf der Seite."
+  },
+  "content_err_invalid_approval": {
+    "message": "Die Freigabe ist ungültig oder abgelaufen. Beginnen Sie von vorn."
+  },
+  "content_err_invalid_card_fields": {
+    "message": "Wählen Sie nur die geprüften Kartenfelder aus."
+  },
+  "content_err_nonce_invalid": {
+    "message": "Der Klick ist abgelaufen oder gehört zu einer anderen Seite. Klicken Sie erneut."
+  },
+  "content_err_nonce_required": {
+    "message": "Aktualisieren Sie die Browser-Erweiterung und laden Sie diese Seite neu."
+  },
+  "content_err_not_found": {
+    "message": "Für diese Website ist keine Anmeldung gespeichert."
+  },
+  "content_err_session_changed": {
+    "message": "Tresor oder Profil haben sich geändert. Klicken Sie erneut auf das Symbol."
+  },
+  "content_err_totp_not_found": {
+    "message": "Keine gespeicherte Anmeldung für genau diese Website hat einen 2FA-Einrichtungsschlüssel."
+  },
+  "content_err_user_cancelled": {
+    "message": "Entsperren oder Bestätigung abgebrochen."
+  },
+  "content_fill_card_title": {
+    "message": "Karte mit LocalGateKeys ausfüllen"
+  },
+  "content_fill_identity_title": {
+    "message": "Identität mit LocalGateKeys ausfüllen"
+  },
+  "content_fill_otp_title": {
+    "message": "2FA-Code mit LocalGateKeys ausfüllen"
+  },
+  "content_fill_title": {
+    "message": "Mit LocalGateKeys ausfüllen"
+  },
+  "content_item_limit": {
+    "message": "Ihr kostenloses LocalGateKeys fasst $LIMIT$ Einträge. Wechseln Sie zu Pro für unbegrenzte Einträge.",
+    "placeholders": {
+      "limit": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_login_typed_on": {
+    "message": "Eine Anmeldung, eingegeben auf $ORIGIN$",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_match_domain": {
+    "message": "passt zur Domain"
+  },
+  "content_match_host": {
+    "message": "passt zum Host"
+  },
+  "content_match_prefix": {
+    "message": "passt zum URL-Präfix"
+  },
+  "content_never_site": {
+    "message": "Nie auf dieser Website"
+  },
+  "content_no_new_password": {
+    "message": "Es wurden keine eindeutigen Felder für ein neues Passwort gefunden."
+  },
+  "content_no_username": {
+    "message": "Kein Benutzername"
+  },
+  "content_not_now": {
+    "message": "Nicht jetzt"
+  },
+  "content_page_changed_click_again": {
+    "message": "Die Seite hat sich geändert. Klicken Sie erneut."
+  },
+  "content_profile": {
+    "message": "Profil: $PROFILE$",
+    "placeholders": {
+      "profile": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_profile_origin": {
+    "message": "Profil: $PROFILE$\nUrsprung: $ORIGIN$",
+    "placeholders": {
+      "profile": {
+        "content": "$1"
+      },
+      "origin": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_pw_generated": {
+    "message": "Passwort generiert"
+  },
+  "content_pw_generated_body": {
+    "message": "Die Felder für das neue Passwort wurden ausgefüllt. Speichern Sie dieses Passwort, bevor Sie die Seite verlassen."
+  },
+  "content_reload_extension_and_page": {
+    "message": "Laden Sie die Erweiterung und diese Seite neu."
+  },
+  "content_reload_page": {
+    "message": "Laden Sie diese Seite nach dem Aktualisieren der Erweiterung neu."
+  },
+  "content_review_approve": {
+    "message": "Prüfen und freigeben"
+  },
+  "content_save": {
+    "message": "Speichern"
+  },
+  "content_save_deferred": {
+    "message": "Die Anmeldung wurde erfasst, während LocalGateKeys gesperrt war. Entsperren Sie die Desktop-App, um zu prüfen, ob sie zu einer gespeicherten Anmeldung passt."
+  },
+  "content_save_exists": {
+    "message": "Dieses Konto ist bereits in LocalGateKeys. Diese Anmeldung an die App senden? Sie zeigt vor dem Speichern, ob sich etwas geändert hat."
+  },
+  "content_save_in_vault": {
+    "message": "Im Tresor speichern"
+  },
+  "content_save_login": {
+    "message": "Anmeldung speichern"
+  },
+  "content_save_new": {
+    "message": "Anmeldung abgeschlossen. In Ihrem lokalen verschlüsselten Tresor speichern?"
+  },
+  "content_save_title": {
+    "message": "Diese Anmeldung speichern?"
+  },
+  "content_save_uncertain": {
+    "message": "LocalGateKeys hat einen Anmeldeversuch erfasst, konnte aber den Erfolgsstatus der Website nicht bestätigen. Speichern Sie nur, wenn die Anmeldung erfolgreich war."
+  },
+  "content_save_update": {
+    "message": "Speichern / aktualisieren"
+  },
+  "content_save_update_title": {
+    "message": "In LocalGateKeys speichern / aktualisieren?"
+  },
+  "content_signin_question": {
+    "message": "Haben Sie sich gerade angemeldet?"
+  },
+  "content_tampered": {
+    "message": "Diese Seite hat eine LocalGateKeys-Schaltfläche versteckt, verschoben oder verdeckt, daher wurde der Klick ignoriert."
+  },
+  "content_totp_waiting": {
+    "message": "Einen Moment, bis ein neuer 2FA-Code vorliegt…"
+  },
+  "content_unlock_in_desktop": {
+    "message": "Entsperren Sie im LocalGateKeys-Desktopfenster. Ihr Master-Passwort wird auf dieser Website nie abgefragt."
+  },
+  "content_unlock_review": {
+    "message": "Zum Prüfen entsperren"
+  },
+  "content_unlock_review_title": {
+    "message": "Zum Prüfen dieser Anmeldung entsperren"
+  },
+  "content_waiting_title": {
+    "message": "Warten auf LocalGateKeys…"
+  },
+  "content_which_totp": {
+    "message": "2FA-Code welches Kontos?"
+  },
+  "err_card_ambiguous": {
+    "message": "Auf der Seite fehlt ein Kartenfeld, oder es ist mehrdeutig."
+  },
+  "err_card_approved_changed": {
+    "message": "Die freigegebenen Kartenfelder haben sich geändert."
+  },
+  "err_card_field_gone": {
+    "message": "Ein freigegebenes Kartenfeld ist nicht mehr sichtbar."
+  },
+  "err_card_field_hidden": {
+    "message": "Das Kartenfeld ist verborgen, verdeckt oder nicht mehr Teil eines Zahlungsformulars."
+  },
+  "err_card_form_changed": {
+    "message": "Das Zahlungsformular hat sich vor dem Ausfüllen geändert."
+  },
+  "err_card_form_changed_filling": {
+    "message": "Das Zahlungsformular hat sich beim Ausfüllen geändert."
+  },
+  "err_card_unapproved": {
+    "message": "Die Kartenfreigabe enthielt nicht freigegebene Felder."
+  },
+  "err_code_boxes": {
+    "message": "Dieses Codefeld hat eine unerwartete Anzahl an Kästchen."
+  },
+  "err_code_field_hidden": {
+    "message": "Das Codefeld ist verborgen, verdeckt oder kein 2FA-Feld mehr."
+  },
+  "err_form_other_origin": {
+    "message": "Das Formular verweist auf einen anderen Ursprung. LocalGateKeys füllt es nicht aus."
+  },
+  "err_form_other_origin_short": {
+    "message": "Das Formular verweist auf einen anderen Ursprung."
+  },
+  "err_identity_ambiguous": {
+    "message": "Auf der Seite fehlt ein Identitätsfeld, oder es ist mehrdeutig."
+  },
+  "err_identity_approved_changed": {
+    "message": "Die freigegebenen Identitätsfelder haben sich geändert."
+  },
+  "err_identity_field_gone": {
+    "message": "Ein freigegebenes Identitätsfeld ist nicht mehr sichtbar."
+  },
+  "err_identity_field_hidden": {
+    "message": "Das Identitätsfeld ist verborgen, verdeckt oder nicht unterstützt."
+  },
+  "err_identity_form_changed": {
+    "message": "Das Identitätsformular hat sich vor dem Ausfüllen geändert."
+  },
+  "err_login_form_changed": {
+    "message": "Das Anmeldeformular hat sich beim Ausfüllen geändert."
+  },
+  "err_request_cancelled": {
+    "message": "Die Anfrage wurde vor dem Ausfüllen abgebrochen."
+  },
+  "err_review_required": {
+    "message": "Prüfen Sie die erforderlichen Felder, bevor Sie sich anmelden."
+  },
+  "err_signin_cancelled_changed": {
+    "message": "Anmeldung abgebrochen: Tresor, Profil oder Seite haben sich geändert."
+  },
+  "err_signin_cancelled_form": {
+    "message": "Anmeldung abgebrochen, weil sich das Formular geändert hat."
+  },
+  "err_target_field_hidden": {
+    "message": "Das Zielfeld ist verborgen, verdeckt oder kein Anmeldefeld mehr."
+  },
+  "ext_description": {
+    "message": "Füllen Sie Anmeldungen aus und speichern Sie sie mit dem Passwortmanager LocalGateKeys für Windows. Die Erweiterung kommuniziert nur mit der App auf Ihrem eigenen PC."
+  },
+  "ext_description_ios": {
+    "message": "Bietet an, die Anmeldungen, mit denen Sie sich in Safari anmelden, in LocalGateKeys auf diesem iPhone zu speichern."
+  },
+  "ext_description_macos": {
+    "message": "Bietet an, die Anmeldungen, mit denen Sie sich in Safari anmelden, in LocalGateKeys auf diesem Mac zu speichern."
+  },
+  "ext_name": {
+    "message": "LocalGateKeys"
+  },
+  "popup_actions_unavailable": {
+    "message": "Feldaktionen sind nicht verfügbar. Öffnen Sie LocalGateKeys, reparieren Sie die Browserverbindung und aktualisieren Sie dann."
+  },
+  "popup_auto_need_page": {
+    "message": "Öffnen Sie eine http- oder https-Seite, bevor Sie das automatische Speichern ändern."
+  },
+  "popup_auto_now_off": {
+    "message": "Das automatische Speichern ist für diese Website ausgeschaltet."
+  },
+  "popup_auto_now_on": {
+    "message": "Das automatische Speichern ist eingeschaltet. Sie werden gefragt, bevor eine Anmeldung gespeichert wird."
+  },
+  "popup_auto_off_hint": {
+    "message": "Aus: LocalGateKeys bietet auf dieser Website kein Speichern an"
+  },
+  "popup_auto_on_hint": {
+    "message": "Ein: Sie werden nach einer erfolgreichen Anmeldung hier gefragt"
+  },
+  "popup_auto_read_failed": {
+    "message": "Die Einstellung für das automatische Speichern dieser Website konnte nicht gelesen werden. Versuchen Sie es erneut."
+  },
+  "popup_auto_turn_off": {
+    "message": "Speicherabfragen auf dieser Website ausschalten"
+  },
+  "popup_auto_turn_on": {
+    "message": "Speicherabfragen auf dieser Website einschalten"
+  },
+  "popup_auto_update_failed": {
+    "message": "Das automatische Speichern für diese Website konnte nicht aktualisiert werden. Versuchen Sie es erneut."
+  },
+  "popup_checking_connection": {
+    "message": "Verbindung wird geprüft…"
+  },
+  "popup_checking_connection_desc": {
+    "message": "LocalGateKeys wird kontaktiert, ohne Ihren Tresor zu entsperren."
+  },
+  "popup_checking_page": {
+    "message": "Diese Seite wird geprüft…"
+  },
+  "popup_cmd_busy": {
+    "message": "Beenden Sie die offene LocalGateKeys-Abfrage und versuchen Sie es dann erneut."
+  },
+  "popup_cmd_cancelled": {
+    "message": "Das Ausfüllen wurde abgebrochen, bevor ein Feld freigegeben wurde."
+  },
+  "popup_cmd_card_form_not_found": {
+    "message": "Auf dieser Seite wurde kein Zahlungsformular gefunden. Öffnen Sie ein Bezahlformular mit einem Kartennummernfeld und versuchen Sie es erneut."
+  },
+  "popup_cmd_card_not_found": {
+    "message": "In diesem Profil ist keine Zahlungskarte gespeichert. Fügen Sie zuerst in LocalGateKeys eine Karte hinzu."
+  },
+  "popup_cmd_destination_changed": {
+    "message": "Diese Seite hat sich geändert. Öffnen Sie das Popup erneut im vorgesehenen Anmeldeformular."
+  },
+  "popup_cmd_identity_not_found": {
+    "message": "Auf dieser Seite wurde kein Identitätsfeld gefunden. Öffnen Sie ein Kontakt- oder Adressformular und versuchen Sie es erneut."
+  },
+  "popup_cmd_invalid_card": {
+    "message": "Die Seite hat ein nicht unterstütztes Kartenfeld angefordert. Wählen Sie nur Kartenfelder aus."
+  },
+  "popup_cmd_invalid_identity": {
+    "message": "Die Seite hat ein nicht unterstütztes Identitätsfeld angefordert. Wählen Sie nur Kontakt- oder Adressfelder aus."
+  },
+  "popup_cmd_nonce_invalid": {
+    "message": "Der Klick ist abgelaufen oder gehört zu einer anderen Seite. Wählen Sie die Aktion erneut."
+  },
+  "popup_cmd_nonce_required": {
+    "message": "Aktualisieren Sie die Erweiterung und laden Sie sie neu: Diese Aktion benötigt eine neue Gesture-Nonce."
+  },
+  "popup_cmd_not_found": {
+    "message": "Für diese Website wurde keine gespeicherte Anmeldung gefunden. Speichern Sie zuerst eine Anmeldung oder prüfen Sie deren Ausfüllrichtlinie."
+  },
+  "popup_cmd_offline": {
+    "message": "LocalGateKeys ist offline. Öffnen Sie die Desktop-App und reparieren Sie die Browserverbindung."
+  },
+  "popup_cmd_origin_mismatch": {
+    "message": "Der Ursprung dieser Seite hat sich geändert. Öffnen Sie die Erweiterung erneut auf der vorgesehenen Seite."
+  },
+  "popup_cmd_session_changed": {
+    "message": "Der Tresor ist gesperrt, oder das Profil hat sich geändert. Klicken Sie erneut auf „Anmeldung ausfüllen“, um fortzufahren."
+  },
+  "popup_cmd_version_mismatch": {
+    "message": "Aktualisieren Sie die Erweiterung und LocalGateKeys und laden Sie sie neu, bevor Sie Identitätsfelder ausfüllen."
+  },
+  "popup_connection_unavailable": {
+    "message": "Verbindung nicht verfügbar. $DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_current_site": {
+    "message": "Aktuelle Website"
+  },
+  "popup_diag_agent_offline": {
+    "message": "Öffnen Sie LocalGateKeys, reparieren Sie die Browserverbindung und versuchen Sie es dann erneut."
+  },
+  "popup_diag_connection_lost": {
+    "message": "Die Bridge wurde getrennt. Reparieren Sie die Browserverbindung und versuchen Sie es erneut."
+  },
+  "popup_diag_default": {
+    "message": "Öffnen Sie LocalGateKeys, reparieren Sie die Browserverbindung und versuchen Sie es dann erneut."
+  },
+  "popup_diag_native_host": {
+    "message": "Der Native Host war nicht erreichbar. Reparieren Sie die Browserverbindung in LocalGateKeys."
+  },
+  "popup_diag_state_invalid": {
+    "message": "Starten Sie LocalGateKeys neu und reparieren Sie die Browserverbindung."
+  },
+  "popup_diag_state_missing": {
+    "message": "Schließen Sie die Profilauswahl in LocalGateKeys ab und versuchen Sie es dann erneut."
+  },
+  "popup_diag_timeout": {
+    "message": "Die Bridge hat zu lange für die Antwort gebraucht. Schließen Sie alle Desktop-Abfragen und versuchen Sie es erneut."
+  },
+  "popup_diag_unavailable": {
+    "message": "Starten Sie LocalGateKeys neu und aktualisieren Sie dann die Verbindung."
+  },
+  "popup_diag_version_mismatch": {
+    "message": "Aktualisieren Sie die Erweiterung und LocalGateKeys und starten Sie dann beide neu."
+  },
+  "popup_fb_generate": {
+    "message": "Es wurden keine eindeutigen Felder für ein neues Passwort gefunden. Öffnen Sie ein Registrierungs- oder Passwortänderungsformular und versuchen Sie es erneut."
+  },
+  "popup_fb_identity": {
+    "message": "Es wurde kein unterstütztes Kontakt- oder Adressfeld gefunden. Öffnen Sie ein Identitätsformular und versuchen Sie es erneut."
+  },
+  "popup_fb_login": {
+    "message": "Es wurde kein unterstütztes Anmeldefeld gefunden. Öffnen Sie ein Anmeldeformular und versuchen Sie es erneut."
+  },
+  "popup_fb_save": {
+    "message": "Es wurde kein aktuelles Anmeldefeld gefunden. Geben Sie eine Anmeldung ein und versuchen Sie es dann erneut."
+  },
+  "popup_fill_card": {
+    "message": "Karte ausfüllen…"
+  },
+  "popup_fill_card_desc": {
+    "message": "Karte wählen, Felder anhaken, in der App bestätigen"
+  },
+  "popup_fill_card_label": {
+    "message": "Karte ausfüllen"
+  },
+  "popup_fill_identity": {
+    "message": "Identität ausfüllen"
+  },
+  "popup_fill_identity_desc": {
+    "message": "Kontaktfelder vor dem Ausfüllen prüfen"
+  },
+  "popup_fill_login": {
+    "message": "Anmeldung ausfüllen"
+  },
+  "popup_fill_login_desc": {
+    "message": "Eine gespeicherte Anmeldung für diese Seite wählen"
+  },
+  "popup_finish_setup_refresh": {
+    "message": "Schließen Sie die Einrichtung von LocalGateKeys ab und aktualisieren Sie dann die Verbindung, bevor Sie Feldaktionen verwenden."
+  },
+  "popup_footer": {
+    "message": "Lokal auf diesem Gerät verschlüsselt"
+  },
+  "popup_generate_password": {
+    "message": "Passwort generieren"
+  },
+  "popup_generate_password_desc": {
+    "message": "Ein Passwort für die Registrierung erstellen"
+  },
+  "popup_guidance_checking": {
+    "message": "LocalGateKeys wird geprüft, bevor die Aktionen dieser Seite aktiviert werden."
+  },
+  "popup_guidance_connected": {
+    "message": "Es wird nur der Ursprung dieser Website geprüft. Nichts wird ausgefüllt, bis Sie eine Aktion wählen."
+  },
+  "popup_guidance_locked": {
+    "message": "Wählen Sie eine Aktion, um das Entsperren anzufordern; nichts wird automatisch ausgefüllt."
+  },
+  "popup_guidance_offline": {
+    "message": "Verbinden Sie LocalGateKeys erneut, um die Aktionen dieser Website zu verwenden."
+  },
+  "popup_guidance_setup": {
+    "message": "Schließen Sie die Einrichtung von LocalGateKeys ab, bevor Sie die Aktionen dieser Website verwenden."
+  },
+  "popup_integration_disabled": {
+    "message": "Die Browser-Integration ist pausiert. Aktivieren Sie sie in den LocalGateKeys-Einstellungen wieder."
+  },
+  "popup_local_vault": {
+    "message": "LOKALER TRESOR"
+  },
+  "popup_locked_desc": {
+    "message": "Wählen Sie eine Aktion, um fortzufahren; die Desktop-App fragt vor dem Entsperren nach."
+  },
+  "popup_looking": {
+    "message": "$ACTION$ sucht nach unterstützten Feldern…",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_manual_by_design": {
+    "message": "ABSICHTLICH MANUELL"
+  },
+  "popup_need_login_page": {
+    "message": "Öffnen Sie zuerst eine http- oder https-Seite mit einem Anmeldeformular."
+  },
+  "popup_page_unavailable": {
+    "message": "Diese Seite ist für LocalGateKeys nicht verfügbar."
+  },
+  "popup_page_unavailable_hint": {
+    "message": "Öffnen Sie eine normale http- oder https-Anmeldeseite, um diese Aktionen zu verwenden."
+  },
+  "popup_page_unreachable": {
+    "message": "Diese Seite war nicht erreichbar. Laden Sie die Seite neu und versuchen Sie es erneut."
+  },
+  "popup_quick_actions": {
+    "message": "Schnellaktionen"
+  },
+  "popup_ready_version": {
+    "message": "LocalGateKeys ist bereit$VERSION$. Nichts wird entsperrt, bis Sie eine Aktion wählen.",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_refresh_connection": {
+    "message": "Verbindungsstatus aktualisieren"
+  },
+  "popup_refreshed_locked": {
+    "message": "Verbindung aktualisiert. Entsperrt wird erst, nachdem Sie eine Aktion gewählt haben."
+  },
+  "popup_refreshed_ready": {
+    "message": "Verbindung aktualisiert. LocalGateKeys ist bereit."
+  },
+  "popup_refreshed_setup": {
+    "message": "Verbindung aktualisiert. Schließen Sie die Einrichtung von LocalGateKeys ab und aktualisieren Sie dann."
+  },
+  "popup_save_login": {
+    "message": "Anmeldung speichern"
+  },
+  "popup_save_login_desc": {
+    "message": "Diese Anmeldefelder speichern"
+  },
+  "popup_setup_desc": {
+    "message": "LocalGateKeys hat kein bereites Browserprofil gemeldet. Schließen Sie die Einrichtung ab und aktualisieren Sie dann."
+  },
+  "popup_site_hint": {
+    "message": "Aktionen bleiben auf dieser Seite und erfordern Ihre Auswahl."
+  },
+  "popup_started": {
+    "message": "$ACTION$ wurde auf dieser Seite gestartet.",
+    "placeholders": {
+      "action": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_state_connected": {
+    "message": "Verbunden"
+  },
+  "popup_state_locked": {
+    "message": "Gesperrt"
+  },
+  "popup_state_offline": {
+    "message": "Offline"
+  },
+  "popup_state_setup": {
+    "message": "Einrichtung erforderlich"
+  },
+  "popup_tagline": {
+    "message": "Ihre Schlüssel. Ihre Kontrolle."
+  },
+  "popup_this_page": {
+    "message": "DIESE SEITE"
+  },
+  "popup_unlock_on_action": {
+    "message": "Das Entsperren wird erst angefordert, nachdem Sie eine Feldaktion gewählt haben."
+  },
+  "popup_version_suffix": {
+    "message": " (LocalGateKeys $VERSION$)",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_wait_checking": {
+    "message": "LocalGateKeys wird noch geprüft. Warten Sie auf den Verbindungsstatus und versuchen Sie es dann erneut."
+  }
+}

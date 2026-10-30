@@ -1,0 +1,87 @@
+{
+  "format": "keePassXML",
+  "input": "tests/fixtures/imports/keepass.xml",
+  "python_format": "keepass-xml",
+  "result": {
+    "diagnostics": [
+      "1 entries in the KeePass Recycle Bin were not imported.",
+      "1 historical entry versions were not imported (only current values are kept).",
+      "1 entries have attachments that were not imported."
+    ],
+    "records": [
+      {
+        "card": {},
+        "created": 1704103200,
+        "custom_fields": [
+          {
+            "hidden": false,
+            "name": "Customer number",
+            "value": "CN-000123"
+          },
+          {
+            "hidden": true,
+            "name": "Telephone PIN",
+            "value": "2468"
+          }
+        ],
+        "favorite": false,
+        "folder": "",
+        "identity": {},
+        "kind": "login",
+        "modified": 1714557600,
+        "notes": "Branch: High Street",
+        "password": "kpxml-pass-1",
+        "source_row": 1,
+        "tags": [
+          "finance",
+          "important"
+        ],
+        "title": "Example Bank",
+        "totp_uri": "otpauth://totp/Bank:alex?secret=JBSWY3DPEHPK3PXP&issuer=Bank",
+        "urls": [
+          "https://bank.example.com/"
+        ],
+        "username": "alex.example"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "Work",
+        "identity": {},
+        "kind": "login",
+        "modified": null,
+        "notes": "",
+        "password": "kpxml-pass-2",
+        "source_row": 2,
+        "tags": [],
+        "title": "Ticket system",
+        "totp_uri": "",
+        "urls": [
+          "https://tickets.example.com/login"
+        ],
+        "username": "alex"
+      },
+      {
+        "card": {},
+        "created": null,
+        "custom_fields": [],
+        "favorite": false,
+        "folder": "Work",
+        "identity": {},
+        "kind": "note",
+        "modified": null,
+        "notes": "Side entrance: 1357",
+        "password": "",
+        "source_row": 3,
+        "tags": [],
+        "title": "Door code",
+        "totp_uri": "",
+        "urls": [],
+        "username": ""
+      }
+    ],
+    "source_format": "keepass-xml"
+  }
+}

@@ -22,6 +22,19 @@ describe('UnlockingPage', () => {
     expect(await screen.findByText(/Windows Hello is enabled/)).toBeInTheDocument();
   });
 
+  it('shows a cancel notice by its code and stays quiet for a plain cancel', async () => {
+    const hello_enable = vi.fn()
+      .mockResolvedValueOnce({ ok: false, error: { code: 'cancelled_notice', message: 'Setup abgebrochen.' } })
+      .mockResolvedValueOnce({ ok: false, error: { code: 'cancelled', message: 'Abgebrochen.' } });
+    fakeApi({ hello_status: vi.fn().mockResolvedValue(HELLO_OFF), face_status: vi.fn().mockResolvedValue(FACE_OFF), hello_enable });
+    render(UnlockingPage, { onclose: vi.fn() });
+    await fireEvent.click(await screen.findByRole('button', { name: 'Enable for this profile' }));
+    expect(await screen.findByText('Setup abgebrochen.')).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Enable for this profile' }));
+    await waitFor(() => expect(hello_enable).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByText('Abgebrochen.')).not.toBeInTheDocument());
+  });
+
   it('shows the camera while camera setup runs', async () => {
     let finish;
     fakeApi({ hello_status: vi.fn().mockResolvedValue(HELLO_OFF), face_status: vi.fn().mockResolvedValue(FACE_OFF),

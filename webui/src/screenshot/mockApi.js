@@ -131,7 +131,7 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
 
   const handlers = {
     // ---- app, window, profiles
-    app_info: () => ok({ version: '0.4.8', glass: false }),
+    app_info: () => ok({ version: '0.4.10', glass: false }),
     window_theme_sync: () => ok(),
     phone_backup_choose: () => ok({ handle: 'demo', name: 'LocalGateKeys-Backup-2026-10-20.lgkm', platform: 'android', created: '2026-10-20' }),
     phone_backup_preview: () => ok({ token: 'demo-token', lines: ['3 new items', '1 items updated from the backup', '2 already up to date', '1 items moved to the trash (deleted on the phone)'], status: 'Preview is ready. Review it, then restore.' }),
@@ -183,6 +183,7 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
             { label: 'Devices & connections', icon: 'nav.devicesConnections', token: null, count: null, action: 'connections_clicked' },
             { label: 'Licence', icon: 'nav.settings', token: null, count: null, action: 'licence_clicked' },
             { label: 'Import & export', icon: 'nav.tools', token: null, count: null, action: 'import_export_clicked' },
+            { label: 'Scan QR code', icon: 'nav.tools', token: null, count: null, action: 'scan_qr_clicked' },
             { label: 'Activity', icon: 'nav.allItems', token: null, count: null, action: 'activity_clicked' },
             { label: 'Trash', icon: 'nav.trash', token: null, count: null, action: 'trash_clicked' },
           ] },
@@ -193,7 +194,7 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
     items_list: (token = null, chip = null, query = '') => {
       if (!state.unlocked) {
         return ok({ items: [], count: 0, chips: { attention: 0, no2fa: 0, expiring: 0 },
-          context: { title: 'All items', text: CONTEXT.all }, empty: { title: 'Vault locked', text: 'Unlock this profile to browse its items.', action: 'Unlock vault' } });
+          context: { title: 'All items', text: CONTEXT.all }, empty: { title: 'Vault locked', text: 'Unlock this profile to browse its items.', action: 'Unlock vault', action_id: 'unlock' } });
       }
       const items = all();
       const present = new Set(items.map((i) => i.id));
@@ -209,9 +210,10 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
       const key = token === null ? 'all' : token.startsWith('collection:') ? 'collection' : token;
       const text = CONTEXT[key] ?? `${KIND_LABELS[token] ?? 'Item'} items within All items.`;
       const empty = rows.length ? null : (query || token || chip)
-        ? { title: 'No matching items', text: 'Try another name, username or tag, or clear your filters.', action: 'Clear filters' }
-        : { title: 'No items yet', text: 'Add a website login, desktop login, or typed item to get started.', action: 'New item' };
-      return ok({ items: rows, count: rows.length, chips, context: { title, text }, empty });
+        ? { title: 'No matching items', text: 'Try another name, username or tag, or clear your filters.', action: 'Clear filters', action_id: 'clear_filters' }
+        : { title: 'No items yet', text: 'Add a website login, desktop login, or typed item to get started.', action: 'New item', action_id: 'new_item' };
+      return ok({ items: rows, count: rows.length, chips, context: { title, text }, empty,
+        sort: { option: 'title_asc', favorites_first: true, options: [] } });
     },
     quick_search: (query = '') => ok({ profile: PROFILE.name, rows: all()
       .filter((i) => matches(i, null, null, query))
@@ -340,6 +342,16 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
       errors: [], strength: { segments: 4, label: 'Very strong', reuse_text: 'not used anywhere else' }, dirty: false }),
     login_close: () => ok(),
 
+    // ---- Scan QR code sheet: any picture "contains" a Google Authenticator export of three accounts
+    qr_sheet_scan_image: () => ok(clone(QR_EXPORT)),
+    qr_sheet_scan_camera: () => ok(clone(QR_EXPORT)),
+    qr_sheet_open: (_token, _index, target) => handlers[target ? 'login_open' : 'login_new'](
+      target ? { source: 'credential', id: target, kind: 'web' } : undefined),
+    qr_sheet_add: (_token, choices = []) => ok({ added: choices.filter((c) => c.target === 'new').length,
+      updated: choices.filter((c) => c.target !== 'new').length, skipped: [],
+      message: `Added ${choices.length} account(s). New logins have a generated password: change it to your real one.` }),
+    qr_sheet_discard: () => ok(),
+
     // ---- generator
     generator_get: () => ok({ options: { ...state.generator } }),
     generator_generate: (options = {}) => {
@@ -459,6 +471,15 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
 }
 
 // Recorded from app/tools.palette_results (empty query, unlocked) and _NAVIGATE.
+const QR_EXPORT = {
+  token: 'scan-demo', kind: 'export', complete: true, skipped: [], batch: { size: 1, scanned: [0], missing: [] },
+  accounts: [
+    { index: 0, issuer: 'GitHub', label: 'alex@example.com', already: null, best: null, matches: [] },
+    { index: 1, issuer: 'dropbox.com', label: 'alex', already: null, best: null, matches: [] },
+    { index: 2, issuer: 'Slack', label: 'alex@work.example', already: null, best: null, matches: [] },
+  ],
+};
+
 const PALETTE = [
   ['backup-now', 'Back up now', 'Save an encrypted backup'],
   ['backup-verify', 'Verify a backup', 'Check that a backup opens'],
@@ -466,6 +487,7 @@ const PALETTE = [
   ['recovery-kit', 'Write recovery kit', 'Print or save your recovery kit'],
   ['generate-password', 'Generate password', 'Create a strong password'],
   ['new-item', 'New item', 'Add a login, card, note or other item'],
+  ['scan-qr', 'Scan QR code', 'Add 2FA codes from a QR picture, screenshot or webcam'],
   ['quick-access', 'Quick access', 'Open the quick access window'],
   ['lock-now', 'Lock now', 'Lock the vault'],
   ['emergency-lock', 'Emergency lock', 'Lock and clear sensitive state'],

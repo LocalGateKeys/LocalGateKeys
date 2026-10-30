@@ -2,15 +2,22 @@ package app.localgatekeys.android.settings
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.annotation.StringRes
+import app.localgatekeys.android.R
+import app.localgatekeys.android.i18n.Txt
+import app.localgatekeys.android.vault.VaultSort
+import app.localgatekeys.android.vault.VaultSortOption
 
 /** How long the app may stay in the background before it locks. */
-enum class AutoLockDelay(val seconds: Long, val label: String) {
-    IMMEDIATELY(0, "Immediately"),
-    ONE_MINUTE(60, "After 1 minute"),
-    FIVE_MINUTES(300, "After 5 minutes"),
-    FIFTEEN_MINUTES(900, "After 15 minutes"),
-    ONE_HOUR(3600, "After 1 hour"),
+enum class AutoLockDelay(val seconds: Long, @StringRes private val labelRes: Int) {
+    IMMEDIATELY(0, R.string.autolock_immediately),
+    ONE_MINUTE(60, R.string.autolock_one_minute),
+    FIVE_MINUTES(300, R.string.autolock_five_minutes),
+    FIFTEEN_MINUTES(900, R.string.autolock_fifteen_minutes),
+    ONE_HOUR(3600, R.string.autolock_one_hour),
     ;
+
+    fun label(t: Txt): String = t.s(labelRes)
 
     companion object {
         fun of(seconds: Long?): AutoLockDelay? = entries.firstOrNull { it.seconds == seconds }
@@ -18,13 +25,15 @@ enum class AutoLockDelay(val seconds: Long, val label: String) {
 }
 
 /** How long the unlocked app may go without a touch before it locks. Stored as 0 for Never. */
-enum class IdleLock(val seconds: Long, val label: String) {
-    ONE_MINUTE(60, "1 minute"),
-    FIVE_MINUTES(300, "5 minutes"),
-    FIFTEEN_MINUTES(900, "15 minutes"),
-    THIRTY_MINUTES(1800, "30 minutes"),
-    NEVER(0, "Never"),
+enum class IdleLock(val seconds: Long, @StringRes private val labelRes: Int) {
+    ONE_MINUTE(60, R.string.idle_one_minute),
+    FIVE_MINUTES(300, R.string.idle_five_minutes),
+    FIFTEEN_MINUTES(900, R.string.idle_fifteen_minutes),
+    THIRTY_MINUTES(1800, R.string.idle_thirty_minutes),
+    NEVER(0, R.string.settings_never),
     ;
+
+    fun label(t: Txt): String = t.s(labelRes)
 
     /** Seconds before locking, or null for Never. */
     val limit: Long? get() = if (this == NEVER) null else seconds
@@ -35,23 +44,27 @@ enum class IdleLock(val seconds: Long, val label: String) {
 }
 
 /** When a copied secret leaves the clipboard. There is no "never": copies always expire. */
-enum class ClipboardExpiry(val seconds: Long, val label: String) {
-    THIRTY_SECONDS(30, "30 seconds"),
-    SIXTY_SECONDS(60, "60 seconds"),
-    TWO_MINUTES(120, "2 minutes"),
-    FIVE_MINUTES(300, "5 minutes"),
+enum class ClipboardExpiry(val seconds: Long, @StringRes private val labelRes: Int) {
+    THIRTY_SECONDS(30, R.string.clipboard_thirty_seconds),
+    SIXTY_SECONDS(60, R.string.clipboard_sixty_seconds),
+    TWO_MINUTES(120, R.string.clipboard_two_minutes),
+    FIVE_MINUTES(300, R.string.clipboard_five_minutes),
     ;
+
+    fun label(t: Txt): String = t.s(labelRes)
 
     companion object {
         fun of(seconds: Long?): ClipboardExpiry? = entries.firstOrNull { it.seconds == seconds }
     }
 }
 
-enum class Appearance(val raw: String, val label: String) {
-    SYSTEM("system", "System"),
-    LIGHT("light", "Light"),
-    DARK("dark", "Dark"),
+enum class Appearance(val raw: String, @StringRes private val labelRes: Int) {
+    SYSTEM("system", R.string.settings_appearance_system),
+    LIGHT("light", R.string.settings_appearance_light),
+    DARK("dark", R.string.settings_appearance_dark),
     ;
+
+    fun label(t: Txt): String = t.s(labelRes)
 
     companion object {
         fun of(raw: String?): Appearance? = entries.firstOrNull { it.raw == raw }
@@ -148,9 +161,24 @@ class AppSettings(private val store: KeyValueStore) {
         const val ERASE_PENDING = "settings.erasePending"
         const val INITIALS = "settings.initials"
         const val PLAN_FULL_REVISION = "settings.planFullRevision"
+        const val VAULT_SORT = "settings.listSort"
+        const val FAVORITES_FIRST = "settings.listFavoritesFirst"
+        const val IMPORT_CARD_DISMISSED = "settings.importCardDismissed"
+        const val APP_PASSWORD_FAILURES = "settings.unlockFailures"
+        const val APP_PASSWORD_LAST_FAILURE = "settings.unlockFailureAt"
+        const val APP_PASSWORD_LAST_FAILURE_ELAPSED = "settings.unlockFailureUptime"
+        const val APP_PASSWORD_LAST_FAILURE_BOOT = "settings.unlockFailureBoot"
+        const val SETUP_DONE = "settings.setupDone"
+        const val SETUP_SEEN = "settings.setupSeen"
+        const val SETUP_CARD_HIDDEN = "settings.setupCardHidden"
+        const val AUTOFILL_SUGGESTIONS = "settings.autofillSuggestions"
+        const val PASSKEY_PROVIDER = "settings.passkeyProvider"
         val all = listOf(
             AUTO_LOCK_DELAY, IDLE_LOCK, CLIPBOARD_EXPIRY, CONCEAL_SECRETS_IN_DETAIL, SHOW_CODES_ROW, COPY_CODE_ON_FILL,
-            APPEARANCE, GENERATOR_OPTIONS, ERASE_PENDING, INITIALS, PLAN_FULL_REVISION,
+            APPEARANCE, GENERATOR_OPTIONS, ERASE_PENDING, INITIALS, PLAN_FULL_REVISION, VAULT_SORT, FAVORITES_FIRST,
+            IMPORT_CARD_DISMISSED, APP_PASSWORD_FAILURES, APP_PASSWORD_LAST_FAILURE,
+            APP_PASSWORD_LAST_FAILURE_ELAPSED, APP_PASSWORD_LAST_FAILURE_BOOT, SETUP_DONE, SETUP_SEEN, SETUP_CARD_HIDDEN,
+            AUTOFILL_SUGGESTIONS, PASSKEY_PROVIDER,
         )
     }
 
@@ -171,6 +199,26 @@ class AppSettings(private val store: KeyValueStore) {
         get() = store.getBoolean(Key.CONCEAL_SECRETS_IN_DETAIL) ?: true
         set(v) = store.putBoolean(Key.CONCEAL_SECRETS_IN_DETAIL, v)
 
+    /** Onboarding steps finished on this phone (their raw names, comma separated); never synced. */
+    var setupDone: Set<String>
+        get() = store.getString(Key.SETUP_DONE)?.split(',')?.filter { it.isNotEmpty() }?.toSet() ?: emptySet()
+        set(v) = store.putString(Key.SETUP_DONE, v.sorted().joinToString(","))
+
+    /** The onboarding pages were shown (finished or skipped) on this phone. */
+    var setupSeen: Boolean
+        get() = store.getBoolean(Key.SETUP_SEEN) ?: false
+        set(v) = store.putBoolean(Key.SETUP_SEEN, v)
+
+    /** Hide on the vault's "Finish setting up" card. */
+    var setupCardHidden: Boolean
+        get() = store.getBoolean(Key.SETUP_CARD_HIDDEN) ?: false
+        set(v) = store.putBoolean(Key.SETUP_CARD_HIDDEN, v)
+
+    /** "Not now" on the empty vault's "Import your passwords" card (this phone only). */
+    var importCardDismissed: Boolean
+        get() = store.getBoolean(Key.IMPORT_CARD_DISMISSED) ?: false
+        set(v) = store.putBoolean(Key.IMPORT_CARD_DISMISSED, v)
+
     /** The Vault tab's pinned Codes row. */
     var showCodesRow: Boolean
         get() = store.getBoolean(Key.SHOW_CODES_ROW) ?: true
@@ -180,6 +228,16 @@ class AppSettings(private val store: KeyValueStore) {
     var copyCodeOnFill: Boolean
         get() = store.getBoolean(Key.COPY_CODE_ON_FILL) ?: true
         set(v) = store.putBoolean(Key.COPY_CODE_ON_FILL, v)
+
+    /** Part C: "Show logins in suggestions": off, autofill offers only "Unlock LocalGateKeys" (no titles or usernames). */
+    var autofillSuggestions: Boolean
+        get() = store.getBoolean(Key.AUTOFILL_SUGGESTIONS) ?: true
+        set(v) = store.putBoolean(Key.AUTOFILL_SUGGESTIONS, v)
+
+    /** Part C: "Offer LocalGateKeys for passkeys" (the desktop's `passkeys_enabled`). */
+    var passkeyProvider: Boolean
+        get() = store.getBoolean(Key.PASSKEY_PROVIDER) ?: true
+        set(v) = store.putBoolean(Key.PASSKEY_PROVIDER, v)
 
     var appearance: Appearance
         get() = Appearance.of(store.getString(Key.APPEARANCE)) ?: Appearance.SYSTEM
@@ -203,10 +261,40 @@ class AppSettings(private val store: KeyValueStore) {
             else store.putLong(Key.PLAN_FULL_REVISION, v, durable = true)
         }
 
+    /** The vault list's sort (this phone only, never synced). Default: newest modified first. */
+    var vaultSort: VaultSort
+        get() = VaultSort(
+            VaultSortOption.of(store.getString(Key.VAULT_SORT)) ?: VaultSortOption.MODIFIED_DESC,
+            store.getBoolean(Key.FAVORITES_FIRST) ?: false,
+        )
+        set(v) {
+            store.putString(Key.VAULT_SORT, v.option.raw)
+            store.putBoolean(Key.FAVORITES_FIRST, v.favoritesFirst)
+        }
+
     /** The avatar letters (Settings, Appearance), at most two; empty shows the person glyph. */
     var initials: String
         get() = store.getString(Key.INITIALS) ?: ""
         set(v) = store.putString(Key.INITIALS, AvatarInitials.from(v) ?: "")
+
+    /** Consecutive wrong app passwords or recovery phrases (the wrong-try delay); never the password itself. */
+    var appPasswordFailures: Int
+        get() = (store.getLong(Key.APP_PASSWORD_FAILURES) ?: 0L).toInt()
+        set(v) = store.putLong(Key.APP_PASSWORD_FAILURES, v.toLong(), durable = true)
+
+    /** Unix seconds of the last wrong app password. */
+    var appPasswordLastFailureAt: Long
+        get() = store.getLong(Key.APP_PASSWORD_LAST_FAILURE) ?: 0L
+        set(v) = store.putLong(Key.APP_PASSWORD_LAST_FAILURE, v, durable = true)
+
+    /** Monotonic seconds since boot at the last wrong app password (-1: none), and that boot's count. */
+    var appPasswordLastFailureElapsed: Long
+        get() = store.getLong(Key.APP_PASSWORD_LAST_FAILURE_ELAPSED) ?: -1L
+        set(v) = store.putLong(Key.APP_PASSWORD_LAST_FAILURE_ELAPSED, v, durable = true)
+
+    var appPasswordLastFailureBoot: Long
+        get() = store.getLong(Key.APP_PASSWORD_LAST_FAILURE_BOOT) ?: -1L
+        set(v) = store.putLong(Key.APP_PASSWORD_LAST_FAILURE_BOOT, v, durable = true)
 
     /**
      * Part of "Erase this phone's vault": removes every preference (durably) except [erasePending], which the lock

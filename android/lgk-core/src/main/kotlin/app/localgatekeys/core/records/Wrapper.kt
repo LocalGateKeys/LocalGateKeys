@@ -3,6 +3,8 @@ package app.localgatekeys.core.records
 import app.localgatekeys.core.engine.ItemState
 import app.localgatekeys.core.engine.VersionVector
 import app.localgatekeys.core.json.JsonValue
+import app.localgatekeys.core.sync.AttachmentRef
+import app.localgatekeys.core.sync.AttachmentSyncException
 
 /** The item wrapper `{"ns", "schema", "updated_at", "record"}` (vectors README "Item wrapper"). */
 object Wrapper {
@@ -36,8 +38,17 @@ object Wrapper {
     /**
      * Namespace and record of a live remote state (desktop `_unwrap`). A conflict copy ([isCopy]) gets the
      * copy id as its record id. Licences are verified against [licenseKeys].
+     *
+     * Documents (attachment sync, 2026-10-29): with [documents] null a `document` is refused as a kind that does not
+     * sync, as before. Otherwise its wrapper must carry a valid `attachment` reference naming its record's
+     * `payload.attachment_id`, and [documents] must say its file is stored here (else `attachment-missing`).
      */
-    fun unwrap(state: ItemState, isCopy: Boolean, licenseKeys: Map<String, ByteArray> = emptyMap()): Pair<Namespace, JsonValue> {
+    fun unwrap(
+        state: ItemState,
+        isCopy: Boolean,
+        licenseKeys: Map<String, ByteArray> = emptyMap(),
+        documents: ((AttachmentRef) -> Boolean)? = null,
+    ): Pair<Namespace, JsonValue> {
         val id = state.itemId
         fun bad(d: String) = RecordException("bad-remote", id, d)
         val item = (state.item as? JsonValue.Obj)?.fields
@@ -45,7 +56,9 @@ object Wrapper {
         val s0 = (item?.get("schema") as? JsonValue.Int)?.v
         if (s0 != null && s0 > SCHEMA) throw RecordException("update-needed", id, "written by a newer LocalGateKeys")
         val required = setOf("ns", "schema", "updated_at", "record")
-        val allowed = if (isCopy) required + "id" else required
+        val isDocument = documents != null && item?.get("ns") == JsonValue.Str(Namespace.ITEM.wire) &&
+            ((item["record"] as? JsonValue.Obj)?.fields?.get("kind") as? JsonValue.Str)?.v in unsyncedItemKinds
+        val allowed = (if (isCopy) required + "id" else required) + (if (isDocument) setOf("attachment") else emptySet())
         if (item == null || !item.keys.containsAll(required) || !allowed.containsAll(item.keys)) throw bad("malformed wrapper")
         val schema = (item["schema"] as? JsonValue.Int)?.v
         if (schema == null || schema < 1) throw bad("malformed schema")
@@ -67,7 +80,17 @@ object Wrapper {
         if (nsOf(record) != ns) throw bad("wrong namespace")
         if (ns == Namespace.ITEM) {
             val k = (record["kind"] as? JsonValue.Str)?.v
-            if (k != null && k in unsyncedItemKinds) throw bad("a kind that does not sync")
+            if (k != null && k in unsyncedItemKinds) {
+                if (documents == null || !isDocument) throw bad("a kind that does not sync")
+                val ref = try {
+                    AttachmentRef.fromJson(item["attachment"])
+                } catch (e: AttachmentSyncException) {
+                    throw bad("malformed attachment (${e.reason})")
+                }
+                val payload = (record["payload"] as? JsonValue.Obj)?.fields
+                if (payload?.get("attachment_id") != JsonValue.Str(ref.attachmentId)) throw bad("names another attachment")
+                if (!documents(ref)) throw RecordException("attachment-missing", id, "waits for its file")
+            }
         }
         return ns to JsonValue.Obj(record)
     }

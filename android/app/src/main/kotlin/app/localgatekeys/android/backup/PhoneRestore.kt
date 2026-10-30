@@ -17,6 +17,8 @@ import app.localgatekeys.core.sync.Plausibility
 import app.localgatekeys.core.sync.StoreChange
 import app.localgatekeys.core.sync.StoreSnapshot
 import app.localgatekeys.core.sync.SyncRunner
+import app.localgatekeys.core.sync.AttachmentVault
+import app.localgatekeys.core.sync.Documents
 
 /** The backup cannot be restored here. [reason] is [SAME_DEVICE], [UNREADABLE] or [LOCKED]. */
 class PhoneRestoreException(val reason: String) : Exception(messageFor(reason)) {
@@ -28,7 +30,7 @@ class PhoneRestoreException(val reason: String) : Exception(messageFor(reason)) 
         private fun messageFor(reason: String): String = when (reason) {
             // Desktop "This backup was made on this computer, so there is nothing to restore." with the platform word.
             SAME_DEVICE -> "This backup was made on this phone, so there is nothing to restore."
-            UNREADABLE -> BackupText.UNREADABLE
+            UNREADABLE -> "The vault could not be read for the restore."
             else -> "The vault is locked."
         }
     }
@@ -46,10 +48,18 @@ class RestorePlan internal constructor(
     val skipped: Int,
     val deleted: Int,
     internal val view: PeerView,
+    /** Blob id -> sealed blob of the document files this restore takes from the backup (opened only on restore). */
+    internal val files: Map<String, ByteArray> = emptyMap(),
+    /** Live documents left out: their file is neither in the backup nor on this phone. */
+    val filesMissing: Int = 0,
 ) {
+    /** How many document files come from the backup. */
+    val filesFromBackup: Int get() = files.size
+
     /** Counts only: the states hold plaintext secrets. */
     override fun toString(): String =
-        "RestorePlan(new=$new, updated=$updated, unchanged=$unchanged, heldBack=$heldBack, skipped=$skipped, deleted=$deleted)"
+        "RestorePlan(new=$new, updated=$updated, unchanged=$unchanged, heldBack=$heldBack, skipped=$skipped, deleted=$deleted, " +
+            "files=${files.size}, filesMissing=$filesMissing)"
 }
 
 /**
@@ -65,6 +75,12 @@ data class RestoreReport(
     val deleted: Int = 0,
     val failure: String? = null,
     val licenseRestored: Boolean = false,
+    /** Document files stored from the backup. */
+    val files: Int = 0,
+    /** Document files the backup carried that failed their checks (their documents were not restored). */
+    val filesRefused: Int = 0,
+    /** Documents not restored because their file is neither in the backup nor on this phone. */
+    val filesMissing: Int = 0,
 )
 
 /**
@@ -81,6 +97,11 @@ data class RestoreReport(
  *   whose merge makes a conflict copy counts as a new item, ranked after the plain new ones, and is held back when its
  *   copy does not fit (this phone keeps its own version). Updates of items already here are never capped.
  * - Ruling B: two-factor keys are restored as they are (restoring your own data is not adding a code).
+ * - Documents (format 2, desktop `_document_files`): with [attachments], a live document is restored only with its
+ *   file, from the backup or already stored here (same attachment id and blob); otherwise it is left out and counted
+ *   ([RestorePlan.filesMissing]). The preview stores nothing; [restore] verifies and stores the needed files first
+ *   (`Documents.importMissing`, the sync import path), and a refused file's document is not restored. Without
+ *   [attachments] documents are refused like any kind this build does not sync (skipped).
  *
  * [store] is the sync coordinator's gated store: after a lock nothing is read or committed ([PhoneRestoreException.LOCKED]).
  * Blocking: call off the main thread.
@@ -93,7 +114,12 @@ class PhoneRestore(
     private val licenseKeys: Map<String, ByteArray> = LicenseKeys.production,
     /** The Wi-Fi-paired peer's device id, or null (desktop `_known_devices` adds its LAN peers). */
     private val pairedPeerId: () -> String? = { null },
+    /** The attachment store document files are restored into, or null (documents then are skipped). */
+    private val attachments: AttachmentVault? = null,
 ) {
+    private val present: ((app.localgatekeys.core.sync.AttachmentRef) -> Boolean)? =
+        attachments?.let { v -> { ref -> v.has(ref) } }
+
     fun plan(backup: PhoneBackup): RestorePlan {
         val snap = load()
         val now = clock.now
@@ -105,10 +131,25 @@ class PhoneRestore(
         // Records the merge would refuse never reach it, so they take no free slot; nor do states with an implausible
         // version vector (the run would quarantine them anyway). Desktop plan_restore.
         val known = knownDevices(snap, device, backup.deviceId)
+        // Documents are checked with their reference; whether their file is here is decided just below.
+        val anyFile: ((app.localgatekeys.core.sync.AttachmentRef) -> Boolean)? = present?.let { { _ -> true } }
         val unreadable = byId.values.filter {
-            SyncRunner.check(it, licenseKeys) != null || Plausibility.implausibleVv(it.vv, local[it.itemId]?.vv, known) != null
+            SyncRunner.check(it, licenseKeys, anyFile) != null || Plausibility.implausibleVv(it.vv, local[it.itemId]?.vv, known) != null
         }.map { it.itemId }.toSet()
         byId.keys.removeAll(unreadable)
+        val needed = HashMap<String, ByteArray>()
+        val noFile = HashSet<String>()
+        val vault = attachments
+        if (vault != null) {
+            for ((id, s) in byId) {
+                if (!Documents.isDocumentState(s)) continue
+                val ref = Documents.refOf(s.item) ?: continue
+                if (vault.has(ref)) continue
+                val blob = backup.files[ref.blob]
+                if (blob == null) noFile.add(id) else needed[ref.blob] = blob
+            }
+            byId.keys.removeAll(noFile)
+        }
 
         val held = HashSet<String>()
         val slots = if (isPro()) null else maxOf(0, ItemLimit.FREE_ITEMS - ItemLimit.liveCount(snap))
@@ -135,6 +176,8 @@ class PhoneRestore(
             skipped = unreadable.size,
             deleted = t.deleted.size,
             view = PeerView(backup.deviceId, final),
+            files = needed.filterKeys { b -> final.any { s -> Documents.isDocumentState(s) && Documents.refOf(s.item)?.blob == b } },
+            filesMissing = noFile.size,
         )
     }
 
@@ -145,12 +188,26 @@ class PhoneRestore(
         val device = BackupDevice.id(snap, installId)
         val before = contentIds(snap)
         val hadLicense = ItemLimit.validLicense(snap, licenseKeys) != null
-        val report = SyncRunner.run(snap, listOf(plan.view), device, now, licenseKeys, knownDevices(snap, device, plan.view.deviceId))
-        val fatal = report.issues.map { it.kind }.firstOrNull { it !in QUARANTINE_KINDS }
+        // Files first (verified against their references), so their documents apply; a refused one stores nothing
+        // and its document waits (`attachment-missing`), the rest of the backup is still applied.
+        val vault = attachments
+        val fileIssues = if (vault != null && plan.files.isNotEmpty()) {
+            Documents.importMissing(vault, plan.view.states) { plan.files[it.blob] }
+        } else {
+            emptyList()
+        }
+        val refused = fileIssues.count { it.kind == "attachment-refused" || it.kind == "write-failed" }
+        val report = SyncRunner.run(
+            snap, listOf(plan.view), device, now, licenseKeys, knownDevices(snap, device, plan.view.deviceId), present,
+        )
+        val issues = fileIssues + report.issues
+        val fatal = issues.map { it.kind }.firstOrNull { it !in QUARANTINE_KINDS && it !in FILE_KINDS }
         val records = report.records
         val meta = report.meta
         if (fatal != null || records == null || meta == null) {
-            return RestoreReport(heldBack = plan.heldBack, skipped = plan.skipped, failure = fatal ?: "apply-failed")
+            return RestoreReport(
+                heldBack = plan.heldBack, skipped = plan.skipped, failure = fatal ?: "apply-failed", filesMissing = plan.filesMissing,
+            )
         }
         val after = StoreSnapshot(records, meta, snap.sync, snap.revision)
         if (records != snap.records || meta != snap.meta) {
@@ -160,7 +217,7 @@ class PhoneRestore(
                 throw PhoneRestoreException(PhoneRestoreException.LOCKED)
             } catch (e: LocalStoreException) {
                 val kind = if (e.kind == LocalStoreException.Kind.STALE) "busy" else "apply-failed"
-                return RestoreReport(heldBack = plan.heldBack, skipped = plan.skipped, failure = kind)
+                return RestoreReport(heldBack = plan.heldBack, skipped = plan.skipped, failure = kind, filesMissing = plan.filesMissing)
             }
         }
         val new = (contentIds(after) - before).size
@@ -171,6 +228,9 @@ class PhoneRestore(
             skipped = plan.skipped + report.issues.count { it.kind in QUARANTINE_KINDS },
             deleted = report.deleted,
             licenseRestored = !hadLicense && ItemLimit.validLicense(after, licenseKeys) != null,
+            files = maxOf(0, plan.files.size - refused),
+            filesRefused = refused,
+            filesMissing = plan.filesMissing,
         )
     }
 
@@ -234,6 +294,9 @@ class PhoneRestore(
         /** Run issue kinds that skip one record while the rest is applied (desktop `QUARANTINE_KINDS`). */
         val QUARANTINE_KINDS = setOf("bad-peer-record", "update-needed", "implausible-vv")
         val CONTENT_NS = setOf("entry", "item")
+
+        /** A document whose file is missing or refused is left out; everything else is still applied (desktop QUARANTINE). */
+        val FILE_KINDS = setOf("attachment-missing", "attachment-refused", "write-failed")
 
         fun ns(s: ItemState): String? = ((s.item as? JsonValue.Obj)?.fields?.get("ns") as? JsonValue.Str)?.v
 

@@ -1,0 +1,9 @@
+{
+  "error": {
+    "message": "This Bitwarden export is encrypted with your Bitwarden account key, so only Bitwarden can open it. In Bitwarden choose Export vault, then either File format 'JSON' (unencrypted) or '.json (Encrypted)' with Export type 'Password protected', and enter that password here.",
+    "type": "format"
+  },
+  "format": "bitwarden",
+  "input": "tests/fixtures/imports/bitwarden_account_restricted.json",
+  "python_format": "bitwarden-json"
+}

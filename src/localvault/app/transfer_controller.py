@@ -23,6 +23,7 @@ from ..transfer import (
     preview_transfer,
 )
 from ..vault import ItemLimitReached
+from ..i18n import t
 
 ConflictPolicy = str
 
@@ -40,15 +41,11 @@ def import_limit_lines(summary: Mapping[str, Any]) -> list[str]:
     skipped = len(summary.get("limit_skipped_ids") or [])
     lines: list[str] = []
     if skipped:
-        record = "record" if skipped == 1 else "records"
-        verb = ("was skipped" if skipped == 1 else "were skipped") if summary.get("committed") else "will be skipped"
-        lines.append(
-            f"{skipped} new {record} {verb}: the free plan holds up to {summary['item_limit']} items. "
-            "Get LocalGateKeys Pro for unlimited items to bring in the rest."
-        )
+        lines.append(t("transfer.limitSkippedDone" if summary.get("committed") else "transfer.limitSkippedPlan",
+                       count=skipped, limit=summary["item_limit"]))
     free = summary.get("free_slots")
     if free is not None and not summary.get("committed"):
-        lines.append(f"{free} free slot{'' if free == 1 else 's'} left on the free plan.")
+        lines.append(t("transfer.freeSlots", count=free))
     return lines
 
 
@@ -239,18 +236,18 @@ class TransferSessionBinding:
     def current(self) -> Any:
         current = self._session_provider() if self._session_provider is not None else self._session
         if current is not self._session:
-            raise StaleSession("Profile/session changed. The transfer was cancelled.")
+            raise StaleSession(t("transfer.profileSessionChangedTheTransfer"))
         if self._session_path(current) != self._path:
-            raise StaleSession("Profile/session destination changed. The transfer was cancelled.")
+            raise StaleSession(t("transfer.profileSessionDestinationChangedThe"))
         if not bool(getattr(current, "is_unlocked", False)):
-            raise StaleSession("Vault is locked. Unlock and start the transfer again.")
+            raise StaleSession(t("transfer.vaultIsLockedUnlockAnd"))
         if self._guard is not None:
             if self.lease is None or not callable(getattr(self._guard, "require", None)):
-                raise StaleSession("The transfer has no valid session lease.")
+                raise StaleSession(t("transfer.theTransferHasNoValid"))
             self._guard.require(self.lease)
         if self._require_lease_callback is not None:
             if self.lease is None:
-                raise StaleSession("The transfer has no valid session lease.")
+                raise StaleSession(t("transfer.theTransferHasNoValid"))
             self._require_lease_callback(self.lease)
         return current
 
@@ -329,9 +326,9 @@ class TransferController:
                 cancel() if callable(cancel) else bool(cancel)
             )
         except Exception as exc:
-            raise TransferCancelled("Transfer operation was cancelled") from exc
+            raise TransferCancelled(t("transfer.transferOperationWasCancelled")) from exc
         if value:
-            raise TransferCancelled("Transfer operation was cancelled")
+            raise TransferCancelled(t("transfer.transferOperationWasCancelled"))
 
     @staticmethod
     def _result_summary(result: Mapping[str, Any], **extra: Any) -> dict[str, Any]:
@@ -383,9 +380,9 @@ class TransferController:
         master_password: str | None = None,
         **selection_fields: Any,
     ) -> dict[str, Any]:
-        destination_path = self._local_path(destination, label="Transfer destination")
+        destination_path = self._local_path(destination, label=t("transfer.transferDestination"))
         if master_password is not None and transfer_password == master_password:
-            raise TransferError("Transfer password must be distinct from the vault password")
+            raise TransferError(t("transfer.transferPasswordMustBeDistinct"))
         # This is intentionally a fresh preview immediately before export.
         preview = self.preview_export(selection, cancel=cancel, **selection_fields)
         session = self.binding.current()
@@ -403,7 +400,7 @@ class TransferController:
 
     def inspect_package(self, source: Path | str) -> dict[str, Any]:
         self.binding.current()
-        package = self._local_path(source, label="Transfer package")
+        package = self._local_path(source, label=t("transfer.transferPackage"))
         manifest = inspect_transfer(package)
         self._check_manifest_bounds(manifest)
         return summarize_manifest(manifest, operation="inspect", dry_run=True)
@@ -422,7 +419,7 @@ class TransferController:
     ) -> dict[str, Any]:
         self._check_cancel(cancel)
         session = self.binding.current()
-        package = self._local_path(source, label="Transfer package")
+        package = self._local_path(source, label=t("transfer.transferPackage"))
         result = preview_transfer(
             package, session, transfer_password, conflict_policy=conflict_policy,
             allow_replace=allow_replace, expected_revisions=expected_revisions,
@@ -457,7 +454,7 @@ class TransferController:
         # Revalidate after the user confirmation and before any destination
         # mutation.  import_transfer performs a second authenticated plan.
         session = self.binding.current()
-        package = self._local_path(source, label="Transfer package")
+        package = self._local_path(source, label=t("transfer.transferPackage"))
         result = import_transfer(
             package, session, transfer_password, conflict_policy=conflict_policy,
             allow_replace=allow_replace, expected_revisions=expected_revisions,

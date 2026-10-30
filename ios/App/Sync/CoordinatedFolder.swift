@@ -1,5 +1,9 @@
 import Foundation
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 /// `FolderAccess` over the folder the user picked (iCloud Drive, OneDrive, Dropbox, Google Drive...).
 ///
@@ -181,6 +185,24 @@ final class CoordinatedFolder: FolderAccess, @unchecked Sendable {
         guard let u = try? url(path) else { return false }
         return present(u)
     }
+
+    func fileAttributes(_ path: String) -> (size: Int, modified: Int64)? {
+        guard let u = try? url(path), let a = try? FileManager.default.attributesOfItem(atPath: u.path),
+              (a[.type] as? FileAttributeType) == .typeRegular, let size = (a[.size] as? NSNumber)?.intValue,
+              let date = a[.modificationDate] as? Date else { return nil }
+        return (size, Int64(date.timeIntervalSince1970))
+    }
+
+    func touch(_ path: String, modified: Int64) throws {
+        let u = try url(path)
+        guard present(u) else { throw FolderAccessError.notFound(path) }
+        try coordinate(write: u, options: []) { f in
+            do {
+                try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSince1970: TimeInterval(modified))],
+                                                      ofItemAtPath: f.path)
+            } catch { throw Self.mapped(error, f) }
+        }
+    }
 }
 
 // MARK: bookmarks
@@ -194,20 +216,30 @@ protocol FolderOpening: Sendable {
 }
 
 struct SecurityScopedFolderOpener: FolderOpening {
+    #if os(macOS)
+    /// The sandboxed Mac app keeps access to a folder chosen in the open panel only through an app-scoped,
+    /// security-scoped bookmark (`com.apple.security.files.bookmarks.app-scope`).
+    static let createOptions: URL.BookmarkCreationOptions = [.withSecurityScope]
+    static let resolveOptions: URL.BookmarkResolutionOptions = [.withSecurityScope]
+    #else
+    static let createOptions: URL.BookmarkCreationOptions = []
+    static let resolveOptions: URL.BookmarkResolutionOptions = []
+    #endif
+
     func bookmark(for url: URL) throws -> [UInt8] {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-        return Array(try url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil))
+        return Array(try url.bookmarkData(options: Self.createOptions, includingResourceValuesForKeys: nil, relativeTo: nil))
     }
 
     func open(bookmark: [UInt8]) throws -> (folder: any FolderAccess, refreshed: [UInt8]?) {
         var stale = false
         let url: URL
-        do { url = try URL(resolvingBookmarkData: Data(bookmark), options: [], relativeTo: nil, bookmarkDataIsStale: &stale) }
+        do { url = try URL(resolvingBookmarkData: Data(bookmark), options: Self.resolveOptions, relativeTo: nil, bookmarkDataIsStale: &stale) }
         catch { throw FolderAccessError.io("the chosen folder is no longer available") }
         let folder = CoordinatedFolder(root: url)
         // A stale bookmark still resolves; save a fresh one while the scope is open.
-        let refreshed = stale ? (try? url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)).map(Array.init) : nil
+        let refreshed = stale ? (try? url.bookmarkData(options: Self.createOptions, includingResourceValuesForKeys: nil, relativeTo: nil)).map(Array.init) : nil
         return (folder, refreshed)
     }
 }

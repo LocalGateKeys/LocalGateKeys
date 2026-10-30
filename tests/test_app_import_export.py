@@ -96,7 +96,7 @@ def test_import_review_masks_passwords_and_applies(env):
     assert len(review["rows"]) == 2 and review["summary"].startswith("Add 2 ")
     assert "pw-secret" not in json.dumps(review)
     result = env.imports.apply(opened["handle"])
-    assert result["status"] == "Imported 2 record(s)." and env.port.asked == ["Apply import?"]
+    assert result["status"] == "Imported 2 records." and env.port.asked == ["Apply import?"]
     assert ("items.changed", {}) in env.bus.events
     assert "pw-secret" not in json.dumps(env.bus.events)
     with pytest.raises(ApiError):
@@ -178,7 +178,7 @@ def test_export_kdbx_validation_and_write(env):
     env.dialogs.save_path = env.tmp / "out"
     env.port.passwords = [MASTER]
     result = env.exports.export("kdbx", False, "kdbx password 123", "kdbx password 123")
-    assert (env.tmp / "out.kdbx").exists() and result["status"] == "Exported 1 record(s)."
+    assert (env.tmp / "out.kdbx").exists() and result["status"] == "Exported 1 record."
     assert env.port.asked == ["Confirm to export passwords", "Export now?"]
 
 
@@ -204,7 +204,7 @@ def test_cancel_during_the_confirm_is_honoured_by_the_service(env):
     env.port.confirm = confirm
     with pytest.raises(ApiError) as cancelled:
         env.imports.apply(handle)
-    assert cancelled.value.code in ("cancelled", "expired")
+    assert cancelled.value.code in ("import_cancelled", "expired")
     assert env.controller.session.live_item_count() == 0
 
 

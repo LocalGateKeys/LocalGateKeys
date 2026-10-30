@@ -11,7 +11,7 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 from localvault import hello_unlock as hello
 from localvault.vault import InvalidMasterPassword, VaultError, create_vault, unlock_vault
-from localvault.windows_hello import HelloCancelled, HelloError, native_operation
+from localvault.windows_hello import HelloCancelled, HelloError, NativeError, native_operation
 
 MASTER = "Local-Only-Test-Master-0001"
 KDF = {"memory_cost_kib": 8192, "time_cost": 1, "parallelism": 1}
@@ -299,3 +299,61 @@ def test_invalid_sidecar_does_not_break_master_unlock(vault, provider, content):
         unlock(vault, provider)
     check = unlock_vault(vault.path, MASTER); check.lock()
     assert not provider.calls
+
+
+class Sha1OnlyProvider(SimulatedProvider):
+    """A Passport provider (for example TPM 1.2 backed) that refuses OAEP with SHA-256."""
+    def _hash(self, oaep_hash):
+        return hashes.SHA1() if oaep_hash == "SHA1" else hashes.SHA256()
+
+    def wrap(self, record_id, secret, oaep_hash="SHA256"):
+        self.calls.append(f"wrap:{oaep_hash}")
+        if oaep_hash != "SHA1":
+            raise NativeError("encrypting", 0x80090027)
+        return self.keys[record_id].public_key().encrypt(bytes(secret), padding.OAEP(
+            mgf=padding.MGF1(hashes.SHA1()), algorithm=hashes.SHA1(), label=None))
+
+    def unwrap(self, record_id, wrapped, hwnd, oaep_hash="SHA256"):
+        self.calls.append(f"unwrap:{oaep_hash}")
+        if oaep_hash != "SHA1":
+            raise NativeError("decrypting", 0x80090027)
+        result = bytearray(self.keys[record_id].decrypt(wrapped, padding.OAEP(
+            mgf=padding.MGF1(hashes.SHA1()), algorithm=hashes.SHA1(), label=None)))
+        self.outputs.append(result)
+        return result
+
+
+def test_provider_without_sha256_oaep_falls_back_to_sha1(vault):
+    provider = Sha1OnlyProvider()
+    enroll(vault, provider)
+    record = json.loads(hello.envelope_path(vault.path).read_bytes())
+    assert record["oaep"] == "SHA1"
+    vault.lock()
+    result = unlock(vault, provider)
+    assert result.find_web("https://example.test")[0]["password"] == "Test-Only-Site-Secret"
+    result.lock()
+    assert provider.calls == ["create", "wrap:SHA256", "wrap:SHA1", "unwrap:SHA1", "unwrap:SHA1"]
+
+
+def test_default_setup_records_no_oaep_field(vault, provider):
+    enroll(vault, provider)
+    assert "oaep" not in json.loads(hello.envelope_path(vault.path).read_bytes())
+
+
+def test_unknown_oaep_hash_is_damaged_setup(vault, provider):
+    enroll(vault, provider)
+    path = hello.envelope_path(vault.path)
+    record = json.loads(path.read_bytes())
+    record["oaep"] = "MD5"
+    path.write_text(json.dumps(record))
+    assert not hello.has_envelope(vault.path, PROFILE)
+
+
+def test_other_native_errors_do_not_fall_back(vault):
+    provider = Sha1OnlyProvider()
+    provider.wrap = lambda record_id, secret, oaep_hash="SHA256": (_ for _ in ()).throw(
+        NativeError("encrypting", 0x80090016))
+    with pytest.raises(NativeError):
+        hello.prepare_enrollment(PROFILE, vault.unlock_context(), 123, threading.Event(),
+                                 provider_factory=lambda: provider)
+    assert provider.keys == {}

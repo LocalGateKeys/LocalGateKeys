@@ -13,10 +13,10 @@ A licence is an Ed25519-signed file checked offline by the app. There is no
 activation server and no account.
 
 Code: `src/localvault/licensing.py` (verification, item limit, vault copy),
-`licensing_ui.py` (Tools > Licence, upgrade dialog), `pro_gate.py` (applies the
-limit to the unlocked vault and routes a refusal to the upgrade dialog),
-`scripts/issue_license.py`
-(owner tooling), `cloudflare/license-issuer` (Worker that issues licences after
+`app/licence.py` and `app/licence_view.py` (Tools > Licence, upgrade dialog),
+`pro_gate.py` (applies the limit to the unlocked vault and routes a refusal to
+the upgrade dialog), `licence_link.py` (the `localgatekeys://install-licence/`
+link), `scripts/issue_license.py` (owner tooling), `cloudflare/license-issuer` (Worker that issues licences after
 payment). Design: `docs/superpowers/specs/2026-10-15-licensing-design.md`
 ("Revision 2" is the item-limit model).
 
@@ -40,14 +40,28 @@ payment). Design: `docs/superpowers/specs/2026-10-15-licensing-design.md`
     written. Opening, previewing, saving a copy and exporting existing
     documents stay free. Encrypted transfer leaves new documents (and items
     that reference them) out as "limit".
-  - *Sync:* `SyncWebService` builds no service on Free (`view()["pro"]` is
-    false, every action raises `pro_required`) and starts or stops when the
-    licence changes (`LicenceService.on_plan_change`). `SyncService` itself also
-    refuses to listen or run on a session without `"sync"`. Data earlier syncs
-    brought stays in the vault, and sync resumes with Pro.
-  - *Licences no longer travel to a free PC by sync:* a free PC cannot sync, so
-    the buyer enters the licence on each PC (one licence covers all their PCs).
-    A Pro PC still adopts licences it receives by sync.
+  - *Sync:* on Free, `SyncWebService` builds a **licence-only** service
+    (`SyncService(licence_only=True)`, `view()["licence_only"]` true,
+    `view()["pro"]` false). Pairing, joining and Sync now work; a round reads
+    only `license`-namespace records from peers, adopts a valid one through
+    `licensing.adopt_synced_license`, stores no other record and publishes
+    nothing (an empty view; witness and attachment requests answer
+    `bad-message`). It never runs in the background: only Sync now, and the
+    Wi-Fi listener only for 120 s after a round or while a pairing code is
+    shown. Revoked licences, licences whose updates ended before this build
+    and a pending removal marker block adoption. Once a licence is adopted the
+    plan turns Pro (`LicenceService.on_plan_change`) and full sync starts.
+    Data earlier syncs brought stays in the vault.
+  - *Store purchases unlock the PC:* an App Store (iPhone/Mac) or Google Play
+    (Android) purchase of `pro_unlimited` claims an `LGK1-` licence from the
+    licence Worker (`POST /appstore/claim` with the transaction JWS,
+    `POST /play/claim` with the purchase token). The Worker verifies the
+    purchase, issues one licence per original purchase (name "App Store
+    purchase" / "Google Play purchase", no personal data) and revokes it on a
+    refund. The app writes it as the synced licence state, so pairing a free PC
+    with the phone makes the PC Pro. A licence bought on the website still
+    works by key on Windows. Claims are silent; Pro on the phone never depends
+    on them.
 
 - **The limit.** `FREE_ITEM_LIMIT = 4`. Live items are web and desktop logins
   plus every typed kind (notes, cards, identities, documents, passkeys and so
@@ -63,10 +77,10 @@ payment). Design: `docs/superpowers/specs/2026-10-15-licensing-design.md`
   only up to the free slots left, in package order; the preview and the result
   say how many were skipped and offer Pro. Updates to existing records are never
   limited.
-- **Import from other password managers (partial import planned, not yet
-  implemented).** For now an import that would pass the limit writes nothing
-  and opens the upgrade dialog; the review shows how many free slots are left.
-  Bringing in just the free slots, as the transfer does, comes later.
+- **Import from other password managers.** New rows beyond the free slots left
+  are marked "needs Pro" in review order and left out; the rest are imported.
+  The review and the result say how many. When no row fits, nothing is written
+  and the upgrade dialog opens. Updates to existing items never use a slot.
 - **Pro and builds.** A licence is valid when its signature verifies and its id
   is not on the revocation list. Newly issued licences carry
   `updates_until = 9999-12-31`, so every build is covered. Older licences
@@ -89,8 +103,7 @@ payment). Design: `docs/superpowers/specs/2026-10-15-licensing-design.md`
   does not verify is never written.
 - A valid licence file is never replaced by the vault copy; if it differs, the
   vault copy is updated to match the file.
-- Sync carries the licence to every device in the group, so each one is Pro.
-  A device publishes its vault copy and the licences it received by sync, each
+- Sync carries the licence between the Pro devices in the group. A device publishes its vault copy and the licences it received by sync, each
   as a signed licence state (namespace `license`, id `lic:` plus the first 32
   hex digits of sha256 of the licence id). Only a licence that verifies and is
   not revoked is published or accepted; anything else is refused for that one
@@ -163,7 +176,9 @@ Summary:
    `wrangler.jsonc` has no routes; add the custom-domain route first.
 2. Create the KV namespace and put its id into `wrangler.jsonc`:
    `npx wrangler kv namespace create LICENSES`.
-3. Export the key from the PEM and set the secrets:
+3. Export the key from the PEM and set the secrets
+   (`scripts/export_license_key_for_worker.py` does the export and checks the
+   key id, piping straight into `wrangler secret put` so the key never shows):
 
 ```
 openssl pkey -in license-signing-key.pem -outform DER | base64 -w0
@@ -215,8 +230,12 @@ second licence.
 
 The Worker issues lifetime licences (`updates_until` 9999-12-31).
 
-When the domain exists, also set `PURCHASE_URL` in `licensing_ui.py`. It is
-empty now, which hides the Buy buttons.
+`PURCHASE_URL` in `app/licence_view.py` is `https://localgatekeys.app/buy`; an
+empty value hides the Buy buttons.
+
+The licence page also has an **Install in LocalGateKeys** button: a
+`localgatekeys://install-licence/` link that both installers register (and the
+Mac app handles). The app checks the signature and asks before installing.
 
 ## 6. Manual issue (support)
 
@@ -240,6 +259,13 @@ records; you need it to revoke.
 Revocation is a signed list of licence ids. It is signed with the **release**
 key (the one in `updates.PUBLISHER_KEYS`), not the licence key, and served from
 the update feed at `/revocations.json`.
+
+The Worker records each refund or chargeback as a `revoke:<license_id>:<id>` KV
+record; the weekly routine in
+[cloudflare/license-issuer/README.md](../cloudflare/license-issuer/README.md)
+("Refunds and revocation") lists them and runs
+`.\scripts\publish_revocations.ps1 -IdsFile <ids> -Key <release key PEM>`,
+which signs (steps 3-4 below) and uploads in one go. By hand:
 
 1. Find the `license_id` (`lgk_...`) of the refunded order. The Worker stores
    licences in the `LICENSES` KV namespace; for a manual licence use your
@@ -282,8 +308,9 @@ and a list older than the cached one is rejected.
 Licences are checked against every key in `LICENSE_KEYS`, so several can be
 trusted at once.
 
-1. Run `keygen` for a new key and add it to `LICENSE_KEYS` next to the old one.
-   Ship that build.
+1. Run `keygen` for a new key and add it to `LICENSE_KEYS` next to the old one,
+   and to the copies in `ios/AppShared/Pro/ItemLimit.swift` and
+   `android/.../pro/LicenseKeys.kt`. Ship those builds.
 2. Switch the Worker's `LICENSE_PRIVATE_KEY` to the new key.
 3. Existing licences keep working while the old key stays in `LICENSE_KEYS`.
    Removing it invalidates every licence it signed, so remove it only if it

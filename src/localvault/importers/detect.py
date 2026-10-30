@@ -19,6 +19,7 @@ from . import (
     cap_diagnostics,
 )
 from ._source import decode_text, normalize_header, read_csv_table, read_source_bytes
+from ..i18n import t
 
 SUPPORTED_FORMATS: dict[str, str] = {
     "kdbx": "KeePass 2 database (.kdbx)",
@@ -43,8 +44,7 @@ PASSWORD_FORMATS = frozenset({"kdbx", "bitwarden-encrypted-json"})
 CSV_FORMATS = frozenset({"keepass-csv", "1password-csv", "bitwarden-csv", "lastpass-csv", "dashlane-csv",
                          "protonpass-csv", "chrome-csv", "firefox-csv", "safari-csv", "csv"})
 FILE_DIALOG_PATTERNS = "*.kdbx *.1pux *.zip *.json *.csv *.xml"
-DAMAGED_MESSAGE = ("{label} could not be read: the file looks damaged or was edited after export. "
-                   "Export it again from the original app and retry.")
+DAMAGED_MESSAGE = ("detect.couldNotBeReadThe")
 _PGP_ARMOR = b"-----BEGIN PGP MESSAGE-----"
 _DASHLANE_ZIP_FILES = frozenset({"credentials.csv", "securenotes.csv", "payments.csv", "ids.csv", "personalinfo.csv"})
 # Exceptions a parser bug could leak on hostile input; load_records converts
@@ -111,26 +111,25 @@ def _detect_json(text: str, path: Path) -> Detection:
     try:
         document = json.loads(text)
     except (ValueError, RecursionError) as exc:
-        raise ImportFormatError("The file looks like JSON but could not be parsed") from exc
+        raise ImportFormatError(t("detect.theFileLooksLikeJson")) from exc
     if not isinstance(document, dict):
-        raise ImportFormatError("Unsupported JSON document")
+        raise ImportFormatError(t("detect.unsupportedJsonDocument"))
     if isinstance(document.get("vaults"), dict):
         if document.get("encrypted") is True:
             from .protonpass import ENCRYPTED_MESSAGE
-            raise ImportFormatError(ENCRYPTED_MESSAGE)
+            raise ImportFormatError(t(ENCRYPTED_MESSAGE))
         return Detection("protonpass-json", False, "high", "Proton Pass vaults object")
     if document.get("encrypted") is True:
         if not document.get("passwordProtected"):
             from .bitwarden import ACCOUNT_RESTRICTED_MESSAGE
-            raise ImportFormatError(ACCOUNT_RESTRICTED_MESSAGE)
+            raise ImportFormatError(t(ACCOUNT_RESTRICTED_MESSAGE))
         if "data" in document:
             return Detection("bitwarden-encrypted-json", True, "high", "Bitwarden encrypted envelope")
     if isinstance(document.get("items"), list):
         return Detection("bitwarden-json", False, "high", "Bitwarden items list")
     if isinstance(document.get("accounts"), list):
         return Detection("1pux", False, "high", "1Password export.data accounts list")
-    raise ImportFormatError("This JSON file is not a supported export. Supported JSON exports are Bitwarden "
-                            "(.json), 1Password (.1pux) and Proton Pass (.zip / data.json).")
+    raise ImportFormatError(t("detect.thisJsonFileIsNot"))
 
 
 def detect_format(path: Path | str, data: bytes | None = None) -> Detection:
@@ -144,8 +143,7 @@ def detect_format(path: Path | str, data: bytes | None = None) -> Detection:
     except ImporterError:
         raise
     except _PARSER_LEAKS as exc:
-        raise ImportFormatError("The file could not be recognised as a password-manager export; "
-                                "it may be damaged.") from exc
+        raise ImportFormatError(t("detect.theFileCouldNotBe")) from exc
 
 
 def _detect_format(path: Path, data: bytes | None) -> Detection:
@@ -155,36 +153,33 @@ def _detect_format(path: Path, data: bytes | None) -> Detection:
     head = data[:16]
     if head[:4] == _KDBX_MAGIC:
         if head[4:8] == b"\x65\xfb\x4b\xb5":
-            raise ImportFormatError("KeePass 1.x (.kdb) databases are not supported; open it in KeePass 2 and save as .kdbx")
+            raise ImportFormatError(t("detect.keepass1XKdbDatabases"))
         return Detection("kdbx", True, "high", "KDBX signature")
     if suffix in {".kdbx", ".kdb"}:
-        raise ImportFormatError("The file does not have a KeePass KDBX signature")
+        raise ImportFormatError(t("detect.theFileDoesNotHave"))
     if head[:2] == b"PK":
         try:
             with zipfile.ZipFile(io.BytesIO(data)) as archive:
                 names = set(archive.namelist())
         except (zipfile.BadZipFile, zipfile.LargeZipFile, OSError, EOFError, ValueError) as exc:
-            raise ImportFormatError("The archive is corrupted") from exc
+            raise ImportFormatError(t("detect.theArchiveIsCorrupted")) from exc
         if "export.data" in names:
             return Detection("1pux", False, "high", "Zip archive containing export.data")
         basenames = {name.rsplit("/", 1)[-1].casefold() for name in names}
         if "data.pgp" in basenames:
             from .protonpass import ENCRYPTED_MESSAGE
-            raise ImportFormatError(ENCRYPTED_MESSAGE)
+            raise ImportFormatError(t(ENCRYPTED_MESSAGE))
         if "data.json" in basenames:
             return Detection("protonpass-json", False, "high", "Zip archive containing Proton Pass data.json")
         if basenames & _DASHLANE_ZIP_FILES:
             return Detection("dashlane-zip", False, "high", "Zip archive containing Dashlane CSV files")
-        raise ImportFormatError("This zip archive is not a supported export. Supported archives are 1Password "
-                                "(.1pux), Proton Pass (.zip) and Dashlane (.zip of CSV files).")
+        raise ImportFormatError(t("detect.thisZipArchiveIsNot"))
     if suffix == ".1pux":
-        raise ImportFormatError("The .1pux file is not a zip archive")
+        raise ImportFormatError(t("detect.the1puxFileIsNot"))
     if suffix == ".1pif":
-        raise ImportFormatError("1Password 7 .1pif files are not supported. In 1Password choose File > Export and "
-                                "pick the 1PUX (or CSV) format.")
+        raise ImportFormatError(t("detect.t1password71pifFilesAre"))
     if data.lstrip()[:len(_PGP_ARMOR)] == _PGP_ARMOR or suffix in {".pgp", ".gpg"}:
-        raise ImportFormatError("This file is PGP-encrypted and cannot be imported. Export again without "
-                                "encryption (in Proton Pass: Settings > Export, turn off 'Encrypt with PGP').")
+        raise ImportFormatError(t("detect.thisFileIsPgpEncrypted"))
     try:
         text = decode_text(data[:4 * 1024 * 1024] if len(data) > 4 * 1024 * 1024 else data)
     except ImportFormatError:
@@ -195,12 +190,12 @@ def _detect_format(path: Path, data: bytes | None) -> Detection:
     if stripped.startswith("<"):
         if "<KeePassFile" in stripped[:4096]:
             return Detection("keepass-xml", False, "high", "KeePassFile XML root")
-        raise ImportFormatError("Unsupported XML document; expected a KeePass 2 XML export")
+        raise ImportFormatError(t("detect.unsupportedXmlDocumentExpectedA"))
     if "\x00" in stripped[:4096] or not stripped:
-        raise ImportFormatError("Unsupported or empty file")
+        raise ImportFormatError(t("detect.unsupportedOrEmptyFile"))
     if suffix in {".csv", ".txt", ".tsv", ""} or "," in stripped.splitlines()[0] or ";" in stripped.splitlines()[0] or "\t" in stripped.splitlines()[0]:
         return _detect_csv(decode_text(data))
-    raise ImportFormatError("Unsupported file type")
+    raise ImportFormatError(t("detect.unsupportedFileType"))
 
 
 def load_records(path: Path | str, *, password: str | None = None, keyfile: bytes | Path | str | None = None,
@@ -216,7 +211,7 @@ def load_records(path: Path | str, *, password: str | None = None, keyfile: byte
     if source_format not in SUPPORTED_FORMATS:
         raise ImportFormatError(f"Unsupported import format {source_format!r}")
     if source_format in PASSWORD_FORMATS and not password and not keyfile:
-        raise ImportPasswordRequired(f"{SUPPORTED_FORMATS[source_format]} requires a password")
+        raise ImportPasswordRequired(t("detect.requiresAPassword", v1=SUPPORTED_FORMATS[source_format]))
     try:
         result = _load(path, source_format, password=password, keyfile=keyfile, column_mapping=column_mapping)
         result.diagnostics = cap_diagnostics(result.diagnostics)
@@ -224,7 +219,7 @@ def load_records(path: Path | str, *, password: str | None = None, keyfile: byte
     except ImporterError:
         raise
     except _PARSER_LEAKS as exc:
-        raise ImportFormatError(DAMAGED_MESSAGE.format(label=SUPPORTED_FORMATS[source_format])) from exc
+        raise ImportFormatError(t(DAMAGED_MESSAGE, label=t(SUPPORTED_FORMATS[source_format]))) from exc
 
 
 def _load(path: Path, source_format: str, *, password: str | None, keyfile: bytes | Path | str | None,

@@ -22,7 +22,8 @@ from ..item_schema import (
     validate_web_urls,
 )
 from ..origin import MATCH_MODES, OriginError, canonicalize_origin, origin_of
-from ..password_tools import STRENGTH_LABELS, estimate_strength
+from ..i18n import t
+from ..password_tools import estimate_strength, strength_label
 from ..totp import TotpError, generate_totp, normalize_secret, parse_otpauth_uri
 from ..vault import friendly_origin_label
 
@@ -138,6 +139,12 @@ def _derived_label(rows: list[UrlRow]) -> str:
     return ""
 
 
+def display_label(d: LoginDraft) -> str:
+    """The label for display: the stored English default is shown in the active language."""
+    label = effective_label(d)
+    return t("loginForm.untitled") if label == UNTITLED else label
+
+
 def effective_label(d: LoginDraft) -> str:
     if d.label_edited and d.label.strip():
         return d.label.strip()
@@ -150,11 +157,11 @@ def _url_error(row: UrlRow) -> tuple[dict[str, str] | None, str]:
     """Return the normalised vault row, or an inline error message."""
     text = row.url.strip()
     if not text:
-        return None, "Enter a website address"
+        return None, t("loginForm.err.enterAddress")
     if row.match not in MATCH_MODES:
-        return None, "Unsupported match mode"
+        return None, t("loginForm.err.matchMode")
     if len(text) > MAX_URL:
-        return None, f"Address is longer than {MAX_URL} characters"
+        return None, t("loginForm.err.addressTooLong", max=MAX_URL)
     if "://" not in text:
         text = "https://" + text  # people type bare domains; plain HTTP must be explicit
     try:
@@ -165,7 +172,7 @@ def _url_error(row: UrlRow) -> tuple[dict[str, str] | None, str]:
     except ItemSchemaError as exc:
         return None, str(exc).removeprefix("url is malformed: ")
     except ValueError as exc:  # OriginError, or any parser error that escaped it
-        return None, str(exc) if isinstance(exc, OriginError) else "Enter a valid website address"
+        return None, str(exc) if isinstance(exc, OriginError) else t("loginForm.err.validAddress")
     return {"url": text, "match": row.match}, ""
 
 
@@ -201,52 +208,52 @@ def validate(d: LoginDraft) -> list[FieldError]:
     errors: list[FieldError] = []
     if d.kind == "web":
         if not d.urls:
-            errors.append(FieldError("urls", "Add at least one website address"))
+            errors.append(FieldError("urls", t("loginForm.err.addUrl")))
         elif len(d.urls) > MAX_WEB_URLS:
-            errors.append(FieldError("urls", f"At most {MAX_WEB_URLS} website addresses"))
+            errors.append(FieldError("urls", t("loginForm.err.maxUrls", max=MAX_WEB_URLS)))
         else:
             for i, row in enumerate(d.urls):
                 _, message = _url_error(row)
                 if message:
                     errors.append(FieldError(f"urls[{i}]", message))
     if len(d.username) > MAX_USERNAME:
-        errors.append(FieldError("username", f"Username is longer than {MAX_USERNAME} characters"))
+        errors.append(FieldError("username", t("loginForm.err.usernameTooLong", max=MAX_USERNAME)))
     if d.label_edited and len(d.label.strip()) > MAX_LABEL:
-        errors.append(FieldError("label", f"Name is longer than {MAX_LABEL} characters"))
+        errors.append(FieldError("label", t("loginForm.err.nameTooLong", max=MAX_LABEL)))
     if d.password is None:
         if d.entry_id is None:
-            errors.append(FieldError("password", "Enter a password"))
+            errors.append(FieldError("password", t("loginForm.err.enterPassword")))
     elif not d.password:
-        errors.append(FieldError("password", "Password cannot be empty"))
+        errors.append(FieldError("password", t("loginForm.err.passwordEmpty")))
     elif len(d.password) > MAX_PASSWORD:
-        errors.append(FieldError("password", f"Password is longer than {MAX_PASSWORD} characters"))
+        errors.append(FieldError("password", t("loginForm.err.passwordTooLong", max=MAX_PASSWORD)))
     if len(d.notes) > MAX_NOTES:
-        errors.append(FieldError("notes", f"Notes are longer than {MAX_NOTES} characters"))
+        errors.append(FieldError("notes", t("loginForm.err.notesTooLong", max=MAX_NOTES)))
     tags = _clean_tags(d.tags)
     if len(tags) > MAX_TAGS:
-        errors.append(FieldError("tags", f"At most {MAX_TAGS} tags"))
+        errors.append(FieldError("tags", t("loginForm.err.maxTags", max=MAX_TAGS)))
     elif any(len(t) > MAX_TAG_LENGTH for t in tags):
-        errors.append(FieldError("tags", f"Tags are at most {MAX_TAG_LENGTH} characters"))
+        errors.append(FieldError("tags", t("loginForm.err.tagTooLong", max=MAX_TAG_LENGTH)))
     try:
         totp_config(d)
     except (TotpError, ValueError, TypeError) as exc:
-        errors.append(FieldError("totp", str(exc) or "Invalid one-time-password setup"))
+        errors.append(FieldError("totp", str(exc) or t("loginForm.err.totpInvalid")))
     codes = [c for c in d.recovery_codes if c.strip()]
     if len(codes) > MAX_RECOVERY_CODES:
-        errors.append(FieldError("recovery_codes", f"At most {MAX_RECOVERY_CODES} recovery codes"))
+        errors.append(FieldError("recovery_codes", t("loginForm.err.maxRecoveryCodes", max=MAX_RECOVERY_CODES)))
     elif any(len(c) > MAX_RECOVERY_CODE for c in codes):
-        errors.append(FieldError("recovery_codes", f"Recovery codes are at most {MAX_RECOVERY_CODE} characters"))
+        errors.append(FieldError("recovery_codes", t("loginForm.err.recoveryCodeTooLong", max=MAX_RECOVERY_CODE)))
     filled = _filled_fields(d)
     if len(filled) > MAX_CUSTOM_FIELDS:
-        errors.append(FieldError("custom_fields", f"At most {MAX_CUSTOM_FIELDS} custom fields"))
+        errors.append(FieldError("custom_fields", t("loginForm.err.maxCustomFields", max=MAX_CUSTOM_FIELDS)))
     for i, f in filled:
         name = str(f.get("name", "")).strip()
         if not name:
-            errors.append(FieldError(f"custom_fields[{i}]", "Give this field a name"))
+            errors.append(FieldError(f"custom_fields[{i}]", t("loginForm.err.fieldNeedsName")))
         elif len(name) > MAX_FIELD_NAME:
-            errors.append(FieldError(f"custom_fields[{i}]", f"Name is longer than {MAX_FIELD_NAME} characters"))
+            errors.append(FieldError(f"custom_fields[{i}]", t("loginForm.err.nameTooLong", max=MAX_FIELD_NAME)))
         elif len(str(f.get("value", ""))) > MAX_FIELD_VALUE:
-            errors.append(FieldError(f"custom_fields[{i}]", f"Value is longer than {MAX_FIELD_VALUE} characters"))
+            errors.append(FieldError(f"custom_fields[{i}]", t("loginForm.err.valueTooLong", max=MAX_FIELD_VALUE)))
     return errors
 
 
@@ -270,8 +277,8 @@ def is_dirty(d: LoginDraft, original_snapshot: tuple) -> bool:
 
 def password_meta(password: str, *, reuse_count: int) -> PasswordMeta:
     score = max(0, min(4, estimate_strength(password).score))
-    reuse = "not used anywhere else" if reuse_count <= 0 else f"used by {reuse_count} other logins"
-    return PasswordMeta(segments=score, label=STRENGTH_LABELS[score], reuse_text=reuse)
+    reuse = t("loginForm.reuseNone") if reuse_count <= 0 else t("loginForm.reuseCount", count=reuse_count)
+    return PasswordMeta(segments=score, label=strength_label(score), reuse_text=reuse)
 
 
 def save_kwargs(d: LoginDraft) -> dict[str, Any]:

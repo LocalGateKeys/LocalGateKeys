@@ -219,3 +219,41 @@ def test_virtual_addresses_by_adapter_name_or_virtualbox_range():
     assert not is_virtual_address(snapshot, "192.168.137.1")  # Mobile Hotspot: may be deliberate
     assert not is_virtual_address(snapshot, "192.168.60.26")
     assert not is_virtual_address(snapshot, "not an address")
+
+
+# ------------------------------------------------------------------ following an address change (task 11)
+def _snap(*interfaces, gateways=None, primary=None):
+    from localvault.sync.lan_interfaces import NetworkSnapshot
+
+    return NetworkSnapshot(interfaces=tuple(interfaces), gateway_addresses=gateways, primary=primary)
+
+
+def test_followed_endpoint_moves_to_the_one_new_address_and_keeps_the_port():
+    from localvault.sync.lan_interfaces import Interface, followed_endpoint
+
+    snap = _snap(Interface("Wi-Fi", ("192.168.1.23",)), gateways=frozenset({"192.168.1.23"}), primary="192.168.1.23")
+    assert followed_endpoint("192.168.1.10:47900", snap) == "192.168.1.23:47900"
+
+
+def test_followed_endpoint_keeps_an_address_that_is_still_owned():
+    from localvault.sync.lan_interfaces import Interface, followed_endpoint
+
+    snap = _snap(Interface("Wi-Fi", ("192.168.1.10",)), Interface("Ethernet", ("10.0.0.5",)))
+    assert followed_endpoint("192.168.1.10:47821", snap) is None
+
+
+def test_followed_endpoint_asks_when_there_is_no_single_obvious_choice():
+    from localvault.sync.lan_interfaces import Interface, followed_endpoint
+
+    two = _snap(Interface("Wi-Fi", ("192.168.1.23",)), Interface("Ethernet", ("10.0.0.5",)))
+    assert followed_endpoint("192.168.1.10:47821", two) is None
+    assert followed_endpoint("192.168.1.10:47821", _snap()) is None  # probe found nothing: never move
+
+
+def test_followed_endpoint_ignores_virtual_adapters_and_bad_values():
+    from localvault.sync.lan_interfaces import Interface, followed_endpoint
+
+    snap = _snap(Interface("Wi-Fi", ("192.168.1.23",)), Interface("vEthernet (WSL)", ("172.20.0.1",)))
+    assert followed_endpoint("192.168.1.10:47821", snap) == "192.168.1.23:47821"
+    for bad in ("", "nonsense", "192.168.1.10:", ":47821"):
+        assert followed_endpoint(bad, snap) is None

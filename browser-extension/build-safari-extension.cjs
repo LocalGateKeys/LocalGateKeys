@@ -13,25 +13,33 @@
 //
 // Deterministic: fixed file list, LF line endings, stable JSON.
 //
-// Usage: node browser-extension/build-safari-extension.cjs [outDir]
-//        default outDir: ios/SafariSave/Resources
+// Usage: node browser-extension/build-safari-extension.cjs [outDir [ios|macos]]
+//        no arguments: both outputs, ios/SafariSave/Resources (iPhone) and
+//        ios/SafariMac/Resources (Mac). Same script set; only the manifest
+//        description names the device.
 const fs = require("node:fs");
 const path = require("node:path");
 
 const SOURCE_DIR = __dirname;
 const DEFAULT_OUT_DIR = path.join(SOURCE_DIR, "..", "ios", "SafariSave", "Resources");
+const MAC_OUT_DIR = path.join(SOURCE_DIR, "..", "ios", "SafariMac", "Resources");
 const SAFARI_FILES = Object.freeze(["api.js", "heuristics.js", "login-safety.js", "content.js", "background-safari.js"]);
 // Binary, copied unchanged next to the scripts; named in the manifest's "icons".
 const SAFARI_ICONS = Object.freeze({ 16: "icon16.png", 32: "icon32.png", 48: "icon48.png", 128: "icon128.png" });
 const PASSKEY_SCRIPTS = new Set(["webauthn-page.js", "webauthn-bridge.js"]);
-const DESCRIPTION = "Offers to save the logins you sign in with in Safari to LocalGateKeys on this iPhone.";
+const DESCRIPTIONS = Object.freeze({
+  ios: "Offers to save the logins you sign in with in Safari to LocalGateKeys on this iPhone.",
+  macos: "Offers to save the logins you sign in with in Safari to LocalGateKeys on this Mac.",
+});
+const DESCRIPTION = DESCRIPTIONS.ios;
 
-function safariManifest(source) {
+function safariManifest(source, platform = "ios") {
+  if (!Object.hasOwn(DESCRIPTIONS, platform)) throw new Error(`unknown platform ${platform}`);
   const m = JSON.parse(JSON.stringify(source));
   // Chromium/Firefox-only keys. No popup and no extension pages: the save
   // panel is drawn in the page. The icons point at the flat copies.
   for (const key of ["key", "minimum_chrome_version", "web_accessible_resources", "browser_specific_settings", "action", "icons"]) delete m[key];
-  m.description = DESCRIPTION;
+  m.description = `__MSG_ext_description_${platform}__`;
   m.icons = { ...SAFARI_ICONS };
   // webNavigation: background-safari.js checks the whole frame chain of an
   // iframe sender with getFrame (frameChainOk) instead of the top frame only.
@@ -48,7 +56,7 @@ function safariManifest(source) {
   return m;
 }
 
-function build(outDir = DEFAULT_OUT_DIR) {
+function build(outDir = DEFAULT_OUT_DIR, platform = "ios") {
   const source = JSON.parse(fs.readFileSync(path.join(SOURCE_DIR, "manifest.json"), "utf8"));
   fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(outDir, { recursive: true });
@@ -56,16 +64,22 @@ function build(outDir = DEFAULT_OUT_DIR) {
     const text = fs.readFileSync(path.join(SOURCE_DIR, name), "utf8").replace(/\r\n/g, "\n");
     fs.writeFileSync(path.join(outDir, name), text);
   }
+  // Locale catalogs for the __MSG_*__ name in the manifest and tr() in the scripts.
+  fs.cpSync(path.join(SOURCE_DIR, "_locales"), path.join(outDir, "_locales"), { recursive: true });
   for (const name of Object.values(SAFARI_ICONS)) {
     fs.copyFileSync(path.join(SOURCE_DIR, "icons", name), path.join(outDir, name));
   }
-  fs.writeFileSync(path.join(outDir, "manifest.json"), JSON.stringify(safariManifest(source), null, 2) + "\n");
+  fs.writeFileSync(path.join(outDir, "manifest.json"), JSON.stringify(safariManifest(source, platform), null, 2) + "\n");
   return outDir;
 }
 
-module.exports = { safariManifest, SAFARI_FILES, SAFARI_ICONS, build };
+module.exports = { safariManifest, SAFARI_FILES, SAFARI_ICONS, DESCRIPTIONS, DEFAULT_OUT_DIR, MAC_OUT_DIR, build };
 
 if (require.main === module) {
-  const outDir = path.resolve(process.argv[2] || DEFAULT_OUT_DIR);
-  console.log(`Safari resources written to ${build(outDir)}`);
+  if (process.argv[2]) {
+    console.log(`Safari resources written to ${build(path.resolve(process.argv[2]), process.argv[3] || "ios")}`);
+  } else {
+    console.log(`Safari resources written to ${build(DEFAULT_OUT_DIR, "ios")}`);
+    console.log(`Safari resources written to ${build(MAC_OUT_DIR, "macos")}`);
+  }
 }

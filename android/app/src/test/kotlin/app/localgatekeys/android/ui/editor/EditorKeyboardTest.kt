@@ -62,7 +62,7 @@ class EditorKeyboardTest {
         assertEquals("EditorSeams", EditorSeams(MemoryItemStore()).toString())
         val clock = TestClock(1)
         val clipboard = SecretClipboard(FakeClipboardSink(), AppSettings(MemoryStore()), ManualScheduler(clock), clock)
-        assertEquals("DetailSeams(edit=false, delete=false)", DetailSeams(clipboard, CopyToast(true)).toString())
-        assertEquals("DetailSeams(edit=true, delete=false)", DetailSeams(clipboard, CopyToast(true), onEdit = {}).toString())
+        assertEquals("DetailSeams(edit=false, delete=false, favorite=false, restore=false)", DetailSeams(clipboard, CopyToast(true)).toString())
+        assertEquals("DetailSeams(edit=true, delete=false, favorite=false, restore=false)", DetailSeams(clipboard, CopyToast(true), onEdit = {}).toString())
     }
 }

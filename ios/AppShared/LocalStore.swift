@@ -124,6 +124,12 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
         try? url.setResourceValues(values)
     }
 
+    /// A 32-byte key for another file of this vault (the iPhone's local data), HKDF of the local key under
+    /// `info`. Never the local key itself.
+    public func derivedKey(info: [UInt8]) -> [UInt8] {
+        CryptoBox.hkdf(ikm: key, salt: [], info: info, length: 32)
+    }
+
     init(directory: URL, key: [UInt8], random: any RandomSource) throws {
         guard key.count == 32 else { throw LocalStoreError.badLocalKey }
         self.directory = directory; self.key = key; self.random = random
@@ -202,21 +208,7 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
                 let tmp = directory.appendingPathComponent("tmp-\(UUID().uuidString)", isDirectory: true)
                 do {
                     try fm.createDirectory(at: tmp, withIntermediateDirectories: false)
-                    var index: [JSONValue] = []
-                    for (n, id) in change.records.keys.sorted().enumerated() {
-                        let file = "i\(n).blob"
-                        let plain = try CanonicalJSON.encode(change.records[id]!, dialect: .utf8)
-                        try writeFileSynced(try seal(plain, aad: Self.itemAAD + "\(rev)|" + id), to: tmp.appendingPathComponent(file))
-                        index.append(.object(["id": .string(id), "file": .string(file)]))
-                    }
-                    let state = JSONValue.object([
-                        "v": .int(1), "revision": .int(rev), "items": .array(index),
-                        "meta": .object(change.meta.mapValues(Self.encodeMeta)),
-                        "sync": change.sync.map(Self.encodeSync) ?? .null,
-                    ])
-                    try writeFileSynced(try seal(try CanonicalJSON.encode(state, dialect: .utf8), aad: Self.stateAAD + "\(rev)"),
-                                        to: tmp.appendingPathComponent("state.blob"))
-                    try syncDirectory(tmp)
+                    try writeGeneration(records: change.records, meta: change.meta, sync: change.sync, revision: rev, into: tmp)
                     let gen = generationURL(rev)
                     if fm.fileExists(atPath: gen.path) { try fm.removeItem(at: gen) } // leftover of a crashed commit
                     try fm.moveItem(at: tmp, to: gen)
@@ -233,6 +225,37 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
                 safariIndex?.publish(committed)   // never throws: a failed publish never fails the commit
             }
         }
+    }
+
+    /// Seals one generation's blobs (items, then state) into the existing folder `gen`, each fsynced.
+    private func writeGeneration(records: [String: JSONValue], meta: [String: SyncMeta], sync: SyncGroupState?,
+                                 revision rev: Int64, into gen: URL) throws {
+        var index: [JSONValue] = []
+        for (n, id) in records.keys.sorted().enumerated() {
+            let file = "i\(n).blob"
+            let plain = try CanonicalJSON.encode(records[id]!, dialect: .utf8)
+            try writeFileSynced(try seal(plain, aad: Self.itemAAD + "\(rev)|" + id), to: gen.appendingPathComponent(file))
+            index.append(.object(["id": .string(id), "file": .string(file)]))
+        }
+        let state = JSONValue.object([
+            "v": .int(1), "revision": .int(rev), "items": .array(index),
+            "meta": .object(meta.mapValues(Self.encodeMeta)),
+            "sync": sync.map(Self.encodeSync) ?? .null,
+        ])
+        try writeFileSynced(try seal(try CanonicalJSON.encode(state, dialect: .utf8), aad: Self.stateAAD + "\(rev)"),
+                            to: gen.appendingPathComponent("state.blob"))
+        try syncDirectory(gen)
+    }
+
+    /// Key rotation (`KeyRotation`): writes `snapshot` as generation `g<revision>` under `key` into `staging`
+    /// (no `CURRENT`, no lock: the caller holds the vault lock and stages `CURRENT` itself).
+    public static func stageGeneration(_ snapshot: StoreSnapshot, revision: Int64, key: [UInt8],
+                                       random: any RandomSource, into staging: URL) throws {
+        let staged = try LocalStore(directory: staging, key: key, random: random)
+        let gen = staging.appendingPathComponent("g\(revision)", isDirectory: true)
+        try? FileManager.default.removeItem(at: gen)
+        try FileManager.default.createDirectory(at: gen, withIntermediateDirectories: false)
+        try staged.writeGeneration(records: snapshot.records, meta: snapshot.meta, sync: snapshot.sync, revision: revision, into: gen)
     }
 
     private func publishLimitHint(_ snap: StoreSnapshot) {
@@ -380,6 +403,20 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
     }
 
     static func encodeSync(_ s: SyncGroupState) -> JSONValue {
+        guard case .object(var o) = encodeSyncBase(s) else { return encodeSyncBase(s) }
+        // Rollback witnesses (2026-10-29): written only when not default, so an unaffected state is unchanged.
+        if !s.peerGenerations.isEmpty { o["peer_generations"] = ints(s.peerGenerations) }
+        if s.rollbackSuspected != 0 { o["rollback_suspected"] = .int(s.rollbackSuspected) }
+        if !s.witnessPeers.isEmpty { o["witness_peers"] = .array(s.witnessPeers.map { .string($0) }) }
+        if !s.witnessCounters.isEmpty { o["witness_counters"] = ints(s.witnessCounters) }
+        if s.generationOffset != 0 { o["generation_offset"] = .int(s.generationOffset) }
+        if !s.attachmentPeers.isEmpty { o["attachment_peers"] = .array(s.attachmentPeers.map { .string($0) }) }
+        // Workstream 6: per-device last-synced times (desktop `peer_synced_at`), local only, written when not empty.
+        if !s.peerSyncedAt.isEmpty { o["peer_synced_at"] = ints(s.peerSyncedAt) }
+        return .object(o)
+    }
+
+    private static func encodeSyncBase(_ s: SyncGroupState) -> JSONValue {
         .object(["group_id": .string(s.groupID), "epoch": .int(s.epoch), "key": b64(s.key),
                  "device_id": .string(s.identity.deviceID), "signing": b64(s.identity.signingPrivateKey),
                  "exchange": b64(s.identity.exchangePrivateKey), "install_id": .string(s.installID),
@@ -387,7 +424,9 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
                  "peer_digests": .object(s.peerDigests.mapValues { .string($0) }),
                  "members_epoch": .int(s.membersEpoch), "members": .array(s.members.map { .string($0) }),
                  "keyring": s.keyring.map(b64) ?? .null, "own_counter": .int(s.ownCounter),
-                 "view_signers": .object(s.viewSigners.mapValues { .string($0) })])
+                 "view_signers": .object(s.viewSigners.mapValues { .string($0) }),
+                 "lan_peers": .array(s.lanPeers.map(\.json)),
+                 "unacked_members": .array(s.unackedMembers.map { .string($0) })])
     }
 
     private struct Fields {
@@ -422,6 +461,73 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
         let signers: [String: String] = f.o["view_signers"] == nil ? [:] : try f.dict("view_signers").mapValues { v -> String in
             guard case .string(let s) = v else { throw LocalStoreError.corrupt("view_signers") }; return s
         }
+        // Pinned LAN peers (Mac host); absent in states stored before the field existed.
+        let lanPeers: [LanPeer]
+        switch f.o["lan_peers"] {
+        case nil: lanPeers = []
+        case .array(let a)?:
+            do { lanPeers = try a.map(LanPeer.init(json:)) } catch { throw LocalStoreError.corrupt("lan_peers") }
+        default: throw LocalStoreError.corrupt("lan_peers")
+        }
+        // Members awaiting the user's confirmation (audit M10); absent in states stored before the field existed.
+        let unacked: [String]
+        switch f.o["unacked_members"] {
+        case nil: unacked = []
+        case .array(let a)?:
+            unacked = try a.map { guard case .string(let s) = $0 else { throw LocalStoreError.corrupt("unacked_members") }; return s }
+        default: throw LocalStoreError.corrupt("unacked_members")
+        }
+        // Rollback witnesses (2026-10-29); every key is absent in older states (defaults), validated like the desktop.
+        func generations(_ key: String) throws -> [String: Int64] {
+            guard f.o[key] != nil else { return [:] }
+            let d = try f.ints(key)
+            guard d.count <= 64, d.allSatisfy({ Identifier.isValid($0.key) && (0...Witness.maxGeneration).contains($0.value) }) else {
+                throw LocalStoreError.corrupt(key)
+            }
+            return d
+        }
+        let peerGenerations = try generations("peer_generations")
+        let witnessCounters = try generations("witness_counters")
+        let suspected: Int64 = f.o["rollback_suspected"] == nil ? 0 : try f.int("rollback_suspected")
+        guard (0...Witness.maxGeneration).contains(suspected) else { throw LocalStoreError.corrupt("rollback_suspected") }
+        let offset: Int64 = f.o["generation_offset"] == nil ? 0 : try f.int("generation_offset")
+        guard offset >= 0 else { throw LocalStoreError.corrupt("generation_offset") }
+        let attachmentPeers: [String]
+        switch f.o["attachment_peers"] {
+        case nil: attachmentPeers = []
+        case .array(let a)?:
+            attachmentPeers = try a.map {
+                guard case .string(let s) = $0, Identifier.isValid(s) else { throw LocalStoreError.corrupt("attachment_peers") }
+                return s
+            }
+            guard attachmentPeers.count <= 64, Set(attachmentPeers).count == attachmentPeers.count else {
+                throw LocalStoreError.corrupt("attachment_peers")
+            }
+        default: throw LocalStoreError.corrupt("attachment_peers")
+        }
+        // Per-device last-synced times (workstream 6); absent in older states. Validated like the desktop.
+        let peerSyncedAt: [String: Int64]
+        if f.o["peer_synced_at"] == nil {
+            peerSyncedAt = [:]
+        } else {
+            peerSyncedAt = try f.ints("peer_synced_at")
+            guard peerSyncedAt.count <= SyncGroupState.maxPeerSyncedAt, peerSyncedAt.allSatisfy({
+                Identifier.isValid($0.key) && (0...SyncGroupState.maxSyncedAtValue).contains($0.value)
+            }) else { throw LocalStoreError.corrupt("peer_synced_at") }
+        }
+        let witnessPeers: [String]
+        switch f.o["witness_peers"] {
+        case nil: witnessPeers = []
+        case .array(let a)?:
+            witnessPeers = try a.map {
+                guard case .string(let s) = $0, Identifier.isValid(s) else { throw LocalStoreError.corrupt("witness_peers") }
+                return s
+            }
+            guard witnessPeers.count <= 64, Set(witnessPeers).count == witnessPeers.count else {
+                throw LocalStoreError.corrupt("witness_peers")
+            }
+        default: throw LocalStoreError.corrupt("witness_peers")
+        }
         return SyncGroupState(
             groupID: try f.str("group_id"), epoch: try f.int("epoch"), key: try f.bytes("key"), identity: identity,
             installID: try f.str("install_id"), hasFolder: try f.bool("has_folder"), lastSeen: try f.ints("last_seen"),
@@ -429,23 +535,26 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
             membersEpoch: try f.int("members_epoch"),
             members: try members.map { guard case .string(let s) = $0 else { throw LocalStoreError.corrupt("members") }; return s },
             keyring: f.o["keyring"] == .null ? nil : try f.bytes("keyring"), ownCounter: try f.int("own_counter"),
-            viewSigners: signers)
+            viewSigners: signers, lanPeers: lanPeers, unackedMembers: unacked,
+            peerGenerations: peerGenerations, rollbackSuspected: suspected, witnessPeers: witnessPeers.sorted(),
+            witnessCounters: witnessCounters, generationOffset: offset, attachmentPeers: attachmentPeers.sorted(),
+            peerSyncedAt: peerSyncedAt)
     }
 }
 
 /// `nonce(12) || AES-256-GCM(ciphertext || tag)` with a string AAD: the blob format of `LocalStore` and
 /// `SafariInbox`.
-enum SealedBlob {
+public enum SealedBlob {
     /// Nonce plus tag: anything shorter cannot be a sealed blob.
-    static let minimumLength = 28
+    public static let minimumLength = 28
 
-    static func seal(_ plain: [UInt8], key: [UInt8], aad: String, random: any RandomSource) throws -> [UInt8] {
+    public static func seal(_ plain: [UInt8], key: [UInt8], aad: String, random: any RandomSource) throws -> [UInt8] {
         let nonce = random.bytes(count: 12)
         return nonce + (try CryptoBox.sealGCM(key: key, nonce: nonce, plaintext: plain, aad: Array(aad.utf8)))
     }
 
     /// Throws `CryptoBoxError` when the blob is too short, the key is not 32 bytes, or it does not authenticate.
-    static func open(_ blob: [UInt8], key: [UInt8], aad: String) throws -> [UInt8] {
+    public static func open(_ blob: [UInt8], key: [UInt8], aad: String) throws -> [UInt8] {
         guard blob.count >= minimumLength else { throw CryptoBoxError.authenticationFailed }
         return try CryptoBox.openGCM(key: key, nonce: Array(blob[0..<12]), ciphertext: Array(blob[12...]), aad: Array(aad.utf8))
     }

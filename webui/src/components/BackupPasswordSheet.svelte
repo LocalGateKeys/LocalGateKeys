@@ -1,6 +1,7 @@
 <script>
   /** Set the scheduled-backup password (kept only inside the encrypted vault). Cleared from the page after every try. */
   import ErrorLogLink from './ErrorLogLink.svelte';
+  import { t } from '../lib/i18n.svelte.js';
   import { call } from '../lib/api.js';
   import { toast } from '../lib/toast.js';
   import Button from './Button.svelte';
@@ -26,19 +27,19 @@
   }
 </script>
 
-<div class="scrim" role="dialog" aria-modal="true" aria-label="Backup password">
+<div class="scrim" role="dialog" aria-modal="true" aria-label={t('backupPasswordSheet.title')}>
   <form class="sheet glass" onsubmit={submit}>
-    <h2>Backup password</h2>
-    <p class="note">Choose a backup password for scheduled backups (at least 12 characters).</p>
-    <p class="note">Write it down or remember it: restoring after a disk failure needs it, and the copy kept inside the vault is lost with the disk.</p>
+    <h2>{t('backupPasswordSheet.title')}</h2>
+    <p class="note">{t('backupPasswordSheet.intro')}</p>
+    <p class="note">{t('backupPasswordSheet.warning')}</p>
     <div class="group">
-      <Field label="Backup password" type="password" bind:value={first} autofocus autocomplete="new-password" />
-      <Field label="Enter the backup password again" type="password" bind:value={second} autocomplete="new-password" />
+      <Field label={t('backupPasswordSheet.title')} type="password" bind:value={first} autofocus autocomplete="new-password" />
+      <Field label={t('backupPasswordSheet.again')} type="password" bind:value={second} autocomplete="new-password" />
     </div>
     {#if error}<p class="error" role="alert">{error}<ErrorLogLink text={error} /></p>{/if}
     <footer>
-      <Button label="Cancel" onclick={() => onclose(false)} />
-      <Button type="submit" variant="primary" label="Save" busy={busy} busyLabel="Saving…" />
+      <Button label={t('common.cancel')} onclick={() => onclose(false)} />
+      <Button type="submit" variant="primary" label={t('common.save')} busy={busy} busyLabel={t('common.saving')} />
     </footer>
   </form>
 </div>

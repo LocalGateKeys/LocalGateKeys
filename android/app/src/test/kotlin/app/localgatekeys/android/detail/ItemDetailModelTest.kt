@@ -1,5 +1,6 @@
 package app.localgatekeys.android.detail
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.editor.Amount
 import app.localgatekeys.android.settings.AppSettings
 import app.localgatekeys.android.settings.MemoryStore
@@ -65,7 +66,7 @@ class ItemDetailModelTest {
     }
 
     private fun model(r: Obj, clock: TestClock = TestClock(0), clip: Clip = Clip(clock), conceal: Boolean = true) =
-        ItemDetailModel(item(r), clock, clip.clipboard, conceal)
+        ItemDetailModel(item(r), clock, clip.clipboard, EnglishTxt(), conceal)
 
     @Test fun test_clipboard_is_sensitive_and_expires_in_60s() {
         val clock = TestClock(1_790_000_000)
@@ -232,11 +233,11 @@ class ItemDetailModelTest {
     }
 
     @Test fun label_overrides_and_kind_label_fallback() {
-        assertEquals("URL", ItemDetailModel.label("url"))
-        assertEquals("Routing number / BIC", ItemDetailModel.label("routing"))
-        assertEquals("License key", ItemDetailModel.label("license_value"))
-        assertEquals("Job title", ItemDetailModel.label("job_title"))
-        assertEquals("First name", ItemDetailModel.label("first_name"))
+        assertEquals("URL", ItemDetailModel.label("url", EnglishTxt()))
+        assertEquals("Routing number / BIC", ItemDetailModel.label("routing", EnglishTxt()))
+        assertEquals("License key", ItemDetailModel.label("license_value", EnglishTxt()))
+        assertEquals("Job title", ItemDetailModel.label("job_title", EnglishTxt()))
+        assertEquals("First name", ItemDetailModel.label("first_name", EnglishTxt()))
     }
 
     @Test fun dates_show_in_the_medium_style_only_when_they_are_real_iso_days() {

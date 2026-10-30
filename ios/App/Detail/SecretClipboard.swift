@@ -14,7 +14,7 @@ extension UIPasteboard: PasteboardWriting {}
 /// Copies secrets local-only (never to Universal Clipboard) with the expiry chosen in Settings (60 seconds by
 /// default). The app shares one instance so locking can clear what the detail screen copied.
 @MainActor
-final class SecretClipboard {
+final class SecretClipboard: SecretCopying {
     static let shared = SecretClipboard()
     let pasteboard: any PasteboardWriting
     let clock: any UnixClock

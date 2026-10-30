@@ -108,6 +108,7 @@ def test_palette_run_lock_and_navigate(env):
     controller, _saved = env
     palette = PaletteService(controller)
     assert palette.run("generate-password") == {"navigate": "generator"}
+    assert palette.run("scan-qr") == {"navigate": "scan-qr"}
     assert palette.run("settings-locking") == {"navigate": "settings", "section": "locking"}
     assert palette.run("lock-now") == {"done": "Vault locked."}
     assert not controller.is_unlocked()

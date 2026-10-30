@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "HMAC block stream is truncated",
+    "type": "format"
+  },
+  "format": "keePassKDBX",
+  "input": "tests/vectors/import/_inputs/kdbx4_truncated.kdbx",
+  "password": "kdbx fixture password",
+  "python_format": "kdbx"
+}

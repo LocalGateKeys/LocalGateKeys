@@ -1,0 +1,9 @@
+Label,Address,Email,Pwd,Comments,TOTP Secret,Group
+My site,https://my.example.com/login,me@example.com,pw1,hello,JBSWY3DPEHPK3PXP,A\B
+,https://User:x@Host.Example.COM:8443/p,,pw2,,,
+Only notes,,,,a note body,,
+,,,,,,
+Bare,example.org/path,bob,pw3,,,
+IPv6,http://[::1]:80/x,,pw4,,,
+Bad v6,http://[::1/x,,pw5,,,
+,,,,,TOTPONLY,

@@ -1,12 +1,13 @@
 <script>
   /** Live camera preview while a 2FA QR code is read, driven by qr.status / qr.frame events.
    *  Frames exist only in this page's memory; nothing is saved. */
+  import { t } from '../lib/i18n.svelte.js';
   import { call, on } from '../lib/api.js';
   import Button from './Button.svelte';
 
   let image = $state('');
-  let status = $state('Starting camera…');
-  let detail = $state('Nothing is uploaded. No photo or video is saved.');
+  let status = $state(t('cameraView.starting'));
+  let detail = $state(t('cameraView.noUpload'));
   let phase = $state('running');
 
   $effect(() => {
@@ -19,8 +20,8 @@
 </script>
 
 <div class="scrim">
-  <div class="card glass" role="dialog" aria-modal="true" aria-label="Scan a 2FA QR code">
-    <h2>Scan a 2FA QR code</h2>
+  <div class="card glass" role="dialog" aria-modal="true" aria-label={t('cameraView.qrTitle')}>
+    <h2>{t('cameraView.qrTitle')}</h2>
     <div class="preview">
       {#if image}<img src={image} alt="" />{/if}
       <span class="frame" aria-hidden="true"></span>
@@ -28,8 +29,8 @@
     <p class="status" role="status">{status}</p>
     <p class="detail">{detail}</p>
     <footer>
-      <Button label="Try another camera" onclick={() => call('qr_switch_camera')} disabled={phase !== 'running'} />
-      <Button label="Cancel" onclick={() => call('qr_cancel')} />
+      <Button label={t('cameraView.tryAnother')} onclick={() => call('qr_switch_camera')} disabled={phase !== 'running'} />
+      <Button label={t('common.cancel')} onclick={() => call('qr_cancel')} />
     </footer>
   </div>
 </div>

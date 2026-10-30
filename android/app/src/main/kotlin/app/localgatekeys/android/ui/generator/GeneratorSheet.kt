@@ -1,5 +1,8 @@
 package app.localgatekeys.android.ui.generator
+import androidx.compose.ui.res.pluralStringResource
 
+import androidx.compose.ui.res.stringResource
+import app.localgatekeys.android.R
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -105,9 +108,9 @@ fun GeneratorSheet(model: GeneratorModel, onCancel: () -> Unit, onUse: (String) 
         GlassBackdropHost(Modifier.fillMaxSize()) { AuroraBackground() }
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onCancel) { Text("Cancel", color = c.accentText) }
+                TextButton(onCancel) { Text(stringResource(R.string.common_cancel), color = c.accentText) }
                 Text(
-                    "Generator", color = c.text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
+                    stringResource(R.string.generator_title), color = c.text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center, modifier = Modifier.weight(1f).semantics { heading() },
                 )
                 Button(
@@ -115,7 +118,7 @@ fun GeneratorSheet(model: GeneratorModel, onCancel: () -> Unit, onUse: (String) 
                     enabled = model.canUse,
                     colors = ButtonDefaults.buttonColors(containerColor = c.accent, contentColor = Color.White),
                     modifier = Modifier.padding(end = 4.dp).testTag("generator-use"),
-                ) { Text("Use", fontWeight = FontWeight.SemiBold) }
+                ) { Text(stringResource(R.string.generator_use), fontWeight = FontWeight.SemiBold) }
             }
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding()
@@ -127,8 +130,8 @@ fun GeneratorSheet(model: GeneratorModel, onCancel: () -> Unit, onUse: (String) 
                     picker = { ModePicker(state.options.mode, { m -> model.update { it.copy(mode = m) } }) },
                     buttons = {
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            GlassCircle("Generate again", model::regenerate) { Icon(Icons.Filled.Refresh, null, tint = c.text) }
-                            GlassCircle(if (state.copied) "Copied" else "Copy", model::copy, enabled = state.value.isNotEmpty()) {
+                            GlassCircle(stringResource(R.string.generator_again), model::regenerate) { Icon(Icons.Filled.Refresh, null, tint = c.text) }
+                            GlassCircle(stringResource(if (state.copied) R.string.generator_copied else R.string.generator_copy), model::copy, enabled = state.value.isNotEmpty()) {
                                 Icon(if (state.copied) Icons.Filled.Check else Icons.Filled.ContentCopy, null, tint = c.text)
                             }
                         }
@@ -186,17 +189,17 @@ private fun HeroCard(state: GeneratorModel.State, strength: GeneratorStrength.Le
     val symbol = if (LgkTheme.isDark) c.glowOrange else c.warning
     Column(
         Modifier.fillMaxWidth().lgkGroupSurface().clip(RoundedCornerShape(22.dp))
-            .clickable(role = Role.Button, onClickLabel = "Copy", onClick = onCopy)
+            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.generator_copy), onClick = onCopy)
             .padding(18.dp).testTag("generator-hero"),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (state.options.mode == Mode.PASSWORD) "Password" else "Passphrase",
+                stringResource(if (state.options.mode == Mode.PASSWORD) R.string.generator_password else R.string.generator_passphrase),
                 color = c.secondaryText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f),
             )
             Text(
-                if (state.copied) "Copied" else "Tap to copy",
+                stringResource(if (state.copied) R.string.generator_copied else R.string.generator_tap_to_copy),
                 color = if (state.copied) c.success else c.secondaryText, style = MaterialTheme.typography.bodySmall,
             )
         }
@@ -236,6 +239,8 @@ internal fun colored(value: String, digit: Color, letter: Color, symbol: Color):
 @Composable
 fun StrengthMeter(level: GeneratorStrength.Level, modifier: Modifier = Modifier) {
     val c = LgkTheme.colors
+    val levelLabel = stringResource(level.label)
+    val description = stringResource(R.string.generator_strength_description, levelLabel)
     val fill = when (level) {
         GeneratorStrength.Level.WEAK -> c.danger
         GeneratorStrength.Level.FAIR -> c.warning
@@ -243,7 +248,7 @@ fun StrengthMeter(level: GeneratorStrength.Level, modifier: Modifier = Modifier)
         GeneratorStrength.Level.VERY_STRONG -> c.success
     }
     Row(
-        modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = "Strength: ${level.label}" }
+        modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = description }
             .testTag("strength-meter"),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -254,7 +259,7 @@ fun StrengthMeter(level: GeneratorStrength.Level, modifier: Modifier = Modifier)
                 Box(Modifier.weight(1f).height(6.dp).clip(CircleShape).background(color))
             }
         }
-        Text(level.label, color = c.text, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Text(levelLabel, color = c.text, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
 }
 
@@ -263,7 +268,7 @@ fun StrengthMeter(level: GeneratorStrength.Level, modifier: Modifier = Modifier)
 private fun ModePicker(mode: Mode, onSelect: (Mode) -> Unit, modifier: Modifier = Modifier) {
     val c = LgkTheme.colors
     Row(modifier.heightIn(min = 48.dp).lgkGlass(CircleShape).padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        for ((m, title) in listOf(Mode.PASSWORD to "Password", Mode.PASSPHRASE to "Passphrase")) {
+        for ((m, title) in listOf(Mode.PASSWORD to R.string.generator_password, Mode.PASSPHRASE to R.string.generator_passphrase)) {
             val selected = mode == m
             Box(
                 Modifier.weight(1f).clip(CircleShape)
@@ -274,7 +279,7 @@ private fun ModePicker(mode: Mode, onSelect: (Mode) -> Unit, modifier: Modifier 
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    title, color = if (selected) c.accentText else c.text, style = MaterialTheme.typography.bodyMedium,
+                    stringResource(title), color = if (selected) c.accentText else c.text, style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
@@ -300,15 +305,15 @@ private fun OptionsCard(o: GeneratorOptions, model: GeneratorModel) {
         if (o.mode == Mode.PASSWORD) {
             LengthRow(o.length, model)
             Divider()
-            ToggleRow("Lowercase (a-z)", Icons.Filled.Abc, o.lowercase) { v -> set { it.copy(lowercase = v) } }
+            ToggleRow(stringResource(R.string.generator_lowercase), Icons.Filled.Abc, o.lowercase) { v -> set { it.copy(lowercase = v) } }
             Divider()
-            ToggleRow("Uppercase (A-Z)", Icons.Filled.TextFormat, o.uppercase) { v -> set { it.copy(uppercase = v) } }
+            ToggleRow(stringResource(R.string.generator_uppercase), Icons.Filled.TextFormat, o.uppercase) { v -> set { it.copy(uppercase = v) } }
             Divider()
-            ToggleRow("Digits (0-9)", Icons.Filled.Numbers, o.digits) { v -> set { it.copy(digits = v) } }
+            ToggleRow(stringResource(R.string.generator_digits), Icons.Filled.Numbers, o.digits) { v -> set { it.copy(digits = v) } }
             Divider()
-            ToggleRow("Symbols", Icons.Filled.Emergency, o.symbols) { v -> set { it.copy(symbols = v) } }
+            ToggleRow(stringResource(R.string.generator_symbols), Icons.Filled.Emergency, o.symbols) { v -> set { it.copy(symbols = v) } }
             Divider()
-            ToggleRow("Avoid look-alike characters", Icons.Filled.VisibilityOff, o.avoidAmbiguous) { v ->
+            ToggleRow(stringResource(R.string.generator_avoid_ambiguous), Icons.Filled.VisibilityOff, o.avoidAmbiguous) { v ->
                 set { it.copy(avoidAmbiguous = v) }
             }
         } else {
@@ -316,9 +321,9 @@ private fun OptionsCard(o: GeneratorOptions, model: GeneratorModel) {
             Divider()
             SeparatorRow(o.separator) { s -> set { it.copy(separator = s) } }
             Divider()
-            ToggleRow("Capitalize words", Icons.Filled.FormatSize, o.capitalize) { v -> set { it.copy(capitalize = v) } }
+            ToggleRow(stringResource(R.string.generator_capitalize), Icons.Filled.FormatSize, o.capitalize) { v -> set { it.copy(capitalize = v) } }
             Divider()
-            ToggleRow("Add a number", Icons.Filled.Numbers, o.appendNumber) { v -> set { it.copy(appendNumber = v) } }
+            ToggleRow(stringResource(R.string.generator_add_number), Icons.Filled.Numbers, o.appendNumber) { v -> set { it.copy(appendNumber = v) } }
         }
     }
 }
@@ -357,19 +362,23 @@ private fun ToggleRow(title: String, icon: ImageVector, checked: Boolean, onChan
 private fun LengthRow(length: Int, model: GeneratorModel) {
     val c = LgkTheme.colors
     val range = GeneratorSlider.LENGTH_RANGE
+    val decreaseLabel = stringResource(R.string.generator_decrease_length)
+    val increaseLabel = stringResource(R.string.generator_increase_length)
+    val lengthLabel = stringResource(R.string.generator_length)
+    val lengthState = pluralStringResource(R.plurals.generator_characters, length, length)
     Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             OptionIcon(Icons.Filled.Straighten)
-            Text("Length", color = c.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.generator_length), color = c.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
             Text("$length", color = c.text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold,
                 fontFamily = FontFamily.Monospace, modifier = Modifier.testTag("generator-length"))
             Row(Modifier.clip(CircleShape).background(c.innerTile)) {
                 IconButton({ model.stepLength(-1) }, enabled = length > PasswordGenerator.LENGTH_RANGE.first,
-                    modifier = Modifier.size(40.dp).semantics { contentDescription = "Decrease length" }) {
+                    modifier = Modifier.size(48.dp).semantics { contentDescription = decreaseLabel }) {
                     Icon(Icons.Filled.Remove, null, tint = c.accentText)
                 }
                 IconButton({ model.stepLength(+1) }, enabled = length < PasswordGenerator.LENGTH_RANGE.last,
-                    modifier = Modifier.size(40.dp).semantics { contentDescription = "Increase length" }) {
+                    modifier = Modifier.size(48.dp).semantics { contentDescription = increaseLabel }) {
                     Icon(Icons.Filled.Add, null, tint = c.accentText)
                 }
             }
@@ -383,7 +392,7 @@ private fun LengthRow(length: Int, model: GeneratorModel) {
                 thumbColor = c.accent, activeTrackColor = c.accent,
                 activeTickColor = Color.Transparent, inactiveTickColor = Color.Transparent,
             ),
-            modifier = Modifier.semantics { contentDescription = "Length"; stateDescription = "$length characters" },
+            modifier = Modifier.semantics { contentDescription = lengthLabel; stateDescription = lengthState },
         )
     }
 }
@@ -392,10 +401,12 @@ private fun LengthRow(length: Int, model: GeneratorModel) {
 private fun WordsRow(words: Int, model: GeneratorModel) {
     val c = LgkTheme.colors
     val range = PasswordGenerator.WORDS_RANGE
+    val wordsLabel = stringResource(R.string.generator_words)
+    val wordsState = pluralStringResource(R.plurals.generator_word_count, words, words)
     Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             OptionIcon(Icons.Filled.SpaceBar)
-            Text("Words", color = c.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.generator_words), color = c.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
             Text("$words", color = c.text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold,
                 fontFamily = FontFamily.Monospace)
         }
@@ -408,7 +419,7 @@ private fun WordsRow(words: Int, model: GeneratorModel) {
                 thumbColor = c.accent, activeTrackColor = c.accent,
                 activeTickColor = Color.Transparent, inactiveTickColor = Color.Transparent,
             ),
-            modifier = Modifier.semantics { contentDescription = "Words"; stateDescription = "$words words" },
+            modifier = Modifier.semantics { contentDescription = wordsLabel; stateDescription = wordsState },
         )
     }
 }
@@ -420,17 +431,19 @@ private fun SeparatorRow(selected: String, onSelect: (String) -> Unit) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             OptionIcon(Icons.Filled.Remove)
-            Text("Separator", color = c.text, style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.generator_separator), color = c.text, style = MaterialTheme.typography.bodyLarge)
         }
         ChipFlowLayout(spacing = 8.dp) {
-            for ((sep, name) in SEPARATORS) {
+            for ((sep, nameRes) in SEPARATORS) {
+                val name = stringResource(nameRes)
+                val sepDescription = stringResource(R.string.generator_separator_description, name)
                 val on = selected == sep
                 Box(
                     Modifier.clip(CircleShape)
                         .background(if (on) c.accent.copy(alpha = 0.18f) else c.innerTile)
                         .then(if (on) Modifier.border(1.dp, c.accent.copy(alpha = 0.5f), CircleShape) else Modifier)
                         .selectable(on, role = Role.RadioButton, onClick = { onSelect(sep) })
-                        .semantics { contentDescription = "Separator: $name" }
+                        .semantics { contentDescription = sepDescription }
                         .padding(horizontal = 14.dp, vertical = 8.dp),
                 ) {
                     Text(
@@ -444,4 +457,7 @@ private fun SeparatorRow(selected: String, onSelect: (String) -> Unit) {
 }
 
 /** The separator choices and their names, in the iPhone's order. */
-internal val SEPARATORS = listOf("-" to "Dash", " " to "Space", "." to "Dot", "_" to "Underscore", "" to "None")
+internal val SEPARATORS = listOf(
+    "-" to R.string.generator_separator_dash, " " to R.string.generator_separator_space, "." to R.string.generator_separator_dot,
+    "_" to R.string.generator_separator_underscore, "" to R.string.common_none,
+)

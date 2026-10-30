@@ -1,189 +1,10 @@
 import Foundation
 import Observation
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
-
-/// The kinds the phone edits field by field: the phone kinds (LGKCore `Normalise.phoneEntryKinds` +
-/// `phoneItemKinds`) that have a case here. `passkey` is a phone kind (AutoFill creates it) but has no case:
-/// it is only renamed or deleted (`PasskeyRenameModel`). Desktop logins and documents stay desktop-only.
-enum EditorKind: String, CaseIterable, Identifiable, Sendable {
-    case web, note, card, identity
-    case bankAccount = "bank_account", purchase, subscription, warranty
-    case wifi, license, apiKey = "api_key", sshKey = "ssh_key", bookmark
-    var id: String { rawValue }
-
-    init?(kind: String) {
-        guard Normalise.phoneEntryKinds.contains(kind) || Normalise.phoneItemKinds.contains(kind) else { return nil }
-        self.init(rawValue: kind)
-    }
-
-    var ns: Namespace { self == .web ? .entry : .item }
-    var label: String { VaultItem.kindLabel(rawValue) }
-    var isPurchaseLike: Bool { self == .purchase || self == .warranty || self == .subscription }
-
-    /// The New item menu, in sections.
-    static let menuSections: [[EditorKind]] = [
-        [.web, .note, .card, .identity],
-        [.bankAccount, .purchase, .subscription, .warranty],
-        [.wifi, .license, .apiKey, .sshKey, .bookmark],
-    ]
-
-    struct Field: Identifiable, Sendable {
-        let key: String
-        let label: String
-        var secret = false
-        var multiline = false
-        var keyboard: Keyboard = .text
-        var control: Control = .text
-        var caps: Caps = .none
-        /// A line under the field, for what the label cannot say.
-        var hint: String?
-        var id: String { key }
-    }
-    enum Keyboard: Sendable { case text, url, email, number, phone, decimal }
-    /// `toggle` values are "true"/"false"; `date` values are ISO `YYYY-MM-DD`; `amount` is a decimal in the
-    /// currency's major unit (the record stores minor units).
-    enum Control: Sendable, Equatable { case text, toggle, choice([String]), date, amount }
-    enum Caps: Sendable { case none, words, sentences, characters }
-
-    private static func title(_ key: String = "title") -> Field { Field(key: key, label: "Title", caps: .sentences) }
-    private static let notes = Field(key: "notes", label: "Notes", multiline: true, caps: .sentences)
-    private static func words(_ key: String, _ label: String) -> Field { Field(key: key, label: label, caps: .words) }
-    private static func date(_ key: String, _ label: String) -> Field { Field(key: key, label: label, control: .date) }
-
-    /// Field keys: `label`/`title` and the record or payload key they edit.
-    var fields: [Field] {
-        switch self {
-        case .web: [Self.title("label"), Field(key: "origin", label: "Website", keyboard: .url),
-                    Field(key: "username", label: "Username", keyboard: .email), Field(key: "password", label: "Password", secret: true),
-                    Field(key: "totp", label: "2FA secret (TOTP)", secret: true),
-                    Self.notes]
-        case .note: [Self.title(), Field(key: "body", label: "Note", multiline: true, caps: .sentences)]
-        case .card: [Self.title(), Self.words("cardholder", "Cardholder"),
-                     Field(key: "number", label: "Card number", secret: true, keyboard: .number),
-                     Field(key: "expiry", label: "Expiry (MM/YY)"), Field(key: "cvv", label: "CVV", secret: true, keyboard: .number),
-                     Field(key: "pin", label: "PIN", secret: true, keyboard: .number), Self.notes]
-        case .identity: [Self.title(), Self.words("name", "Full name"),
-                         Field(key: "email", label: "Email", keyboard: .email), Field(key: "phone", label: "Phone", keyboard: .phone),
-                         Self.words("organization", "Organization"), Self.words("job_title", "Job title"),
-                         Self.words("address_line1", "Address line 1"), Self.words("address_line2", "Address line 2"),
-                         Self.words("city", "City"), Self.words("state", "State / region"),
-                         Field(key: "postal_code", label: "Postal code", caps: .characters), Self.words("country", "Country")]
-        case .bankAccount: [Self.title(), Self.words("bank", "Bank"), Self.words("account_holder", "Account holder"),
-                            Field(key: "account_number", label: "IBAN / account number", secret: true, caps: .characters,
-                                  hint: "An IBAN is checked and stored without spaces."),
-                            Field(key: "routing", label: "Routing number / BIC", caps: .characters),
-                            Field(key: "pin", label: "PIN", secret: true, keyboard: .number), Self.notes]
-        case .purchase, .warranty, .subscription:
-            [Self.title(), Self.words("product", "Product"), Self.words("vendor", "Vendor"), Self.words("provider", "Provider"),
-             Field(key: "amount_minor", label: "Amount", keyboard: .decimal, control: .amount),
-             Field(key: "currency", label: "Currency", caps: .characters, hint: "Three letters, for example EUR or USD."),
-             Self.date("purchase_date", "Purchase date"), Self.date("renewal_date", "Renewal date"),
-             Self.date("expiration_date", "Expiration date"), Field(key: "active", label: "Active", control: .toggle), Self.notes]
-        case .wifi: [Self.title(), Field(key: "ssid", label: "Network name (SSID)"),
-                     Field(key: "password", label: "Password", secret: true),
-                     Field(key: "security", label: "Security", control: .choice(Normalise.wifiSecurityTypes)),
-                     Field(key: "hidden", label: "Hidden network", control: .toggle), Self.notes]
-        case .license: [Self.title(), Self.words("product", "Product"), Self.words("vendor", "Vendor"),
-                        Field(key: "license_value", label: "License key / serial", secret: true),
-                        Self.date("purchase_date", "Purchase date"), Self.date("expiration_date", "Expiration date"), Self.notes]
-        case .apiKey: [Self.title(), Self.words("service", "Service"), Field(key: "key", label: "Key", secret: true),
-                       Field(key: "secret", label: "Secret", secret: true), Self.date("expires", "Expires"), Self.notes]
-        case .sshKey: [Self.title(), Field(key: "private_key", label: "Private key", secret: true, multiline: true),
-                       Field(key: "public_key", label: "Public key", multiline: true,
-                             hint: "An OpenSSH line (ssh-ed25519 AAAA…). The fingerprint is worked out from it."),
-                       Field(key: "passphrase", label: "Passphrase", secret: true), Field(key: "fingerprint", label: "Fingerprint"),
-                       Self.notes]
-        case .bookmark: [Self.title(), Field(key: "url", label: "URL", keyboard: .url, hint: "http:// or https://"), Self.notes]
-        }
-    }
-
-    /// What a new item of this kind starts with.
-    var defaults: [String: String] {
-        switch self {
-        case .wifi: ["security": "wpa2"]
-        case .purchase, .warranty, .subscription: ["active": "true", "currency": Amount.localCurrency]
-        default: [:]
-        }
-    }
-
-    /// Display names for the Wi-Fi security choices.
-    static func choiceLabel(_ value: String) -> String {
-        switch value {
-        case "none": "None (open)"
-        case "wep": "WEP"
-        case "wpa": "WPA"
-        case "wpa2": "WPA2"
-        case "wpa3": "WPA3"
-        case "wpa2-enterprise": "WPA2 Enterprise"
-        case "wpa3-enterprise": "WPA3 Enterprise"
-        default: value
-        }
-    }
-}
-
-enum AmountError: Error, Equatable { case invalid(String) }
-
-/// Amounts: the record keeps whole minor units (cents) plus a currency code, as the desktop does; the editor
-/// shows and takes the major unit (12.99).
-enum Amount {
-    static var localCurrency: String {
-        let code = Locale.current.currency?.identifier ?? ""
-        return code.count == 3 ? code : ""
-    }
-
-    /// Minor-unit digits for a currency (2 for EUR, 0 for JPY); 2 for the desktop's "no currency" XXX.
-    static func fractionDigits(_ code: String) -> Int {
-        guard code.count == 3, code != "XXX" else { return 2 }
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = code
-        return f.maximumFractionDigits
-    }
-
-    static func minorUnits(_ text: String, currency: String) throws -> Int64 {
-        var t = text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: " ", with: "")
-        if t.isEmpty { return 0 }
-        t = t.replacingOccurrences(of: ",", with: ".")
-        let body = t.hasPrefix("-") ? String(t.dropFirst()) : t
-        let parts = body.split(separator: ".", omittingEmptySubsequences: false)
-        guard parts.count <= 2, parts.allSatisfy({ $0.allSatisfy { $0.isASCII && $0.isNumber } }),
-              !parts.joined().isEmpty else {
-            throw AmountError.invalid("Enter the amount as a number, for example 12.99.")
-        }
-        let digits = fractionDigits(currency)
-        let fraction = parts.count == 2 ? String(parts[1]) : ""
-        guard fraction.count <= digits else {
-            throw AmountError.invalid(digits == 0 ? "This currency has no decimals." : "Use at most \(digits) decimals.")
-        }
-        let whole = parts[0].isEmpty ? "0" : String(parts[0])
-        let combined = whole + fraction.padding(toLength: digits, withPad: "0", startingAt: 0)
-        guard combined.count <= 17, let n = Int64(combined), n <= 1_000_000_000_000_000 else {
-            throw AmountError.invalid("This amount is too large.")
-        }
-        return t.hasPrefix("-") ? -n : n
-    }
-
-    /// 129999 CHF → "1299.99"; 1500 EUR → "15.00".
-    static func text(minor: Int64, currency: String) -> String {
-        let digits = fractionDigits(currency)
-        let sign = minor < 0 ? "-" : ""
-        let s = String(minor.magnitude)
-        guard digits > 0 else { return sign + s }
-        let padded = String(repeating: "0", count: max(0, digits + 1 - s.count)) + s
-        return sign + padded.dropLast(digits) + "." + padded.suffix(digits)
-    }
-
-    /// "CHF 1,299.99" in the person's locale.
-    static func display(minor: Int64, currency: String) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        if currency.count == 3 && currency != "XXX" { f.currencyCode = currency } else { f.currencySymbol = "" }
-        let digits = fractionDigits(currency)
-        f.minimumFractionDigits = digits; f.maximumFractionDigits = digits
-        let value = NSDecimalNumber(mantissa: minor.magnitude, exponent: Int16(-digits), isNegative: minor < 0)
-        return (f.string(from: value) ?? text(minor: minor, currency: currency)).trimmingCharacters(in: .whitespaces)
-    }
-}
+#endif
 
 enum SaveResult: Equatable { case saved, unchanged, needsPro, needsPunycode, invalid, failed }
 
@@ -204,6 +25,10 @@ final class EditorModel {
     /// Inline error for the Amount field.
     private(set) var amountError: String?
     var showUpgrade = false
+    /// The Mac's tags field: when set, replaces the record's `tags` (already normalised). nil leaves them as stored.
+    var tags: [String]?
+    /// The id the last successful save wrote (a new item's generated id).
+    private(set) var savedID: String?
     /// Delete found the item gone already (a sync removed it): the view says so and closes.
     private(set) var alreadyRemoved = false
 
@@ -216,14 +41,28 @@ final class EditorModel {
     @ObservationIgnored private let original: [String: JSONValue]?
     /// Commits run inside a background task (the store holds a flock in the app-group container).
     @ObservationIgnored private let background: any BackgroundTasking
+    /// The Mac records a login's replaced password in `password_history` like the desktop (`vault.py`);
+    /// off by default, so the iPhone keeps the stored history untouched.
+    @ObservationIgnored private let keepsPasswordHistory: Bool
 
     init(store: any ItemStore, pro: ProModel, editing item: VaultItem?, kind: EditorKind,
-         clock: any UnixClock, random: any RandomSource, background: (any BackgroundTasking)? = nil) {
+         clock: any UnixClock, random: any RandomSource, background: (any BackgroundTasking)? = nil,
+         keepsPasswordHistory: Bool = false) {
         self.store = store; self.pro = pro; self.clock = clock; self.random = random
-        self.background = background ?? UIKitBackgroundTasks()
+        self.keepsPasswordHistory = keepsPasswordHistory
+        self.background = background ?? PlatformBackgroundTasks.make()
         self.kind = item.flatMap { EditorKind(kind: $0.kind) } ?? kind
         isNew = item == nil; id = item?.id; original = item?.record
         if let r = item?.record { values = Self.values(of: r, kind: self.kind) } else { values = self.kind.defaults }
+    }
+
+    /// The edited item's id (nil: a new item) and its record as stored, for the unsaved draft (EditorDraft.swift).
+    var editingID: String? { id }
+    var originalRecord: [String: JSONValue]? { original }
+
+    /// A restored draft's form replaces the values shown (Task 6, EditorDraft.swift).
+    func restore(_ form: [String: String]) {
+        values = form; error = nil; needsPunycode = false; totpError = nil; websiteError = nil; amountError = nil
     }
 
     var titleKey: String { kind == .web ? "label" : "title" }
@@ -237,16 +76,22 @@ final class EditorModel {
         if key == "amount_minor" || key == "currency" { amountError = nil }
     }
 
-    static let migrationQRMessage = "This QR code moves accounts out of an authenticator app. Scan the website's own 2FA setup code instead, or import the export on your PC."
-    static let notTOTPQRMessage = "This QR code is not a 2FA setup code."
-    static let totpCameraMessage = "The camera is not available. Paste the setup key instead."
+    static let migrationQRMessage = String(localized: "This QR code moves several accounts out of an authenticator app. Use Scan QR code (next to New item) to add them all.")
+    static let notTOTPQRMessage = String(localized: "This QR code is not a 2FA setup code.")
+    static let totpCameraMessage = String(localized: "The camera is not available. Paste the setup key instead.")
 
     /// A QR code scanned for the 2FA field: a setup code (otpauth link or Base32 secret) fills the field,
     /// anything else leaves it as it was and explains why.
     func scanTOTP(_ code: String) {
         let text = code.trimmingCharacters(in: .whitespacesAndNewlines)
         let isOtpauth = text.lowercased().hasPrefix("otpauth")
-        if text.lowercased().hasPrefix("otpauth-migration:") { totpError = Self.migrationQRMessage; return }
+        if text.lowercased().hasPrefix("otpauth-migration:") {
+            // An authenticator export with one account fills the field; several go through Scan QR code.
+            guard let batch = try? OTPMigration.parse(text), batch.batchSize == 1, batch.accounts.count == 1,
+                  batch.skipped.isEmpty else { totpError = Self.migrationQRMessage; return }
+            set("totp", batch.accounts[0].uri)
+            return
+        }
         do {
             guard try TOTP.parseField(text) != nil else { totpError = Self.notTOTPQRMessage; return }
             set("totp", text)
@@ -256,6 +101,9 @@ final class EditorModel {
     }
 
     func totpCameraUnavailable() { totpError = Self.totpCameraMessage }
+
+    /// A QR image (Photos, or an image file on the Mac) had no usable 2FA code: fixed text, never the payload.
+    func totpScanFailed(_ message: String) { totpError = message }
 
     static func values(of r: [String: JSONValue], kind: EditorKind) -> [String: String] {
         var out: [String: String] = [:]
@@ -284,6 +132,21 @@ final class EditorModel {
 
     // MARK: building the record
 
+    /// A changed Website moves the login: the URL rows on the old site (its exact-origin row and any imported page
+    /// address there) give way to the new exact origin as `urls[0]`, which the desktop treats as authoritative
+    /// (`migrate_web_scope`); rows on other sites stay.
+    static func movedRows(_ rows: [JSONValue], from old: String, to new: String) -> JSONValue {
+        let first: JSONValue = .object(["url": .string(new), "match": .string("exact_origin")])
+        let kept = rows.filter { row in
+            guard let url = row.objectValue?["url"]?.stringValue ?? row.stringValue else { return false }
+            guard let origin = try? Origin.originOf(url) else { return true }
+            let match = row.objectValue?["match"]?.stringValue ?? "exact_origin"
+            if origin.utf8.elementsEqual(old.utf8) { return false }
+            return !(origin.utf8.elementsEqual(new.utf8) && match == "exact_origin")
+        }
+        return .array([first] + kept)
+    }
+
     /// The record with the form applied over the original (unknown fields kept). An empty field the record
     /// never had is not added, so opening and saving changes nothing.
     func edited() throws -> [String: JSONValue] {
@@ -295,7 +158,11 @@ final class EditorModel {
             switch (kind, f.key) {
             case (.web, "origin"):
                 // Required for web logins; what was typed is reduced to its origin first.
-                scope["origin"] = .string(try WebsiteInput.origin(v))
+                let new = try WebsiteInput.origin(v)
+                if let old = scope["origin"]?.stringValue, !old.utf8.elementsEqual(new.utf8), let rows = scope["urls"]?.arrayValue {
+                    scope["urls"] = Self.movedRows(rows, from: old, to: new)
+                }
+                scope["origin"] = .string(new)
             case (.web, "totp"):
                 r["totp"] = try Self.totp(v, current: r["totp"])
             case (.web, _), (_, "title"):
@@ -321,6 +188,7 @@ final class EditorModel {
             }
         }
         if kind == .web { r["scope"] = .object(scope) } else { r["payload"] = .object(payload) }
+        if let tags, !(tags.isEmpty && r["tags"] == nil) { r["tags"] = .array(tags.map(JSONValue.string)) }
         return r
     }
 
@@ -372,6 +240,32 @@ final class EditorModel {
         return x == y
     }
 
+    /// How many history rows a save writes. The owner chose 10 (UX plan workstream 8) and LGKCore reads 10
+    /// (`Normalise.passwordHistoryLimit`), but the Windows normaliser (`vault_bridge.py` `_MAX_PASSWORD_HISTORY`)
+    /// and Android still refuse more than 5, so a login with 6+ rows would stop syncing to them. Raise this to
+    /// `Normalise.passwordHistoryLimit` in the same release as those two.
+    nonisolated static let historyWriteLimit = 5
+    /// History rows older than this are dropped when a password changes (owner decision: kept 365 days).
+    nonisolated static let historyKeepSeconds: Int64 = 365 * 86_400
+
+    /// `vault.py` `update_entry`: when the password actually changes (byte comparison) from a non-empty one,
+    /// the old password goes first in `password_history` as `{password, changed_at}`, keeping at most
+    /// `historyWriteLimit` rows from the last 365 days.
+    static func withPasswordHistory(_ edited: [String: JSONValue], original: [String: JSONValue]?, now: Int64) -> [String: JSONValue] {
+        guard let previous = original?["password"]?.stringValue, !previous.isEmpty,
+              let new = edited["password"]?.stringValue, Array(previous.utf8) != Array(new.utf8) else { return edited }
+        var out = edited
+        var history = edited["password_history"]?.arrayValue ?? []
+        history.removeAll { row in
+            guard case .object(let o) = row else { return false }
+            let at: Int64? = if case .int(let n)? = o["changed_at"] ?? o["replaced_at"] { n } else { nil }
+            return at.map { now - $0 > historyKeepSeconds } ?? false
+        }
+        history.insert(.object(["password": .string(previous), "changed_at": .int(now)]), at: 0)
+        out["password_history"] = .array(Array(history.prefix(historyWriteLimit)))
+        return out
+    }
+
     private static func withoutStamp(_ r: JSONValue) -> JSONValue {
         guard case .object(var o) = r else { return r }
         o["updated_at"] = nil
@@ -380,27 +274,27 @@ final class EditorModel {
 
     // MARK: actions
 
-    static let punycodeMessage = "Enter this website's domain in its xn-- (punycode) form."
-    static let alreadyRemovedMessage = "This item was already removed"
+    static let punycodeMessage = String(localized: "Enter this website's domain in its xn-- (punycode) form.")
+    static let alreadyRemovedMessage = String(localized: "This item was already removed")
 
     func save() -> SaveResult {
         error = nil; needsPunycode = false; totpError = nil; websiteError = nil; amountError = nil
         let edited: [String: JSONValue]
         do { edited = try self.edited() } catch AmountError.invalid(let message) {
-            amountError = message; error = "Check the amount."; return .invalid
+            amountError = message; error = String(localized: "Check the amount."); return .invalid
         } catch let e as TOTPError {
-            totpError = TOTP.message(for: e); error = "Check the 2FA secret."; return .invalid
+            totpError = TOTP.message(for: e); error = String(localized: "Check the 2FA secret."); return .invalid
         } catch WebsiteInputError.needsPunycode {
             needsPunycode = true; error = Self.punycodeMessage; return .needsPunycode
         } catch WebsiteInputError.required {
-            websiteError = WebsiteInput.requiredMessage; error = "Check the website."; return .invalid
+            websiteError = WebsiteInput.requiredMessage; error = String(localized: "Check the website."); return .invalid
         } catch WebsiteInputError.invalid(let message) {
-            websiteError = message; error = "Check the website."; return .invalid
-        } catch { self.error = "This item cannot be saved."; return .invalid }
+            websiteError = message; error = String(localized: "Check the website."); return .invalid
+        } catch { self.error = String(localized: "This item cannot be saved."); return .invalid }
         // Unchanged: leave the stored bytes alone so the version vector is not bumped.
         if let original, Self.same(.object(edited), .object(original)) { return .unchanged }
         if totpNeedsPro, ProFeatures.totpChangeNeedsPro(new: edited["totp"], old: original?["totp"]) {
-            totpError = ProFeatures.totpMessage; error = "Two-factor codes need Pro."; showUpgrade = true
+            totpError = ProFeatures.totpMessage; error = String(localized: "Two-factor codes need Pro."); showUpgrade = true
             return .needsPro
         }
         do {
@@ -415,24 +309,26 @@ final class EditorModel {
                 return .unchanged
             }
             var stamped = edited
+            if keepsPasswordHistory, kind == .web { stamped = Self.withPasswordHistory(stamped, original: original, now: clock.now) }
             stamped["updated_at"] = .int(clock.now)
             if case .int(let created)? = stamped["created_at"], created > clock.now { stamped["created_at"] = .int(clock.now) }
             let record = try Normalise.normalForm(ns: kind.ns, record: .object(stamped))
-            guard case .object(let o) = record, case .string(let rid)? = o["id"] else { error = "This item cannot be saved."; return .invalid }
-            if let id, rid != id { error = "This item cannot be saved."; return .invalid }
-            if isNew, snap.records[rid] != nil { error = "This item cannot be saved."; return .failed }
+            guard case .object(let o) = record, case .string(let rid)? = o["id"] else { error = String(localized: "This item cannot be saved."); return .invalid }
+            if let id, rid != id { error = String(localized: "This item cannot be saved."); return .invalid }
+            if isNew, snap.records[rid] != nil { error = String(localized: "This item cannot be saved."); return .failed }
             snap.records[rid] = Wrapper.make(ns: kind.ns, record: record)
             let change = StoreChange(baseRevision: snap.revision, records: snap.records, meta: snap.meta, sync: snap.sync)
             try background.run("LocalGateKeys save") { try store.commit(change) }
+            savedID = rid
             return .saved
         } catch NormaliseError.needsPunycode {
             needsPunycode = true
             error = Self.punycodeMessage
             return .needsPunycode
         } catch NormaliseError.rejected(let detail) {
-            error = detail; return .invalid
+            error = kind.friendlyError(detail); return .invalid
         } catch {
-            self.error = "The item could not be saved on this device."; return .failed
+            self.error = String(localized: "The item could not be saved on this device."); return .failed
         }
     }
 
@@ -440,10 +336,12 @@ final class EditorModel {
     /// device), so the next sync publishes the delete. With no sync state (meta kept after Leave) there is no
     /// device to bump with; the meta is left for `SyncMeta.localView`, which tombstones a meta whose record
     /// is gone with exactly one bump on the next join. Writing an unbumped tomb here would lose the delete.
-    func delete() -> SaveResult {
+    /// `move`: the iPhone's Recently deleted (`PhoneTrash.moveToTrash`), which saves the record before it
+    /// does the same store delete; nil deletes at once.
+    func delete(using move: ((String) -> SaveResult)? = nil) -> SaveResult {
         guard let id else { return .failed }
-        let r = Self.delete(id: id, store: store, clock: clock, background: background)
-        if r == .failed { error = "The item could not be deleted on this device." }
+        let r = move?(id) ?? Self.delete(id: id, store: store, clock: clock, background: background)
+        if r == .failed { error = String(localized: "The item could not be deleted on this device.") }
         alreadyRemoved = r == .unchanged
         return r
     }

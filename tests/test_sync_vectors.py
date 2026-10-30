@@ -134,10 +134,12 @@ def test_generator_reproduces_committed_files_byte_for_byte(tmp_path, monkeypatc
 
     fresh = sorted(p.relative_to(out).as_posix() for p in out.rglob("*") if p.is_file())
     # from_ios/ and from_android/ are written by the phone cores (LGK_WRITE_FROM_IOS=1 swift test,
-    # LGK_WRITE_FROM_ANDROID=1 gradlew :lgk-core:test), not by this generator.
+    # LGK_WRITE_FROM_ANDROID=1 gradlew :lgk-core:test), not by this generator; mac/ has its own generator
+    # (scripts/gen_mac_sync_vectors.py) and checks (tests/test_sync_from_mac.py); attachments/ likewise
+    # (scripts/make_attachment_sync_vectors.py, tests/test_attachment_sync_vectors.py).
     committed = sorted(
         rel for rel in (p.relative_to(VECTORS).as_posix() for p in VECTORS.rglob("*") if p.is_file())
-        if not rel.startswith(("from_ios/", "from_android/"))
+        if not rel.startswith(("from_ios/", "from_android/", "mac/", "attachments/"))
     )
     assert fresh == committed
     for rel in committed:
@@ -1136,3 +1138,95 @@ def test_passkey_vector_records_match_validator():
     by_name = {r["name"]: r for r in rows}
     assert by_name["uppercase-rp-id"]["normalised"]["relying_party_id"] == "example.com"
     assert by_name["missing-discoverable"]["normalised"]["discoverable"] is True
+
+
+# --- rollback witnesses (view format 2, 2026-10-29) ------------------------------------------------
+
+
+def _ids() -> dict[str, str]:
+    return json.loads((VECTORS / "identities.json").read_text(encoding="utf-8"))["devices"]
+
+
+def _device_id(name: str) -> str:
+    return _ids()[name]["device_id"]
+
+
+def test_format2_device_views_carry_the_documented_generations_and_witnesses():
+    gk1 = _group_key(1)
+    ids = {n: _device_id(n) for n in DEVICES}
+    gens = {"A": 40, "B": 12, "C": 9}
+    seen = {"A": {ids["B"]: 12}, "B": {ids["A"]: 40}, "C": {}}
+    for name in DEVICES:
+        v1 = decode_view(gk1, (VECTORS / "devices" / f"{name}.lgksync").read_bytes(), expected_device_id=ids[name])
+        v2 = decode_view(gk1, (VECTORS / "witness" / "devices_v2" / f"{name}.lgksync").read_bytes(),
+                         expected_device_id=ids[name])
+        assert v1.format == 1 and v2.format == 2
+        assert v2.vault_generation == gens[name] and v2.witness == seen[name]
+        assert v2.states == v1.states
+        for key in ("counter", "written_at", "epoch", "group_id", "device_id"):
+            assert v2.header[key] == v1.header[key]
+
+
+def test_sidecar_witness_file_belongs_to_the_format1_view_of_a():
+    from localvault.sync.group import verify_view_signature
+    from localvault.sync.witness import observation
+    gk1 = _group_key(1)
+    ids = {n: _device_id(n) for n in DEVICES}
+    view = decode_view(gk1, (VECTORS / "devices" / "A.lgksync").read_bytes())
+    raw = (VECTORS / "witness" / "sidecar" / "A.lgksync").read_bytes()
+    side = decode_view(gk1, raw, expected_device_id=ids["A"], max_records=0)
+    sig = (VECTORS / "witness" / "sidecar" / "A.lgksig").read_bytes()
+    a_key = base64.b64decode(_ids()["A"]["signing_public_b64"])
+    assert verify_view_signature(sig, raw, side.header) == a_key
+    obs = observation(view, side)
+    assert obs is not None and obs.vault_generation == 40 and dict(obs.witness) == {ids["B"]: 12, ids["C"]: 9}
+
+
+def test_lan_witness_message_parses_and_opens():
+    gk1 = _group_key(1)
+    raw = (VECTORS / "witness" / "lan_witness_A.bin").read_bytes()
+    msg = parse_message(raw)
+    assert msg["type"] == "witness" and set(msg) == {"type", "group_id", "epoch", "view"}
+    side = decode_view(gk1, base64.b64decode(msg["view"]), expected_device_id=_device_id("A"), max_records=0)
+    assert side.format == 2 and side.vault_generation == 40 and side.witness == {_device_id("B"): 12}
+    assert side.header["counter"] == 0 and side.states == ()
+
+
+def test_witness_cases_match_the_decoder_and_the_rule():
+    from localvault.sync import witness as wit
+    from localvault.sync.group import SyncFormatError
+    gk1 = _group_key(1)
+    cases = json.loads((VECTORS / "witness" / "cases.json").read_text(encoding="utf-8"))
+    assert cases["constants"] == {"FORMAT_WITNESS": 2, "MAX_WITNESS": 64, "MAX_WITNESS_BYTES": 16384,
+                                  "LAN_GENERATION_SLACK": 32}
+    outcomes = set()
+    for case in cases["headers"]:
+        raw = base64.b64decode(case["file_b64"])
+        try:
+            decode_view(gk1, raw)
+            got = "valid"
+        except SyncFormatError as exc:
+            got = exc.reason
+        assert got == case["expected"], case["name"]
+        outcomes.add(got)
+    assert outcomes == {"valid", "bad-header"}
+    view_a = decode_view(gk1, (VECTORS / "devices" / "A.lgksync").read_bytes())
+    matched = [c["name"] for c in cases["witness_file_matches"] if c["expected"] is not None]
+    assert matched == ["matches"]
+    for case in cases["witness_file_matches"]:
+        obs = wit.observation(view_a, decode_view(gk1, base64.b64decode(case["witness_file_b64"])))
+        got = None if obs is None else {"peer_id": obs.peer_id, "vault_generation": obs.vault_generation,
+                                        "witness": dict(obs.witness)}
+        assert got == case["expected"], case["name"]
+    kinds = set()
+    for case in cases["checks"]:
+        res = wit.check(case["own_id"], case["own_generation"],
+                        [wit.Observation(o["peer_id"], o["vault_generation"], o["witness"])
+                         for o in case["observations"]],
+                        case["peer_generations"], case["rollback_suspected"])
+        assert [[i.kind, i.detail] for i in res.issues] == case["expected"]["issues"], case["name"]
+        assert res.peer_generations == case["expected"]["peer_generations"], case["name"]
+        assert res.rollback_suspected == case["expected"]["rollback_suspected"], case["name"]
+        assert sorted(res.capable) == case["expected"]["capable"], case["name"]
+        kinds |= {i.kind for i in res.issues}
+    assert kinds == {"peer-vault-rollback", "vault-rollback"}

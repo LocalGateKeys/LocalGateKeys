@@ -46,7 +46,11 @@ What the script does, in order:
 | `-OutputRoot <dir>` | Build into an isolated directory instead of the checkout. |
 | `-Offline` | No network: models must be pre-staged (`-ModelRoot`), dependencies come from `-Wheelhouse` (default `release-inputs\wheelhouse` when present). |
 | `-Wheelhouse <dir>` / `-LockFile <file>` | Offline dependency source and the hash lock to enforce. |
-| `-InstallDependencies` | Online install of `requirements-dev.lock.txt` with `--require-hashes` before building. |
+| `-ModelRoot <dir>` / `-ManifestPath <file>` | Pre-staged model directory for offline builds, and where the verified face-model manifest is written/read. |
+| `-InstallDependencies` | Online install of `requirements-dev.lock.txt` with `--require-hashes` before building. Release builds do this by default. |
+| `-Release` | Release build: dependencies from the hash-pinned lock (unless `-Offline` with a wheelhouse) and the Python minimum is enforced. Implied by `-CertificateThumbprint` / `-PfxPath`. |
+| `-UseEnvironment` | Release builds only: package the venv as it is instead of reinstalling the lock. |
+| `-MinimumPythonVersion <x.y.z>` | Oldest Python the frozen runtime may come from (default `3.14.9`). Release builds fail below it; other builds warn. |
 | `-SkipInstaller` | Stop after PyInstaller, self-check, SBOM and manifest (CI smoke). |
 | `-SkipSbom` | Skip SBOM generation (not for releases). |
 | `-CertificateThumbprint <sha1>` | Sign with a certificate from the Windows certificate store (preferred). Inno Setup then also signs the uninstaller. |

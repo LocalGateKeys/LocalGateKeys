@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
+from localvault.i18n import t
 from localvault.export import EXPORT_FORMATS, KDBX_MIN_PASSWORD, ExportWarning
 from localvault.app.import_export import (
     EXPORT_MIN_PASSWORD,
@@ -70,9 +71,9 @@ def test_export_request_validation_for_kdbx_and_plaintext() -> None:
 
 
 def test_export_summary_text_mentions_counts_and_permission_warning(tmp_path) -> None:
-    summary = SimpleNamespace(path=tmp_path / "out.csv", format="csv", count=3, skipped=1, warnings=(ExportWarning.PERMISSIONS,),
-                              permissions_restricted=False, encrypted=False, label=EXPORT_FORMATS["csv"])
+    summary = SimpleNamespace(path=tmp_path / "out.csv", format="csv", count=3, skipped=1, warnings=(t(ExportWarning.PERMISSIONS),),
+                              permissions_restricted=False, encrypted=False, label=t(EXPORT_FORMATS["csv"]))
     text = export_summary_text(summary)
-    assert "3" in text and "out.csv" in text and ExportWarning.PERMISSIONS in text and "1" in text
+    assert "3" in text and "out.csv" in text and t(ExportWarning.PERMISSIONS) in text and "1" in text
 
 

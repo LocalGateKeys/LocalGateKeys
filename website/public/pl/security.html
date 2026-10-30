@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bezpieczeństwo | LocalGateKeys</title>
+  <meta name="description" content="Jak LocalGateKeys chroni Twój sejf i przed czym nie chroni.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/pl/security">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/security">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/security">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/security">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/security">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/security">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/security">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/security">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/security">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/security">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/security">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/security">
+  <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../brand/icon-256.png">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">Przejdź do treści</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../pl/index.html">
+        <img src="../brand/icon.svg" alt="" width="36" height="36">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav aria-label="Główne">
+        <ul class="nav">
+          <li><a href="../pl/features.html">Funkcje</a></li>
+          <li><a href="../pl/pricing.html">Cennik</a></li>
+          <li><a href="../pl/security.html" aria-current="page">Bezpieczeństwo</a></li>
+          <li><a href="../pl/get-started.html">Pierwsze kroki</a></li>
+          <li><a href="../pl/help.html">Przewodnik</a></li>
+          <li><a href="../pl/download.html">Pobierz</a></li>
+          <li><a href="../pl/support.html">Wsparcie</a></li>
+          <li><a href="../buy.html">Kup Pro</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Model bezpieczeństwa prostymi słowami</h1>
+  <p class="lead">Co LocalGateKeys ma chronić, a czego chronić nie może.</p>
+</div>
+
+<div class="wrap page-body">
+  <div class="prose">
+    <h2>Jak szyfrowany jest Twój sejf</h2>
+    <p>Losowy 256-bitowy klucz szyfruje sejf. Ten klucz nigdy nie jest przechowywany w postaci jawnej; jest osobno opakowywany (szyfrowany) przez każdy sposób odblokowania, więc zmiana hasła nie oznacza ponownego szyfrowania wszystkiego, a opakowanie skopiowane z innego sejfu jest odrzucane.</p>
+  </div>
+  <dl class="spec">
+    <dt>Szyfrowanie sejfu</dt><dd>AES-256-GCM ze świeżym losowym nonce przy każdym zapisie</dd>
+    <dt>Hasło główne</dt><dd>Argon2id, 64 MiB pamięci, 3 przebiegi, równoległość 4, losowa sól dla każdego opakowania</dd>
+    <dt>Fraza odzyskiwania</dt><dd>Opcjonalna 24-wyrazowa fraza BIP39 (256 bitów), rozszerzana przez HKDF-SHA256</dd>
+    <dt>Windows Hello</dt><dd>Opakowuje klucz sejfu, nigdy hasło główne</dd>
+    <dt>Kopie zapasowe i transfery</dt><dd>Argon2id i AES-256-GCM z parametrami zapisanymi w uwierzytelnionym nagłówku</dd>
+    <dt>Synchronizacja urządzeń</dt><dd>Losowy klucz grupy, przekazywany każdemu urządzeniu przez X25519 i HKDF-SHA256 oraz, w przypadku folderu w chmurze, także opakowany Twoim hasłem synchronizacji przez Argon2id; każdy rekord zapieczętowany AES-256-GCM i powiązany ze swoim elementem, wersją i epoką klucza; każdy plik urządzenia powiązany z urządzeniem, które go zapisało</dd>
+    <dt>Klucze dostępu</dt><dd>Klucze ES256 (P-256) przechowywane w zaszyfrowanym sejfie; aplikacja buduje podpisywane dane z origin zgłoszonego przez przeglądarkę, nigdy ze strony</dd>
+    <dt>Zapisy na dysk</dt><dd>Plik tymczasowy, opróżnienie bufora, a potem atomowa podmiana, więc awaria nie może zostawić połowy sejfu</dd>
+  </dl>
+
+  <div class="ledger">
+    <section aria-labelledby="protects">
+      <h2 id="protects">Zaprojektowany, by chronić przed</h2>
+      <ul>
+        <li>Kimś, kto kopiuje plik Twojego sejfu lub kopię zapasową i nie zna Twojego hasła głównego</li>
+        <li>Witryną, która dostaje loginy lub klucze dostępu zapisane dla innej witryny</li>
+        <li>Innym programem na Twoim komputerze rozmawiającym z LocalGateKeys bez sekretu sesji, który aplikacja przekazuje własnemu pomocnikowi przeglądarki</li>
+        <li>Wypełnianiem aplikacji pulpitowej, która została podmieniona, zaktualizowana lub zmieniona od czasu powiązania</li>
+        <li>Hasłami leżącymi niezaszyfrowane na dysku</li>
+        <li>Wysyłaniem formularzy bez Twojego udziału</li>
+        <li>Dostawcą chmury czytającym zsynchronizowane dane: przechowuje tylko szyfrogram</li>
+      </ul>
+    </section>
+    <section class="not" aria-labelledby="not-protects">
+      <h2 id="not-protects">Niezdolny do ochrony przed</h2>
+      <ul>
+        <li>Złośliwym oprogramowaniem lub kimkolwiek z uprawnieniami administratora, już działającym na Twoim komputerze</li>
+        <li>Przejętą przeglądarką, instalacją Windows lub zależnością</li>
+        <li>Witryną, w którą celowo wpisujesz hasło</li>
+        <li>Kimś, kto używa Twojego komputera, gdy sejf jest odblokowany</li>
+        <li>Phishingiem wewnątrz prawdziwej aplikacji, która pokazuje treści kontrolowane przez atakującego</li>
+        <li>Utratą sejfu, kopii zapasowych i hasła głównego bez frazy odzyskiwania: nikt, także my, nie może go otworzyć</li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="prose">
+    <h2>Czego LocalGateKeys nigdy nie robi</h2>
+    <p>Niektóre sposoby wypełniania haseł nie różnią się od oprogramowania szpiegującego, więc są wykluczone już w projekcie. LocalGateKeys nie zawiera:</p>
+    <ul>
+      <li>haków klawiatury ani nagrywania naciśnięć klawiszy</li>
+      <li>monitorowania schowka</li>
+      <li>odczytu ekranu ani OCR w celu znalezienia danych logowania</li>
+      <li>skanowania pamięci innych programów</li>
+      <li>odszyfrowywania bazy zapisanych haseł Twojej przeglądarki</li>
+      <li>wstrzykiwania kodu do innych programów lub gier</li>
+      <li>wysyłania logowania, którego nie rozpoczęto</li>
+    </ul>
+
+    <h2>Sieć, szczerze</h2>
+    <p>Nie ma konta LocalGateKeys ani serwera przechowującego sejfy. Aplikacja łączy się z internetem tylko w tych przypadkach:</p>
+    <ul>
+      <li><strong>Sprawdzanie aktualizacji.</strong> Gdy wybierzesz Sprawdź aktualizacje, aplikacja pobiera jeden mały plik i weryfikuje jego podpis kluczem wbudowanym w aplikację. Nigdy sama nie pobiera ani nie uruchamia instalatora.</li>
+      <li><strong>Lista unieważnionych licencji.</strong> Razem z każdym sprawdzeniem aktualizacji aplikacja pobiera podpisaną listę zwróconych licencji i sprawdza Twoją licencję względem niej na Twoim komputerze. Nie wysyła niczego o Twojej licencji.</li>
+      <li><strong>Ikony witryn.</strong> Aby pokazać ikonę witryny, aplikacja pobiera ją z własnego adresu tej witryny. Nie jest wysyłana nazwa użytkownika, hasło ani dane sejfu, ale każde pobranie informuje tę witrynę i każdego, kto obserwuje sieć, że Twój sejf ma tam konto. Jest to domyślnie wyłączone i dzieje się tylko wtedy, gdy włączysz „Pokazuj ikony stron” w Ustawieniach; ścisły tryb offline to blokuje.</li>
+      <li><strong>Sprawdzanie wycieków, jeśli je włączysz.</strong> Gdy uruchamiasz sprawdzenie, aplikacja wysyła do Have I Been Pwned pierwsze pięć znaków skrótu SHA-1 każdego hasła. Usługa widzi Twój adres IP, nigdy hasło, pełny skrót, nazwę użytkownika ani witrynę.</li>
+      <li><strong>Synchronizacja, jeśli ją skonfigurujesz.</strong> Przez sieć domową urządzenia rozmawiają ze sobą bezpośrednio. Przez folder w chmurze wysyłaniem zajmuje się Twoja aplikacja dysku w chmurze.</li>
+    </ul>
+    <p>Ścisły tryb offline jest domyślnie włączony. Blokuje żądania internetowe w tle, ikony witryn i sprawdzanie wycieków, a przed sprawdzeniem aktualizacji aplikacja pyta Cię o zgodę. <a href="../legal/privacy.html">Polityka prywatności</a> wymienia dokładnie, co widzą nasze serwery, gdy sprawdzasz aktualizacje.</p>
+
+    <h2>Znane ograniczenia</h2>
+    <ul>
+      <li>Hasło główne jest przenoszone do bufora, który można wyczyścić, zaraz po dotarciu do aplikacji i jest kasowane, gdy kończy się operacja, która go potrzebowała. Strona, w którą je wpisujesz, działa w Microsoft Edge WebView2, a przekazanie ze strony do aplikacji tworzy krótkotrwałą kopię; żadnej z tych kopii aplikacja nie może skasować.</li>
+      <li>Odblokowanie kamerą to kontrola dla wygody, a nie certyfikowana ochrona przed zdjęciami czy maskami. Windows Hello to mocniejszy wybór.</li>
+      <li>Wypełnianie aplikacji Windows nie działa z programami uruchomionymi jako administrator, z własnoręcznie rysowanymi interfejsami gier ani z osadzonymi widokami internetowymi, których nie może zweryfikować.</li>
+      <li>Sejf wykrywa cofnięcie do starszej kopii. Jeśli używasz synchronizacji, Twoje pozostałe urządzenia pamiętają też, jak nowy był Twój sejf, więc usunięcie sejfu razem z plikiem kotwicy jest wychwytywane przy następnej synchronizacji (na razie komputery z Windows; aplikacje na iPhone'a, Maca i Androida to dołączą). Bez synchronizacji ktoś, kto potrafi podmienić oba pliki, nadal może obejść tę kontrolę.</li>
+      <li>Klucze dostępu działają tylko w Chrome i Edge, i tylko dla samej strony: logowanie wewnątrz ramki innej witryny używa własnego okna kluczy dostępu przeglądarki. Jeśli witryna anuluje po zatwierdzeniu nowego klucza dostępu, klucz może zostać w Twoim sejfie; usuń go w aplikacji.</li>
+    </ul>
+
+    <h2>Zgłoś lukę w zabezpieczeniach</h2>
+    <p>Napisz na <a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>. <a href="../legal/vulnerability-disclosure.html">Polityka ujawniania luk</a> wyjaśnia, co jest w zakresie, jak szybko odpowiadamy i jak wymieniamy badaczy.</p>
+  </div>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand">LocalGateKeys</p>
+        <p>Menedżer haseł dla Windows, który trzyma Twój sejf na Twoich urządzeniach.</p>
+        <p class="quiet">Ta strona nie ustawia plików cookie, nie używa analityki i nie ładuje niczego od innych firm.</p>
+      </div>
+      <nav aria-label="Produkt">
+        <h2>Produkt</h2>
+        <ul>
+          <li><a href="../pl/features.html">Funkcje</a></li>
+          <li><a href="../pl/pricing.html">Cennik</a></li>
+          <li><a href="../pl/download.html">Pobierz</a></li>
+          <li><a href="../pl/licence.html">Twoja licencja Pro</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Pomoc">
+        <h2>Pomoc</h2>
+        <ul>
+          <li><a href="../pl/help.html">Przewodnik</a></li>
+          <li><a href="../pl/support.html">Wsparcie i FAQ</a></li>
+          <li><a href="../pl/security.html">Bezpieczeństwo</a></li>
+          <li><a href="../legal/vulnerability-disclosure.html">Zgłoś lukę w zabezpieczeniach</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Prawne">
+        <h2>Prawne</h2>
+        <p class="quiet">Te dokumenty są w języku angielskim, a obowiązuje i jest wiążąca wersja angielska.</p>
+        <ul>
+          <li><a href="../legal/eula.html">Umowa licencyjna</a></li>
+          <li><a href="../legal/privacy.html">Polityka prywatności</a></li>
+          <li><a href="../legal/terms-of-sale.html">Warunki sprzedaży</a></li>
+          <li><a href="../legal/refunds.html">Polityka zwrotów</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base">
+      <p>&copy; 2026 Ilias Pelekas. Kontakt: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows jest znakiem towarowym grupy firm Microsoft. Chrome jest znakiem towarowym Google LLC.</p>
+      <p class="lang-switch" role="navigation" aria-label="Język"><a href="../security.html" hreflang="en" lang="en">English</a> · <a href="../es/security.html" hreflang="es" lang="es">Español</a> · <a href="../it/security.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/security.html" hreflang="pl" lang="pl" aria-current="true">Polski</a> · <a href="../zh-hans/security.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../ja/security.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/security.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/security.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/security.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/security.html" hreflang="nl" lang="nl">Nederlands</a></p>
+    </div>
+  </footer>
+</body>
+</html>

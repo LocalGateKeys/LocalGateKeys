@@ -89,7 +89,7 @@ production build does not know that key, so it treats the licence as needing a n
 | `rejected/wrong_password.lgkm` | The same bytes as `backup.lgkm`. | Open with password `wrong`: `wrong-password-or-damaged`. |
 | `rejected/flipped_ciphertext.lgkm` | One bit of the first ciphertext byte flipped. | `wrong-password-or-damaged`. |
 | `rejected/edited_header.lgkm` | `created_at` + 1, ciphertext unchanged, so the AAD no longer matches. | `wrong-password-or-damaged`. |
-| `rejected/version_2.lgkm` | Header `version` 2. Refused from the header, before any key derivation. | `unsupported-version`. |
+| `rejected/version_3.lgkm` | Header `version` 3 (no such format). Refused from the header, before any key derivation. | `unsupported-version`. |
 | `rejected/kdf_time_11.lgkm` | Header `kdf.time_cost` 11 (above the maximum of 10). Refused before any key derivation. | `bad-kdf`. |
 | `rejected/extra_header_key.lgkm` | An extra key `extra` in the header (headers must have exactly the listed keys). | `not-a-backup`. |
 | `rejected/duplicate_ids.lgkm` | A correctly encrypted payload whose first state appears twice (ids must be strictly increasing). | `bad-payload`. |
@@ -98,6 +98,32 @@ production build does not know that key, so it treats the licence as needing a n
 | `rejected/noncanonical_ciphertext.lgkm` | A correctly encrypted backup (`app_version` `1.0.0b`, so the ciphertext base64 ends in padding) whose `ciphertext` text is changed to a different base64 spelling of the same bytes (a spare bit set). Refused before any key derivation. | `not-a-backup`. |
 | `rejected/non_ascii_app_version.lgkm` | A correctly encrypted payload whose `app_version` is `1.0.é` (not printable ASCII). | `bad-payload`. |
 | `rejected/zero_vv_counter.lgkm` | A correctly encrypted payload where one state's `vv` has a counter of 0. | `bad-payload`. |
+
+## Format 2: document files (`format2/`)
+
+Format 2 is format 1 with header `version` 2, payload `version` 2 and one more payload key, `files`:
+
+```
+payload = {..., "files": [{"blob": <blob id, 64 lowercase hex>, "data": b64(sync blob)} ...], "version": 2}
+```
+
+`files` has 1..500 entries, strictly ascending by `blob`. Each `data` is canonical base64 of exactly one sync
+blob (`LGKABLB1`, `tests/vectors/sync/attachments`), its SHA-256 is `blob`, and it is named, with the same
+`blob_size`, by the `attachment` reference of at least one live document state in the same payload. A writer
+emits format 2 only when it includes at least one file, and format 1 otherwise. Readers accept both. Every
+failure of these rules is `bad-payload`. A reader opens a file with its reference (`open_blob`) only when it
+restores it.
+
+| File | What it is | Reason |
+| --- | --- | --- |
+| `format2/backup.lgkm` | The fixed inputs plus the document `88888888-aaaa-4000-8000-000000000008` whose `attachment` is the `small` reference of the attachment vectors, and that blob as the one file. Write it with the fixed salt and nonce and compare every byte. | opens |
+| `format2/expected.json` | Header, AAD, payload hash and size, states, the file list, and `rejected`. | |
+| `format2/rejected/empty_files.lgkm` | Version 2 with `files` `[]`. | `bad-payload` |
+| `format2/rejected/file_hash_mismatch.lgkm` | The file entry's `data` is another blob of the same size. | `bad-payload` |
+| `format2/rejected/files_in_version_1.lgkm` | Header and payload version 1 with a `files` key. | `bad-payload` |
+| `format2/rejected/payload_version_1.lgkm` | Header version 2, payload version 1. | `bad-payload` |
+| `format2/rejected/unreferenced_file.lgkm` | A second file no document names (the `unicode-name` blob). | `bad-payload` |
+| `format2/rejected/unsorted_files.lgkm` | The two files in descending order. | `bad-payload` |
 
 Every `.lgkm` file is canonical JSON with no trailing newline and is kept byte-exact in git
 (`*.lgkm binary`, `tests/vectors/** -text`); the other files use LF.

@@ -1,5 +1,6 @@
 package app.localgatekeys.android.sync
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.unlock.MemoryItemStore
 import app.localgatekeys.android.unlock.TestClock
 import app.localgatekeys.android.unlock.UnlockedVault
@@ -50,6 +51,7 @@ class SyncSessionsTest {
                     clock = TestClock(0), licenseKeys = emptyMap(),
                 ),
                 scope,
+                EnglishTxt(),
             ).also { made += it }
         }
         val first = vault()
@@ -99,6 +101,7 @@ class SyncSessionsTest {
                     clock = TestClock(0), licenseKeys = emptyMap(),
                 ),
                 scope,
+                EnglishTxt(),
             ).also { made += it }
         }
         val first = vault()
@@ -136,6 +139,7 @@ class SyncSessionsTest {
                     clock = TestClock(SyncVectors.lanNow()), licenseKeys = emptyMap(),
                 ),
                 scope,
+                EnglishTxt(),
             )
         }
         val c = sessions.forVault(vault())

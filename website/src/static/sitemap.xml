@@ -5,6 +5,7 @@
   <url><loc>https://{{DOMAIN}}/pricing</loc></url>
   <url><loc>https://{{DOMAIN}}/security</loc></url>
   <url><loc>https://{{DOMAIN}}/get-started</loc></url>
+  <url><loc>https://{{DOMAIN}}/help</loc></url>
   <url><loc>https://{{DOMAIN}}/download</loc></url>
   <url><loc>https://{{DOMAIN}}/support</loc></url>
   <url><loc>https://{{DOMAIN}}/licence</loc></url>

@@ -81,9 +81,39 @@ public final class AppSettings: @unchecked Sendable {
         public static let identityRemovalPending = "settings.quickTypeCleanupPending"
         public static let initials = "settings.initials"
         public static let planFullRevision = "settings.planFullRevision"
+        /// Mac only: the longest an unlocked session may last (seconds); absent means off.
+        public static let maxSessionSeconds = "settings.maxSessionSeconds"
+        /// Mac only: lock when the screen locks / when the Mac sleeps.
+        public static let lockOnScreenLock = "settings.lockOnScreenLock"
+        public static let lockOnSleep = "settings.lockOnSleep"
+        /// Mac only: the user turned on Touch ID unlock (the Keychain item holds the key; this is only the choice).
+        public static let touchIDUnlock = "settings.touchIDUnlock"
+        /// Mac only: breach checks may be started (each one still asks first); off by default.
+        public static let breachCheckEnabled = "settings.breachCheckEnabled"
+        /// Mac only: refuses every outside request (breach checks); on by default.
+        public static let strictOfflineMode = "settings.strictOfflineMode"
+        /// Mac only: reminder notifications name the item ("{title} is due"); on by default.
+        public static let showItemNamesInReminders = "settings.showItemNamesInReminders"
+        /// Mac only: Wi-Fi sync hosting is on (listens while unlocked); off by default.
+        public static let wifiSyncOn = "settings.macWiFiSyncOn"
+        /// Mac only: the address and port Wi-Fi sync listens on ("host:port", IPv6 in brackets).
+        public static let wifiSyncEndpoint = "settings.macWiFiSyncEndpoint"
+        /// "Not now" on the empty vault's "Import your passwords" card (this device only).
+        public static let importCardDismissed = "settings.importCardDismissed"
+        /// The app version whose "What's new" sheet was shown or skipped on this device.
+        public static let whatsNewSeen = "settings.whatsNewSeenVersion"
+        /// iPhone only: reminder notifications name the item; off by default (UX plan workstream 10).
+        public static let phoneReminderNames = "settings.phoneReminderItemNames"
+        /// Setup progress on this device (UX plan workstream 4; never synced): finished step names, whether the
+        /// pages were seen, and the vault card's Hide.
+        public static let setupDone = "settings.setupDone"
+        public static let setupSeen = "settings.setupSeen"
+        public static let setupCardHidden = "settings.setupCardHidden"
         public static let all = [autoLockDelay, idleLock, clipboardExpiry, concealSecretsInDetail, showCodesRow, showWebsiteIcons,
                                  copyCodeOnFill, showInQuickType, quickTypeExactSites, offerPasskeys, appearance, generatorOptions, erasePending, identityRemovalPending, initials,
-                                 planFullRevision]
+                                 planFullRevision, maxSessionSeconds, lockOnScreenLock, lockOnSleep, touchIDUnlock,
+                                 breachCheckEnabled, strictOfflineMode, showItemNamesInReminders, wifiSyncOn, wifiSyncEndpoint, importCardDismissed,
+                                 phoneReminderNames, setupDone, setupSeen, setupCardHidden]
     }
 
     /// The app group's defaults (standard defaults when the group is unavailable, e.g. unsigned builds).
@@ -120,6 +150,18 @@ public final class AppSettings: @unchecked Sendable {
     public var showWebsiteIcons: Bool {
         get { access(keyPath: \.showWebsiteIcons); return bool(Key.showWebsiteIcons, false) }
         set { withMutation(keyPath: \.showWebsiteIcons) { defaults.set(newValue, forKey: Key.showWebsiteIcons) } }
+    }
+
+    /// The empty vault hides its "Import your passwords" card (off by default).
+    public var importCardDismissed: Bool {
+        get { access(keyPath: \.importCardDismissed); return bool(Key.importCardDismissed, false) }
+        set { withMutation(keyPath: \.importCardDismissed) { defaults.set(newValue, forKey: Key.importCardDismissed) } }
+    }
+
+    /// The version whose "What's new" sheet this device has seen ("" before any).
+    public var whatsNewSeen: String {
+        get { access(keyPath: \.whatsNewSeen); return defaults.string(forKey: Key.whatsNewSeen) ?? "" }
+        set { withMutation(keyPath: \.whatsNewSeen) { defaults.set(newValue, forKey: Key.whatsNewSeen) } }
     }
 
     /// The Vault tab's pinned Codes row.
@@ -190,6 +232,84 @@ public final class AppSettings: @unchecked Sendable {
     public var planFullRevision: Int64? {
         get { access(keyPath: \.planFullRevision); return int(Key.planFullRevision) }
         set { withMutation(keyPath: \.planFullRevision) { defaults.set(newValue, forKey: Key.planFullRevision) } }
+    }
+
+    /// Mac only: maximum unlocked session length in seconds, nil (default) for no limit.
+    public var maxSessionSeconds: Int64? {
+        get { access(keyPath: \.maxSessionSeconds); return int(Key.maxSessionSeconds).flatMap { $0 > 0 ? $0 : nil } }
+        set { withMutation(keyPath: \.maxSessionSeconds) { defaults.set(newValue, forKey: Key.maxSessionSeconds) } }
+    }
+
+    /// Mac only: lock when the screen locks (default on).
+    public var lockOnScreenLock: Bool {
+        get { access(keyPath: \.lockOnScreenLock); return bool(Key.lockOnScreenLock, true) }
+        set { withMutation(keyPath: \.lockOnScreenLock) { defaults.set(newValue, forKey: Key.lockOnScreenLock) } }
+    }
+
+    /// Mac only: lock when the Mac goes to sleep (default on).
+    public var lockOnSleep: Bool {
+        get { access(keyPath: \.lockOnSleep); return bool(Key.lockOnSleep, true) }
+        set { withMutation(keyPath: \.lockOnSleep) { defaults.set(newValue, forKey: Key.lockOnSleep) } }
+    }
+
+    /// Mac only: Touch ID unlock was turned on.
+    public var touchIDUnlock: Bool {
+        get { access(keyPath: \.touchIDUnlock); return bool(Key.touchIDUnlock, false) }
+        set { withMutation(keyPath: \.touchIDUnlock) { defaults.set(newValue, forKey: Key.touchIDUnlock) } }
+    }
+
+    /// Mac only (Windows `breach_check_enabled`): off until the person turns it on.
+    public var breachCheckEnabled: Bool {
+        get { access(keyPath: \.breachCheckEnabled); return bool(Key.breachCheckEnabled, false) }
+        set { withMutation(keyPath: \.breachCheckEnabled) { defaults.set(newValue, forKey: Key.breachCheckEnabled) } }
+    }
+
+    /// Mac only (Windows `strict_offline_mode`): on until the person turns it off.
+    public var strictOfflineMode: Bool {
+        get { access(keyPath: \.strictOfflineMode); return bool(Key.strictOfflineMode, true) }
+        set { withMutation(keyPath: \.strictOfflineMode) { defaults.set(newValue, forKey: Key.strictOfflineMode) } }
+    }
+
+    /// iPhone only: reminder notifications say "{title} is due"; off (the default) says "A reminder is due".
+    public var showItemNamesInPhoneReminders: Bool {
+        get { access(keyPath: \.showItemNamesInPhoneReminders); return bool(Key.phoneReminderNames, false) }
+        set { withMutation(keyPath: \.showItemNamesInPhoneReminders) { defaults.set(newValue, forKey: Key.phoneReminderNames) } }
+    }
+
+    /// Mac only: reminder notifications say "{title} is due"; off says "A reminder is due" (lock screen privacy).
+    public var showItemNamesInReminders: Bool {
+        get { access(keyPath: \.showItemNamesInReminders); return bool(Key.showItemNamesInReminders, true) }
+        set { withMutation(keyPath: \.showItemNamesInReminders) { defaults.set(newValue, forKey: Key.showItemNamesInReminders) } }
+    }
+
+    /// Mac only: Wi-Fi sync hosting turned on (default off).
+    public var wifiSyncOn: Bool {
+        get { access(keyPath: \.wifiSyncOn); return bool(Key.wifiSyncOn, false) }
+        set { withMutation(keyPath: \.wifiSyncOn) { defaults.set(newValue, forKey: Key.wifiSyncOn) } }
+    }
+
+    /// Mac only: the chosen listening address as "host:port" (nil until one is chosen). Validated by the app.
+    public var wifiSyncEndpoint: String? {
+        get { access(keyPath: \.wifiSyncEndpoint); return defaults.string(forKey: Key.wifiSyncEndpoint) }
+        set { withMutation(keyPath: \.wifiSyncEndpoint) { defaults.set(newValue, forKey: Key.wifiSyncEndpoint) } }
+    }
+
+    /// Setup steps finished on this device (`SetupStep` raw names; unknown names are ignored when read).
+    public var setupDone: [String] {
+        get { access(keyPath: \.setupDone); return defaults.stringArray(forKey: Key.setupDone) ?? [] }
+        set { withMutation(keyPath: \.setupDone) { defaults.set(newValue, forKey: Key.setupDone) } }
+    }
+
+    /// The setup pages were finished or skipped once (they do not open again by themselves).
+    public var setupSeen: Bool {
+        get { access(keyPath: \.setupSeen); return bool(Key.setupSeen, false) }
+        set { withMutation(keyPath: \.setupSeen) { defaults.set(newValue, forKey: Key.setupSeen) } }
+    }
+
+    /// Hide on the vault's "Finish setting up" card (until Settings › Show setup again).
+    public var setupCardHidden: Bool {
+        get { access(keyPath: \.setupCardHidden); return bool(Key.setupCardHidden, false) }
+        set { withMutation(keyPath: \.setupCardHidden) { defaults.set(newValue, forKey: Key.setupCardHidden) } }
     }
 
     /// The avatar's letters (Settings › Appearance), at most two; empty shows the person glyph.

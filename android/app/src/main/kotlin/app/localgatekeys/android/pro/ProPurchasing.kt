@@ -42,6 +42,12 @@ interface ProPurchasing {
     /** "Restore purchases": re-read the purchases from Play, then the entitlement. */
     suspend fun restore(): Boolean
 
+    /**
+     * The token of the PURCHASED `pro_unlimited` purchase once it is acknowledged (the licence claim's proof); null when
+     * there is none, it is not acknowledged yet, or Play cannot answer. Never logged.
+     */
+    suspend fun purchaseToken(): String?
+
     /** Fires when a purchase update arrives outside a purchase call (a pending purchase approved, a refund). */
     fun entitlementChanges(): Flow<Unit>
 }

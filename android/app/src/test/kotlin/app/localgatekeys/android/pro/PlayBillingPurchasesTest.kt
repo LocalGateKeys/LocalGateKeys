@@ -1,5 +1,6 @@
 package app.localgatekeys.android.pro
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.editor.CountingStore
 import app.localgatekeys.android.editor.EditorKind
 import app.localgatekeys.android.editor.EditorModel
@@ -43,7 +44,7 @@ class PlayBillingPurchasesTest {
         assertEquals(PurchaseOutcome.PURCHASED, store.purchase())
         assertTrue(store.isEntitled())
 
-        val p = ProModel(store, emptyMap())
+        val p = ProModel(store, emptyMap(), txt = EnglishTxt())
         p.restore()
         assertTrue(p.isPro)
 
@@ -67,11 +68,11 @@ class PlayBillingPurchasesTest {
     @Test fun gate_end_to_end_buy_then_restore() = runBlocking {
         val play = FakePlayStore()
         val store = CountingStore(snapshot(numberedNotes(ItemLimit.FREE_ITEMS)))
-        val pro = ProModel(PlayBillingPurchases(play), emptyMap())
+        val pro = ProModel(PlayBillingPurchases(play), emptyMap(), txt = EnglishTxt())
         pro.refresh()
         assertFalse(pro.isPro)
         val random = CountingRandom() // one source for every editor, so each new note gets its own id
-        fun newNote(p: ProModel) = EditorModel(store, null, EditorKind.NOTE, { p.isPro }, clock(), random)
+        fun newNote(p: ProModel) = EditorModel(store, null, EditorKind.NOTE, { p.isPro }, clock(), random, EnglishTxt())
             .apply { set(titleKey, "More"); set("body", "x") }
         val blocked = newNote(pro)
         assertEquals(SaveResult.NEEDS_PRO, blocked.save())
@@ -81,7 +82,7 @@ class PlayBillingPurchasesTest {
         assertTrue(pro.isPro)
         assertEquals(SaveResult.SAVED, newNote(pro).save())
 
-        val fresh = ProModel(PlayBillingPurchases(play), emptyMap())
+        val fresh = ProModel(PlayBillingPurchases(play), emptyMap(), txt = EnglishTxt())
         assertFalse(fresh.isPro)
         fresh.restore()
         assertTrue(fresh.isPro)
@@ -90,7 +91,7 @@ class PlayBillingPurchasesTest {
 
         // With the purchase gone (refunded), restore finds nothing: the entitlement above came from Play, not memory.
         play.owned.clear()
-        val cleared = ProModel(PlayBillingPurchases(play), emptyMap())
+        val cleared = ProModel(PlayBillingPurchases(play), emptyMap(), txt = EnglishTxt())
         cleared.restore()
         assertFalse(cleared.isPro)
         assertEquals(SaveResult.NEEDS_PRO, newNote(cleared).save())
@@ -107,7 +108,7 @@ class PlayBillingPurchasesTest {
             // expected
         }
         assertEquals(0, play.launchCalls)
-        val p = ProModel(store, emptyMap())
+        val p = ProModel(store, emptyMap(), txt = EnglishTxt())
         p.loadPrice()
         assertFalse(p.canBuy)
         assertEquals("Pro isn't available yet", p.message)
@@ -168,7 +169,7 @@ class PlayBillingPurchasesTest {
         assertFalse(store.isEntitled())
         assertTrue("a pending purchase is never acknowledged", play.acknowledged.isEmpty())
 
-        val pro = ProModel(store, emptyMap())
+        val pro = ProModel(store, emptyMap(), txt = EnglishTxt())
         val scope = CoroutineScope(Dispatchers.Unconfined + Job())
         pro.startObserving(scope)
         pro.buy()
@@ -201,18 +202,18 @@ class PlayBillingPurchasesTest {
         }
         assertEquals(0, play.launchCalls)
 
-        val pro = ProModel(store, v.keys)
+        val pro = ProModel(store, v.keys, txt = EnglishTxt())
         pro.refresh()
         pro.update(snapshot(numberedNotes(4), extra = mapOf(v.id to v.wrapper)))
         pro.loadPrice()
-        assertEquals(ProModel.UNAVAILABLE_MESSAGE, pro.message)
+        assertEquals(pro.unavailableMessage, pro.message)
         assertFalse(pro.canBuy)
         assertTrue("a synced desktop licence still unlocks", pro.isPro)
         pro.restore()
         assertTrue(pro.isPro)
-        assertEquals("Ruling 24: restore with no billing still says Pro is not available", ProModel.UNAVAILABLE_MESSAGE, pro.message)
+        assertEquals("Ruling 24: restore with no billing still says Pro is not available", pro.unavailableMessage, pro.message)
         val store4 = CountingStore(snapshot(numberedNotes(4), extra = mapOf(v.id to v.wrapper)))
-        val fifth = EditorModel(store4, null, EditorKind.NOTE, { pro.isPro }, clock(), CountingRandom())
+        val fifth = EditorModel(store4, null, EditorKind.NOTE, { pro.isPro }, clock(), CountingRandom(), EnglishTxt())
             .apply { set("title", "Fifth"); set("body", "b") }
         assertEquals(SaveResult.SAVED, fifth.save())
     }
@@ -232,7 +233,7 @@ class PlayBillingPurchasesTest {
     @Test fun a_cancelled_sheet_is_cancelled() = runBlocking {
         val play = FakePlayStore().apply { sheet = { BillingResponseCode.USER_CANCELED to null } }
         assertEquals(PurchaseOutcome.CANCELLED, PlayBillingPurchases(play).purchase())
-        val p = ProModel(PlayBillingPurchases(play), emptyMap())
+        val p = ProModel(PlayBillingPurchases(play), emptyMap(), txt = EnglishTxt())
         p.buy()
         assertNull(p.message)
         assertFalse(p.isPro)
@@ -242,7 +243,7 @@ class PlayBillingPurchasesTest {
         val play = FakePlayStore()
         play.owned += purchase(PurchaseState.PURCHASED)
         play.sheet = { BillingResponseCode.ITEM_ALREADY_OWNED to null }
-        val p = ProModel(PlayBillingPurchases(play), emptyMap())
+        val p = ProModel(PlayBillingPurchases(play), emptyMap(), txt = EnglishTxt())
         p.buy()
         assertTrue(p.isPro)
         assertNull(p.message)
@@ -251,7 +252,7 @@ class PlayBillingPurchasesTest {
 
     @Test fun an_ok_answer_listing_nothing_rereads_the_entitlement() = runBlocking {
         val play = FakePlayStore().apply { sheet = { BillingResponseCode.OK to null } }
-        val p = ProModel(PlayBillingPurchases(play), emptyMap())
+        val p = ProModel(PlayBillingPurchases(play), emptyMap(), txt = EnglishTxt())
         p.buy()
         assertFalse("nothing owned: the entitlement read says no", p.isPro)
         val odd = FakePlayStore().apply {
@@ -271,7 +272,7 @@ class PlayBillingPurchasesTest {
             } catch (e: BillingException) {
                 assertTrue(e.responseCode == BillingResponseCode.DEVELOPER_ERROR || e.responseCode == BillingResponseCode.ERROR)
             }
-            val p = ProModel(PlayBillingPurchases(play), emptyMap())
+            val p = ProModel(PlayBillingPurchases(play), emptyMap(), txt = EnglishTxt())
             p.buy()
             assertEquals("The purchase could not be completed. Try again later.", p.message)
         }
@@ -305,7 +306,7 @@ class PlayBillingPurchasesTest {
         } catch (e: BillingException) {
             assertTrue(e.message!!.contains("Play says: try later"))
         }
-        val p = ProModel(store, emptyMap())
+        val p = ProModel(store, emptyMap(), txt = EnglishTxt())
         p.restore()
         assertEquals("Purchases could not be restored. Try again later.", p.message)
         val sheet = FakePlayStore().apply { sheet = { BillingResponseCode.ERROR to null }; debugMessage = "sheet failed" }

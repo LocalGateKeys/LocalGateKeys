@@ -1,5 +1,6 @@
 package app.localgatekeys.android.sync
 
+import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.unlock.TestClock
 import app.localgatekeys.android.vault.SecretSlots
 import app.localgatekeys.android.vault.Slot
@@ -8,6 +9,7 @@ import app.localgatekeys.core.group.GroupKey
 import app.localgatekeys.core.group.ViewFile
 import app.localgatekeys.core.lan.CounterStore
 import app.localgatekeys.core.lan.DeviceIdentity
+import app.localgatekeys.core.lan.Discovery
 import app.localgatekeys.core.lan.Enrollment
 import app.localgatekeys.core.lan.HelloCounterSource
 import app.localgatekeys.core.lan.LanConnection
@@ -24,6 +26,7 @@ import app.localgatekeys.core.lan.SessionHello
 import app.localgatekeys.core.primitives.Base64Std
 import app.localgatekeys.core.primitives.Hex
 import app.localgatekeys.core.primitives.SystemRandomSource
+import app.localgatekeys.core.sync.RunReport
 import app.localgatekeys.core.sync.StoreSnapshot
 import app.localgatekeys.core.sync.SyncGroupState
 import java.io.Closeable
@@ -164,7 +167,12 @@ class SocketLanTransportTest {
      * The desktop (A) answering B's LAN sync: per connection a hello, then one sealed request; a single-chunk view of
      * B is answered with A's single-chunk view of [aStates]. [received] gets B's view bytes.
      */
-    private fun viewResponder(aStates: List<ItemState>, received: AtomicReference<ByteArray?>, holdHello: CountDownLatch? = null): Responder {
+    private fun viewResponder(
+        aStates: List<ItemState>,
+        received: AtomicReference<ByteArray?>,
+        holdHello: CountDownLatch? = null,
+        host: DeviceIdentity = a,
+    ): Responder {
         val counter = AtomicLong(0)
         val pinnedB = pinned(b, null)
         return responder { s, _ ->
@@ -173,13 +181,19 @@ class SocketLanTransportTest {
             val hello = SessionHello.parse(LanTransport.decodeFrame(readFrame(input)))
             SessionHello.verify(hello, pinnedB, groupKey.groupId)
             holdHello?.await()
-            val mine = SessionHello.make(a, groupKey.groupId, hello.sessionId, counter.incrementAndGet(), SystemRandomSource())
-            val channel = SecureChannel(a, pinnedB, groupKey.groupId, hello.sessionId, SecureChannel.Role.RESPONDER, mine, hello)
+            val mine = SessionHello.make(host, groupKey.groupId, hello.sessionId, counter.incrementAndGet(), SystemRandomSource())
+            val channel = SecureChannel(host, pinnedB, groupKey.groupId, hello.sessionId, SecureChannel.Role.RESPONDER, mine, hello)
             out.write(LanTransport.encodeFrame(mine.toBytes())); out.flush()
-            val request = LanMessages.parse(channel.open(readFrame(input))) as LanMessage.View
+            val parsed = LanMessages.parse(channel.open(readFrame(input)))
+            if (parsed !is LanMessage.View) {
+                // A responder from before witness messages (2026-10-29) answers anything else with bad-message.
+                out.write(channel.seal(LanMessages.encode(LanMessage.Error("bad-message")))); out.flush()
+                return@responder
+            }
+            val request = parsed
             check(request.seq == 0L && request.total == 1L) { "one chunk expected" }
             received.set(Base64Std.decodeStrict(request.view))
-            val raw = ViewFile.encode(groupKey, a.deviceId, 3, aStates, clock, SystemRandomSource())
+            val raw = ViewFile.encode(groupKey, host.deviceId, 3, aStates, clock, SystemRandomSource())
             val answer = LanMessage.View(
                 groupKey.groupId, groupKey.epoch, Hex.lower(SystemRandomSource().bytes(16)), 0, 1, raw.size.toLong(), Base64Std.encode(raw),
             )
@@ -404,7 +418,7 @@ class SocketLanTransportTest {
             slots = slots, folders = FolderOpening.UNAVAILABLE, lan = lan, random = SystemRandomSource(), clock = clock,
             licenseKeys = emptyMap(), sleep = {}, newIdentity = { b }, deviceName = SyncVectors.DEVICE_NAME,
         )
-        return SyncCoordinator(store, deps, scope)
+        return SyncCoordinator(store, deps, scope, EnglishTxt())
     }
 
     /** Every dial goes to [port] on loopback, whatever address the offer or peer names. */
@@ -703,7 +717,7 @@ class SocketLanTransportTest {
         assertEquals(LanFailure.UNREACHABLE, e.kind)
         assertEquals("no Wi-Fi network", e.message)
         // The Sync screen explains it with the iPhone's wording.
-        val text = SyncWording.enrollFailureText(EnrollConnectException(e.kind, LanEndpoint("192.168.1.20", 47821)))
+        val text = SyncWording(EnglishTxt()).enrollFailureText(EnrollConnectException(e.kind, LanEndpoint("192.168.1.20", 47821)))
         assertEquals(
             "192.168.1.20:47821 cannot be reached from this phone. Check that the PC is on this Wi-Fi and that the code shows the PC's Wi-Fi address.",
             text,
@@ -734,5 +748,142 @@ class SocketLanTransportTest {
         val text = e.toString() + (e.cause?.toString() ?: "")
         assertFalse(text.contains(Base64Std.encode(request)))
         assertFalse(text.contains(Hex.lower(request)))
+    }
+
+    // MARK: discovery (plan 2026-10-29-sync-ip-change): the pinned address fails, the host is found by its announcement
+
+    /** Dials to the fake LAN hosts of [routes] go to loopback ports; [dialled] records every dial. */
+    private inner class Discovering(val routes: Map<String, Int>) {
+        val dialled: MutableList<LanEndpoint> = Collections.synchronizedList(ArrayList())
+        val announcements = ArrayList<Discovery.Announcement>()
+        val browses = AtomicInteger()
+
+        fun announce(host: String, port: Int = 47821, tag: String = todayTag()) {
+            announcements.add(Discovery.Announcement(host, port, mapOf("v" to "1", "t" to tag)))
+        }
+
+        fun transport(): SocketLanTransport {
+            val dialer = ChannelLanDialer(2_000, 2_000, { _, _ -> }) { e ->
+                dialled.add(e)
+                InetSocketAddress(InetAddress.getByName("127.0.0.1"), routes[e.host] ?: error("unrouted ${e.host}"))
+            }
+            val browser = ServiceBrowser { type, _ ->
+                assertEquals("_lgksync._tcp", type)
+                browses.incrementAndGet()
+                announcements.toList()
+            }
+            return SocketLanTransport(HelloCounterSource(MemoryCounters(), clock), SystemRandomSource(), clock, dialer = dialer, browser = browser)
+        }
+    }
+
+    private fun todayTag(): String = Discovery.tag(groupKey, a.deviceId, Discovery.utcDay(clock.now))
+
+    private fun deadPort(): Int = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1")).use { it.localPort }
+
+    private val oldAddress = LanEndpoint("192.168.50.1", 47821)
+
+    private fun impostor(): DeviceIdentity = DeviceIdentity(a.deviceId, SystemRandomSource().bytes(32), SystemRandomSource().bytes(32))
+
+    private fun lanRunWith(d: Discovering): Triple<RunReport, SecretSlots, LockedStore> = runBlocking {
+        val slots = SecretSlots(tmp.newFile("secrets.bin").also { it.delete() }, ByteArray(32) { 3 }, SystemRandomSource())
+        val installId = slots.installId()
+        val peer = pinned(a, oldAddress)
+        slots.setPairedPeer(peer)
+        val state = SyncGroupState(groupKey.groupId, groupKey.epoch, groupKey.key, b, installId, hasFolder = false)
+        val store = LockedStore(StoreSnapshot(sync = state))
+        val deps = SyncDependencies(
+            slots = slots, folders = FolderOpening.UNAVAILABLE, lan = d.transport(), random = SystemRandomSource(),
+            clock = clock, licenseKeys = emptyMap(),
+        )
+        Triple(SyncCoordinator.lanRun(store, deps, installId, peer), slots, store)
+    }
+
+    @Test fun pinned_fails_and_the_announced_host_syncs_and_its_address_is_stored() {
+        val aStates = peerStates(mapOf(noteRecord(1, "From PC")), a.deviceId, clock.now)
+        val host = viewResponder(aStates, AtomicReference(null))
+        val d = Discovering(mapOf("192.168.50.1" to deadPort(), "192.168.50.2" to host.port))
+        d.announce("192.168.50.2")
+        val (report, slots, _) = lanRunWith(d)
+        assertEquals(emptyList<String>(), report.issues.map { it.kind })
+        assertEquals(1, d.browses.get())
+        // The view exchange at the found host, then (format 1) the one witness message to the same host.
+        val found = LanEndpoint("192.168.50.2", 47821)
+        assertEquals(listOf(oldAddress, found, found), d.dialled.toList())
+        assertEquals(found, slots.pairedPeer()?.endpoint)
+        assertTrue(host.errors.toString(), host.errors.isEmpty())
+    }
+
+    @Test fun the_pinned_address_that_answers_is_used_without_a_browse() {
+        val host = viewResponder(emptyList(), AtomicReference(null))
+        val d = Discovering(mapOf("192.168.50.1" to host.port))
+        d.announce("192.168.50.2")
+        val moved = AtomicReference<LanEndpoint?>(null)
+        d.transport().exchangeViewsFindingHost(pinned(a, oldAddress), b, groupKey, emptyList(), 0) { moved.set(it) }
+        assertEquals(0, d.browses.get())
+        assertNull(moved.get())
+    }
+
+    @Test fun yesterdays_tag_is_accepted() {
+        val host = viewResponder(emptyList(), AtomicReference(null))
+        val d = Discovering(mapOf("192.168.50.1" to deadPort(), "192.168.50.2" to host.port))
+        d.announce("192.168.50.2", tag = Discovery.tag(groupKey, a.deviceId, Discovery.utcDay(clock.now - 86_400)))
+        val moved = AtomicReference<LanEndpoint?>(null)
+        d.transport().exchangeViewsFindingHost(pinned(a, oldAddress), b, groupKey, emptyList(), 0) { moved.set(it) }
+        assertEquals(LanEndpoint("192.168.50.2", 47821), moved.get())
+    }
+
+    @Test fun an_announcement_with_another_tag_is_ignored() {
+        val host = viewResponder(emptyList(), AtomicReference(null))
+        val d = Discovering(mapOf("192.168.50.1" to deadPort(), "192.168.50.2" to host.port))
+        d.announce("192.168.50.2", tag = "aaaaaaaaaaaaaaaa")
+        d.announce("192.168.50.2", 47822, Discovery.tag(groupKey, b.deviceId, Discovery.utcDay(clock.now))) // another device's tag
+        val moved = AtomicReference<LanEndpoint?>(null)
+        val e = failure { d.transport().exchangeViewsFindingHost(pinned(a, oldAddress), b, groupKey, emptyList(), 0) { moved.set(it) } }
+        assertTrue(e.toString(), e is LanPeerNotAnswering)
+        assertEquals(listOf(oldAddress), d.dialled.toList())
+        assertEquals(0, host.connections.get())
+        assertNull(moved.get())
+    }
+
+    @Test fun a_non_lan_address_is_never_dialled() {
+        val d = Discovering(mapOf("192.168.50.1" to deadPort()))
+        d.announce("8.8.8.8")
+        d.announce("100.64.0.1")
+        d.announce("fe80::1%wlan0")
+        failure { d.transport().exchangeViewsFindingHost(pinned(a, oldAddress), b, groupKey, emptyList(), 0) {} }
+        assertEquals(listOf(oldAddress), d.dialled.toList())
+    }
+
+    @Test fun at_most_four_announced_addresses_are_dialled() {
+        val dead = deadPort()
+        val d = Discovering((1..8).associate { "192.168.50.$it" to dead })
+        (2..8).forEach { d.announce("192.168.50.$it") }
+        val e = failure { d.transport().exchangeViewsFindingHost(pinned(a, oldAddress), b, groupKey, emptyList(), 0) {} }
+        assertTrue(e.toString(), e is LanPeerNotAnswering)
+        // The pinned address once, then four candidates (the first request of a sync is not retried).
+        assertEquals(listOf(oldAddress) + (2..5).map { LanEndpoint("192.168.50.$it", 47821) }, d.dialled.toList())
+    }
+
+    @Test fun a_host_with_other_keys_is_refused_and_the_next_candidate_is_tried() {
+        val fake = viewResponder(emptyList(), AtomicReference(null), host = impostor())
+        val host = viewResponder(emptyList(), AtomicReference(null))
+        val d = Discovering(mapOf("192.168.50.1" to deadPort(), "192.168.50.3" to fake.port, "192.168.50.4" to host.port))
+        d.announce("192.168.50.3")
+        d.announce("192.168.50.4")
+        val moved = AtomicReference<LanEndpoint?>(null)
+        d.transport().exchangeViewsFindingHost(pinned(a, oldAddress), b, groupKey, emptyList(), 0) { moved.set(it) }
+        assertEquals(1, fake.connections.get())
+        assertEquals(LanEndpoint("192.168.50.4", 47821), moved.get())
+    }
+
+    @Test fun only_a_host_with_other_keys_stores_nothing() {
+        val fake = viewResponder(emptyList(), AtomicReference(null), host = impostor())
+        val d = Discovering(mapOf("192.168.50.1" to deadPort(), "192.168.50.3" to fake.port))
+        d.announce("192.168.50.3")
+        val (report, slots, store) = lanRunWith(d)
+        assertEquals(listOf("unreachable"), report.issues.map { it.kind })
+        assertEquals(1, fake.connections.get())
+        assertEquals(oldAddress, slots.pairedPeer()?.endpoint)
+        assertEquals(0, store.commits)
     }
 }

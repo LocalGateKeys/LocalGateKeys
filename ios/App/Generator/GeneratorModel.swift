@@ -1,5 +1,9 @@
 import Foundation
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 /// The generator sheet's state: options (saved as the new defaults on every change), the current value, and
 /// the hand-off of that value to whoever opened the sheet.
@@ -22,11 +26,16 @@ final class GeneratorModel {
 
     @ObservationIgnored private let defaults: GeneratorDefaults
     @ObservationIgnored private let generator: PasswordGenerator
-    @ObservationIgnored private let clipboard: SecretClipboard
+    @ObservationIgnored private let clipboard: any SecretCopying
 
     init(defaults: GeneratorDefaults = GeneratorDefaults(), random: any RandomSource = SystemRandomSource(),
-         clipboard: SecretClipboard = .shared) {
-        self.defaults = defaults; self.clipboard = clipboard
+         clipboard: (any SecretCopying)? = nil) {
+        self.defaults = defaults
+        #if os(macOS)
+        self.clipboard = clipboard ?? MacClipboard.shared
+        #else
+        self.clipboard = clipboard ?? SecretClipboard.shared
+        #endif
         generator = PasswordGenerator(random: random)
         options = defaults.load()
     }
@@ -44,7 +53,7 @@ final class GeneratorModel {
         } catch let e as GeneratorError {
             value = ""; error = e.message
         } catch {
-            value = ""; self.error = "Could not generate a password"
+            value = ""; self.error = String(localized: "Could not generate a password")
         }
     }
 

@@ -1,5 +1,7 @@
 package app.localgatekeys.android.ui.vault
+import app.localgatekeys.android.R
 
+import app.localgatekeys.android.i18n.rememberTxt
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -72,20 +74,23 @@ fun rememberSecondTick(clock: UnixClock): Long {
  */
 @Composable
 fun CodeTile(item: VaultItem, clock: UnixClock, tick: Long, clipboard: Copier) {
+    val txt = rememberTxt()
     val c = LgkTheme.colors
     // Keyed on the item: an edited item gets a new model, so the old code is never shown or copied.
     val current = remember(item, clock) { CodeTileModel.modelFor(item, null, clock) }
     // A new tick (every second) or a new model recomputes the code from the clock.
     val state = remember(tick, current) { current.state }
-    val title = item.title.ifEmpty { item.kindLabel }
+    val title = item.title.ifEmpty { item.kindLabel(txt) }
+    val codeCopied = txt.s(R.string.detail_code_copied)
+    val tileDescription = if (state != null) txt.s(R.string.code_tile_description, title, state.code) else txt.s(R.string.code_tile_no_code, title)
     Column(
         Modifier
             .width(160.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(c.innerTile)
-            .clickable(role = Role.Button) { current.copy { clipboard.copy(it, "Code copied") } }
+            .clickable(role = Role.Button) { current.copy { clipboard.copy(it, codeCopied) } }
             .semantics(mergeDescendants = true) {
-                contentDescription = if (state != null) "$title, code ${state.code}. Copies the code" else "$title, no code"
+                contentDescription = tileDescription
             }
             .testTag("code-tile")
             .padding(14.dp),

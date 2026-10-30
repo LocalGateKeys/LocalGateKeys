@@ -53,7 +53,7 @@ class PhoneRestoreTest {
         val plan = r.plan(backupOf(states))
         assertEquals(3, plan.new); assertEquals(0, plan.updated); assertEquals(0, plan.unchanged); assertEquals(0, plan.heldBack)
         assertEquals("the plan reads only", 0, store.commits)
-        assertEquals("RestorePlan(new=3, updated=0, unchanged=0, heldBack=0, skipped=0, deleted=0)", plan.toString())
+        assertEquals("RestorePlan(new=3, updated=0, unchanged=0, heldBack=0, skipped=0, deleted=0, files=0, filesMissing=0)", plan.toString())
         val report = r.restore(plan)
         assertNull(report.failure)
         assertEquals(3, report.new); assertEquals(0, report.updated); assertEquals(0, report.heldBack)

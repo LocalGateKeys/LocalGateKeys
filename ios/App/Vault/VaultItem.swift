@@ -1,5 +1,9 @@
 import Foundation
+#if os(macOS)
+import AppSharedMac
+#else
 import AppShared
+#endif
 
 /// One live record, decoded from its synced wrapper, with the list projection the desktop shows
 /// (`agent.py` `_summary_title`, `row_target`, `kind_label`).
@@ -16,6 +20,8 @@ struct VaultItem: Identifiable, Equatable, Sendable {
     let tags: [String]
     let favorite: Bool
     let updatedAt: Int64
+    /// The record's `created_at`, 0 when missing (the sort rule).
+    let createdAt: Int64
     let record: [String: JSONValue]
 
     var kindLabel: String { Self.kindLabel(kind) }
@@ -42,6 +48,7 @@ struct VaultItem: Identifiable, Equatable, Sendable {
         tags = (r["tags"]?.arrayValue ?? []).compactMap(\.stringValue)
         favorite = r["favorite"] == .bool(true)
         if case .int(let n)? = r["updated_at"] { updatedAt = n } else { updatedAt = 0 }
+        if case .int(let n)? = r["created_at"] { createdAt = n } else { createdAt = 0 }
         target = Self.safeDisplay(Self.rowTarget(kind: kind, scope: scope, payload: r["payload"]?.objectValue ?? [:]))
         cardSummary = kind == "card" ? Self.cardSummary(payload: r["payload"]?.objectValue ?? [:]) : nil
     }
@@ -66,15 +73,19 @@ struct VaultItem: Identifiable, Equatable, Sendable {
     // MARK: desktop parity
 
     static let kindLabelOverrides: [String: String] = [
-        "web": "Website login", "desktop": "Desktop login", "card": "Payment card", "bank_account": "Bank account",
-        "ssh_key": "SSH key", "api_key": "API key", "wifi": "Wi-Fi network", "passkey": "Passkey",
+        "web": String(localized: "Website login"), "desktop": String(localized: "Desktop login"), "card": String(localized: "Payment card"), "bank_account": String(localized: "Bank account"),
+        "ssh_key": String(localized: "SSH key"), "api_key": String(localized: "API key"), "wifi": String(localized: "Wi-Fi network"), "passkey": String(localized: "Passkey"),
+        // The rest read as the fallback below would ("note" -> "Note"), listed so they translate.
+        "note": String(localized: "Note"), "identity": String(localized: "Identity"), "purchase": String(localized: "Purchase"),
+        "subscription": String(localized: "Subscription"), "warranty": String(localized: "Warranty"),
+        "license": String(localized: "License"), "bookmark": String(localized: "Bookmark"), "document": String(localized: "Document"),
     ]
 
     /// `agent.py` `kind_label`.
     static func kindLabel(_ kind: String) -> String {
         if let l = kindLabelOverrides[kind] { return l }
         let s = kind.replacingOccurrences(of: "_", with: " ").trimmingCharacters(in: .whitespaces)
-        guard let first = s.first else { return "Item" }
+        guard let first = s.first else { return String(localized: "Item") }
         return first.uppercased() + s.dropFirst().lowercased()
     }
 
@@ -121,4 +132,18 @@ extension JSONValue {
     var stringValue: String? { if case .string(let s) = self { return s }; return nil }
     var objectValue: [String: JSONValue]? { if case .object(let o) = self { return o }; return nil }
     var arrayValue: [JSONValue]? { if case .array(let a) = self { return a }; return nil }
+}
+
+extension VaultItem {
+    /// Desktop `web_page_address`: a web login's origin, or the first `starts_with` row on that same origin (an
+    /// imported full page address, 2026-10-29). Display and Open website only; matching uses every row.
+    static func pageAddress(_ scope: [String: JSONValue]?) -> String? {
+        guard let origin = scope?["origin"]?.stringValue else { return nil }
+        for row in scope?["urls"]?.arrayValue ?? [] {
+            guard let o = row.objectValue, o["match"]?.stringValue == "starts_with", let url = o["url"]?.stringValue,
+                  let rowOrigin = try? Origin.originOf(url), rowOrigin.utf8.elementsEqual(origin.utf8) else { continue }
+            return url
+        }
+        return origin
+    }
 }

@@ -1,5 +1,8 @@
 package app.localgatekeys.android.settings
 
+import app.localgatekeys.android.i18n.appTxt
+import app.localgatekeys.android.i18n.Txt
+import app.localgatekeys.android.i18n.AndroidTxt
 import android.os.Build
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -61,6 +64,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
+/** The app's own English texts (the test device runs in English), resolved from the target app's resources. */
+private val txt: Txt get() = AndroidTxt(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.resources)
+
 /** Settings and the backup pages on the device, over fakes (no real picker, no Google Play, no real vault). */
 class SettingsScreenTest {
     @get:Rule val rule = createComposeRule()
@@ -70,6 +76,7 @@ class SettingsScreenTest {
         override suspend fun offer() = ProOffer.Available("$4.99")
         override suspend fun purchase() = PurchaseOutcome.PURCHASED
         override suspend fun restore() = false
+        override suspend fun purchaseToken(): String? = null
         override fun entitlementChanges(): Flow<Unit> = emptyFlow()
     }
 
@@ -130,7 +137,7 @@ class SettingsScreenTest {
         noteActivity = {},
         appearance = { applied = it },
         erase = { erased++ },
-        autofill = AutofillStatusModel(isEnabled = { false }, open = { throw IllegalStateException("no service yet") }),
+        autofill = AutofillStatusModel(isEnabled = { false }, open = { throw IllegalStateException("no service yet") }, t = txt),
         acknowledgements = { listOf(Acknowledgement("ZXing", "Apache-2.0", "Apache License text")) },
         version = "0.1.0 (1)",
         openUrl = { urls.add(it) },
@@ -147,8 +154,8 @@ class SettingsScreenTest {
     )
 
     private fun show(store: Store = Store()) {
-        val model = VaultListModel(store)
-        val pro = ProModel(FakePurchases(), emptyMap())
+        val model = VaultListModel(store, appTxt())
+        val pro = ProModel(FakePurchases(), emptyMap(), txt = txt)
         val vault = VaultSeams(clipboard = Copier { _, _ -> }, isPro = { pro.isPro }, clock = clock)
         rule.setContent {
             LgkTheme {
@@ -189,10 +196,10 @@ class SettingsScreenTest {
         rule.onNodeWithText("Autofill service").assertIsDisplayed()
         rule.onNodeWithText("Off").assertIsDisplayed()
         rule.onNodeWithTag("settings-open-autofill").performClick()
-        rule.onNodeWithText(AutofillStatusModel.OPEN_FAILED_MESSAGE).assertExists()
+        rule.onNodeWithText(txt.s(app.localgatekeys.android.R.string.autofill_open_failed)).assertExists()
         scrollTo("settings-backup")
-        rule.onNodeWithText(BackupText.EXPORT).assertExists()
-        rule.onNodeWithText(BackupText.RESTORE).assertExists()
+        rule.onNodeWithText(BackupText(txt).export).assertExists()
+        rule.onNodeWithText(BackupText(txt).restore).assertExists()
         scrollTo("settings-sync")
         rule.onNodeWithText("Not set up").assertExists()
         scrollTo("settings-pro")
@@ -201,7 +208,7 @@ class SettingsScreenTest {
         rule.onNodeWithText("Restore purchases").assertExists()
         scrollTo("settings-about")
         rule.onNodeWithText("0.1.0 (1)").assertExists()
-        rule.onNodeWithText(SettingsText.DATA_NOT_COLLECTED).assertExists()
+        rule.onNodeWithText(SettingsText(txt).dataNotCollected).assertExists()
         rule.onNodeWithTag("settings-privacy").performClick()
         rule.onNodeWithTag("settings-licence").performClick()
         assertEquals(listOf(SettingsText.PRIVACY_POLICY_URL, SettingsText.LICENCE_AGREEMENT_URL), urls)
@@ -211,7 +218,7 @@ class SettingsScreenTest {
         rule.onNodeWithTag("licence-text-done").performClick()
         rule.onNodeWithTag("acknowledgements-done").performClick()
         scrollTo("settings-erase")
-        rule.onNodeWithText(SettingsText.ERASE_FOOTER).assertExists()
+        rule.onNodeWithText(SettingsText(txt).eraseFooter).assertExists()
     }
 
     @Test fun choices_are_saved_and_initials_are_stored_on_done() {
@@ -240,9 +247,9 @@ class SettingsScreenTest {
         rule.onNodeWithContentDescription("Settings").performClick()
         scrollTo("settings-erase")
         rule.onNodeWithTag("settings-erase-button").performClick()
-        rule.onNodeWithText(app.localgatekeys.android.unlock.VaultEraser.CONFIRM_TEXT_1).assertIsDisplayed()
+        rule.onNodeWithText(appTxt().s(app.localgatekeys.android.unlock.VaultEraser.CONFIRM_TEXT_1)).assertIsDisplayed()
         rule.onNodeWithTag("erase-confirm").performClick()
-        rule.onNodeWithText(app.localgatekeys.android.unlock.VaultEraser.CONFIRM_TEXT_2).assertIsDisplayed()
+        rule.onNodeWithText(appTxt().s(app.localgatekeys.android.unlock.VaultEraser.CONFIRM_TEXT_2)).assertIsDisplayed()
         assertEquals(0, erased)
         rule.onNodeWithTag("erase-confirm").performClick()
         rule.waitForIdle()
@@ -272,7 +279,7 @@ class SettingsScreenTest {
         owner = true
         rule.onNodeWithTag("settings-export").performClick()
         rule.waitUntil(5_000) { rule.onAllNodesWithTag("export-backup").fetchSemanticsNodes().isNotEmpty() }
-        rule.onNodeWithText(BackupText.EXPORT_HINT).assertIsDisplayed()
+        rule.onNodeWithText(BackupText(txt).exportHint).assertIsDisplayed()
         rule.onNodeWithTag("export-backup-close").performClick()
         rule.onNodeWithTag("settings").assertIsDisplayed()
     }
@@ -281,7 +288,7 @@ class SettingsScreenTest {
         show()
         rule.onNodeWithTag("empty-vault-restore").performClick()
         rule.onNodeWithTag("restore-backup").assertIsDisplayed()
-        rule.onNodeWithText(BackupText.CHOOSE).assertIsDisplayed()
+        rule.onNodeWithText(BackupText(txt).choose).assertIsDisplayed()
         rule.onNodeWithTag("restore-backup-close").performClick()
         rule.onNodeWithTag("empty-vault").assertIsDisplayed()
     }
@@ -290,7 +297,7 @@ class SettingsScreenTest {
         val store = Store()
         val docs = FakeDocuments(backupFile())
         val restore = PhoneRestore(store, { false }, clock, installId = { "0123456789abcdef0123456789abcdef" })
-        val flow = RestoreFlow(RestoreAttempts(clock), { restore }, Dispatchers.IO)
+        val flow = RestoreFlow(RestoreAttempts(clock), { restore }, Dispatchers.IO, txt)
         var restored = 0
         rule.setContent { LgkTheme { RestoreBackupScreen(flow, docs, onRestored = { restored++ }, onClose = {}) } }
         rule.onNodeWithTag("restore-choose").performClick()
@@ -300,10 +307,10 @@ class SettingsScreenTest {
         rule.waitUntil(20_000) { rule.onAllNodesWithText("Wrong password, or the file is damaged.").fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithTag("restore-password").performTextInput(good)
         rule.onNodeWithTag("restore-backup-action").performClick()
-        rule.waitUntil(20_000) { rule.onAllNodesWithText(BackupText.PREVIEW_READY).fetchSemanticsNodes().isNotEmpty() }
+        rule.waitUntil(20_000) { rule.onAllNodesWithText(BackupText(txt).previewReady).fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithText("3 new items").assertIsDisplayed()
         assertEquals(0, store.commits)
-        rule.onNodeWithText(BackupText.RESTORE_BUTTON).performClick()
+        rule.onNodeWithText(BackupText(txt).restoreButton).performClick()
         rule.waitUntil(20_000) { rule.onAllNodesWithText("Phone backup restored.").fetchSemanticsNodes().isNotEmpty() }
         assertEquals(1, store.commits)
         assertEquals(3, store.snapshot.records.size)
@@ -316,7 +323,7 @@ class SettingsScreenTest {
         val exporter = app.localgatekeys.android.backup.BackupExporter(
             store, clock, Counting(), "0.1.0", installId = { "0123456789abcdef0123456789abcdef" }, kdf = kdf,
         )
-        val flow = ExportFlow({ pw -> exporter.export(pw) }, Dispatchers.IO)
+        val flow = ExportFlow({ pw -> app.localgatekeys.android.backup.BackupExport(exporter.export(pw)) }, Dispatchers.IO, txt)
         rule.setContent { LgkTheme { ExportBackupScreen(flow, docs, fileName = { BackupText.fileName(clock.now) }, onClose = {}) } }
         rule.onNodeWithTag("export-password").performTextInput("short")
         rule.onNodeWithTag("export-confirm").performTextInput("short")
@@ -326,7 +333,7 @@ class SettingsScreenTest {
         rule.onNodeWithTag("export-password").performTextInput(" and more words 42")
         rule.onNodeWithTag("export-confirm").performTextInput(" and more words 42")
         rule.onNodeWithTag("export-backup-action").performClick()
-        rule.waitUntil(20_000) { rule.onAllNodesWithText(BackupText.SAVED).fetchSemanticsNodes().isNotEmpty() }
+        rule.waitUntil(20_000) { rule.onAllNodesWithText(BackupText(txt).saved).fetchSemanticsNodes().isNotEmpty() }
         assertTrue(docs.savedName!!.matches(Regex("LocalGateKeys-Backup-\\d{4}-\\d{2}-\\d{2}\\.lgkm")))
         val back = PhoneBackupFormat.read(docs.savedBytes!!, "short and more words 42")
         assertEquals(listOf((note(1).fields["id"] as Str).v), back.states.map { it.itemId })

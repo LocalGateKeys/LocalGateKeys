@@ -1,5 +1,8 @@
 package app.localgatekeys.android.ui.settings
+import app.localgatekeys.android.R
+import androidx.compose.ui.res.stringResource
 
+import app.localgatekeys.android.i18n.rememberTxt
 import android.content.Context
 import android.net.Uri
 import android.provider.DocumentsContract
@@ -227,6 +230,8 @@ private fun deleteQuietly(context: Context, uri: Uri) {
 @Composable
 fun ExportBackupScreen(flow: ExportFlow, documents: BackupDocuments, fileName: () -> String, onClose: () -> Unit) {
     val c = LgkTheme.colors
+    val txt = rememberTxt()
+    val text = BackupText(txt)
     val password by flow.password.collectAsStateWithLifecycle()
     val confirm by flow.confirm.collectAsStateWithLifecycle()
     val working by flow.working.collectAsStateWithLifecycle()
@@ -239,19 +244,19 @@ fun ExportBackupScreen(flow: ExportFlow, documents: BackupDocuments, fileName: (
             documents.save(fileName(), bytes) { ok -> if (ok != null) flow.written(ok) }
         }
     }
-    BackupPage(BackupText.EXPORT_TITLE, "export-backup", onClose, action = if (saved) null else BackupText.EXPORT_BUTTON to export, actionEnabled = !working) {
+    BackupPage(text.exportTitle, "export-backup", onClose, action = if (saved) null else text.exportButton to export, actionEnabled = !working) {
         if (!saved) {
-            Footnote(BackupText.EXPORT_HINT)
+            Footnote(text.exportHint)
             Group {
-                PasswordField(password, BackupText.PASSWORD, "export-password", flow::updatePassword, onDone = null)
+                PasswordField(password, text.password, "export-password", flow::updatePassword, onDone = null)
                 HorizontalDivider(thickness = 0.5.dp, color = c.separator)
-                PasswordField(confirm, BackupText.CONFIRM, "export-confirm", flow::updateConfirm, onDone = export)
+                PasswordField(confirm, text.confirm, "export-confirm", flow::updateConfirm, onDone = export)
             }
             // The desktop's label (its sync-password check); computed off the main thread.
             val strength by produceState<String?>(null, password) { value = withContext(Dispatchers.Default) { flow.strengthText() } }
             strength?.let { Footnote(it) }
         }
-        if (working) Working(BackupText.WORKING)
+        if (working) Working(text.working)
         message?.let { Text(it, color = if (saved) c.success else c.danger, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.testTag("export-message")) }
     }
 }
@@ -260,6 +265,8 @@ fun ExportBackupScreen(flow: ExportFlow, documents: BackupDocuments, fileName: (
 @Composable
 fun RestoreBackupScreen(flow: RestoreFlow, documents: BackupDocuments, onRestored: () -> Unit, onClose: () -> Unit) {
     val c = LgkTheme.colors
+    val txt = rememberTxt()
+    val text = BackupText(txt)
     val step by flow.step.collectAsStateWithLifecycle()
     val password by flow.password.collectAsStateWithLifecycle()
     val working by flow.working.collectAsStateWithLifecycle()
@@ -271,19 +278,19 @@ fun RestoreBackupScreen(flow: RestoreFlow, documents: BackupDocuments, onRestore
     val choose: () -> Unit = { documents.open { flow.chose(it) } }
     val openIt: () -> Unit = { scope.launch { flow.open() } }
     val action: Pair<String, () -> Unit>? = when (step) {
-        RestoreFlow.Step.PASSWORD -> BackupText.OPEN_BUTTON to openIt
-        RestoreFlow.Step.PREVIEW -> BackupText.RESTORE_BUTTON to { scope.launch { if (flow.restore()) onRestored() } }
+        RestoreFlow.Step.PASSWORD -> text.openButton to openIt
+        RestoreFlow.Step.PREVIEW -> text.restoreButton to { scope.launch { if (flow.restore()) onRestored() } }
         else -> null
     }
-    BackupPage(BackupText.RESTORE_TITLE, "restore-backup", onClose, action = action, actionEnabled = !working) {
+    BackupPage(text.restoreTitle, "restore-backup", onClose, action = action, actionEnabled = !working) {
         when (step) {
             RestoreFlow.Step.CHOOSE -> {
-                Footnote(BackupText.CHOOSE_HINT)
-                Group { RowButton(BackupText.CHOOSE, "restore-choose", divider = false, onClick = choose) }
+                Footnote(text.chooseHint)
+                Group { RowButton(text.choose, "restore-choose", divider = false, onClick = choose) }
             }
             RestoreFlow.Step.PASSWORD -> {
                 from?.let { Footnote(it) }
-                Group { PasswordField(password, BackupText.PASSWORD, "restore-password", flow::updatePassword, onDone = openIt) }
+                Group { PasswordField(password, text.password, "restore-password", flow::updatePassword, onDone = openIt) }
             }
             RestoreFlow.Step.PREVIEW, RestoreFlow.Step.DONE -> {
                 Group(Modifier.testTag("restore-summary")) {
@@ -300,7 +307,7 @@ fun RestoreBackupScreen(flow: RestoreFlow, documents: BackupDocuments, onRestore
                 }
             }
         }
-        if (working) Working(BackupText.OPENING)
+        if (working) Working(text.opening)
         error?.let { Text(it, color = c.danger, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.testTag("restore-error")) }
     }
 }
@@ -320,7 +327,7 @@ private fun BackupPage(
         GlassBackdropHost(Modifier.fillMaxSize()) { AuroraBackground() }
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClose, modifier = Modifier.testTag("$tag-close")) { Text(if (action == null) "Done" else "Cancel", color = c.accentText) }
+                TextButton(onClose, modifier = Modifier.testTag("$tag-close")) { Text(stringResource(if (action == null) R.string.common_done else R.string.common_cancel), color = c.accentText) }
                 Text(
                     title, color = c.text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center, modifier = Modifier.weight(1f).semantics { heading() },

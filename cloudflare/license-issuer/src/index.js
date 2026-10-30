@@ -4,6 +4,11 @@
 //   GET  /license/<token>                            -> HTML page with LGK1- key and an install link
 //   GET  /license/<token>/file                       -> .lgklicense download
 //   GET  /recover, POST /recover                     -> find a licence by order id + email
+//   POST /appstore/claim                             -> App Store transaction JWS -> {"licence": "LGK1-..."}
+//   POST /webhooks/appstore                          -> App Store refunds / revocations -> revoke: records
+//   POST /play/claim                                 -> Play purchase token -> {"licence": "LGK1-..."}
+//   POST /webhooks/play                              -> Play refunds (Pub/Sub push) -> revoke: records
+//   cron 0 4 * * *                                   -> Play voided purchases backstop
 //
 // Everything else is 404 and there is no CORS. Secrets and vars: see README.md.
 // `handle(request, env, deps)` is the testable entry; `env` holds only bindings,
@@ -26,7 +31,25 @@ import {
   issueBundle,
   licenseIdForOrder,
   recoveryThrottleKey,
+  throttleKey,
 } from "./sign.js";
+import { APPLE_ROOT_G3_SHA256, decodeNotification, verifyAppleJws } from "./appstore.js";
+import { appStoreAlert, sendSalesAlert } from "./sales-alert.js";
+import { AppStoreApiError, appStoreApiConfigured, getAppStoreTransaction } from "./appstore-api.js";
+import {
+  PLAY_ORDER_ID,
+  PLAY_PACKAGE,
+  PLAY_PRODUCT,
+  PURCHASE_TOKEN,
+  PlayError,
+  getPlayPurchase,
+  revokePlayOrder,
+  syncVoided,
+  verifyGoogleOidc,
+} from "./play.js";
+import { issueStoreLicence, revokeStoreClaim, writeRevocation } from "./store-claims.js";
+
+export { issueStoreLicence };
 
 const PENDING_GIVE_UP_SECONDS = 10 * 60;
 // KV caches reads at the edge, "not found" included, for 60 s by default. The
@@ -44,6 +67,11 @@ const ORDER_ID = /^[A-Za-z0-9_-]{1,64}$/;
 // "Licence recovery limit" (3 requests / 10 s per IP) on the zone.
 const RECOVER_MAX_ATTEMPTS = 5;
 const RECOVER_WINDOW_SECONDS = 60 * 60;
+// Store claims (/appstore/claim, /play/claim): the same KV throttle, per client
+// IP. Apps claim once per purchase and retry on the next launch, so 20 an hour
+// leaves room for several phones behind one carrier NAT.
+const STORE_CLAIM_MAX_ATTEMPTS = 20;
+const STORE_PRODUCT_ID = "pro_unlimited";
 // On every response: licence pages are never framed, indexed or cached, and
 // the host is HTTPS-only (no `preload` until the owner decides on it).
 const PAGE_HEADERS = {
@@ -212,11 +240,8 @@ async function recordAdjustment(provider, adjustment, env, deps) {
     reinstate: adjustment.reinstate,
     recorded_at: new Date(nowMs(deps)).toISOString(),
   };
-  const value = JSON.stringify(record);
-  // The record doubles as metadata so `wrangler kv key list` shows it (< 1 KiB).
   // adjustment.updated overwrites the same keys with the newer status.
-  await env.LICENSES.put(`adjustment:${provider}:${adjustment.adjustmentId}`, value, { metadata: record });
-  await env.LICENSES.put(`revoke:${licenseId}:${adjustment.adjustmentId}`, value, { metadata: record });
+  await writeRevocation(env, provider, adjustment.adjustmentId, record);
   if (adjustment.revoke) console.warn(`license-issuer: licence ${licenseId} needs revoking (${adjustment.action})`);
   return plain(200, "Recorded");
 }
@@ -347,8 +372,12 @@ function providersFor(env, orderId) {
 // limit, else 0. KV increments are not atomic and reads may lag between
 // locations, so a burst can slip a few extra attempts in; the per-IP rule
 // bounds bursts. The record expires with its window.
-async function throttleRecovery(env, deps, email) {
-  const key = await recoveryThrottleKey(email, env.LICENSE_PRIVATE_KEY);
+function throttleRecovery(env, deps, email) {
+  return throttle(env, deps, recoveryThrottleKey(email, env.LICENSE_PRIVATE_KEY), RECOVER_MAX_ATTEMPTS);
+}
+
+async function throttle(env, deps, keyPromise, maxAttempts) {
+  const key = await keyPromise;
   const nowSec = Math.floor(nowMs(deps) / 1000);
   let state = null;
   try {
@@ -359,7 +388,7 @@ async function throttleRecovery(env, deps, email) {
   if (!state || !Number.isFinite(state.reset) || !Number.isFinite(state.count) || state.reset <= nowSec) {
     state = { count: 0, reset: nowSec + RECOVER_WINDOW_SECONDS };
   }
-  if (state.count >= RECOVER_MAX_ATTEMPTS) return state.reset - nowSec;
+  if (state.count >= maxAttempts) return state.reset - nowSec;
   state.count += 1;
   // KV needs an expiration at least 60 s ahead.
   await env.LICENSES.put(key, JSON.stringify(state), { expiration: Math.max(state.reset, nowSec + 60) });
@@ -421,9 +450,247 @@ async function recover(request, env, deps) {
   return respond(303, "", "text/plain; charset=utf-8", { Location: `/license/${token}` });
 }
 
+// --- Store purchases ------------------------------------------------------------
+//
+// The iPhone, Mac and Android apps claim a desktop licence right after a
+// purchase or restore. Every refusal is a bare 400 "Invalid" (403 for a
+// refunded purchase), so callers learn nothing about which check failed.
+
+const json = (status, value) => respond(status, JSON.stringify(value), "application/json");
+const invalid = () => plain(400, "Invalid");
+const enabled = (value) => value === "1" || value === "true";
+
+// Counts this claim against the client IP; null if allowed, else the 429.
+async function throttleStoreClaim(request, env, deps) {
+  const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
+  const wait = await throttle(env, deps, throttleKey("store-claim", ip, env.LICENSE_PRIVATE_KEY), STORE_CLAIM_MAX_ATTEMPTS);
+  return wait > 0 ? respond(429, "Too many requests\n", undefined, { "Retry-After": String(wait) }) : null;
+}
+
+async function readJson(request) {
+  const body = await readBody(request, MAX_FORM_BYTES * 8);
+  if (body === null) return null;
+  try {
+    const value = JSON.parse(body);
+    return value !== null && typeof value === "object" && !Array.isArray(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+async function storeLicenceResponse(env, deps, table, originalId, name) {
+  if (!env.CLAIMS) {
+    console.error("license-issuer: D1 binding CLAIMS missing; store claims are unavailable");
+    return plain(503, "Unavailable");
+  }
+  const result = await issueStoreLicence(env, table, originalId, name, nowMs(deps));
+  return result.revoked ? plain(403, "Revoked") : json(200, { licence: result.licence });
+}
+
+function appStoreEnvironmentAllowed(env, environment) {
+  return environment === "Production" || (environment === "Sandbox" && enabled(env.APPSTORE_ALLOW_SANDBOX));
+}
+
+const appStoreBundles = (env) =>
+  String(env.APPSTORE_BUNDLE_IDS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+// `deps.appleRootSha256` replaces the pinned Apple root in tests only.
+const appleOptions = (deps) => ({ rootSha256: deps.appleRootSha256 ?? APPLE_ROOT_G3_SHA256, now: new Date(nowMs(deps)) });
+
+// Logged once per isolate when the App Store Server API is not configured.
+let appStoreApiWarned = false;
+
+async function appStoreClaim(request, env, deps) {
+  const limited = await throttleStoreClaim(request, env, deps);
+  if (limited) return limited;
+  const body = await readJson(request);
+  if (body === null || typeof body.jws !== "string") return invalid();
+  let tx;
+  try {
+    tx = await verifyAppleJws(body.jws, appleOptions(deps));
+  } catch {
+    return invalid();
+  }
+  if (!appStoreBundles(env).includes(tx.bundleId) || tx.productId !== STORE_PRODUCT_ID) return invalid();
+  if (!appStoreEnvironmentAllowed(env, tx.environment)) return invalid();
+  if (typeof tx.originalTransactionId !== "string" || !ORDER_ID.test(tx.originalTransactionId)) return invalid();
+  if (tx.revocationDate !== undefined && tx.revocationDate !== null) return plain(403, "Revoked");
+  if (appStoreApiConfigured(env)) {
+    // The client's JWS can predate a refund we missed: ask Apple for its current view.
+    let current;
+    try {
+      current = await getAppStoreTransaction(
+        env,
+        { transactionId: typeof tx.transactionId === "string" ? tx.transactionId : tx.originalTransactionId, environment: tx.environment, bundleId: tx.bundleId },
+        deps.fetch ?? fetch,
+        appleOptions(deps),
+        nowMs(deps),
+      );
+    } catch (error) {
+      if (error instanceof AppStoreApiError && error.code === "not-found") return invalid();
+      return plain(503, "Unavailable");
+    }
+    if (current.originalTransactionId !== tx.originalTransactionId || current.bundleId !== tx.bundleId) return invalid();
+    if (current.revocationDate !== undefined && current.revocationDate !== null) {
+      if (!env.CLAIMS) return plain(503, "Unavailable");
+      await revokeStoreClaim(
+        env,
+        "appstore_claims",
+        tx.originalTransactionId,
+        {
+          adjustmentId: `refund-${tx.originalTransactionId}`,
+          action: "refund",
+          occurredAt: new Date(Number.isFinite(current.revocationDate) ? current.revocationDate : nowMs(deps)).toISOString(),
+        },
+        nowMs(deps),
+      );
+      return plain(403, "Revoked");
+    }
+  } else if (!appStoreApiWarned) {
+    appStoreApiWarned = true;
+    console.warn("license-issuer: App Store Server API credentials not set; claims trust the client's transaction JWS");
+  }
+  return storeLicenceResponse(env, deps, "appstore_claims", tx.originalTransactionId, "App Store purchase");
+}
+
+// Google Play: the token is looked up with the Play Developer API. Only a
+// purchased (0), unconsumed (0) pro_unlimited counts; test purchases
+// (purchaseType 0) only with PLAY_ALLOW_TEST. Google failures are 503 so the
+// app retries on its next launch.
+async function playClaim(request, env, deps) {
+  const limited = await throttleStoreClaim(request, env, deps);
+  if (limited) return limited;
+  const body = await readJson(request);
+  if (body === null || body.productId !== PLAY_PRODUCT || typeof body.purchaseToken !== "string") return invalid();
+  if (!PURCHASE_TOKEN.test(body.purchaseToken)) return invalid();
+  let purchase;
+  try {
+    purchase = await getPlayPurchase(env, body.purchaseToken, deps.fetch ?? fetch, nowMs(deps));
+  } catch (error) {
+    if (error instanceof PlayError && error.code === "invalid") return invalid();
+    return plain(503, "Unavailable");
+  }
+  if (purchase.purchaseState === 1) return plain(403, "Revoked"); // canceled / refunded
+  if (purchase.purchaseState !== 0 || purchase.consumptionState !== 0) return invalid();
+  if (purchase.purchaseType === 0 && !enabled(env.PLAY_ALLOW_TEST)) return invalid();
+  if (typeof purchase.orderId !== "string" || !PLAY_ORDER_ID.test(purchase.orderId)) return invalid();
+  return storeLicenceResponse(env, deps, "play_claims", purchase.orderId, "Google Play purchase");
+}
+
+// Real-time Developer Notifications through a Pub/Sub push subscription. The
+// push carries a Google-signed OIDC token for PLAY_PUSH_AUDIENCE minted for
+// the subscription's service account PLAY_PUSH_SERVICE_ACCOUNT (401 otherwise,
+// and always 401 while that var is empty). The body is never trusted on its
+// own: a canceled one-time purchase (type 2) or a voided-purchase notification
+// is looked up by its purchase token, and the order is revoked only if Google
+// reports that purchase canceled (purchaseState 1) under the same order id.
+// Anything unconfirmed is acknowledged and left to the daily Voided Purchases
+// cron; anything else is acknowledged (200) so Pub/Sub does not redeliver it;
+// a Google failure is 503 so it does.
+async function playWebhook(request, env, deps) {
+  const fetchImpl = deps.fetch ?? fetch;
+  try {
+    await verifyGoogleOidc(
+      request.headers.get("Authorization"),
+      env.PLAY_PUSH_AUDIENCE,
+      env.PLAY_PUSH_SERVICE_ACCOUNT,
+      fetchImpl,
+      nowMs(deps),
+    );
+  } catch {
+    return plain(401, "Unauthorized");
+  }
+  const body = await readJson(request);
+  let note;
+  try {
+    note = JSON.parse(atob(body?.message?.data ?? ""));
+  } catch {
+    return plain(200, "Ignored");
+  }
+  if (note?.packageName !== PLAY_PACKAGE) return plain(200, "Ignored");
+  const occurredAt = new Date(Number(note.eventTimeMillis) || nowMs(deps)).toISOString();
+  const voided = note.voidedPurchaseNotification;
+  const oneTime = note.oneTimeProductNotification;
+  let purchaseToken;
+  let notedOrderId = null;
+  if (voided !== undefined && voided !== null) {
+    if (typeof voided.purchaseToken !== "string") return plain(200, "Ignored");
+    await sendSalesAlert(env, { title: "LocalGateKeys Pro refunded", message: "Google Play: purchase voided", tags: "warning" }, fetchImpl);
+    purchaseToken = voided.purchaseToken;
+    notedOrderId = typeof voided.orderId === "string" ? voided.orderId : null;
+  } else if (oneTime?.notificationType === 1 && oneTime.sku === PLAY_PRODUCT) {
+    // ONE_TIME_PRODUCT_PURCHASED: only the sales alert; claims issue the licence.
+    await sendSalesAlert(env, { title: "LocalGateKeys Pro sold", message: "Google Play: new purchase", tags: "moneybag" }, fetchImpl);
+    return plain(200, "Ignored");
+  } else if (oneTime?.notificationType === 2 && oneTime.sku === PLAY_PRODUCT && typeof oneTime.purchaseToken === "string") {
+    purchaseToken = oneTime.purchaseToken;
+  } else {
+    return plain(200, "Ignored");
+  }
+  if (!env.CLAIMS) return plain(503, "Unavailable");
+  let purchase;
+  try {
+    purchase = await getPlayPurchase(env, purchaseToken, fetchImpl, nowMs(deps));
+  } catch (error) {
+    if (error instanceof PlayError && error.code === "invalid") return plain(200, "Ignored");
+    return plain(503, "Unavailable");
+  }
+  if (typeof purchase.orderId !== "string" || !PLAY_ORDER_ID.test(purchase.orderId)) return plain(200, "Ignored");
+  if (notedOrderId !== null && notedOrderId !== purchase.orderId) return plain(200, "Ignored");
+  // purchaseState: 0 purchased, 1 canceled, 2 pending. Not canceled (yet): the cron decides.
+  if (purchase.purchaseState !== 1) return plain(200, "Unconfirmed");
+  await revokePlayOrder(env, purchase.orderId, occurredAt, nowMs(deps));
+  return plain(200, "Recorded");
+}
+
+const APPSTORE_REVOKING = new Set(["REFUND", "REVOKE"]);
+
+// App Store Server Notifications V2. REFUND and REVOKE mark the purchase
+// revoked and write its `revoke:` record; everything else is acknowledged and
+// ignored. A bad signature is 400 (Apple retries, then gives up).
+async function appStoreWebhook(request, env, deps) {
+  const body = await readJson(request);
+  if (body === null || typeof body.signedPayload !== "string") return invalid();
+  let note;
+  try {
+    note = await decodeNotification(body.signedPayload, appleOptions(deps));
+  } catch {
+    return invalid();
+  }
+  const tx = note.transaction;
+  if (tx === null || !appStoreBundles(env).includes(tx.bundleId) || tx.productId !== STORE_PRODUCT_ID) {
+    return plain(200, "Ignored");
+  }
+  await sendSalesAlert(env, appStoreAlert(note, tx), deps.fetch ?? fetch);
+  if (!APPSTORE_REVOKING.has(note.notificationType)) return plain(200, "Ignored");
+  if (!appStoreEnvironmentAllowed(env, tx.environment)) return plain(200, "Ignored");
+  if (typeof tx.originalTransactionId !== "string" || !ORDER_ID.test(tx.originalTransactionId)) return invalid();
+  if (!env.CLAIMS) return plain(503, "Unavailable");
+  const uuid = typeof note.notificationUUID === "string" && ORDER_ID.test(note.notificationUUID) ? note.notificationUUID : null;
+  await revokeStoreClaim(
+    env,
+    "appstore_claims",
+    tx.originalTransactionId,
+    {
+      adjustmentId: uuid ?? `${note.notificationType.toLowerCase()}-${tx.originalTransactionId}`,
+      action: note.notificationType.toLowerCase(),
+      occurredAt: new Date(Number.isFinite(tx.revocationDate) ? tx.revocationDate : nowMs(deps)).toISOString(),
+    },
+    nowMs(deps),
+  );
+  return plain(200, "Recorded");
+}
+
 export async function handle(request, env, deps = {}) {
   const url = new URL(request.url);
   const { pathname } = url;
+  if (request.method === "POST" && pathname === "/appstore/claim") return appStoreClaim(request, env, deps);
+  if (request.method === "POST" && pathname === "/webhooks/appstore") return appStoreWebhook(request, env, deps);
+  if (request.method === "POST" && pathname === "/play/claim") return playClaim(request, env, deps);
+  if (request.method === "POST" && pathname === "/webhooks/play") return playWebhook(request, env, deps);
   if (request.method === "POST" && (pathname === "/webhooks/lemonsqueezy" || pathname === "/webhooks/paddle")) {
     return webhook(pathname.slice("/webhooks/".length), request, env, deps);
   }
@@ -441,5 +708,11 @@ export async function handle(request, env, deps = {}) {
 export default {
   fetch(request, env) {
     return handle(request, env);
+  },
+  // Cron trigger (wrangler.jsonc): the Play voided-purchases backstop.
+  scheduled(controller, env, ctx) {
+    ctx.waitUntil(
+      syncVoided(env, fetch).catch((error) => console.error(`license-issuer: Play voided-purchases sync failed: ${error.message}`)),
+    );
   },
 };

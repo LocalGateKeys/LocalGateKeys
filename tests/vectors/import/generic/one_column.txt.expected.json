@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "CSV columns could not be mapped; choose the password column",
+    "type": "format"
+  },
+  "format": "generic",
+  "input": "tests/vectors/import/_inputs/one_column.txt",
+  "mapping": {},
+  "python_format": "csv"
+}

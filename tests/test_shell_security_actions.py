@@ -37,7 +37,7 @@ def test_policy_change_revokes_only_that_entrys_pending_fill_grants(env) -> None
 
     result = extras.policy_save(ref, {"require_master_password": True})
 
-    assert "2 pending fill permission(s)" in result["message"]
+    assert "2 pending fill permissions" in result["message"]
     assert controller.is_unlocked()
     assert guard.valid(lease)
     with pytest.raises(StaleSession):

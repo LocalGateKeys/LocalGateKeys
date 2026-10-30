@@ -20,6 +20,7 @@ import app.localgatekeys.core.primitives.Hex
 import app.localgatekeys.core.primitives.Identifier
 import app.localgatekeys.core.primitives.RandomSource
 import app.localgatekeys.core.primitives.Scalars
+import app.localgatekeys.core.primitives.SystemRandomSource
 import app.localgatekeys.core.primitives.UnixClock
 import app.localgatekeys.core.records.SyncMeta
 import java.security.MessageDigest
@@ -37,6 +38,15 @@ internal class PeerRead {
 
     /** Device id -> base64 signing key of every accepted view that carried a valid signature. */
     val signers = LinkedHashMap<String, String>()
+
+    /** Generations and witnesses published with the accepted views ([Witness.observation]). */
+    val observations = ArrayList<Observation>()
+
+    /** Device id -> view counter of every accepted view that published a generation (format 2 or witness file). */
+    val witnessed = LinkedHashMap<String, Long>()
+
+    /** Device id -> view counter of every accepted signed format-1 view without a matching witness file. */
+    val unwitnessed = LinkedHashMap<String, Long>()
 }
 
 /** Outcome of checking the folder keyring; [key] null means the run must stop. */
@@ -61,6 +71,16 @@ class FolderSync(
      * first use.
      */
     val pairedKeys: Map<String, String> = emptyMap(),
+    /**
+     * Nonces of witness files. Separate from a run's [RandomSource] so the views a run writes stay byte-identical to
+     * the shared vectors (`from_android/`), which predate witness files.
+     */
+    private val witnessRandom: RandomSource = SystemRandomSource(),
+    /**
+     * This device's attachment files (attachment sync, 2026-10-29). Null: documents are neither received nor published
+     * and no `attachments/` file is touched (the behaviour before attachment sync).
+     */
+    private val attachments: AttachmentVault? = null,
 ) {
     init {
         if (installId.isEmpty() || Scalars.count(installId) > MAX_INSTALL_ID || installId.contains('\u0000')) {
@@ -98,7 +118,7 @@ class FolderSync(
         /** Fields cleared on moving to a new epoch: peer counters, digests and signing keys (own key kept). */
         internal fun epochReset(state: SyncGroupState, epoch: Long, key: ByteArray): SyncGroupState = state.copy(
             epoch = epoch, key = key, lastSeen = emptyMap(), peerDigests = emptyMap(),
-            viewSigners = state.viewSigners.filterKeys { it == state.deviceId },
+            viewSigners = state.viewSigners.filterKeys { it == state.deviceId }, witnessCounters = emptyMap(),
         )
 
         private val restoreKinds = setOf("tampered", "rollback")
@@ -341,9 +361,34 @@ class FolderSync(
                 continue
             }
             out.views.add(PeerView(dev, view.second))
+            val obs = Witness.observation(view.first) ?: signer?.let { readWitness(gk, view.first, it) }
+            if (obs != null) {
+                out.observations.add(obs)
+                out.witnessed[dev] = counter
+            } else if (signer != null) {
+                out.unwitnessed[dev] = counter
+            }
         }
         if (ignored.isNotEmpty()) out.issues.add(ignoredIssue(ignored))
         return out
+    }
+
+    /**
+     * The observation of a format-1 view from its witness file, or null (missing, stale, bad, or signed by another key
+     * than [signer], the key that signed the view). Silent: a cloud client may upload the witness after the view.
+     */
+    private fun readWitness(gk: GroupKey, view: ViewHeader, signer: String): Observation? {
+        val path = FolderLayout.witnessFile(view.deviceId) ?: return null
+        val sigPath = FolderLayout.witnessSignatureFile(view.deviceId) ?: return null
+        return try {
+            val raw = access.read(path, Witness.MAX_WITNESS_BYTES + 1)
+            val sig = access.read(sigPath, ViewSignature.MAX_BYTES + 1)
+            val witness = ViewFile.decode(raw, gk, view.deviceId, maxBytes = Witness.MAX_WITNESS_BYTES, maxRecords = 0)
+            if (Base64Std.encode(ViewSignature.verify(sig, raw, witness.first)) != signer) return null
+            Witness.observation(view, witness)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private fun readSignature(deviceId: String): ByteArray? {
@@ -413,6 +458,10 @@ class FolderSync(
         val stale: Boolean,
         val present: Boolean = false,
         val selfSigned: Boolean = false,
+        /** View format of the file (1 or 2), 0 when absent or unreadable. */
+        val format: Long = 0,
+        /** A format-1 file has a valid own-signed witness file for the same counter. */
+        val witnessed: Boolean = false,
     )
 
     private fun ownFileStatus(
@@ -438,16 +487,22 @@ class FolderSync(
         } catch (e: SyncFormatException) {
             false
         }
-        if (ownStates == null) return OwnStatus(false, counter, stale, true, selfSigned)
+        val format = view.first.format
+        val witnessed = format == ViewFile.FORMAT && selfSigned &&
+            readWitness(gk, view.first, Base64Std.encode(state.identity.signingPublicKey)) != null
+        if (ownStates == null) return OwnStatus(false, counter, stale, true, selfSigned, format, witnessed)
         val needs = view.second != ownStates || counter != state.ownCounter || !selfSigned ||
             writtenAt < now - OWN_REFRESH_SECONDS
-        return OwnStatus(needs, counter, stale, true, selfSigned)
+        return OwnStatus(needs, counter, stale, true, selfSigned, format, witnessed)
     }
 
     // ---- one run ----
 
-    /** One full folder sync (desktop `run_once`). Never throws: every problem is an issue in the report. */
-    fun runOnce(store: ItemStore, random: RandomSource, clock: UnixClock): RunReport {
+    /**
+     * One full folder sync (desktop `run_once`). Never throws: every problem is an issue in the report. [memory]: the
+     * unlock session's witness memory (LAN checks may be ahead of the stored generations).
+     */
+    fun runOnce(store: ItemStore, random: RandomSource, clock: UnixClock, memory: WitnessMemory? = null): RunReport {
         val now = clock.now
         val snapshot = try {
             store.load()
@@ -506,8 +561,37 @@ class FolderSync(
         )
         issues.addAll(peers.issues)
         val knownDevices = members + state.lastSeen.keys + state.deviceId
-        var report = SyncRunner.run(snapshot, peers.views, state.deviceId, now, licenseKeys, knownDevices)
+        // Attachment files first (desktop `attachment_flow.import_missing`): a document is applied only with its file.
+        val vault = attachments
+        if (vault != null) issues.addAll(Documents.importMissing(vault, peers.views.flatMap { it.states }) { readFolderBlob(it.blob) })
+        val present: ((AttachmentRef) -> Boolean)? = vault?.let { v -> { ref: AttachmentRef -> v.has(ref) } }
+        var report = SyncRunner.run(snapshot, peers.views, state.deviceId, now, licenseKeys, knownDevices, present)
         issues.addAll(report.issues)
+
+        // Rollback witnesses (desktop `run_once` step 9).
+        val ownGeneration = Witness.generation(snapshot)
+        val checked = Witness.check(
+            state.deviceId, ownGeneration ?: 0, if (ownGeneration != null) peers.observations else emptyList(),
+            memory?.merged(state) ?: state.peerGenerations, state.rollbackSuspected,
+        )
+        issues.addAll(checked.issues)
+        val witnessKeep = (members + pairedKeys.keys) - state.deviceId
+        val peerGenerations = Witness.prune(checked.peerGenerations, witnessKeep)
+        memory?.remember(state, peerGenerations)
+        val witnessPeers = Witness.pruneIds(state.witnessPeers + checked.capable, witnessKeep)
+        // A peer known to publish its generation whose newer view comes without one: the witness file was deleted,
+        // damaged or withheld. One run of grace (the view was already there last run) covers a late cloud upload.
+        val knownWitnessing = witnessPeers.toSet() + state.witnessCounters.keys
+        for ((dev, ctr) in peers.unwitnessed.entries.sortedWith { a, b -> Scalars.compare(a.key, b.key) }) {
+            if (dev in knownWitnessing && ctr > (state.witnessCounters[dev] ?: -1) && state.lastSeen[dev] == ctr) {
+                issues.add(SyncIssue("witness-missing", dev))
+            }
+        }
+        var witnessCounters = (state.witnessCounters + peers.witnessed).filterKeys { it in witnessKeep }
+        if (witnessCounters.size > MAX_PEERS_SEEN) witnessCounters = Witness.prune(witnessCounters, witnessCounters.keys)
+        val others = current - state.deviceId
+        val inline = ownGeneration != null && others.isNotEmpty() && witnessPeers.containsAll(others)
+        val ownWitness = Witness.ownWitness(peerGenerations, witnessKeep, state.deviceId)
 
         val ownKey = Base64Std.encode(state.identity.signingPublicKey)
         var lastSeen = state.lastSeen + peers.seen
@@ -519,10 +603,17 @@ class FolderSync(
             digests = digests.filterKeys { it in members }
             signers = signers.filterKeys { it in members }
         }
+        // Workstream 6: a peer whose newer view was accepted this run was synced with now (local only).
+        val accepted = peers.seen.filter { (dev, ctr) -> dev != state.deviceId && ctr > (state.lastSeen[dev] ?: -1) }.keys
+        // Publish gating: documents go into the view only when every other member wrote a valid signed capability file.
+        val documents = vault != null && others.all { folderCapable(gk, it, signers[it]) }
+        val fullOwn = report.ownStates
+        if (fullOwn != null) report = report.copy(ownStates = Documents.publishable(fullOwn, documents))
         var newState = state.copy(
             lastSeen = lastSeen, peerDigests = digests, membersEpoch = gk.epoch, members = sortedNames(members),
-            keyring = ringBytes, viewSigners = signers,
-        )
+            keyring = ringBytes, viewSigners = signers, peerGenerations = peerGenerations,
+            rollbackSuspected = checked.rollbackSuspected, witnessPeers = witnessPeers, witnessCounters = witnessCounters,
+        ).syncedWith(accepted, now)
         val status = ownFileStatus(gk, state, report.ownStates, now)
         if (status.stale) issues.add(SyncIssue("stale-self", "this device had not synced for over a year"))
         var fileCounter = status.counter
@@ -543,6 +634,18 @@ class FolderSync(
         }
         val base = maxOf(state.ownCounter, fileCounter)
         var needsWrite = status.needsWrite
+        var witnessOnly = false
+        if (report.ownStates != null && status.present && (
+                (status.format == ViewFile.FORMAT && ownGeneration != null && (inline || !status.witnessed)) ||
+                    (status.format == ViewFile.FORMAT_WITNESS && !inline)
+                )
+        ) {
+            if (status.format == ViewFile.FORMAT && !inline && status.selfSigned && status.counter == state.ownCounter) {
+                witnessOnly = !needsWrite // only the witness file is missing or bad: rewrite just it
+            } else {
+                needsWrite = true // publish the witness once, in the form every member can read
+            }
+        }
         if (base >= VersionVector.MAX_COUNTER) {
             // Only a counter stored before the bounds existed can get here; never fail the whole run.
             issues.add(SyncIssue("counter-exhausted", "own counter $base"))
@@ -565,16 +668,34 @@ class FolderSync(
 
         var wrote = report.wrote
         val own = report.ownStates
+        if (vault != null) {
+            try {
+                writeCapability(gk, state, clock)
+            } catch (e: Exception) {
+                issues.add(SyncIssue("write-failed", "attachment capability: ${e.message ?: e}"))
+            }
+        }
+        if (needsWrite && own != null && documents && vault != null) issues.addAll(publishFolderBlobs(vault, own, now))
         if (needsWrite && own != null) {
             val path = FolderLayout.deviceFile(state.deviceId)
             val sigPath = FolderLayout.signatureFile(state.deviceId)
             if (path != null && sigPath != null) {
                 try {
-                    val raw = ViewFile.encode(gk, state.deviceId, counter, own, clock, random)
+                    val raw = if (inline) {
+                        ViewFile.encode(gk, state.deviceId, counter, own, clock, random, vaultGeneration = ownGeneration, witness = ownWitness)
+                    } else {
+                        ViewFile.encode(gk, state.deviceId, counter, own, clock, random)
+                    }
                     val header = ViewFile.decodeHeader(raw)
                     val sig = ViewSignature.sign(raw, header, state.identity)
+                    val side = if (!inline && ownGeneration != null) {
+                        witnessPair(gk, state, counter, ownGeneration, ownWitness, clock, witnessRandom)
+                    } else {
+                        null
+                    }
                     access.writeAtomic(path, raw)
                     access.writeAtomic(sigPath, sig)
+                    if (side != null) writeWitnessPair(state.deviceId, side)
                     wrote = true
                 } catch (e: SyncFormatException) {
                     issues.add(SyncIssue("too-large", (e.message ?: e.toString())))
@@ -584,9 +705,153 @@ class FolderSync(
             } else {
                 issues.add(SyncIssue("write-failed", "device id is not a safe file name"))
             }
+        } else if (witnessOnly && ownGeneration != null) {
+            // The view itself is current: write only its witness file (same counter); no counter bump, no store commit.
+            try {
+                writeWitnessPair(state.deviceId, witnessPair(gk, state, status.counter, ownGeneration, ownWitness, clock, witnessRandom))
+            } catch (e: Exception) {
+                issues.add(SyncIssue("write-failed", (e.message ?: e.toString())))
+            }
+        }
+        // Sweep unreferenced blobs, only after a run that read a view from every other member.
+        if (vault != null && fullOwn != null && peers.views.map { it.deviceId }.toSet().containsAll(others)) {
+            sweepBlobs(Documents.refs(fullOwn + peers.views.flatMap { it.states }).map { it.blob }.toSet(), now)
         }
         report = report.copy(issues = issues, wrote = wrote)
         return report
+    }
+
+    // ---- attachments (desktop `attachment_flow`) ----
+
+    /** The verified blob [blobId] from the folder, or null when missing, too large or not matching its name. */
+    private fun readFolderBlob(blobId: String): ByteArray? {
+        val path = FolderLayout.blobFile(blobId) ?: return null
+        return try {
+            val raw = access.read(path, AttachmentSync.MAX_BLOB_BYTES + 1)
+            AttachmentSync.checkBlobShape(raw, blobId)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /** Names of the blobs in the folder (`[0-9a-f]{64}.lgkblob` only). */
+    private fun folderBlobIds(): Set<String> {
+        val names = try {
+            access.list(FolderLayout.ATTACHMENTS_DIR)
+        } catch (e: Exception) {
+            return emptySet()
+        }
+        val suffix = AttachmentSync.BLOB_SUFFIX
+        return names.filter { it.endsWith(suffix) }.map { it.dropLast(suffix.length) }.filter { AttachmentSync.isBlobId(it) }.toSet()
+    }
+
+    /** Whether [deviceId] published a valid capability file under [gk], signed by [signer] (desktop `folder_capable`). */
+    internal fun folderCapable(gk: GroupKey, deviceId: String, signer: String?): Boolean {
+        if (signer == null) return false
+        val path = FolderLayout.capabilityFile(deviceId) ?: return false
+        val sigPath = FolderLayout.capabilitySignatureFile(deviceId) ?: return false
+        return try {
+            val raw = access.read(path, AttachmentSync.MAX_CAP_BYTES + 1)
+            val sig = access.read(sigPath, ViewSignature.MAX_BYTES + 1)
+            val view = ViewFile.decode(raw, gk, deviceId, maxBytes = AttachmentSync.MAX_CAP_BYTES, maxRecords = 0)
+            Base64Std.encode(ViewSignature.verify(sig, raw, view.first)) == signer
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /** Writes this device's capability file unless a valid one is there (a new epoch, damage). */
+    private fun writeCapability(gk: GroupKey, state: SyncGroupState, clock: UnixClock) {
+        val own = Base64Std.encode(state.identity.signingPublicKey)
+        if (folderCapable(gk, state.deviceId, own)) return
+        val path = FolderLayout.capabilityFile(state.deviceId) ?: return
+        val sigPath = FolderLayout.capabilitySignatureFile(state.deviceId) ?: return
+        val raw = ViewFile.encode(gk, state.deviceId, 0, emptyList(), clock, witnessRandom)
+        val sig = ViewSignature.sign(raw, ViewFile.decodeHeader(raw), state.identity)
+        access.writeAtomic(path, raw)
+        access.writeAtomic(sigPath, sig)
+    }
+
+    /** Writes the blob of every own document missing from the folder (before the view is written). */
+    private fun publishFolderBlobs(vault: AttachmentVault, own: List<app.localgatekeys.core.engine.ItemState>, now: Long): List<SyncIssue> {
+        val out = ArrayList<SyncIssue>()
+        val present = folderBlobIds()
+        val done = HashSet<String>()
+        for (ref in Documents.refs(own)) {
+            if (ref.blob in done) continue
+            if (ref.blob in present && keepFolderBlob(ref, now)) {
+                done.add(ref.blob)
+                continue
+            }
+            val blob = vault.blob(ref)
+            if (blob == null) {
+                out.add(SyncIssue("attachment-missing", "own:${ref.attachmentId}"))
+                continue
+            }
+            try {
+                // Missing, wrong length (a half-synced cloud copy), or old enough that a sweep could take it: (re)write,
+                // which also refreshes its time. A failed write does not count as present.
+                access.writeAtomic(FolderLayout.blobFile(ref.blob)!!, blob)
+                done.add(ref.blob)
+            } catch (e: Exception) {
+                out.add(SyncIssue("write-failed", "attachment: ${e.message ?: e}"))
+            }
+        }
+        return out
+    }
+
+    /**
+     * Desktop `BlobFolder.keep`: true when the folder blob has the right length and was written less than half the
+     * sweep age ago. False (rewrite it) when its length is wrong or unknown-and-unreadable, or when it is that old or its
+     * time is unknown (FolderAccess cannot touch a file's time, so a rewrite refreshes it).
+     */
+    private fun keepFolderBlob(ref: AttachmentRef, now: Long): Boolean {
+        val path = FolderLayout.blobFile(ref.blob) ?: return false
+        return try {
+            val size = access.size(path) ?: access.read(path, AttachmentSync.MAX_BLOB_BYTES + 1).size.toLong()
+            if (size != ref.blobSize) return false
+            val at = access.modifiedAt(path) ?: return false
+            now - at < AttachmentSync.SWEEP_MIN_AGE_SECONDS / 2
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /** Removes blobs no view references once older than [AttachmentSync.SWEEP_MIN_AGE_SECONDS] (time unknown: kept). */
+    private fun sweepBlobs(referenced: Set<String>, now: Long) {
+        for (id in folderBlobIds().sorted()) {
+            if (id in referenced) continue
+            val path = FolderLayout.blobFile(id) ?: continue
+            try {
+                val at = access.modifiedAt(path) ?: continue
+                if (now - at < AttachmentSync.SWEEP_MIN_AGE_SECONDS) continue
+                access.remove(path)
+            } catch (e: Exception) {
+                // best effort
+            }
+        }
+    }
+
+    /** The own witness file for the view at [counter] and its signature. */
+    private fun witnessPair(
+        gk: GroupKey,
+        state: SyncGroupState,
+        counter: Long,
+        generation: Long,
+        witness: Map<String, Long>,
+        clock: UnixClock,
+        random: RandomSource,
+    ): Pair<ByteArray, ByteArray> {
+        val raw = ViewFile.encode(gk, state.deviceId, counter, emptyList(), clock, random, vaultGeneration = generation, witness = witness)
+        return raw to ViewSignature.sign(raw, ViewFile.decodeHeader(raw), state.identity)
+    }
+
+    private fun writeWitnessPair(deviceId: String, pair: Pair<ByteArray, ByteArray>) {
+        val path = FolderLayout.witnessFile(deviceId)
+        val sigPath = FolderLayout.witnessSignatureFile(deviceId)
+        if (path == null || sigPath == null) throw FolderSyncException("write-failed", "device id is not a safe file name")
+        access.writeAtomic(path, pair.first)
+        access.writeAtomic(sigPath, pair.second)
     }
 
     // ---- join and attach ----
@@ -641,7 +906,11 @@ class FolderSync(
             }
             if (existing != null && existing.installId == installId) {
                 val path = FolderLayout.deviceFile(existing.deviceId)
-                for (old in listOf(path, FolderLayout.signatureFile(existing.deviceId))) {
+                val oldFiles = listOf(
+                    path, FolderLayout.signatureFile(existing.deviceId), FolderLayout.witnessFile(existing.deviceId),
+                    FolderLayout.witnessSignatureFile(existing.deviceId),
+                )
+                for (old in oldFiles) {
                     if (old == null) continue
                     try {
                         access.remove(old) // our previous identity's file is obsolete

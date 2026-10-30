@@ -1,6 +1,7 @@
 import Crypto
 
-/// Parsed `LGKSYNC1` header line.
+/// Parsed `LGKSYNC1` header line. Format 2 (rollback witnesses, 2026-10-29) adds `vaultGeneration` and
+/// `witness`; they are nil / empty for a format-1 header.
 public struct ViewHeader: Equatable, Sendable {
     public let format: Int64
     public let groupID: String
@@ -8,15 +9,26 @@ public struct ViewHeader: Equatable, Sendable {
     public let epoch: Int64
     public let counter: Int64
     public let writtenAt: Int64
+    /// The writer's vault generation (format 2), nil for format 1.
+    public let vaultGeneration: Int64?
+    /// The writer's witness of its peers (format 2), empty for format 1.
+    public let witness: [String: Int64]
 
-    public init(format: Int64, groupID: String, deviceID: String, epoch: Int64, counter: Int64, writtenAt: Int64) {
+    public init(format: Int64, groupID: String, deviceID: String, epoch: Int64, counter: Int64, writtenAt: Int64,
+                vaultGeneration: Int64? = nil, witness: [String: Int64] = [:]) {
         self.format = format; self.groupID = groupID; self.deviceID = deviceID
         self.epoch = epoch; self.counter = counter; self.writtenAt = writtenAt
+        self.vaultGeneration = vaultGeneration; self.witness = witness
     }
 
     var json: JSONValue {
-        .object(["format": .int(format), "group_id": .string(groupID), "device_id": .string(deviceID),
-                 "epoch": .int(epoch), "counter": .int(counter), "written_at": .int(writtenAt)])
+        var o: [String: JSONValue] = ["format": .int(format), "group_id": .string(groupID), "device_id": .string(deviceID),
+                                      "epoch": .int(epoch), "counter": .int(counter), "written_at": .int(writtenAt)]
+        if let vaultGeneration {
+            o["vault_generation"] = .int(vaultGeneration)
+            o["witness"] = .object(witness.mapValues { JSONValue.int($0) })
+        }
+        return .object(o)
     }
 }
 
@@ -24,9 +36,32 @@ public struct ViewHeader: Equatable, Sendable {
 public enum ViewFile {
     public static let magic = Array("LGKSYNC1\n".utf8)
     public static let format: Int64 = 1
+    /// View format 2: the header also carries `vault_generation` and `witness` (desktop `FORMAT_WITNESS`).
+    public static let formatWitness: Int64 = 2
+    /// At most this many witness entries (desktop `MAX_WITNESS`).
+    public static let maxWitness = 64
     public static let maxBytes = 64 * 1024 * 1024
     public static let maxRecords = 20000
     private static let headerFields: Set<String> = ["format", "group_id", "device_id", "epoch", "counter", "written_at"]
+    private static let headerFieldsV2: Set<String> = headerFields.union(["vault_generation", "witness"])
+
+    /// Desktop `_check_witness_values`: a generation in 0..2**53-1, and at most 64 entries whose keys are valid
+    /// ids other than the writer's own and whose values are in the same range.
+    private static func checkWitnessValues(device: String, vaultGeneration: JSONValue?,
+                                           witness: JSONValue?) throws -> [String: Int64] {
+        guard SealedItem.isInt(vaultGeneration) else { throw SyncFormatError("bad-header", "invalid vault_generation") }
+        guard case .object(let w)? = witness, w.count <= maxWitness else {
+            throw SyncFormatError("bad-header", "invalid witness")
+        }
+        var out: [String: Int64] = [:]
+        for (peer, value) in w {
+            guard Identifier.isValid(peer), peer != device, SealedItem.isInt(value), case .int(let g) = value else {
+                throw SyncFormatError("bad-header", "invalid witness entry")
+            }
+            out[peer] = g
+        }
+        return out
+    }
 
     private static func checkHeaderValues(device: JSONValue?, epoch: JSONValue?, counter: JSONValue?, writtenAt: JSONValue?) throws {
         let validDevice: Bool
@@ -38,10 +73,20 @@ public enum ViewFile {
     }
 
     /// Serialises `states` (sorted by id) into one view file. Nonces: one per item in id order, then the file nonce.
+    /// Format 1 unless `vaultGeneration` is given; then format 2 with `witness` (default empty).
     public static func encode(key: GroupKey, deviceID: String, counter: Int64, states: [ItemState],
-                              now: some UnixClock, random: some RandomSource, maxRecords: Int = maxRecords) throws -> [UInt8] {
+                              now: some UnixClock, random: some RandomSource, maxRecords: Int = maxRecords,
+                              vaultGeneration: Int64? = nil, witness: [String: Int64]? = nil) throws -> [UInt8] {
         let writtenAt = now.now
         try checkHeaderValues(device: .string(deviceID), epoch: .int(key.epoch), counter: .int(counter), writtenAt: .int(writtenAt))
+        if vaultGeneration == nil && witness != nil {
+            throw SyncFormatError("bad-header", "a witness needs a vault_generation")
+        }
+        var checkedWitness: [String: Int64] = [:]
+        if let vaultGeneration {
+            checkedWitness = try checkWitnessValues(device: deviceID, vaultGeneration: .int(vaultGeneration),
+                                                    witness: .object((witness ?? [:]).mapValues { JSONValue.int($0) }))
+        }
         // Ids are ASCII, so String order equals code point order.
         let ordered = states.sorted { $0.itemID < $1.itemID }
         if ordered.count > maxRecords { throw SyncFormatError("too-many-records", "\(ordered.count) > \(maxRecords)") }
@@ -58,8 +103,9 @@ public enum ViewFile {
         sealed.reserveCapacity(ordered.count)
         for s in ordered { sealed.append(try SealedItem.seal(key, s, nonce: try uniqueNonce())) }
         let header = try CanonicalJSON.encode(
-            ViewHeader(format: format, groupID: key.groupID, deviceID: deviceID, epoch: key.epoch,
-                       counter: counter, writtenAt: writtenAt).json, dialect: .utf8)
+            ViewHeader(format: vaultGeneration == nil ? format : formatWitness, groupID: key.groupID,
+                       deviceID: deviceID, epoch: key.epoch, counter: counter, writtenAt: writtenAt,
+                       vaultGeneration: vaultGeneration, witness: checkedWitness).json, dialect: .utf8)
         let nonce = try uniqueNonce()
         let body = try CryptoBox.sealGCM(key: key.fileKey, nonce: nonce,
                                          plaintext: CanonicalJSON.encode(.array(sealed), dialect: .utf8), aad: header)
@@ -87,12 +133,23 @@ public enum ViewFile {
         guard let end = data[magic.count...].firstIndex(of: 0x0A) else { throw SyncFormatError("bad-header", "missing header line") }
         let headerBytes = Array(data[magic.count..<end])
         guard let parsed = try? CanonicalJSON.parse(headerBytes) else { throw SyncFormatError("bad-header", "header is not JSON") }
-        guard case .object(let h) = parsed, Set(h.keys) == headerFields else { throw SyncFormatError("bad-header", "header fields") }
-        guard h["format"] == .int(format) else { throw SyncFormatError("bad-header", "unsupported format") }
+        guard case .object(let h) = parsed, h["format"] != nil else { throw SyncFormatError("bad-header", "header fields") }
+        guard case .int(let fmt)? = h["format"], fmt == format || fmt == formatWitness else {
+            throw SyncFormatError("bad-header", "unsupported format")
+        }
+        guard Set(h.keys) == (fmt == format ? headerFields : headerFieldsV2) else {
+            throw SyncFormatError("bad-header", "header fields")
+        }
         guard case .string(let groupID)? = h["group_id"], Identifier.isValid(groupID) else {
             throw SyncFormatError("bad-header", "group_id")
         }
         try checkHeaderValues(device: h["device_id"], epoch: h["epoch"], counter: h["counter"], writtenAt: h["written_at"])
+        var generation: Int64?
+        var witness: [String: Int64] = [:]
+        if fmt == formatWitness, case .string(let writer)? = h["device_id"] {
+            witness = try checkWitnessValues(device: writer, vaultGeneration: h["vault_generation"], witness: h["witness"])
+            if case .int(let g)? = h["vault_generation"] { generation = g }
+        }
         guard let canonical = try? CanonicalJSON.encode(parsed, dialect: .utf8) else {
             throw SyncFormatError("bad-header", "header is not canonical-JSON safe")
         }
@@ -101,7 +158,8 @@ public enum ViewFile {
               case .int(let counter)? = h["counter"], case .int(let writtenAt)? = h["written_at"] else {
             throw SyncFormatError("bad-header", "header fields")
         }
-        let header = ViewHeader(format: format, groupID: groupID, deviceID: deviceID, epoch: epoch, counter: counter, writtenAt: writtenAt)
+        let header = ViewHeader(format: fmt, groupID: groupID, deviceID: deviceID, epoch: epoch, counter: counter,
+                                writtenAt: writtenAt, vaultGeneration: generation, witness: witness)
         return (header, headerBytes, end)
     }
 

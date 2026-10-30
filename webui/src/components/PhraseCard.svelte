@@ -4,6 +4,7 @@
   import { untrack } from 'svelte';
   import ErrorLogLink from './ErrorLogLink.svelte';
   import { call } from '../lib/api.js';
+  import { formatNumber, t } from '../lib/i18n.svelte.js';
   import Button from './Button.svelte';
 
   let { card, ondone } = $props();
@@ -26,22 +27,22 @@
   }
 </script>
 
-<section class="card group" aria-label="Your recovery phrase">
-  <h3>Your recovery phrase</h3>
+<section class="card group" aria-label={t('phraseCard.title')}>
+  <h3>{t('phraseCard.title')}</h3>
   <p class="note">{card.intro}</p>
   <ol class="words">
     {#each card.words as word, i (i)}<li><span class="n">{String(i + 1).padStart(2, '0')}.</span> {word}</li>{/each}
   </ol>
-  <p class="note">To confirm you wrote it down, enter these words:</p>
+  <p class="note">{t('phraseCard.confirmPrompt')}</p>
   <div class="challenge">
     {#each card.positions as pos, i (pos)}
-      <label>Word #{pos}<input autocomplete="off" spellcheck="false" bind:value={answers[i]} /></label>
+      <label>{t('phraseCard.word', { number: formatNumber(pos) })}<input autocomplete="off" spellcheck="false" bind:value={answers[i]} /></label>
     {/each}
   </div>
   {#if cardError}<p class="error" role="alert">{cardError}<ErrorLogLink text={cardError} /></p>{/if}
   <footer>
-    <Button label="Close without confirming" onclick={closeCard} />
-    <Button label="Confirm" variant="primary" onclick={confirmPhrase} />
+    <Button label={t('phraseCard.closeWithout')} onclick={closeCard} />
+    <Button label={t('common.confirm')} variant="primary" onclick={confirmPhrase} />
   </footer>
 </section>
 

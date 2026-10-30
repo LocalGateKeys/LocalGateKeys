@@ -14,6 +14,7 @@ from test_hello_unlock import SimulatedProvider
 from test_hello_unlock import enroll as hello_enroll
 
 import localvault.vault as vault_module
+from localvault.i18n import t
 from localvault import face_unlock as face
 from localvault import hello_unlock as hello
 from localvault.app import recovery_center
@@ -295,7 +296,7 @@ def test_controller_recover_cleans_envelopes_and_says_so(tmp_path: Path, monkeyp
     assert bytes(controller.session._key) != old_key
     assert not face.envelope_path(path).exists() and controller.session.face_binding() == ""
     notices = [detail for name, detail in bus.events if name == "notice"]
-    assert [notice["title"] for notice in notices] == [RECOVERY_RESET_TITLE]
+    assert [notice["title"] for notice in notices] == [t(RECOVERY_RESET_TITLE)]
     assert "Windows Hello and camera verification were removed" in notices[0]["message"]
     controller.lock()
     controller.unlock(NEW_MASTER)
