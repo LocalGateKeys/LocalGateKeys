@@ -128,7 +128,8 @@ def test_setup_and_remove_are_refused_inside_a_duress_session(real):
             duress.remove(second)
     finally:
         second.lock()
-    assert duress.remove(real) is True and not duress.configured(real.path) and duress.lock_hours(real) is None
+    removed = duress.remove(real)
+    assert removed is True and not duress.configured(real.path) and duress.lock_hours(real) is None
     assert not (real.path.parent / ".lgk-d").exists()
 
 

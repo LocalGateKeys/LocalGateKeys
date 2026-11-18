@@ -197,7 +197,7 @@ def test_lan_responder_waits_for_file_then_initiator_run_fetches(devs) -> None:
     a, b = _group_ab(devs)
     b.sync_with(a)  # learn support both ways
     item_id = _add_document(a)
-    report = a.sync_with(b)  # B is the responder: it cannot fetch, so the document waits
+    a.sync_with(b)  # B is the responder: it cannot fetch, so the document waits
     assert item_id not in _documents(b)
     b.sync_with(a)
     assert _file(b, item_id) == DATA

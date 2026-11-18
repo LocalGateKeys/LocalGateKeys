@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import ctypes
+import ctypes.wintypes as wintypes
 import os
 import time
 from collections.abc import Callable
-from ctypes import wintypes
 
 
 class InputError(RuntimeError):

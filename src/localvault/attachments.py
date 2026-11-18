@@ -281,10 +281,12 @@ def cleanup_open_copies(profile_dir: Path) -> list[Path]:
         try:
             folder.rmdir()
         except OSError:
+            # Best-effort file/OS step: failure is harmless here, so it is ignored.
             pass
     try:
         root.rmdir()
     except OSError:
+        # Best-effort file/OS step: failure is harmless here, so it is ignored.
         pass
     return remaining
 
@@ -352,6 +354,7 @@ class AttachmentStore:
             try:
                 path.unlink()
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
 
     @staticmethod
@@ -365,6 +368,7 @@ class AttachmentStore:
             try:
                 path.unlink()
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
 
     def _read_source(self, source: Path, *, cancel: Callable[[], bool] | threading.Event | None) -> bytes:
@@ -618,6 +622,7 @@ class AttachmentStore:
             try:
                 folder.rmdir()
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
             if isinstance(exc, AttachmentError):
                 raise
@@ -703,6 +708,7 @@ class AttachmentStore:
                         try:
                             result.add(_uuid(attachment_id))
                         except AttachmentError:
+                            # Expected failure for this optional step: fall back to the default behaviour.
                             pass
         # Retained typed history is a reachability root.  A document may have
         # been replaced or moved to trash while an older snapshot still needs
@@ -716,12 +722,14 @@ class AttachmentStore:
                     try:
                         result.add(_uuid(attachment_id))
                     except AttachmentError:
+                        # Expected failure for this optional step: fall back to the default behaviour.
                         pass
         for attachment_id in payload.get("attachment_pins", []):
             if isinstance(attachment_id, str):
                 try:
                     result.add(_uuid(attachment_id))
                 except AttachmentError:
+                    # Expected failure for this optional step: fall back to the default behaviour.
                     pass
         return result
 
@@ -776,6 +784,7 @@ class DocumentService:
         try:
             self.session.activity.record("document.create", item_id=item_id)
         except (AttributeError, VaultError, ItemSchemaError):
+            # Expected failure for this optional step: fall back to the default behaviour.
             pass
         return item_id
 
@@ -819,6 +828,7 @@ class DocumentService:
             try:
                 self.store.garbage_collect()
             except (AttachmentError, OSError, VaultError, ItemSchemaError):
+                # Expected failure for this optional step: fall back to the default behaviour.
                 pass
             raise
         try:
@@ -830,6 +840,7 @@ class DocumentService:
         try:
             self.session.activity.record("document.replace", item_id=item_id, count=1)
         except (AttributeError, VaultError, ItemSchemaError):
+            # Expected failure for this optional step: fall back to the default behaviour.
             pass
         return attachment_id
 
@@ -854,6 +865,7 @@ class DocumentService:
         try:
             self.session.activity.record("document.export", item_id=item_id, count=1)
         except (AttributeError, VaultError, ItemSchemaError):
+            # Expected failure for this optional step: fall back to the default behaviour.
             pass
         return result
 
@@ -865,6 +877,7 @@ class DocumentService:
         try:
             self.session.activity.record("document.open", item_id=item_id, count=1)
         except (AttributeError, VaultError, ItemSchemaError):
+            # Expected failure for this optional step: fall back to the default behaviour.
             pass
         return result
 
@@ -885,6 +898,7 @@ class DocumentService:
             try:
                 path.parent.rmdir()
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
             raise AttachmentError(
                 t("attachments.windowsCouldNotOpenThis")) from exc
@@ -896,6 +910,7 @@ class DocumentService:
             try:
                 self.session.activity.record("document.delete", item_id=item_id)
             except (AttributeError, VaultError, ItemSchemaError):
+                # Expected failure for this optional step: fall back to the default behaviour.
                 pass
         return result
 

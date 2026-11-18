@@ -430,7 +430,7 @@ def test_strict_offline_update_check_always_asks_python_side():
     asked = []
     controller = NS(settings=NS(strict_offline_mode=True))
     port = NS(confirm=lambda title, message: asked.append(title) or False)
-    service = UpdatesService(controller, port, configuration=lambda: object(), check=lambda: pytest.fail("ran"))
+    service = UpdatesService(controller, port, configuration=object, check=lambda: pytest.fail("ran"))
     with pytest.raises(ApiError):
         service.check()
     assert asked == ["Strict offline mode is on"]

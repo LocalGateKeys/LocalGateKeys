@@ -89,13 +89,13 @@ def _lastpass_notes() -> str:
     long_name = "N" * 150
     rows = [
         "url,username,password,totp,extra,name,grouping,fav",
-        'http://sn,,,,"NoteType:Address\nLanguage:en-GB\nTitle:mr\nFirst Name:Alex\nMiddle Name:Q\nLast Name:Example\n'
+        ('http://sn,,,,"NoteType:Address\nLanguage:en-GB\nTitle:mr\nFirst Name:Alex\nMiddle Name:Q\nLast Name:Example\n'
         'Username:alexq\nCompany:Example Ltd\nAddress 1:1 Example Road\nCity / Town:Exampleton\n'
         'Zip / Postal Code:EX1 2PL\nCountry:GB\nEmail Address:alex@example.com\nPhone:0100\nMobile Phone:0200\n'
-        'Fax:0300\nNotes:Home address\nsecond line",Home,Personal,1',
-        'http://sn,,,,"NoteType:Credit Card\nLanguage:en-GB\nName on Card:Alex Example\nType:Visa\n'
+        'Fax:0300\nNotes:Home address\nsecond line",Home,Personal,1'),
+        ('http://sn,,,,"NoteType:Credit Card\nLanguage:en-GB\nName on Card:Alex Example\nType:Visa\n'
         'Number:4111111111111111\nSecurity Code:123\nStart Date:January,2020\nExpiration Date:January,2027\n'
-        'Notes:Main card",Visa card,Finance,0',
+        'Notes:Main card",Visa card,Finance,0'),
         'http://sn,,,,"NoteType:Credit Card\nNumber:5555555555554444\nExpiration Date:sometime\nPIN code:9999",Odd card,,0',
         f'http://sn,,,,"NoteType:Server\nHostname:db.example.test\nPassword:srv-secret\nLanguage:en\n{many}\n'
         f'{long_name}:{"v" * 5000}",Server note,Work\\Infra,0',
@@ -643,6 +643,7 @@ def main() -> None:
                 mapping_doc.append({"input": rel, "header": list(csv_header(path)),
                                     "mapping": _generic_mapping(csv_header(path))})
             except ImporterError:
+                # Not a generic CSV: such cases simply get no mapping document.
                 pass
         case = _load_case(path, rel, load_format)
         target = out / case["format"]

@@ -57,6 +57,7 @@ class TrayController:
             try:
                 self.icon.stop()
             except Exception:
+                # Best-effort optional step: it must never break the caller, so any error is ignored.
                 pass
         if self.thread and self.thread.is_alive():
             self.thread.join(timeout=1.5)
@@ -73,6 +74,7 @@ class TrayController:
                 self.icon.update_menu()
                 self.icon.title = self._title()
             except Exception:
+                # Best-effort optional step: it must never break the caller, so any error is ignored.
                 pass
 
     def _title(self) -> str:

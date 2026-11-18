@@ -349,7 +349,7 @@ def test_hidden_note_fields_stay_out_of_the_detail_survive_body_edits_and_export
     from localvault.app.typed import TypedService
     from localvault.export import item_to_record
     service, controller = env
-    path = _write(service.home / "p" / ".env", f"TOKEN={SECRET}\n")
+    _write(service.home / "p" / ".env", f"TOKEN={SECRET}\n")
     fid = _scan(service)[0]["id"]
     service.import_findings([fid])
     items = controller.session.item_service

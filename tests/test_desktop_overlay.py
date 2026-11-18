@@ -130,7 +130,7 @@ def test_overlay_owner_helper_is_safe_off_windows() -> None:
 # --- the Win32 button (no Tk) ---------------------------------------------------------------------
 from types import SimpleNamespace  # noqa: E402
 
-import localvault.desktop_overlay as overlay_module  # noqa: E402
+from localvault import desktop_overlay as overlay_module  # noqa: E402
 from localvault.desktop_overlay import render_overlay_image  # noqa: E402
 
 

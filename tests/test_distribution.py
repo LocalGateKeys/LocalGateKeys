@@ -489,9 +489,7 @@ def test_packaged_start_with_windows_uses_the_startup_task(monkeypatch, tmp_path
     monkeypatch.setattr(startup.os, "name", "nt")
     task = _FakeStartupTask(enable_result=2)
     monkeypatch.setitem(sys.modules, "localvault.msix_startup", task)
-    import localvault
-
-    monkeypatch.setattr(localvault, "msix_startup", task, raising=False)
+    monkeypatch.setattr("localvault.msix_startup", task, raising=False)
     _no_run_key(monkeypatch)
 
     startup.set_start_with_windows(True)
@@ -508,9 +506,7 @@ def test_startup_task_turned_off_by_the_user_is_reported(monkeypatch, tmp_path) 
     monkeypatch.setattr(startup.os, "name", "nt")
     task = _FakeStartupTask(enable_result=1)
     monkeypatch.setitem(sys.modules, "localvault.msix_startup", task)
-    import localvault
-
-    monkeypatch.setattr(localvault, "msix_startup", task, raising=False)
+    monkeypatch.setattr("localvault.msix_startup", task, raising=False)
     _no_run_key(monkeypatch)
     with pytest.raises(OSError, match="Startup"):
         startup.set_start_with_windows(True)

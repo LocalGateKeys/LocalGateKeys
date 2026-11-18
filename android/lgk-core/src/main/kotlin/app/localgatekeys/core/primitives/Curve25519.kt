@@ -48,7 +48,7 @@ object Ed25519 {
     /** Canonical (`y < p`, `x = 0` only with the sign bit clear) and not one of the 8 torsion points. */
     private fun strictPoint(enc: ByteArray): Boolean {
         val raw = enc.copyOf()
-        val signBit = raw[31].toInt() and 0x80 != 0
+        val signBit = (raw[31].toInt() and 0x80) != 0
         raw[31] = (raw[31].toInt() and 0x7f).toByte()
         val y = le(raw)
         if (y >= P) return false

@@ -105,7 +105,7 @@ def _is_system_cmd(image: str) -> bool:
 
 def _parent_pid_map() -> dict[int, int]:
     import ctypes
-    from ctypes import wintypes
+    import ctypes.wintypes as wintypes
 
     class PROCESSENTRY32W(ctypes.Structure):
         _fields_ = [("dwSize", wintypes.DWORD), ("cntUsage", wintypes.DWORD),
@@ -141,7 +141,7 @@ def _parent_pid_map() -> dict[int, int]:
 
 def _open_process_info(pid: int, parents: dict[int, int]) -> ProcessInfo | None:
     import ctypes
-    from ctypes import wintypes
+    import ctypes.wintypes as wintypes
 
     if pid <= 4 or pid not in parents:
         return None
@@ -195,7 +195,7 @@ def _authenticode_organisation(path: str) -> str | None:
     revocation retrieval; the signer certificate comes from the verified state.
     """
     import ctypes
-    from ctypes import wintypes
+    import ctypes.wintypes as wintypes
 
     class GUID(ctypes.Structure):
         _fields_ = [("Data1", wintypes.DWORD), ("Data2", wintypes.WORD), ("Data3", wintypes.WORD),

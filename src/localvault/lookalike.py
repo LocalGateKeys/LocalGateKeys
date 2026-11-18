@@ -55,7 +55,6 @@ from . import origin as _origin
 
 __all__ = ["Verdict", "classify", "match", "clear_cache"]
 
-KINDS = ("exact", "related", "lookalike", "unknown")
 MIN_EDIT_LABEL = 5
 # Edit distance allowed for a saved registrable label of 5-8 characters, and
 # for one of 9 or more (two edits in a short label make a different word:
@@ -387,6 +386,5 @@ def classify(origin: str, saved_origins: Iterable[str]) -> Verdict:
         return Verdict(_SHIELD_KIND.get(reason, "lookalike"), matched, reason)
     if mixed:
         return Verdict("lookalike", None, "mixed-script")
-    if best is not None:
-        return Verdict("unknown", best[1], "same-site")
+    # A same-site best match always returns above (it is only held back when mixed, which returns too).
     return Verdict("unknown", None, "no-match")

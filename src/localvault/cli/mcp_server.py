@@ -378,6 +378,7 @@ def _tool_error(code: str, message: str) -> dict[str, Any]:
 
 
 def serve_stdio(forward: Forward) -> int:
-    stdin = open(sys.stdin.fileno(), encoding="utf-8", errors="replace", closefd=False)  # noqa: SIM115
-    stdout = open(sys.stdout.fileno(), "w", encoding="utf-8", newline="\n", closefd=False)  # noqa: SIM115
-    return McpServer(forward).serve(stdin, stdout)
+    # closefd=False: closing these wrappers flushes them but leaves the process's stdin/stdout open.
+    with open(sys.stdin.fileno(), encoding="utf-8", errors="replace", closefd=False) as stdin, \
+            open(sys.stdout.fileno(), "w", encoding="utf-8", newline="\n", closefd=False) as stdout:
+        return McpServer(forward).serve(stdin, stdout)

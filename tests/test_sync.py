@@ -106,13 +106,15 @@ def test_pairing_authentication_and_session_auth_failure():
         session_id=session_id, role="responder", local_hello=hello_b, remote_hello=hello_a,
     )
     frame = channel_a.seal(b"opaque delta")
-    assert channel_b.open(frame) == b"opaque delta"
+    opened = channel_b.open(frame)
+    assert opened == b"opaque delta"
     with pytest.raises(ReplayError):
         channel_b.open(frame)
 
     frame_two = channel_a.seal(b"another")
     frame_three = channel_a.seal(b"third")
-    assert channel_b.open(frame_three) == b"third"
+    opened = channel_b.open(frame_three)
+    assert opened == b"third"
     with pytest.raises(ReplayError):
         channel_b.open(frame_two)
 
@@ -172,7 +174,8 @@ def test_existing_channel_rejects_exchange_after_peer_revocation():
         session_id=session_id, role="responder", local_hello=hello_b, remote_hello=hello_a,
     )
     frame = channel_b.seal(b"before revoke")
-    assert channel_a.open(frame) == b"before revoke"
+    opened = channel_a.open(frame)
+    assert opened == b"before revoke"
 
     state.revoke_peer(paired.device_id)
     with pytest.raises(PeerRevoked):
@@ -198,7 +201,8 @@ def test_existing_channel_rejects_exchange_after_sync_disable_and_reenable():
         session_id=session_id, role="responder", local_hello=hello_b, remote_hello=hello_a,
     )
     frame = channel_b.seal(b"before disable")
-    assert channel_a.open(frame) == b"before disable"
+    opened = channel_a.open(frame)
+    assert opened == b"before disable"
 
     state.disable()
     with pytest.raises(SyncDisabled):

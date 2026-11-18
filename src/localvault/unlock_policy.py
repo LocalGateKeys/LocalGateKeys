@@ -59,4 +59,5 @@ def clear_master_unlock_requirement(profile_id: str) -> None:
     try:
         _marker_path(profile_id).unlink(missing_ok=True)
     except (OSError, ValueError):
+        # Expected failure for this optional step: fall back to the default behaviour.
         pass

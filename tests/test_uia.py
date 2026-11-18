@@ -1,6 +1,6 @@
 import pytest
 
-import localvault.uia as uia
+from localvault import uia as uia
 from localvault.uia import (
     ControlDescriptor,
     UIAutomationError,

@@ -364,6 +364,7 @@ def _current_user_sid() -> str | None:
         finally:
             kernel32.CloseHandle(token)
     except (OSError, AttributeError, ValueError):
+        # Expected failure for this optional step: fall back to the default behaviour.
         pass
     try:
         output = subprocess.run([system32("whoami.exe"), "/user", "/fo", "csv", "/nh"], check=True, capture_output=True,  # noqa: S603 - fixed System32 path, constant arguments
@@ -372,6 +373,7 @@ def _current_user_sid() -> str | None:
         if row and len(row) >= 2 and row[1].startswith("S-1-"):
             return row[1]
     except (OSError, subprocess.SubprocessError, ValueError):
+        # Expected failure for this optional step: fall back to the default behaviour.
         pass
     return None
 
@@ -418,10 +420,12 @@ def _apply_windows_acl(path: Path, sid: str) -> bool:
         if _owner_can_access(path):
             return True
     except (OSError, subprocess.SubprocessError, ValueError):
+        # Expected failure for this optional step: fall back to the default behaviour.
         pass
     try:
         _icacls(path, "/reset")
     except (OSError, subprocess.SubprocessError, ValueError):
+        # Expected failure for this optional step: fall back to the default behaviour.
         pass
     return False
 

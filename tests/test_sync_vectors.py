@@ -501,7 +501,8 @@ def _open_both(session: dict, group_id: str, frames: dict[str, bytes]) -> dict[s
         entry = session[role]
         plain = _open_frame(session, frames[role], {**entry, "sender": "initiator" if role == "request" else "responder"})
         channel = _channel(receiver, sid, group_id, hello_i, hello_r, session)
-        assert channel.open(frames[role]) == plain
+        opened = channel.open(frames[role])
+        assert opened == plain
         message = parse_message(plain)
         if "plaintext" in entry:
             assert plain.decode("ascii") == entry["plaintext"]
@@ -1040,7 +1041,7 @@ def test_licence_state_cases_go_through_the_real_bridge(tmp_path, monkeypatch):
 
     state = _json("license_state.json")
     monkeypatch.setattr(licensing, "LICENSE_KEYS", {state["key_id"]: state["public_key_b64"]})
-    monkeypatch.setattr(licensing, "_cached_revoked_ids", lambda: frozenset())
+    monkeypatch.setattr(licensing, "_cached_revoked_ids", frozenset)
     cases = state["cases"]
     names = [c["name"] for c in cases]
     assert len(set(names)) == len(names)

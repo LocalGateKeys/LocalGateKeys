@@ -4,7 +4,7 @@ from __future__ import annotations
 import time
 
 import pytest
-from test_security_audit_ipc import KDF, MASTER, SITE, _Broker, _ctx  # noqa: F401
+from test_security_audit_ipc import KDF, MASTER, SITE, _Broker  # noqa: F401
 
 from localvault import browser_broker as bb
 from localvault.vault import create_vault

@@ -76,6 +76,7 @@ class SetupStore:
             try:
                 os.unlink(temporary)
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
             raise ApiError("invalid", t("onboarding.setupProgressCouldNotBe")) from None
 

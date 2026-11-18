@@ -13,7 +13,7 @@ public class RuntimeConfigTests
     [InlineData("System.Runtime.InteropServices.BuiltInComInterop.IsSupported")]
     public void ProviderRuntimeConfigTurnsTheSwitchOff(string name)
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "LocalGateKeysPasskeyProvider.runtimeconfig.json");
+        var path = Path.Join(AppContext.BaseDirectory, "LocalGateKeysPasskeyProvider.runtimeconfig.json");
         using var document = JsonDocument.Parse(File.ReadAllText(path));
         var properties = document.RootElement.GetProperty("runtimeOptions").GetProperty("configProperties");
         Assert.True(properties.TryGetProperty(name, out var value), name + " missing from " + path);

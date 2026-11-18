@@ -56,7 +56,7 @@ def test_open_settings_only_opens_the_page():
 
 
 def test_registration_current_is_none_when_stale(monkeypatch):
-    import localvault.windows_passkey_provider as module
+    from localvault import windows_passkey_provider as module
 
     state = RegistrationState(spawn=lambda work: None)
     assert state.current() is None

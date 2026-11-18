@@ -31,7 +31,7 @@ object Sss {
         for (power in 0 until 255) {
             EXP[power] = value
             LOG[value] = power
-            val reduce = if (value and 0x80 != 0) 0x1B else 0 // public table build, not secret data
+            val reduce = if ((value and 0x80) != 0) 0x1B else 0 // public table build, not secret data
             value = value xor (((value shl 1) xor reduce) and 0xFF)
         }
         for (power in 255 until 510) EXP[power] = EXP[power - 255]

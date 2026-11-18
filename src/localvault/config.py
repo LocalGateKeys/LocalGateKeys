@@ -201,6 +201,7 @@ def data_dir() -> Path:
             try:
                 (root / OWNED_MARKER).write_text("LocalGateKeys created this folder.\n", encoding="utf-8")
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
         # A folder just created is empty: the owner-only ACL is cheap here and races nothing.
         _restrict_data_dir(root)
@@ -354,6 +355,7 @@ def _restrict_path(path: Path, *, is_dir: bool = False) -> None:
     try:
         path.chmod(stat.S_IRUSR | stat.S_IWUSR | (stat.S_IXUSR if is_dir else 0))
     except OSError:
+        # Best-effort file/OS step: failure is harmless here, so it is ignored.
         pass
 
 

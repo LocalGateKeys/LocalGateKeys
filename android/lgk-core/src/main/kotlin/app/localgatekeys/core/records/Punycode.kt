@@ -114,7 +114,7 @@ internal object Punycode {
                     while (true) {
                         val t = if (k <= bias) T_MIN else if (k >= bias + T_MAX) T_MAX else k - bias
                         if (q < t) break
-                        out.append(digit(t + (q - t) % (BASE - t)))
+                        out.append(digit(t + ((q - t) % (BASE - t))))
                         q = (q - t) / (BASE - t)
                         k += BASE
                     }

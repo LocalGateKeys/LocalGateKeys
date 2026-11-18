@@ -480,7 +480,6 @@ private fun PrivacyOptions(settings: AppSettings) {
 @Composable
 private fun Autofill(settings: AppSettings, model: AutofillStatusModel) {
     val scope = rememberCoroutineScope()
-    val txt = rememberTxt()
     val enabled by model.enabled.collectAsStateWithLifecycle()
     val error by model.openError.collectAsStateWithLifecycle()
     var copyCode by remember { mutableStateOf(settings.copyCodeOnFill) }

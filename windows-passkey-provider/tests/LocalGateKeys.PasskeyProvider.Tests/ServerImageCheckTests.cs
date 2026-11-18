@@ -25,7 +25,7 @@ public class ServerImageCheckTests
     [Fact]
     public void RejectsAnotherImage()
     {
-        var other = Path.Combine(Path.GetDirectoryName(Self)!, "LocalGateKeys.exe");
+        var other = Path.Join(Path.GetDirectoryName(Self)!, "LocalGateKeys.exe");
         Assert.False(new ServerImageCheck(other, Self).IsTrustedServer(Environment.ProcessId));
     }
 
@@ -65,7 +65,7 @@ public class ServerImageCheckTests
     [Fact]
     public void RefusalNamesTheFailedSubCheck()
     {
-        var other = Path.Combine(Path.GetDirectoryName(Self)!, "LocalGateKeys.exe");
+        var other = Path.Join(Path.GetDirectoryName(Self)!, "LocalGateKeys.exe");
         Assert.Equal("path", new ServerImageCheck(other, Self).Refusal(Environment.ProcessId));
         Assert.Equal("pid", new ServerImageCheck(Self, Self).Refusal(0));
         var wrongFamily = new FakeFamilies("IliasPel.LocalGateKeys_abc", () => "Other.Package_abc");
@@ -182,7 +182,7 @@ public class ServerImageCheckTests
     public void UnsignedUnpackagedProviderRefusesTheServerInARelease()
     {
         // The expected server is this (signed) test host; the provider's own image is an unsigned file.
-        var unsignedSelf = Path.Combine(Path.GetTempPath(), "lgk-unsigned-self-" + Guid.NewGuid().ToString("N") + ".exe");
+        var unsignedSelf = Path.Join(Path.GetTempPath(), "lgk-unsigned-self-" + Guid.NewGuid().ToString("N") + ".exe");
         File.WriteAllBytes(unsignedSelf, [0x4D, 0x5A, 0, 0]);
         try
         {
@@ -216,7 +216,7 @@ public class ServerImageCheckTests
     [Fact]
     public void UnsignedFileHasNoSigner()
     {
-        var path = Path.Combine(Path.GetTempPath(), "lgk-unsigned-" + Guid.NewGuid().ToString("N") + ".exe");
+        var path = Path.Join(Path.GetTempPath(), "lgk-unsigned-" + Guid.NewGuid().ToString("N") + ".exe");
         File.WriteAllBytes(path, [0x4D, 0x5A, 0, 0]);
         try
         {

@@ -764,6 +764,7 @@
   "index.a-password-manager-that.4": "アカウントなし",
   "index.a-password-manager-that.5": "LocalGateKeysのサーバーなし",
   "index.a-password-manager-that.6": "テレメトリーなし",
+  "index.hero.source": "<a href=\"[[home]]security.html#source\">監査のためにソースを公開</a>",
   "index.a-password-manager-that.7": "Microsoft Storeで入手",
   "index.a-password-manager-that.8": "その他のダウンロード",
   "index.a-password-manager-that.9": "Windows版をダウンロード",
@@ -1030,6 +1031,9 @@
   "security.known-limitations.6": "パスキーはChrome、Edge、Firefoxで使えます。別のサイトのフレーム内でパスキーを使ってサインインする機能は、外側のサイトが許可している場合にChromeとEdgeで動作します。Firefoxでの場合と、別のサイトのフレーム内でパスキーを作成する場合は、ブラウザー標準のパスキーのダイアログを使います。新しいパスキーを承認した後にサイト側でキャンセルされると、アプリはそのパスキーを再び削除します。サイトがパスキーを保持したかどうかをアプリが判断できない場合、パスキーは保管庫に残るため、アプリで削除できます。",
   "security.report-a-vulnerability.1": "脆弱性の報告",
   "security.report-a-vulnerability.2": "<a href=\"mailto:{{SECURITY_EMAIL}}\">{{SECURITY_EMAIL}}</a>へメールしてください。対象範囲、対応にかかる時間、研究者への謝辞の方法については、<a href=\"[[root]]legal/vulnerability-disclosure.html\">脆弱性開示ポリシー</a>をご覧ください。",
+  "security.source.title": "セキュリティ監査のためのソースコード",
+  "security.source.body": "LocalGateKeys はソースアベイラブルです。保管庫をどのように守っているか誰でも確認できるよう、すべてのソースコードを <a href=\"https://github.com/LocalGateKeys/LocalGateKeys\">GitHub</a> で公開しています。ライセンス（セキュリティ研究の許可付き PolyForm Strict）では、脆弱性を見つけて報告する目的で、コードを非公開で読み、ビルドし、テストできます。オープンソースではないため、コピー、再配布、販売はできません。",
+  "layout.help.source": "ソースコード",
   "support.title": "サポートとFAQ",
   "support.description": "Windows、Mac、iPhoneでのLocalGateKeysについて、マスターパスワード、Proライセンス、同期、共有、返金に関するよくある質問への回答と、サポートへの連絡方法。",
   "support.support-and-questions.1": "サポートとご質問",
@@ -1437,5 +1441,6 @@
   "download.android.beta.step2": "テストに参加して Google Play からインストール",
   "download.android.beta.step2.note": "（そのスマートフォンで開くか、同じアカウントでログインしてください）。",
   "download.android.beta.stay": "アプリをインストールしたまま、14 日間テストに参加し続けてください。公開前に Google が求めている条件です。",
-  "help.android.beta": "Android アプリを今すぐ使いたい方はベータへ。"
+  "help.android.beta": "Android アプリを今すぐ使いたい方はベータへ。",
+  "index.v2.android_join": "テストに参加"
 }

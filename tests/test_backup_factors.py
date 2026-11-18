@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-import localvault.vault as vault_module
+from localvault import vault as vault_module
 from localvault import keyfile
 from localvault.api.result import ApiError
 from localvault.app.controller import WebController

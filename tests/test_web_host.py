@@ -223,7 +223,7 @@ class FakeAgent:
 def test_ssh_agent_follows_the_developer_setting(env):
     made = []
     env.host.post = lambda fn: fn()
-    factory = lambda name: (lambda *a, **k: Fake(*a, **k))  # noqa: E731
+    factory = lambda name: Fake  # noqa: E731
     env.host.start_integrations(pipe=factory("pipe"), hotkey=factory("hotkey"), monitor=factory("monitor"),
                                 tray=factory("tray"), overlay=factory("overlay"),
                                 ssh_agent=lambda host: made.append(FakeAgent(host)) or made[-1])
@@ -244,7 +244,7 @@ def test_ssh_agent_name_taken_is_reported_and_retried(env):
     made = []
     env.host.settings.developer_ssh_agent = True
     env.host.post = lambda fn: fn()
-    factory = lambda name: (lambda *a, **k: Fake(*a, **k))  # noqa: E731
+    factory = lambda name: Fake  # noqa: E731
     env.host.start_integrations(pipe=factory("pipe"), hotkey=factory("hotkey"), monitor=factory("monitor"),
                                 tray=factory("tray"), overlay=factory("overlay"),
                                 ssh_agent=lambda host: made.append(FakeAgent(host, "unavailable")) or made[-1])
@@ -294,7 +294,7 @@ def test_tray_menu_actions(env, monkeypatch):
 
 
 def test_close_hides_to_tray_or_exits(env):
-    made = _start(env)
+    _start(env)
     exits = []
     env.host.on_exit = lambda: exits.append(1)
     env.controller.settings.minimize_to_tray = True
@@ -663,7 +663,7 @@ def test_a_duress_session_stops_the_ssh_agent(env):
 
     made = []
     env.host.post = lambda fn: fn()
-    factory = lambda name: (lambda *a, **k: Fake(*a, **k))  # noqa: E731
+    factory = lambda name: Fake  # noqa: E731
     env.host.settings.developer_ssh_agent = True
     env.host.start_integrations(pipe=factory("pipe"), hotkey=factory("hotkey"), monitor=factory("monitor"),
                                 tray=factory("tray"), overlay=factory("overlay"),

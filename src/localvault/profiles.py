@@ -108,6 +108,7 @@ class ProfileManager:
                 if int(raw.get("version", 0)) == PROFILES_VERSION and isinstance(raw.get("profiles"), list):
                     return
             except (OSError, ValueError, json.JSONDecodeError):
+                # Expected failure for this optional step: fall back to the default behaviour.
                 pass
             raise ProfileError("Profile index is damaged or unsupported")
         self._write_index({"version": PROFILES_VERSION, "active_profile_id": None, "profiles": []})

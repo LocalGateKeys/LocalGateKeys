@@ -92,6 +92,7 @@ def private_temp_root() -> Path:
         try:
             root.chmod(0o700)
         except OSError:
+            # Best-effort file/OS step: failure is harmless here, so it is ignored.
             pass
     return root
 
@@ -1653,6 +1654,7 @@ def _full_publish(
                 else:
                     target.unlink(missing_ok=True)
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
         for old, target in reversed(moved_old):
             try:
@@ -1673,6 +1675,7 @@ def _full_publish(
             try:
                 parent.rmdir()
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
 
 
@@ -1698,6 +1701,7 @@ def _full_restore_stage_parent(vault_file: Path, *, dry_run: bool, stage_parent:
         if private.stat().st_dev == existing.stat().st_dev:
             return private
     except OSError:
+        # Best-effort file/OS step: failure is harmless here, so it is ignored.
         pass
     return existing
 
@@ -1937,6 +1941,7 @@ def _restore_full_backup(
                 except StopIteration:
                     pre_restore_backup_dir.rmdir()
                 except OSError:
+                    # Best-effort file/OS step: failure is harmless here, so it is ignored.
                     pass
         shutil.rmtree(stage_root, ignore_errors=True)
 

@@ -176,8 +176,8 @@ class ImportReview(
     init {
         val (normal, normIssues) = normalise(result.candidates, t)
         val list = normal.toMutableList()
-        var issues = cap(normIssues, t)
-        if (freeSlots != null) issues = issues + keepTotpAsFields(list, t)
+        var kept = cap(normIssues, t)
+        if (freeSlots != null) kept = kept + keepTotpAsFields(list, t)
         classify(list, snapshot)
         for (skip in result.skipped) {
             val row = skip.row ?: 0
@@ -189,7 +189,7 @@ class ImportReview(
             )
         }
         rows = list
-        this.issues = cap(result.skipped.map { skipText(it, t) }, t) + issues
+        this.issues = cap(result.skipped.map { skipText(it, t) }, t) + kept
         recomputeLimits()
     }
 

@@ -150,8 +150,8 @@ MCP_CASES: list[dict[str, Any]] = [
         '[1, "x"]', '"just text"', '{"jsonrpc":"2.0","id":null,"method":"ping"}']},
     {"name": "parse_error_and_blank_lines", "lines": ["{not json", "", "   ", '{"jsonrpc":"2.0","id":9,"method":"ping"}']},
     {"name": "batch", "lines": [
-        '[{"jsonrpc":"2.0","id":1,"method":"ping"},{"jsonrpc":"2.0","method":"notifications/x"},'
-        '{"jsonrpc":"2.0","id":2,"method":"nope"}]', '[{"jsonrpc":"2.0","method":"notifications/x"}]', "[]"]},
+        ('[{"jsonrpc":"2.0","id":1,"method":"ping"},{"jsonrpc":"2.0","method":"notifications/x"},'
+         '{"jsonrpc":"2.0","id":2,"method":"nope"}]'), '[{"jsonrpc":"2.0","method":"notifications/x"}]', "[]"]},
     {"name": "params_not_object", "lines": ['{"jsonrpc":"2.0","id":1,"method":"tools/call","params":[1]}']},
     {"name": "unknown_tool", "lines": [_call("reveal_password", {"site": "x"}), _call("copy_password", {})]},
     {"name": "list_sites_filters_rows", "lines": [_call("list_sites", {"query": "pay"})], "replies": [

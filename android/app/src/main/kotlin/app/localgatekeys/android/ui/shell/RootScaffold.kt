@@ -726,7 +726,6 @@ fun RootScaffold(
             )
         }
         if (featureDialog == FEATURE_PROOF && editor != null) {
-            val context = androidx.compose.ui.platform.LocalContext.current
             PrivacyProofDialog(
                 make = {
                     val snap = editor.store.load()

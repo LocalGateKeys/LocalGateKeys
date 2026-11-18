@@ -108,13 +108,16 @@ def _kill_test_process(process: subprocess.Popen) -> None:
             try:
                 child.kill()
             except psutil.Error:
+                # Expected failure for this optional step: fall back to the default behaviour.
                 pass
     except Exception:
+        # Best-effort optional step: it must never break the caller, so any error is ignored.
         pass
     try:
         process.kill()
         process.communicate(timeout=2)
     except Exception:
+        # Best-effort optional step: it must never break the caller, so any error is ignored.
         pass
 
 

@@ -477,7 +477,6 @@ class WebAgentHost(BrowserBroker):
                     server.start()
                 except Exception as exc:  # noqa: BLE001 - never stop the app over the agent
                     _log.warning("SSH agent could not start: %s", type(exc).__name__)
-                    server = None
                     self.ssh_agent_server = None
                     return "unavailable"
                 self.ssh_agent_server = server

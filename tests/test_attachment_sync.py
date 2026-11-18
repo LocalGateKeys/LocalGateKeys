@@ -122,7 +122,8 @@ def test_blob_folder_write_read_names_and_sweep(case_dir: Path) -> None:
     folder = a.BlobFolder(case_dir)
     blob = a.seal_blob(KEY, AID, b"synthetic")
     name = folder.write(blob)
-    assert folder.write(blob) == name  # content addressed: never rewritten
+    written = folder.write(blob)
+    assert written == name  # content addressed: never rewritten
     assert folder.read(name) == blob and folder.ids() == {name}
     for bad in ("../" + name, name.upper(), name[:-1], "..", name + "/x"):
         with pytest.raises(a.AttachmentSyncError):

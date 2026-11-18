@@ -1153,7 +1153,7 @@
       }
       fillCode(op.ctx,code);hidePanel();
     }catch(e){panel("LocalGateKeys",e.message,[{label:tr("content_close"),run:hidePanel}],op.ctx.field);}
-    finally{response.code=response.next_code="";code="";resetTotp();}
+    finally{response.code=response.next_code="";resetTotp();}
   }
   async function beginTotp(field, fromIcon=false){
     reset();

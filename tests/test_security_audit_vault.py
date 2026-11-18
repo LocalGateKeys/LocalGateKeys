@@ -16,7 +16,7 @@ import pytest
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 import localvault.export as export_module
-import localvault.vault as vault_module
+from localvault import vault as vault_module
 from localvault.i18n import t
 from localvault.attachments import AttachmentError, AttachmentStore
 from localvault.backup import (

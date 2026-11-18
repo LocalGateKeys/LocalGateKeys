@@ -8,7 +8,7 @@ from types import SimpleNamespace
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 
-import localvault.browser_broker as broker_module
+from localvault import browser_broker as broker_module
 from localvault.browser_broker import BrowserBroker
 from localvault.passkeys import b64u_decode, b64u_encode
 from broker_host import BrokerHostBase as RuntimeActions

@@ -73,6 +73,7 @@ def _create_private_windows(folder: str, data: bytes) -> str:
             try:
                 os.unlink(path)
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
             raise
         handle.Close()
@@ -113,5 +114,6 @@ def inject_file(template_path: str, output_path: str, forward: Forward, *, force
         try:
             os.unlink(temporary)
         except OSError:
+            # Best-effort file/OS step: failure is harmless here, so it is ignored.
             pass
         raise

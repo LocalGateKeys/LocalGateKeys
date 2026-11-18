@@ -64,7 +64,8 @@ def test_relationship_edges_backlinks_cycles_and_legacy_migration(session) -> No
     assert set(walked["nodes"]) == {first, second}
     with pytest.raises(RelationshipConflict, match="revision conflict"):
         session.relationships.remove(edge_id, expected_revision=1)
-    assert session.relationships.remove(edge_id, expected_revision=2)
+    removed = session.relationships.remove(edge_id, expected_revision=2)
+    assert removed
     assert session.relationships.outgoing(first) == []
     assert any(row["edge_id"] == edge_id and row["tombstoned"] is True
                for row in session.relationships.list(include_tombstoned=True))
@@ -81,7 +82,7 @@ def test_relationship_edges_backlinks_cycles_and_legacy_migration(session) -> No
 
 def test_smart_views_are_bounded_metadata_only_and_deterministic(session) -> None:
     first = session.items.create_note("Alpha", "private body", tags=["work"])
-    second = session.items.create_note("Beta", "other private body", tags=["home"])
+    session.items.create_note("Beta", "other private body", tags=["home"])
     view = session.smart_views.create(
         "Work notes", {"op": "and", "clauses": [
             {"field": "kind", "op": "eq", "value": "note"},
@@ -93,7 +94,8 @@ def test_smart_views_are_bounded_metadata_only_and_deterministic(session) -> Non
     assert all("private body" not in repr(row) for row in result)
     assert session.smart_views.rename(view, "Renamed")
     assert session.smart_views.pin(view, False)
-    assert session.smart_views.delete(view)
+    deleted = session.smart_views.delete(view)
+    assert deleted
     assert session.smart_views.get(view) is None
     with pytest.raises(SmartViewError):
         session.smart_views.create("Unsafe", {"field": "payload.body", "op": "contains", "value": "x"})

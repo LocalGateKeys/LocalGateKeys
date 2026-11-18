@@ -336,6 +336,7 @@ def scan_bound_window(entry: dict[str, Any], *, include_buttons: bool = False, i
             if (discord_stable and _is_discord_executable(exe_path)) or exe_path == expected_path:
                 candidates.append(int(hwnd))
         except Exception:
+            # Best-effort optional step: it must never break the caller, so any error is ignored.
             pass
         return True
 

@@ -137,14 +137,16 @@ def test_run_provider_unavailable_without_package(monkeypatch) -> None:
 # -- enable / disable / reconcile ---------------------------------------------------------------------------------
 def test_enable_runs_register_then_opens_settings() -> None:
     fake, opened = FakeProvider(), []
-    assert wpp.enable(run=fake, open_settings=lambda: opened.append(fake.commands()[:]))["ok"] is True
+    enabled = wpp.enable(run=fake, open_settings=lambda: opened.append(fake.commands()[:]))
+    assert enabled["ok"] is True
     assert fake.commands() == ["--register"]
     assert opened == [["--register"]]  # settings open only after a successful register
 
 
 def test_enable_failure_does_not_open_settings() -> None:
     fake, opened = FakeProvider(**{"--register": {"ok": False, "hresult": "0x80090029"}}), []
-    assert wpp.enable(run=fake, open_settings=lambda: opened.append(1))["ok"] is False
+    enabled = wpp.enable(run=fake, open_settings=lambda: opened.append(1))
+    assert enabled["ok"] is False
     assert opened == []
 
 
@@ -174,8 +176,9 @@ def test_reconcile_never_registers() -> None:
 
 def test_reconcile_without_identity_uses_native_cleanup_only() -> None:
     fake, native = FakeProvider(), []
-    assert wpp.reconcile(False, run=fake, is_available=lambda: False,
-                         native=lambda: native.append(1) or "unregistered") == "unregistered"
+    reconciled = wpp.reconcile(False, run=fake, is_available=lambda: False,
+                               native=lambda: native.append(1) or "unregistered")
+    assert reconciled == "unregistered"
     assert native == [1] and fake.calls == []
     assert wpp.reconcile(True, run=fake, is_available=lambda: False, native=lambda: 1 / 0) == "unknown"
 
@@ -395,7 +398,7 @@ def test_startup_turns_switch_off_after_reinstall(monkeypatch) -> None:
     monkeypatch.setattr(AppSettings, "save", lambda self, path=None: saved.append(self.windows_passkey_provider))
     controller = FakeController(AppSettings(windows_passkey_provider=True, passkeys_enabled=True))
     fake = FakeProvider()  # --state: not_registered
-    _switch_obj, _bus, _toasts = _attach(controller, fake)
+    _attach(controller, fake)
     assert "--register" not in fake.commands()
     assert controller.settings.windows_passkey_provider is False and saved == [False]
 

@@ -1062,10 +1062,12 @@ class SyncTransport:
         try:
             sock.shutdown(socket.SHUT_RDWR)
         except OSError:
+            # Best-effort file/OS step: failure is harmless here, so it is ignored.
             pass
         try:
             sock.close()
         except OSError:
+            # Best-effort file/OS step: failure is harmless here, so it is ignored.
             pass
 
     def _recently_verified(self, address: str, now: float) -> bool:
@@ -1166,6 +1168,7 @@ class SyncTransport:
                 try:
                     listener.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
                 except OSError:
+                    # Best-effort file/OS step: failure is harmless here, so it is ignored.
                     pass
             listener.bind(self._socket_address(endpoint))
             listener.listen(LISTEN_BACKLOG)
@@ -1401,6 +1404,7 @@ class SyncTransport:
                 raise FrameError("Transport request handler must return bytes")
             self._send_all(client, channel.seal(response), deadline)
         except (TransportCancelled, TransportError, SyncDisabled, OSError):
+            # Expected failure for this optional step: fall back to the default behaviour.
             pass
         except Exception:  # noqa: BLE001 - isolate malformed peer/handler failures
             # A malformed or unauthorised peer gets no unauthenticated error

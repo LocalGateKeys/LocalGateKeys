@@ -764,6 +764,7 @@
   "index.a-password-manager-that.4": "No account",
   "index.a-password-manager-that.5": "No LocalGateKeys server",
   "index.a-password-manager-that.6": "No vault telemetry",
+  "index.hero.source": "<a href=\"[[home]]security.html#source\">Source-available for audits</a>",
   "index.a-password-manager-that.7": "Get it from the Microsoft Store",
   "index.a-password-manager-that.8": "Other downloads",
   "index.a-password-manager-that.9": "Download for Windows",
@@ -1030,6 +1031,9 @@
   "security.known-limitations.6": "Passkeys work in Chrome, Edge and Firefox. Signing in with a passkey inside another site's frame works in Chrome and Edge when the surrounding site allows it; in Firefox, and when you create a passkey inside another site's frame, the browser's own passkey dialog is used. If a site cancels after you approve a new passkey, the app removes it again; when the app cannot tell whether the site kept it, the passkey stays in your vault and you can delete it in the app.",
   "security.report-a-vulnerability.1": "Report a vulnerability",
   "security.report-a-vulnerability.2": "Email <a href=\"mailto:{{SECURITY_EMAIL}}\">{{SECURITY_EMAIL}}</a>. The <a href=\"[[root]]legal/vulnerability-disclosure.html\">vulnerability disclosure policy</a> explains what is in scope, how quickly we respond and how we credit researchers.",
+  "security.source.title": "Source code for security audits",
+  "security.source.body": "LocalGateKeys is source-available: the full source code is published on <a href=\"https://github.com/LocalGateKeys/LocalGateKeys\">GitHub</a> so anyone can check how it protects your vault. The licence (PolyForm Strict, with a security research permission) lets you read, build and test the code privately to find and report vulnerabilities. It is not open source: copying, redistributing or selling it is not allowed.",
+  "layout.help.source": "Source code",
   "support.title": "Support and FAQ",
   "support.description": "Answers to common questions about LocalGateKeys on Windows, Mac and iPhone: master passwords, Pro licences, sync, sharing and refunds, and how to contact support.",
   "support.support-and-questions.1": "Support and questions",
@@ -1437,5 +1441,6 @@
   "download.android.beta.step2": "Opt in and install from Google Play",
   "download.android.beta.step2.note": "(open it on that phone, or sign in with the same account).",
   "download.android.beta.stay": "Please keep the app installed and stay opted in for 14 days. Google requires this before a public release.",
-  "help.android.beta": "Want the Android app now? Join the beta."
+  "help.android.beta": "Want the Android app now? Join the beta.",
+  "index.v2.android_join": "Join testing"
 }

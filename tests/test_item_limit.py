@@ -90,7 +90,7 @@ def test_live_item_count_counts_entries_and_items_not_trash(case_dir: Path) -> N
 @pytest.mark.parametrize("action", [
     lambda s: s.upsert_web(origin="https://new.example", username="me", password="pw"),
     lambda s: s.create_web_login(urls=[{"url": "https://new.example"}], username="me", password="pw"),
-    lambda s: _desktop(s),
+    _desktop,
     lambda s: s.items.create_note("Memo", "body"),
     lambda s: s.items.create_bookmark("Link", "https://example.com"),
     lambda s: s.items.create_typed("warranty", "Typed", {}),
@@ -156,7 +156,8 @@ def test_over_limit_vault_still_edits_and_deletes(case_dir: Path) -> None:
     assert session.get_entry(ids[1])["label"] == "Renamed"
     assert session.items.update_item(note_id, title="Memo 2")
     assert session.items.delete_item(note_id)
-    assert session.delete(ids[2])
+    deleted = session.delete(ids[2])
+    assert deleted
     assert session.live_item_count() == 4
 
 
@@ -172,7 +173,8 @@ def test_item_past_free_limit_hits_limit(case_dir: Path) -> None:
     assert "7 items" in str(caught.value)
     session.update_entry_fields(ids[0], label="Renamed", password="new-pw")
     assert session.get_entry(ids[0])["label"] == "Renamed"
-    assert session.delete(ids[1])
+    deleted = session.delete(ids[1])
+    assert deleted
     assert session.live_item_count() == 6
 
 

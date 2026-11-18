@@ -20,7 +20,7 @@ public class MetadataSyncTests
     {
         var api = new FakeWebAuthnApi();
         setup?.Invoke(api);
-        var output = new StringWriter();
+        using var output = new StringWriter();
         var context = new CliContext(output, api, ProviderHarness.TestClsid, () => buildSupported, () => 0,
                                      _ => Task.FromResult(reply));
         var code = Cli.Run(["--sync"], context);
@@ -121,7 +121,7 @@ public class MetadataSyncTests
     public void ClearCacheRemovesOnlyTheNames()
     {
         var api = new FakeWebAuthnApi();
-        var output = new StringWriter();
+        using var output = new StringWriter();
         var context = new CliContext(output, api, ProviderHarness.TestClsid, () => true, () => 0,
                                      _ => throw new InvalidOperationException("no query"));
         Assert.Equal(0, Cli.Run(["--clear-cache"], context));

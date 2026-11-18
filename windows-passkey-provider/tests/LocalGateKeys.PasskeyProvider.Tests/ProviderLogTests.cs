@@ -12,7 +12,7 @@ namespace LocalGateKeys.PasskeyProvider.Tests;
 
 public partial class ProviderLogTests : IDisposable
 {
-    private readonly string _dir = Path.Combine(Path.GetTempPath(), "lgk-provider-log-" + Guid.NewGuid().ToString("N"));
+    private readonly string _dir = Path.Join(Path.GetTempPath(), "lgk-provider-log-" + Guid.NewGuid().ToString("N"));
 
     public void Dispose()
     {
@@ -20,7 +20,7 @@ public partial class ProviderLogTests : IDisposable
             Directory.Delete(_dir, recursive: true);
     }
 
-    private string LogPath => Path.Combine(_dir, "logs", "passkey-provider.log");
+    private string LogPath => Path.Join(_dir, "logs", "passkey-provider.log");
 
     // Every line: time, op, txn (8 hex), outcome, hr, then optional check/stage/detail/api_hr, then ms.
     [GeneratedRegex(@"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z op=[a-z0-9_]+ txn=[0-9a-f]{8} outcome=[a-z0-9_]+ hr=0x[0-9A-F]{8}( check=[a-z0-9_]+)?( stage=[a-z0-9_]+)?( detail=[a-z0-9_]+)?( api_hr=0x[0-9A-F]{8})? ms=\d+$")]
@@ -66,13 +66,13 @@ public partial class ProviderLogTests : IDisposable
     [Fact]
     public void NeverThrows()
     {
-        var log = new ProviderLog(Path.Combine(_dir, "a\0b", "x.log"));
+        var log = new ProviderLog(Path.Join(_dir, "a\0b", "x.log"));
         log.Write(new OperationRecord("cancel", Guid.Empty, "ok", 0));
     }
 
     [Fact]
     public void DefaultPathIsUnderTheDataFolder() =>
-        Assert.EndsWith(Path.Combine("LocalGateKeys", "logs", "passkey-provider.log"), ProviderLog.DefaultPath());
+        Assert.EndsWith(Path.Join("LocalGateKeys", "logs", "passkey-provider.log"), ProviderLog.DefaultPath());
 
     // -- what a ceremony logs -------------------------------------------------------------------------------
 

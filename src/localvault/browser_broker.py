@@ -800,6 +800,7 @@ class BrowserBroker(PasskeyBrokerMixin, SystemPasskeyMixin):
             if isinstance(tab_id, int) and tab_id >= 0:
                 return tab_id
         except Exception:
+            # Best-effort optional step: it must never break the caller, so any error is ignored.
             pass
         raise ValueError("Invalid browser tab context")
 
@@ -811,6 +812,7 @@ class BrowserBroker(PasskeyBrokerMixin, SystemPasskeyMixin):
             if isinstance(document_id, str) and 1 <= len(document_id) <= 256:
                 return document_id
         except Exception:
+            # Best-effort optional step: it must never break the caller, so any error is ignored.
             pass
         raise ValueError("Invalid browser document context")
 

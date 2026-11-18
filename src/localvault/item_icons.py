@@ -38,7 +38,6 @@ MAX_DOWNLOAD_SECONDS = 5.0
 MAX_IN_FLIGHT = 2
 MAX_ICON_WORKERS = MAX_IN_FLIGHT
 MAX_DNS_RESOLVERS = MAX_IN_FLIGHT
-_UNSET = object()
 
 _DNS_RESOLVER_SLOTS = threading.BoundedSemaphore(MAX_DNS_RESOLVERS)
 
@@ -407,6 +406,7 @@ def _read_bounded(response: Any, *, deadline: float,
         try:
             response.fp.raw._sock.settimeout(remaining)  # type: ignore[attr-defined]
         except Exception:
+            # Best-effort optional step: it must never break the caller, so any error is ignored.
             pass
         chunk = response.read(min(32 * 1024, MAX_DOWNLOAD_BYTES + 1 - total))
         if _monotonic() >= deadline:
@@ -492,11 +492,13 @@ def fetch_website_icon(origin: str, *, cancel_event: threading.Event | None = No
                 try:
                     conn.close()
                 except Exception:
+                    # Best-effort optional step: it must never break the caller, so any error is ignored.
                     pass
             if sock is not None:
                 try:
                     sock.close()
                 except Exception:
+                    # Best-effort optional step: it must never break the caller, so any error is ignored.
                     pass
     raise TimeoutError("Website icon download failed safely") from last_error
 
@@ -762,6 +764,7 @@ def extract_desktop_icon(path: str | Path, *, size: int = 22) -> Any | None:
             try:
                 user32.ReleaseDC(None, hdc)  # type: ignore[name-defined]
             except Exception:
+                # Best-effort optional step: it must never break the caller, so any error is ignored.
                 pass
         if icon_info is not None:
             try:
@@ -769,11 +772,13 @@ def extract_desktop_icon(path: str | Path, *, size: int = 22) -> Any | None:
                     if bitmap_handle:
                         gdi32.DeleteObject(bitmap_handle)  # type: ignore[name-defined]
             except Exception:
+                # Best-effort optional step: it must never break the caller, so any error is ignored.
                 pass
         try:
             for handle in icon_handles:
                 user32.DestroyIcon(ctypes.c_void_p(handle))  # type: ignore[name-defined]
         except Exception:
+            # Best-effort optional step: it must never break the caller, so any error is ignored.
             pass
 
 

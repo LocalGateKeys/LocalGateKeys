@@ -130,6 +130,7 @@ class BackupKeyService:
                 if path.is_dir() and path.resolve() != folders[0].resolve():
                     folders.append(path)
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
         return folders
 

@@ -153,6 +153,7 @@ def encoded_forms(values: Iterable[str]) -> list[bytes]:
         try:
             forms.add(text.encode(ansi))
         except (LookupError, UnicodeError):
+            # Expected failure for this optional step: fall back to the default behaviour.
             pass
         for quoted in (urllib.parse.quote(text, safe=""), urllib.parse.quote(text), urllib.parse.quote_plus(text)):
             forms.update((quoted.encode(), _lower_escapes(quoted).encode()))
@@ -306,6 +307,7 @@ class _Group:
         try:
             os.killpg(self.child.pid, signal.SIGKILL)
         except OSError:
+            # Best-effort file/OS step: failure is harmless here, so it is ignored.
             pass
 
     def close(self) -> None:
@@ -323,7 +325,7 @@ def _kernel32() -> Any:
     global _KERNEL32
     if _KERNEL32 is None:
         import ctypes
-        from ctypes import wintypes
+        import ctypes.wintypes as wintypes
 
         kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
         kernel32.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
@@ -343,7 +345,7 @@ def _kernel32() -> Any:
 def _job_for(child: subprocess.Popen) -> Any:
     """Put the suspended child in a new job object that kills everything in it when closed, then let it run."""
     import ctypes
-    from ctypes import wintypes
+    import ctypes.wintypes as wintypes
 
     class IoCounters(ctypes.Structure):
         _fields_ = [(name, ctypes.c_ulonglong) for name in (
@@ -466,6 +468,7 @@ def run_captured(argv: list[str], values: Mapping[str, str], cwd: str | None, ti
             try:
                 pipe.close()
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
     return {"exit_code": child.returncode, "stdout": stdout.decode("utf-8", errors="replace"),
             "stderr": stderr.decode("utf-8", errors="replace"), "truncated": cut_out or cut_err,

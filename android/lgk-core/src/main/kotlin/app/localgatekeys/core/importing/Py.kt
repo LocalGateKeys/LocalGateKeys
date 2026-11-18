@@ -421,7 +421,7 @@ internal object ImportTime {
         val leap = (y % 4 == 0 && y % 100 != 0) || y % 400 == 0
         val dim = intArrayOf(31, if (leap) 29 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)[m - 1]
         if (d !in 1..dim) return null
-        return java.time.LocalDate.of(y, m, d).toEpochDay() * 86400 + hh * 3600 + mm * 60 + ss
+        return java.time.LocalDate.of(y, m, d).toEpochDay() * 86400L + hh * 3600L + mm * 60L + ss
     }
 
     private fun ints(u: IntArray, from: Int, to: Int): Int? {

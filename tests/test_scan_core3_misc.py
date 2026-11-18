@@ -153,7 +153,7 @@ def test_holder_index_bound_follows_sss_max_n(tmp_path: Path, monkeypatch) -> No
 
 # ------------------------------------------------------------------- suspicion 3: collections.delete save failure
 def test_a_failed_collection_delete_leaves_memory_as_on_disk(tmp_path: Path, monkeypatch) -> None:
-    import localvault.vault as vault_module
+    from localvault import vault as vault_module
     from localvault.collections import CollectionService
     from localvault.item_service import ItemService
     from localvault.vault import VaultError, create_vault

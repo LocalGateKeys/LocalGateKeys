@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 import pytest
 
-import localvault.backup as backup_module
+from localvault import backup as backup_module
 from localvault import restore_test
 from localvault.attachments import DocumentService
 from localvault.backup import (

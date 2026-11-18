@@ -18,7 +18,6 @@ TWO_YEARS = 730 * 86400
 _EXPIRY_KINDS = {"license": "expiration_date", "purchase": "expiration_date", "warranty": "expiration_date",
                  "subscription": "expiration_date", "api_key": "expires"}
 _PAYLOAD_IGNORED = ("notes", "template_id", "document_ids")
-MAX_TAGS = 20
 MAX_NOTES = 20_000
 _LIST_CAPS = {"recovery_codes": 100, "custom_fields": 50}
 MAX_URLS = 20

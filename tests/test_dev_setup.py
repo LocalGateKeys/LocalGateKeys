@@ -70,7 +70,7 @@ def machine(monkeypatch):
 
 def test_set_user_env_returns_previous_and_broadcasts(machine):
     registry, user32 = machine
-    assert dev_setup.set_user_env("SSH_AUTH_SOCK", r"\.\pipe\x") == None  # noqa: E711
+    assert dev_setup.set_user_env("SSH_AUTH_SOCK", r"\.\pipe\x") is None
     assert registry.values["SSH_AUTH_SOCK"] == r"\.\pipe\x"
     assert dev_setup.set_user_env("SSH_AUTH_SOCK", r"\.\pipe\y") == r"\.\pipe\x"
     assert len(user32.calls) == 2

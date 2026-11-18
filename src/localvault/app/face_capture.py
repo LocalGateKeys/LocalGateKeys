@@ -376,6 +376,7 @@ def _open_camera(cv2: Any, start_index: int = 0, *, stop: Callable[[], bool] | N
                     try:
                         capture.release()
                     except Exception:
+                        # Best-effort optional step: it must never break the caller, so any error is ignored.
                         pass
     raise FaceUnavailable(
         t("faceCapture.noUsableWebcamWasFound")

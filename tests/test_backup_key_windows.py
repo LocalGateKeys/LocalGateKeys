@@ -16,7 +16,7 @@ from types import SimpleNamespace
 
 import pytest
 
-import localvault.backup as backup_module
+from localvault import backup as backup_module
 from localvault import backup_key_state as device
 from localvault import backup_schedule as bs
 from localvault.api.bridge import Api

@@ -138,7 +138,7 @@ def test_master_password_change_keeps_content(tmp_path,vault):
 
 def test_failed_rekey_rolls_back(vault,monkeypatch):
     add(vault);old=vault.path.read_bytes()
-    import localvault.vault as module
+    from localvault import vault as module
     def fail(*args,**kwargs):raise OSError('disk unavailable')
     monkeypatch.setattr(module,'atomic_write_json',fail)
     with pytest.raises(VaultError):vault.change_master_password(MASTER,NEW)
@@ -147,7 +147,7 @@ def test_failed_rekey_rolls_back(vault,monkeypatch):
 
 def test_failed_write_restores_memory(vault,monkeypatch):
     i=add(vault);old=vault.get_entry(i);disk=vault.path.read_bytes()
-    import localvault.vault as module
+    from localvault import vault as module
     monkeypatch.setattr(module,'atomic_write_json',lambda *a,**k:(_ for _ in ()).throw(OSError('failure')))
     with pytest.raises(VaultError):vault.update_entry_fields(i,password='New-not-saved!')
     assert vault.get_entry(i)==old and vault.path.read_bytes()==disk

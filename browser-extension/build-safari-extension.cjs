@@ -47,7 +47,6 @@ const DESCRIPTIONS = Object.freeze({
   ios: "Offers to save the logins you sign in with in Safari to LocalGateKeys on this device.",
   macos: "Offers to save the logins you sign in with in Safari to LocalGateKeys on this Mac.",
 });
-const DESCRIPTION = DESCRIPTIONS.ios;
 
 function safariManifest(source, platform = "ios") {
   if (!Object.hasOwn(DESCRIPTIONS, platform)) throw new Error(`unknown platform ${platform}`);

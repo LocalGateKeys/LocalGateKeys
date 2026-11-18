@@ -141,7 +141,7 @@ def test_upgrade_prompt_shows_licence_problem_instead_of_pitch():
 
 
 def test_no_feature_specific_pro_texts_remain():
-    import localvault.app.licence_view as ui
+    from localvault.app import licence_view as ui
     assert not hasattr(ui, "_FEATURE_TEXT")
 
 

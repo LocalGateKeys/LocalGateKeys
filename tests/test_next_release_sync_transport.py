@@ -105,6 +105,7 @@ def test_replayed_hello_without_valid_encrypted_frame_does_not_verify_address():
                 while raw.recv(4096):
                     pass
             except OSError:
+                # The server dropping the connection is the behaviour under test.
                 pass
         assert _wait_until(lambda: not server._inbound)
         assert server._verified == {}

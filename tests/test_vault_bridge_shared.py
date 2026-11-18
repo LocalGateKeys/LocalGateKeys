@@ -454,7 +454,7 @@ def test_removal_keeps_a_shared_document_that_a_personal_item_links(tmp_path):
 
 
 def test_removal_with_a_full_trash_changes_nothing_and_says_so(tmp_path, monkeypatch):
-    import localvault.item_service as item_service_module
+    from localvault import item_service as item_service_module
 
     p = Pair(tmp_path)
     a = note(p.owner, "A", "shared", [p.cid])

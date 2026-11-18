@@ -764,6 +764,7 @@
   "index.a-password-manager-that.4": "Nessun account",
   "index.a-password-manager-that.5": "Nessun server LocalGateKeys",
   "index.a-password-manager-that.6": "Nessuna telemetria",
+  "index.hero.source": "<a href=\"[[home]]security.html#source\">Codice sorgente consultabile</a>",
   "index.a-password-manager-that.7": "Scaricalo dal Microsoft Store",
   "index.a-password-manager-that.8": "Altri download",
   "index.a-password-manager-that.9": "Scarica per Windows",
@@ -1030,6 +1031,9 @@
   "security.known-limitations.6": "Le passkey funzionano in Chrome, Edge e Firefox. L'accesso con una passkey all'interno del frame di un altro sito funziona in Chrome e Edge quando il sito che lo contiene lo consente; in Firefox, e quando crei una passkey all'interno del frame di un altro sito, viene usata la finestra delle passkey del browser. Se un sito annulla dopo che hai approvato una nuova passkey, l'app la rimuove di nuovo; quando l'app non riesce a capire se il sito l'ha conservata, la passkey resta nella cassaforte e puoi eliminarla nell'app.",
   "security.report-a-vulnerability.1": "Segnala una vulnerabilità",
   "security.report-a-vulnerability.2": "Scrivi a <a href=\"mailto:{{SECURITY_EMAIL}}\">{{SECURITY_EMAIL}}</a>. La <a href=\"[[root]]legal/vulnerability-disclosure.html\">politica di divulgazione delle vulnerabilità</a> spiega cosa rientra nell'ambito, quanto rapidamente rispondiamo e come citiamo i ricercatori.",
+  "security.source.title": "Codice sorgente per gli audit di sicurezza",
+  "security.source.body": "LocalGateKeys è source-available: tutto il codice sorgente è pubblicato su <a href=\"https://github.com/LocalGateKeys/LocalGateKeys\">GitHub</a> perché chiunque possa verificare come protegge la tua cassaforte. La licenza (PolyForm Strict, con un permesso per la ricerca sulla sicurezza) consente di leggere, compilare e provare il codice in privato per trovare e segnalare vulnerabilità. Non è open source: copiarlo, ridistribuirlo o venderlo non è consentito.",
+  "layout.help.source": "Codice sorgente",
   "support.title": "Supporto e FAQ",
   "support.description": "Risposte alle domande più comuni su LocalGateKeys su Windows, Mac e iPhone: password principali, licenze Pro, sincronizzazione, condivisione e rimborsi, e come contattare l'assistenza.",
   "support.support-and-questions.1": "Supporto e domande",
@@ -1437,5 +1441,6 @@
   "download.android.beta.step2": "Partecipa e installa da Google Play",
   "download.android.beta.step2.note": "(aprilo su quel telefono o accedi con lo stesso account).",
   "download.android.beta.stay": "Tieni l'app installata e resta iscritto per 14 giorni. Google lo richiede prima della pubblicazione.",
-  "help.android.beta": "Vuoi subito l'app Android? Partecipa alla beta."
+  "help.android.beta": "Vuoi subito l'app Android? Partecipa alla beta.",
+  "index.v2.android_join": "Partecipa al test"
 }

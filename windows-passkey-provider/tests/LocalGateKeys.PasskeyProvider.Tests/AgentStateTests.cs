@@ -12,7 +12,7 @@ public sealed class AgentStateTests : IDisposable
     private const string Pipe = @"\\.\pipe\LocalGateKeys-0123456789abcdef0123456789abcdef";
     private static readonly string Sid = WindowsIdentity.GetCurrent().User!.Value;
     private readonly string _dir = Directory.CreateTempSubdirectory("lgk-agent-state-").FullName;
-    private string Path => System.IO.Path.Combine(_dir, "agent-state.json");
+    private string Path => System.IO.Path.Join(_dir, "agent-state.json");
 
     public void Dispose() => Directory.Delete(_dir, recursive: true);
 
@@ -50,7 +50,7 @@ public sealed class AgentStateTests : IDisposable
     [Fact]
     public void DefaultPathIsTheAppDataFolder()
     {
-        var expected = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        var expected = System.IO.Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                                               "LocalGateKeys", "agent-state.json");
         Assert.Equal(expected, AgentState.DefaultPath());
     }

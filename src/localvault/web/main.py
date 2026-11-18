@@ -55,6 +55,7 @@ def run() -> None:
                 if second.is_dir():
                     cleanup_open_copies(second)
         except OSError:
+            # Best-effort file/OS step: failure is harmless here, so it is ignored.
             pass
 
     if not startup.pending:
@@ -70,6 +71,7 @@ def run() -> None:
             try:
                 sync_start_with_windows(bool(AppSettings.load().start_with_windows))
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
 
     if startup.pending:

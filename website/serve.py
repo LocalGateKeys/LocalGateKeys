@@ -46,6 +46,7 @@ def main() -> None:
     try:
         server.serve_forever()
     except KeyboardInterrupt:
+        # Ctrl+C is the normal way to stop this server; exit quietly.
         pass
 
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import csv
 import io
+import math
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
@@ -144,7 +145,7 @@ def parse_timestamp(value: Any) -> int | None:
             number = float(value)
         except OverflowError:
             return None
-        if number != number or number in (float("inf"), float("-inf")):
+        if not math.isfinite(number):
             return None
         if number > 10_000_000_000:
             number /= 1000.0

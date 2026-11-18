@@ -226,7 +226,8 @@ def test_site_icon_is_stored_encrypted_and_survives_unlock(tmp_path: Path) -> No
     raw = io.BytesIO()
     Image.new("RGBA", (128, 128), (200, 30, 30, 255)).save(raw, format="PNG")
     png = normalize_site_icon(raw.getvalue())
-    assert Image.open(io.BytesIO(png)).size == (64, 64)
+    opened = Image.open(io.BytesIO(png))
+    assert opened.size == (64, 64)
     with pytest.raises(IconDecodeError):
         normalize_site_icon(b"<svg></svg>")
 

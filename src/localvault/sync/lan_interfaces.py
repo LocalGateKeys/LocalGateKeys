@@ -266,6 +266,7 @@ def _resolved_addresses() -> tuple[str, ...]:
             if info[4][0] not in found:
                 found.append(info[4][0])
     except OSError:
+        # Best-effort file/OS step: failure is harmless here, so it is ignored.
         pass
     return tuple(found)
 

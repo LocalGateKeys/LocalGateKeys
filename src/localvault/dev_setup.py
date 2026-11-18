@@ -63,6 +63,7 @@ def _broadcast_environment() -> None:
         _user32().SendMessageTimeoutW(_HWND_BROADCAST, _WM_SETTINGCHANGE, 0, "Environment", _SMTO_ABORTIFHUNG,
                                       _BROADCAST_TIMEOUT_MS, ctypes.byref(result))
     except (OSError, AttributeError):
+        # Expected failure for this optional step: fall back to the default behaviour.
         pass
 
 
@@ -74,6 +75,7 @@ def _write_user_env(name: str, value: str | None) -> None:
                 try:
                     winreg.DeleteValue(key, name)
                 except FileNotFoundError:
+                    # Best-effort file/OS step: failure is harmless here, so it is ignored.
                     pass
             else:
                 winreg.SetValueEx(key, name, 0, winreg.REG_SZ, value)

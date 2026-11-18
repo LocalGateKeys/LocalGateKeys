@@ -100,7 +100,7 @@ class WindowsDnsSdBrowser:
     def __init__(self) -> None:
         if sys.platform != "win32":
             raise OSError("DNS-SD browsing needs Windows")
-        from ctypes import wintypes
+        import ctypes.wintypes as wintypes
 
         dll = ctypes.WinDLL("dnsapi.dll")
         for name in ("DnsServiceBrowse", "DnsServiceBrowseCancel", "DnsServiceResolve",

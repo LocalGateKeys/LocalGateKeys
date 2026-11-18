@@ -524,6 +524,7 @@ class SafeWorkspaceController:
         try:
             session.activity.record("document.view", item_id=clean_id)
         except (AttributeError, ItemSchemaError, VaultError):
+            # Expected failure for this optional step: fall back to the default behaviour.
             pass
         return self._finish(session, output)
 
@@ -548,6 +549,7 @@ class SafeWorkspaceController:
                 try:
                     destination.unlink(missing_ok=True)
                 except OSError:
+                    # Best-effort file/OS step: failure is harmless here, so it is ignored.
                     pass
 
         bound_cancel = self._bound_cancel(cancel)
@@ -636,6 +638,7 @@ class SafeWorkspaceController:
                 try:
                     orphan_bytes += int(path.stat().st_size)
                 except OSError:
+                    # Best-effort file/OS step: failure is harmless here, so it is ignored.
                     pass
         return self._finish(session, {
             "dry_run": True,

@@ -58,7 +58,7 @@ def _vector_licence_keys(monkeypatch) -> dict:
     """Trust the TEST licence key of the sync vectors, as tests/test_sync_vectors.py does."""
     state = json.loads((SYNC_VECTORS / "license_state.json").read_text(encoding="utf-8"))
     monkeypatch.setattr(licensing, "LICENSE_KEYS", {state["key_id"]: state["public_key_b64"]})
-    monkeypatch.setattr(licensing, "_cached_revoked_ids", lambda: frozenset())
+    monkeypatch.setattr(licensing, "_cached_revoked_ids", frozenset)
     return state
 
 

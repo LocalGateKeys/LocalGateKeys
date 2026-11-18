@@ -1286,6 +1286,7 @@ def _commit_plan(session: Any, plan: dict[str, Any], cancel: Any) -> None:
             try:
                 path.unlink(missing_ok=True)
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
         raise
 

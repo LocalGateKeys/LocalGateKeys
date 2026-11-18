@@ -184,7 +184,7 @@ def test_missing_camera_is_unavailable_not_a_mismatch():
         from localvault.app.face_capture import _open_camera
         raise FaceUnavailable("No usable webcam was found.")
 
-    run = FaceCapture("verify", templates=[list(ME)], engine_factory=lambda: Engine(), emit=lambda n, d: None,
+    run = FaceCapture("verify", templates=[list(ME)], engine_factory=Engine, emit=lambda n, d: None,
                       open_camera=no_camera, clock=Clock(), encode=lambda *a: None, sleep=lambda s: None)
     with pytest.raises(FaceUnavailable):
         run.run()
@@ -427,7 +427,7 @@ def _blocked_start(monkeypatch=None, **kwargs):
         return capture, index
 
     events = []
-    run = FaceCapture("verify", templates=[list(ME)], engine_factory=lambda: Engine(),
+    run = FaceCapture("verify", templates=[list(ME)], engine_factory=Engine,
                       emit=lambda n, d: events.append((n, d)), open_camera=slow_open, clock=Clock(),
                       encode=lambda *a: None, sleep=lambda s: None, **kwargs)
     return run, gate, entered, capture, events

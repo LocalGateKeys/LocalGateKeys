@@ -76,6 +76,7 @@ def test_only_origin_error(value):
         try:
             O.match_rank([{"url": value, "match": mode}], "https://example.com/")
         except OriginError:
+            # A clean rejection is an allowed outcome; the property is only that nothing else is raised.
             pass
 
 

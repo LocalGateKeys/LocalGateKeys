@@ -369,6 +369,15 @@ def _custom_request(offer: pairing.PairingOffer, body: dict) -> bytes:
         {**header, "nonce": pairing._b64e(nonce), "ct": pairing._b64e(ct)})
 
 
+def _enroll(host, sender: SyncTransport, raw: bytes) -> bytes:
+    """One enrollment request, sent once the host has released the previous connection: its listener takes only
+    ``MAX_INBOUND_PER_ADDRESS`` at once from one address, and frees a slot just after the reply is sent."""
+    limit = time.monotonic() + 5
+    while host.transport._inbound and time.monotonic() < limit:
+        time.sleep(0.01)
+    return sender.enroll(host.endpoint, raw)
+
+
 def test_forged_or_missing_mac_is_rejected_and_counted(devs) -> None:
     a = devs("a", group=True)
     offer, text = _offer_for(a)
@@ -376,8 +385,8 @@ def test_forged_or_missing_mac_is_rejected_and_counted(devs) -> None:
     sender = SyncTransport()
     # Forged from the public fields only: the attacker does not know the secret (nor the code).
     forged_offer = dataclasses.replace(offer, pairing_secret=os.urandom(32), code="00000000")
-    reply = sender.enroll(a.endpoint, pairing.build_enrollment_request(forged_offer,
-                                                                       pairing.DeviceIdentity.generate(), now=NOW))
+    reply = _enroll(a, sender, pairing.build_enrollment_request(forged_offer, pairing.DeviceIdentity.generate(),
+                                                                now=NOW))
     assert reply.startswith(pairing.ENROLL_REFUSED_MAGIC)
     assert session.attempts == 1
     # A body without the MAC field.
@@ -388,11 +397,11 @@ def test_forged_or_missing_mac_is_rejected_and_counted(devs) -> None:
             "signing_public": pairing._b64e(ident.signing_public_key),
             "exchange_public": pairing._b64e(ident.exchange_public_key), "endpoint": None, "name": "Test PC",
             "signature": pairing._b64e(ident.sign(pairing._SIG_LABEL + transcript))}
-    assert sender.enroll(a.endpoint, _custom_request(offer, body)).startswith(pairing.ENROLL_REFUSED_MAGIC)
+    assert _enroll(a, sender, _custom_request(offer, body)).startswith(pairing.ENROLL_REFUSED_MAGIC)
     # A valid MAC over a different transcript (endpoint swapped after MACing).
     good = dict(body, mac=pairing._b64e(pairing._mac(offer, transcript)),
                 endpoint={"host": "127.0.0.1", "port": 9})
-    assert sender.enroll(a.endpoint, _custom_request(offer, good)).startswith(pairing.ENROLL_REFUSED_MAGIC)
+    assert _enroll(a, sender, _custom_request(offer, good)).startswith(pairing.ENROLL_REFUSED_MAGIC)
     assert session.attempts == 3 and a.state.lan_peers == ()
     # Frames that do not decrypt (no QR: wrong key, junk, another offer) are refused without counting.
     stranger = dataclasses.replace(
@@ -401,7 +410,7 @@ def test_forged_or_missing_mac_is_rejected_and_counted(devs) -> None:
             pairing.ENROLL_REQUEST_MAGIC + b"{}", pairing.ENROLL_REQUEST_MAGIC + b"not json",
             pairing.build_enrollment_request(_offer(), pairing.DeviceIdentity.generate(), now=NOW)]
     for raw in junk * 2:
-        assert sender.enroll(a.endpoint, raw).startswith(pairing.ENROLL_REFUSED_MAGIC)
+        assert _enroll(a, sender, raw).startswith(pairing.ENROLL_REFUSED_MAGIC)
     assert session.attempts == 3 and not session.exhausted
     # The real device still enrolls with the remaining attempts.
     b = devs("b")
@@ -957,7 +966,8 @@ def test_sealed_frame_duplicate_keys_rejected() -> None:
     dup = encode_frame(payload.replace('"counter":1', '"counter":2,"counter":1', 1).encode())
     with pytest.raises(TransportError):
         chan_b.open(dup)
-    assert chan_b.open(frame) == b"payload"
+    opened = chan_b.open(frame)
+    assert opened == b"payload"
 
 
 def _hello_variant(hello, **change) -> bytes:
@@ -1001,7 +1011,8 @@ def test_sealed_frame_requires_the_exact_field_set_and_integer_version(change) -
             raw[key] = value
     with pytest.raises(TransportError):
         chan_b.open(encode_frame(json.dumps(raw, sort_keys=True, separators=(",", ":")).encode()))
-    assert chan_b.open(frame) == b"payload"
+    opened = chan_b.open(frame)
+    assert opened == b"payload"
 
 
 def test_attach_keeps_identity_and_lan_peers(devs, tmp_path: Path) -> None:
@@ -1055,7 +1066,8 @@ def test_session_key_mixes_fresh_ephemeral_keys_and_uses_each_once() -> None:
                                                   role="initiator", local_hello=hello_a, remote_hello=hello_b)
     chan_b = SecureChannel.from_paired_identities(b, peer_a, group_id="group-1", session_id=b"s" * 16,
                                                   role="responder", local_hello=hello_b, remote_hello=hello_a)
-    assert chan_b.open(chan_a.seal(b"hi")) == b"hi"
+    opened = chan_b.open(chan_a.seal(b"hi"))
+    assert opened == b"hi"
     assert hello_a.ephemeral_secret.used and hello_b.ephemeral_secret.used
     # Someone who later learns both static exchange keys (and records both hellos) cannot rebuild the key.
     transcript = b"".join(sorted((hello_a.to_bytes(), hello_b.to_bytes())))
@@ -1154,7 +1166,7 @@ def test_a_peer_announcing_another_version_gives_an_update_issue(devs, monkeypat
             finally:
                 self._release_inbound(client)
                 self._close_socket(client)
-            return
+            return None
         return real(self, client)
 
     monkeypatch.setattr(SyncTransport, "_handle_inbound", old)

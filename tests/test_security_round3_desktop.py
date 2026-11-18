@@ -174,6 +174,7 @@ def _fail(path: Path, times: int) -> None:
         try:
             V.unlock_vault(path, "wrong synthetic password")
         except V.InvalidMasterPassword:
+            # The expected outcome of a wrong password; only the throttle branch needs handling.
             pass
         except V.UnlockThrottled:
             V._reset_unlock_throttle_state_for_tests()  # skip the in-process wait; the files keep the count

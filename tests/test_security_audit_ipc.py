@@ -427,7 +427,7 @@ def test_sec_i6_pipe_dacl_is_user_only_remote_rejected_and_first_instance(monkey
     monkeypatch.setitem(sys.modules, "win32con", NS(GENERIC_ALL=0x10000000))
     monkeypatch.setitem(sys.modules, "win32security", NS(
         ACL=ACL, ACL_REVISION=2, ConvertStringSidToSid=lambda s: ("sid", s),
-        SECURITY_DESCRIPTOR=Descriptor, SECURITY_ATTRIBUTES=lambda: NS()))
+        SECURITY_DESCRIPTOR=Descriptor, SECURITY_ATTRIBUTES=NS))
     monkeypatch.setattr(pipe, "_current_user_sid_string", lambda: "S-1-5-21-AUDIT-1001")
     calls = []
     monkeypatch.setitem(sys.modules, "win32pipe", NS(

@@ -23,7 +23,6 @@ from ..shell.login_form import (
     draft_for_new_web,
     draft_from_detail,
     display_label,
-    effective_label,
     password_meta,
     save_kwargs,
     snapshot,

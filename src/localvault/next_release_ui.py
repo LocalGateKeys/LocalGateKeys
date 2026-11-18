@@ -950,6 +950,7 @@ class OnboardingStore:
             try:
                 os.unlink(temporary)
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
             raise UIModelError("onboarding progress cannot be saved") from exc
         return state

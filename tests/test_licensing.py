@@ -398,14 +398,14 @@ def test_is_pro_false_for_expired_revoked_invalid(signer, monkeypatch):
     feature = licensing.Feature.UNLIMITED_ITEMS
     licensing.install_license(licensing.encode_paste(make_bundle(signer)))
     monkeypatch.setattr(licensing, "BUILD_DATE", UNTIL.isoformat())
-    monkeypatch.setattr(licensing, "_cached_revoked_ids", lambda: frozenset())
+    monkeypatch.setattr(licensing, "_cached_revoked_ids", frozenset)
     assert licensing.is_pro(feature) is True
     monkeypatch.setattr(licensing, "BUILD_DATE", (UNTIL + dt.timedelta(days=1)).isoformat())
     assert licensing.is_pro(feature) is False  # expired
     monkeypatch.setattr(licensing, "BUILD_DATE", ISSUED.isoformat())
     monkeypatch.setattr(licensing, "_cached_revoked_ids", lambda: frozenset({"lic-0001"}))
     assert licensing.is_pro(feature) is False  # revoked
-    monkeypatch.setattr(licensing, "_cached_revoked_ids", lambda: frozenset())
+    monkeypatch.setattr(licensing, "_cached_revoked_ids", frozenset)
     licensing.license_path().write_text("garbage", encoding="utf-8")
     assert licensing.is_pro(feature) is False  # invalid
 

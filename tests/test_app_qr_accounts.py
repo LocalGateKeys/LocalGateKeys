@@ -409,7 +409,7 @@ def test_at_most_two_live_scans(env):
 
 def test_at_most_256_accounts_per_scan_across_parts(env):
     accounts, *_ = env
-    import localvault.totp as totp
+    from localvault import totp as totp
 
     def part(i, n):
         return export_uri([(bytes([i % 250 + 1, n % 250 + 1]) * 5, f"u{n}", f"I{n}") for n in range(i * 100, i * 100 + 100)],

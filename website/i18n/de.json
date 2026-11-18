@@ -764,6 +764,7 @@
   "index.a-password-manager-that.4": "Kein Konto",
   "index.a-password-manager-that.5": "Kein LocalGateKeys-Server",
   "index.a-password-manager-that.6": "Keine Telemetrie",
+  "index.hero.source": "<a href=\"[[home]]security.html#source\">Quellcode zur Prüfung offen</a>",
   "index.a-password-manager-that.7": "Im Microsoft Store herunterladen",
   "index.a-password-manager-that.8": "Weitere Downloads",
   "index.a-password-manager-that.9": "Für Windows herunterladen",
@@ -1030,6 +1031,9 @@
   "security.known-limitations.6": "Passkeys funktionieren in Chrome, Edge und Firefox. Die Anmeldung mit einem Passkey in einem Frame einer anderen Website funktioniert in Chrome und Edge, wenn die umgebende Website es erlaubt; in Firefox und beim Erstellen eines Passkeys in einem Frame einer anderen Website wird der eigene Passkey-Dialog des Browsers verwendet. Bricht eine Website ab, nachdem Sie einen neuen Passkey bestätigt haben, entfernt die App ihn wieder; kann die App nicht erkennen, ob die Website ihn behalten hat, bleibt der Passkey in Ihrem Tresor, und Sie können ihn in der App löschen.",
   "security.report-a-vulnerability.1": "Sicherheitslücke melden",
   "security.report-a-vulnerability.2": "Schreiben Sie an <a href=\"mailto:{{SECURITY_EMAIL}}\">{{SECURITY_EMAIL}}</a>. Die <a href=\"[[root]]legal/vulnerability-disclosure.html\">Richtlinie zur Offenlegung von Sicherheitslücken</a> erklärt, was zum Geltungsbereich gehört, wie schnell wir antworten und wie wir Forschende nennen.",
+  "security.source.title": "Quellcode für Sicherheitsprüfungen",
+  "security.source.body": "LocalGateKeys ist source-available: Der vollständige Quellcode ist auf <a href=\"https://github.com/LocalGateKeys/LocalGateKeys\">GitHub</a> veröffentlicht, damit jeder prüfen kann, wie Ihr Tresor geschützt wird. Die Lizenz (PolyForm Strict, mit einer Erlaubnis für Sicherheitsforschung) erlaubt es, den Code privat zu lesen, zu bauen und zu testen, um Schwachstellen zu finden und zu melden. Er ist nicht Open Source: Kopieren, Weitergeben oder Verkaufen ist nicht erlaubt.",
+  "layout.help.source": "Quellcode",
   "support.title": "Support und FAQ",
   "support.description": "Antworten auf häufige Fragen zu LocalGateKeys unter Windows, auf dem Mac und auf dem iPhone: Master-Passwörter, Pro-Lizenzen, Synchronisierung, Teilen und Rückerstattungen sowie zur Kontaktaufnahme mit dem Support.",
   "support.support-and-questions.1": "Support und Fragen",
@@ -1437,5 +1441,6 @@
   "download.android.beta.step2": "Teilnehmen und bei Google Play installieren",
   "download.android.beta.step2.note": "(auf diesem Handy öffnen oder mit demselben Konto anmelden).",
   "download.android.beta.stay": "Bitte lassen Sie die App 14 Tage installiert und bleiben Sie angemeldet. Google verlangt das vor einer öffentlichen Veröffentlichung.",
-  "help.android.beta": "Die Android-App schon jetzt? Nehmen Sie an der Beta teil."
+  "help.android.beta": "Die Android-App schon jetzt? Nehmen Sie an der Beta teil.",
+  "index.v2.android_join": "Am Test teilnehmen"
 }

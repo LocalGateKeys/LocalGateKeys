@@ -764,6 +764,7 @@
   "index.a-password-manager-that.4": "Aucun compte",
   "index.a-password-manager-that.5": "Aucun serveur LocalGateKeys",
   "index.a-password-manager-that.6": "Aucune télémétrie",
+  "index.hero.source": "<a href=\"[[home]]security.html#source\">Code source consultable pour audit</a>",
   "index.a-password-manager-that.7": "Obtenir depuis le Microsoft Store",
   "index.a-password-manager-that.8": "Autres téléchargements",
   "index.a-password-manager-that.9": "Télécharger pour Windows",
@@ -1030,6 +1031,9 @@
   "security.known-limitations.6": "Les clés d’accès fonctionnent dans Chrome, Edge et Firefox. La connexion avec une clé d’accès dans le cadre d’un autre site fonctionne dans Chrome et Edge lorsque le site qui l’entoure l’autorise ; dans Firefox, et lorsque vous créez une clé d’accès dans le cadre d’un autre site, la boîte de dialogue des clés d’accès du navigateur est utilisée. Si un site annule l’opération après que vous avez approuvé une nouvelle clé d’accès, l’app la supprime de nouveau ; lorsque l’app ne peut pas savoir si le site l’a conservée, la clé d’accès reste dans votre coffre-fort et vous pouvez la supprimer dans l’app.",
   "security.report-a-vulnerability.1": "Signaler une vulnérabilité",
   "security.report-a-vulnerability.2": "Écrivez à <a href=\"mailto:{{SECURITY_EMAIL}}\">{{SECURITY_EMAIL}}</a>. La <a href=\"[[root]]legal/vulnerability-disclosure.html\">politique de divulgation des vulnérabilités</a> explique ce qui est dans le périmètre, dans quel délai nous répondons et comment nous citons les chercheurs.",
+  "security.source.title": "Code source pour les audits de sécurité",
+  "security.source.body": "LocalGateKeys est en source disponible : tout le code source est publié sur <a href=\"https://github.com/LocalGateKeys/LocalGateKeys\">GitHub</a> pour que chacun puisse vérifier comment il protège votre coffre. La licence (PolyForm Strict, avec une autorisation de recherche en sécurité) permet de lire, compiler et tester le code en privé pour trouver et signaler des vulnérabilités. Ce n'est pas de l'open source : le copier, le redistribuer ou le vendre n'est pas autorisé.",
+  "layout.help.source": "Code source",
   "support.title": "Assistance et FAQ",
   "support.description": "Réponses aux questions courantes sur LocalGateKeys sous Windows, sur Mac et sur iPhone : mots de passe principaux, licences Pro, synchronisation, partage et remboursements, et comment contacter l’assistance.",
   "support.support-and-questions.1": "Assistance et questions",
@@ -1437,5 +1441,6 @@
   "download.android.beta.step2": "S'inscrire et installer depuis Google Play",
   "download.android.beta.step2.note": "(ouvrez-le sur ce téléphone ou connectez-vous avec le même compte).",
   "download.android.beta.stay": "Gardez l'app installée et restez inscrit pendant 14 jours. Google l'exige avant une publication publique.",
-  "help.android.beta": "Vous voulez l'app Android dès maintenant ? Rejoignez la bêta."
+  "help.android.beta": "Vous voulez l'app Android dès maintenant ? Rejoignez la bêta.",
+  "index.v2.android_join": "Rejoindre le test"
 }

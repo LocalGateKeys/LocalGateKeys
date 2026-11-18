@@ -56,7 +56,6 @@ private fun failure(e: Exception, t: Txt): String = AppLockModel.message(e, t) ?
 @Composable
 internal fun AppPasswordSection(seams: AppPasswordSeams, refresh: Int, onSetup: () -> Unit, onTurnedOff: () -> Unit = {}) {
     val txt = rememberTxt()
-    val c = LgkTheme.colors
     val context = LocalContext.current
     val appPw = AppPasswordText(rememberTxt())
     val scope = rememberCoroutineScope()

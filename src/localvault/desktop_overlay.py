@@ -291,7 +291,7 @@ class DesktopFieldOverlay:
 
     def _run(self) -> None:  # pragma: no cover - needs a Windows desktop
         import ctypes
-        from ctypes import wintypes
+        import ctypes.wintypes as wintypes
 
         # Private DLL handles: the type declarations below must not change ctypes.windll for other code.
         user32 = ctypes.WinDLL("user32", use_last_error=True)
@@ -405,7 +405,7 @@ class DesktopFieldOverlay:
 def update_layered_window(hwnd: int, image: Any) -> None:  # pragma: no cover - Windows only
     """Show a Pillow RGBA image as the window's per-pixel-alpha surface."""
     import ctypes
-    from ctypes import wintypes
+    import ctypes.wintypes as wintypes
 
     width, height = image.size
     r, g, b, a = image.split()
@@ -510,7 +510,7 @@ def _user32() -> Any:
     global _USER32
     if _USER32 is None:
         import ctypes
-        from ctypes import wintypes
+        import ctypes.wintypes as wintypes
 
         user32 = ctypes.WinDLL("user32")
         user32.GetForegroundWindow.restype = wintypes.HWND
@@ -546,7 +546,7 @@ def get_window_rect(hwnd: int) -> tuple[int, int, int, int] | None:
     if os.name != "nt" or not hwnd:
         return None
     import ctypes
-    from ctypes import wintypes
+    import ctypes.wintypes as wintypes
 
     rect = wintypes.RECT()
     if not _user32().GetWindowRect(_hwnd(hwnd), ctypes.byref(rect)):

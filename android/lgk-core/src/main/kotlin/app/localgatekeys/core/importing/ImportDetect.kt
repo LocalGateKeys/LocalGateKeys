@@ -164,7 +164,7 @@ object ImportDetect {
             if (q + 46 + n > b.size) return null
             val raw = b.copyOfRange(q + 46, q + 46 + n)
             names.add(
-                if (flags and 0x800 != 0) String(raw, Charsets.UTF_8)
+                if ((flags and 0x800) != 0) String(raw, Charsets.UTF_8)
                 else buildString { for (x in raw) appendCodePoint(ZipReader.cp437(x.toInt() and 0xFF)) },
             )
             p += 46 + n + extra + comment

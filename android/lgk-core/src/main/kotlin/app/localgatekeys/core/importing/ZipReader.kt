@@ -15,7 +15,7 @@ class ZipEntry internal constructor(
     internal val localHeaderOffset: Int,
     internal val rawName: ByteArray,
 ) {
-    val isEncrypted: Boolean get() = flags and 0x1 != 0
+    val isEncrypted: Boolean get() = (flags and 0x1) != 0
     val isDirectory: Boolean get() = name.endsWith("/")
 
     override fun toString(): String = "ZipEntry(name=$name, method=$method, size=$uncompressedSize)"
@@ -89,7 +89,7 @@ class ZipReader(private val b: ByteArray, maxBytes: Int, maxEntries: Int) {
             if (csize == 0xFFFF_FFFFL || usize == 0xFFFF_FFFFL || local == 0xFFFF_FFFFL) fail(Failure.ZIP64)
             if (p + 46 + n + extra + comment > cdEnd) fail(Failure.CORRUPT)
             val raw = b.copyOfRange(q + 46, q + 46 + n)
-            val name = if (flags and 0x800 != 0) {
+            val name = if ((flags and 0x800) != 0) {
                 try {
                     Charsets.UTF_8.newDecoder().decode(java.nio.ByteBuffer.wrap(raw)).toString()
                 } catch (e: Exception) {

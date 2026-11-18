@@ -219,7 +219,7 @@ def test_no_secret_in_logs(caplog):
 
 
 def test_dispatch_from_pid_identifies_the_client(monkeypatch):
-    import localvault.local_clients as local_clients
+    from localvault import local_clients as local_clients
 
     seen = []
     monkeypatch.setattr(local_clients, "identify", lambda pid: seen.append(pid) or CLIENT)

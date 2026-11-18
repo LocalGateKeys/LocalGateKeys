@@ -92,6 +92,7 @@ def log_exception(where: str, exc: BaseException, *, secrets: Iterable[str] = ()
         stack = "".join(frame.splitlines()[0] + "\n" for frame in frames if frame.startswith("  File "))
         _logger().error("%s: %s: %s\n%s", where, type(exc).__name__, _message(exc, secrets), stack.rstrip())
     except Exception:
+        # Best-effort optional step: it must never break the caller, so any error is ignored.
         pass
 
 

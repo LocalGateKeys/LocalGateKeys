@@ -1577,6 +1577,7 @@ class UnlockThrottle:
                     if len(key) == 32:
                         return key
             except (ValueError, VaultError):
+                # Expected failure for this optional step: fall back to the default behaviour.
                 pass
         if not create:
             return None
@@ -4279,6 +4280,7 @@ class VaultSession:
                     try:
                         _write_generation_anchor(self.path, generation, old_anchor_key, old_vault_id)
                     except OSError:
+                        # Best-effort file/OS step: failure is harmless here, so it is ignored.
                         pass
                     if marks_target is not None and vault_id == old_vault_id:
                         _raise_rollback_marks(marks_target, generation, old_anchor_key, old_vault_id, exact=True)
@@ -4347,6 +4349,7 @@ class VaultSession:
                                 and header.get("key_generation") == generation):
                             continue
                 except (OSError, ValueError, RecursionError, VaultError):
+                    # Expected failure for this optional step: fall back to the default behaviour.
                     pass
                 found.append(candidate)
         return sorted(found)
@@ -4983,6 +4986,7 @@ class VaultSession:
                 try:
                     old.unlink()
                 except OSError:
+                    # Best-effort file/OS step: failure is harmless here, so it is ignored.
                     pass
         except OSError:
             self.backup_warning = True
@@ -5248,6 +5252,7 @@ class VaultSession:
             from .attachments import AttachmentStore
             AttachmentStore.cleanup_profile_temporary(self.path.parent)
         except Exception:
+            # Best-effort optional step: it must never break the caller, so any error is ignored.
             pass
         gc.collect()
 

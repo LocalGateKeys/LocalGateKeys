@@ -139,7 +139,7 @@ def test_licence_file_and_remove(env, monkeypatch):
 def test_update_check_respects_strict_offline(env, monkeypatch):
     env.controller.settings.strict_offline_mode = True
     calls = []
-    service = UpdatesService(env.controller, env.port, configuration=lambda: object(),
+    service = UpdatesService(env.controller, env.port, configuration=object,
                              check=lambda: calls.append(1) or SimpleNamespace(current_version="1.0", latest_version="1.0",
                                                                                published="2026-10-01", is_newer=False))
     env.port.answers = [False]
@@ -153,7 +153,7 @@ def test_update_check_respects_strict_offline(env, monkeypatch):
 def test_update_available_and_not_configured(env, monkeypatch):
     env.controller.settings.strict_offline_mode = False
     newer = SimpleNamespace(current_version="1.0", latest_version="1.1", published="2026-10-01", is_newer=True)
-    service = UpdatesService(env.controller, env.port, configuration=lambda: object(), check=lambda: newer)
+    service = UpdatesService(env.controller, env.port, configuration=object, check=lambda: newer)
     result = service.check()
     assert result["available"] is True and result["latest"] == "1.1"
     service = UpdatesService(env.controller, env.port, configuration=lambda: None, check=lambda: newer,
@@ -166,13 +166,13 @@ def test_unsupported_version_wins_over_update_available(env):
     env.controller.settings.strict_offline_mode = False
     old = SimpleNamespace(current_version="1.0.0", latest_version="1.2.0", min_supported_version="1.1.0",
                           published="2026-10-01", is_newer=True, is_unsupported=True)
-    service = UpdatesService(env.controller, env.port, configuration=lambda: object(), check=lambda: old,
+    service = UpdatesService(env.controller, env.port, configuration=object, check=lambda: old,
                              revocations=lambda: None)
     result = service.check()
     assert result["unsupported"] is True and result["available"] is True and result["latest"] == "1.2.0"
     assert "1.0.0" in result["message"] and "1.1.0" in result["message"] and "no longer supported" in result["message"]
     supported = SimpleNamespace(**{**vars(old), "is_unsupported": False})
-    service = UpdatesService(env.controller, env.port, configuration=lambda: object(), check=lambda: supported,
+    service = UpdatesService(env.controller, env.port, configuration=object, check=lambda: supported,
                              revocations=lambda: None)
     assert "unsupported" not in service.check()
 
@@ -186,18 +186,18 @@ def test_reminder_surfaces_unsupported_from_last_verified_result_without_network
     def no_network():
         raise AssertionError("the reminder must not fetch")
 
-    service = UpdatesService(env.controller, env.port, configuration=lambda: object(), check=no_network,
+    service = UpdatesService(env.controller, env.port, configuration=object, check=no_network,
                              last_verified=lambda: old)
     reminder = service.reminder()
     assert reminder["due"] is True and reminder["unsupported"] is True and "1.1.0" in reminder["text"]
-    service = UpdatesService(env.controller, env.port, configuration=lambda: object(), check=no_network,
+    service = UpdatesService(env.controller, env.port, configuration=object, check=no_network,
                              last_verified=lambda: None)
     assert service.reminder() == {"due": False}
 
 
 def test_one_update_check_at_a_time(env):
     env.controller.settings.strict_offline_mode = False
-    service = UpdatesService(env.controller, env.port, configuration=lambda: object(), check=lambda: None)
+    service = UpdatesService(env.controller, env.port, configuration=object, check=lambda: None)
     service._in_flight.acquire()
     with pytest.raises(ApiError) as busy:
         service.check()
@@ -323,7 +323,7 @@ def test_update_check_refreshes_the_revocation_list_and_hides_its_failure(env, m
     env.controller.settings.strict_offline_mode = False
     same = SimpleNamespace(current_version="1.0", latest_version="1.0", published="2026-10-01", is_newer=False)
     fetched = []
-    service = UpdatesService(env.controller, env.port, configuration=lambda: object(), check=lambda: same,
+    service = UpdatesService(env.controller, env.port, configuration=object, check=lambda: same,
                              revocations=lambda: fetched.append(1))
     service.check()
     assert fetched == [1]
@@ -332,7 +332,7 @@ def test_update_check_refreshes_the_revocation_list_and_hides_its_failure(env, m
         raise RuntimeError("feed down")
     logged = []
     monkeypatch.setattr("localvault.error_log.log_exception", lambda tag, exc: logged.append(tag))
-    service = UpdatesService(env.controller, env.port, configuration=lambda: object(), check=lambda: same,
+    service = UpdatesService(env.controller, env.port, configuration=object, check=lambda: same,
                              revocations=broken)
     assert service.check()["available"] is False  # the cached list stays in force; nothing surfaces
     assert logged == ["revocation-fetch"]
@@ -345,7 +345,7 @@ def test_old_build_reminder_is_offline_and_snoozes(env, monkeypatch):
     monkeypatch.setattr(updates_module, "reminder_snooze_date", lambda: "2026-11-17")
     monkeypatch.setattr(type(env.controller.settings), "save", lambda self, *a, **k: None)
     calls = []
-    service = UpdatesService(env.controller, env.port, configuration=lambda: object(),
+    service = UpdatesService(env.controller, env.port, configuration=object,
                              check=lambda: calls.append(1))
     env.controller.settings.update_reminder_snoozed_until = ""
     due = service.reminder()

@@ -57,6 +57,7 @@ def _diagnostic_path() -> Path:
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
     except OSError:
+        # Best-effort file/OS step: failure is harmless here, so it is ignored.
         pass
     return path
 
@@ -75,6 +76,7 @@ def _rotate_log(path: Path) -> None:
             return
         os.replace(path, path.with_name(path.name + ".1"))
     except OSError:
+        # Best-effort file/OS step: failure is harmless here, so it is ignored.
         pass
 
 
@@ -97,6 +99,7 @@ def _log(event: str, exc: BaseException | None = None) -> None:
         with path.open("a", encoding="utf-8", newline="\n") as handle:
             handle.write(line[:4000] + "\n")
     except Exception:
+        # Best-effort optional step: it must never break the caller, so any error is ignored.
         pass
 
 
@@ -237,6 +240,7 @@ def _self_images() -> set[str]:
             if isinstance(value, str) and value:
                 images.add(value)
     except Exception:
+        # Best-effort optional step: it must never break the caller, so any error is ignored.
         pass
     return {image for image in images if image}
 
@@ -394,6 +398,7 @@ def _run_cli(arguments: list[str]) -> int:
         try:
             stream.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
         except (AttributeError, ValueError, OSError):
+            # Expected failure for this optional step: fall back to the default behaviour.
             pass
     return cli_main(arguments)
 

@@ -71,9 +71,11 @@ internal sealed class FakePipeServer : IAsyncDisposable
         }
         catch (OperationCanceledException)
         {
+            // The test stopped the server; nothing left to serve.
         }
         catch (IOException)
         {
+            // The client closed the pipe before the reply; the test checks the outcome.
         }
     }
 
@@ -86,6 +88,7 @@ internal sealed class FakePipeServer : IAsyncDisposable
         }
         catch (OperationCanceledException)
         {
+            // Expected: DisposeAsync cancelled the serving loop.
         }
         await _server.DisposeAsync();
         _stop.Dispose();

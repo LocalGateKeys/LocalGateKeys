@@ -8,7 +8,7 @@ namespace LocalGateKeys.PasskeyProvider.Tests;
 public class SystemMessagesTests
 {
     private static readonly JsonObject Fixture =
-        JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "fixtures", "system-messages.json")))!
+        JsonNode.Parse(File.ReadAllText(Path.Join(AppContext.BaseDirectory, "fixtures", "system-messages.json")))!
             .AsObject();
 
     private static readonly Guid Txn = Guid.Parse((string)Fixture["transaction_id"]!);

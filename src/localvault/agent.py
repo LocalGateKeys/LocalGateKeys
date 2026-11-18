@@ -19,7 +19,7 @@ def _acquire_windows_instance_mutex() -> int | None:
     if os.name != "nt":
         return 1
     import ctypes
-    from ctypes import wintypes
+    import ctypes.wintypes as wintypes
 
     kernel32 = ctypes.windll.kernel32
     create_mutex = kernel32.CreateMutexW
@@ -41,7 +41,7 @@ def _acquire_windows_instance_mutex() -> int | None:
 def _release_windows_instance_mutex(handle: int | None) -> None:
     if os.name == "nt" and handle:
         import ctypes
-        from ctypes import wintypes
+        import ctypes.wintypes as wintypes
 
         close_handle = ctypes.windll.kernel32.CloseHandle
         close_handle.argtypes = [wintypes.HANDLE]

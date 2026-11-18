@@ -152,7 +152,7 @@ def set_title_bar_dark(window: Any, dark: bool) -> bool:
     done = {"ok": False}
 
     def run() -> None:
-        from ctypes import wintypes
+        import ctypes.wintypes as wintypes
 
         hwnd = wintypes.HWND(int(window.native.Handle.ToInt64()))
         set_attribute = ctypes.WinDLL("dwmapi").DwmSetWindowAttribute
@@ -191,7 +191,7 @@ def set_display_affinity(hwnd: int | None, hide: bool) -> bool:
     if os.name != "nt" or not hwnd:
         return False
     try:
-        from ctypes import wintypes
+        import ctypes.wintypes as wintypes
 
         set_affinity = ctypes.windll.user32.SetWindowDisplayAffinity
         set_affinity.argtypes = (wintypes.HWND, wintypes.DWORD)
@@ -216,7 +216,7 @@ def apply_glass(window: Any) -> bool:
     applied = {"ok": False}
 
     def run() -> None:
-        from ctypes import wintypes
+        import ctypes.wintypes as wintypes
 
         from System.Drawing import Color  # type: ignore[import-not-found]
 
@@ -505,7 +505,7 @@ def foreground_work_area(hwnd: int) -> tuple[int, int, int, int] | None:
     """The work area (without the taskbar) of the monitor showing a window, in physical pixels."""
     if os.name != "nt":
         return None
-    from ctypes import wintypes
+    import ctypes.wintypes as wintypes
 
     class MONITORINFO(ctypes.Structure):
         _fields_ = [("cbSize", wintypes.DWORD), ("rcMonitor", wintypes.RECT), ("rcWork", wintypes.RECT),

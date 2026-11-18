@@ -50,6 +50,7 @@ def test_str_repr_eq_pickle_never_reveal() -> None:
     with pytest.raises(TypeError):
         str(s)
     with pytest.raises(TypeError):
+        # Deliberate: comparing a SecretText (even with itself) must raise, not reveal anything.
         s == s  # noqa: B015
     with pytest.raises(TypeError):
         hash(s)

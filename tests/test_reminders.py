@@ -43,7 +43,8 @@ def test_reminder_crud_dates_snooze_complete_and_encrypted_restart(session) -> N
     assert session.reminders.complete(reminder_id)
     assert session.reminders.get(reminder_id)["status"] == "dismissed"
     assert session.reminders.due("2030-01-15") == []
-    assert session.reminders.delete(overdue_id)
+    deleted = session.reminders.delete(overdue_id)
+    assert deleted
     assert session.reminders.get(overdue_id) is None
     stale_id = session.reminders.create(other_id, "2030-02-01")
 

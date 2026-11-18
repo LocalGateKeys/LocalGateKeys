@@ -59,7 +59,7 @@ const serve = () => new Promise(res => { const s = http.createServer({ key: fs.r
     await goto(base + "/login");
     const tab = await sw.evaluate(() => chrome.tabs.query({ url: "https://example.com/*" }).then(t => t[0]));
     const pop = await ctx.newPage(); await pop.setViewportSize({ width: 380, height: 600 });
-    await pop.addInitScript(t => { const q = chrome.tabs.query.bind(chrome.tabs); chrome.tabs.query = (o, cb) => { const r = Promise.resolve([t]); if (cb) { r.then(cb); return; } return r; };
+    await pop.addInitScript(t => { chrome.tabs.query = (o, cb) => { const r = Promise.resolve([t]); if (cb) { r.then(cb); return; } return r; };
       const sm = chrome.runtime.sendMessage.bind(chrome.runtime);
       chrome.runtime.sendMessage = (m, ...a) => { if (m && m.type === "diagnostics") return Promise.resolve({ ok: true, version: "0.4.12", locked: false }); return sm(m, ...a); }; }, tab);
     await pop.goto(`chrome-extension://${extId}/popup.html`); await pop.waitForTimeout(1500);

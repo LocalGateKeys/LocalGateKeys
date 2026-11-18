@@ -13,7 +13,7 @@ from test_face_unlock import unlock_face
 from test_hello_unlock import SimulatedProvider
 from test_hello_unlock import enroll as hello_enroll
 
-import localvault.vault as vault_module
+from localvault import vault as vault_module
 from localvault.i18n import t
 from localvault import face_unlock as face
 from localvault import hello_unlock as hello

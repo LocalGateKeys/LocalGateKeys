@@ -217,8 +217,8 @@ def _call(server: McpServer, name: str, **arguments) -> dict:
     return reply["result"]
 
 
-PRINTS = [PY, "-c", "import os,base64; v=os.environ['API_KEY']; print(v, base64.b64encode(v.encode()).decode(), "
-                    "v.encode().hex())"]
+PRINTS = [PY, "-c", ("import os,base64; v=os.environ['API_KEY']; print(v, base64.b64encode(v.encode()).decode(), "
+                     "v.encode().hex())")]
 
 
 def test_tools_are_listed_with_honest_descriptions() -> None:

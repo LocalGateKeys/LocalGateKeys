@@ -138,6 +138,7 @@ def _reset(transport: _Transport) -> None:
     try:
         transport.send(bytes(FEATURE_RPT_DATA_SIZE) + b"\xff")
     except OSError:
+        # Best-effort file/OS step: failure is harmless here, so it is ignored.
         pass
 
 
@@ -250,6 +251,7 @@ def _describe(path: str) -> YubiKeyInfo:
         serial = int.from_bytes(_command(transport, CMD_DEVICE_SERIAL, bytes(SLOT_DATA_SIZE),
                                          SERIAL_SIZE, SERIAL_TIMEOUT), "big")
     except (OSError, YubiKeyError):
+        # Expected failure for this optional step: fall back to the default behaviour.
         pass
     finally:
         transport.close()
@@ -316,7 +318,7 @@ class _WinTransport:
 class _WinHid:
     def __init__(self):
         import ctypes as ct
-        from ctypes import wintypes as wt
+        import ctypes.wintypes as wt
 
         self._ct = ct
 

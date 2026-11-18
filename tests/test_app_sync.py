@@ -333,7 +333,7 @@ def test_a_timed_out_job_keeps_the_service_busy_until_it_ends(env):
         env.service.leave()
     assert slow.value.code == "timeout"
     with pytest.raises(ApiError) as busy:
-        env.service.sync_now() if False else env.service.leave()
+        env.service.leave()
     assert busy.value.code == "busy"
     pending[0](None, None)  # the worker finishes later
     env.fake.submit = FakeService.submit.__get__(env.fake)

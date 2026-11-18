@@ -598,7 +598,8 @@ def test_removing_the_duress_vault_deletes_its_marks(tmp_path: Path, outside_mar
     assert second_names <= set(outside_marks_store.values)
     real_marks = set(_names(path))
     try:
-        assert duress.remove(real) is True
+        removed = duress.remove(real)
+        assert removed is True
     finally:
         real.lock()
     assert not second_names & set(outside_marks_store.values)  # nothing left says a second vault existed

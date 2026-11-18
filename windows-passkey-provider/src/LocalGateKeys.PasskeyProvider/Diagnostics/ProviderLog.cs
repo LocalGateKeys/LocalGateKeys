@@ -35,7 +35,7 @@ public sealed class ProviderLog : IProviderLog
     }
 
     public static string DefaultPath() =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LocalGateKeys", "logs",
+        Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LocalGateKeys", "logs",
                      "passkey-provider.log");
 
     private static readonly Lazy<ProviderLog> SharedInstance = new(() => new ProviderLog(DefaultPath()));

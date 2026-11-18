@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-import localvault.vault as vault_module
+from localvault import vault as vault_module
 from localvault.config import atomic_write_json, read_json
 from localvault.vault import (
     DEFAULT_KDF,

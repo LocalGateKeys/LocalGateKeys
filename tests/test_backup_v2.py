@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-import localvault.backup as backup_module
+from localvault import backup as backup_module
 from localvault.attachments import DocumentService
 from localvault.backup import (
     BackupCancelled,

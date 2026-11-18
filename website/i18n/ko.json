@@ -764,6 +764,7 @@
   "index.a-password-manager-that.4": "계정 없음",
   "index.a-password-manager-that.5": "LocalGateKeys 서버 없음",
   "index.a-password-manager-that.6": "원격 측정 없음",
+  "index.hero.source": "<a href=\"[[home]]security.html#source\">감사를 위한 소스 공개</a>",
   "index.a-password-manager-that.7": "Microsoft Store에서 받기",
   "index.a-password-manager-that.8": "다른 다운로드",
   "index.a-password-manager-that.9": "Windows용 다운로드",
@@ -1030,6 +1031,9 @@
   "security.known-limitations.6": "패스키는 Chrome, Edge, Firefox에서 작동합니다. 다른 사이트의 프레임 안에서 패스키로 로그인하는 것은 바깥 사이트가 허용할 때 Chrome과 Edge에서 작동합니다. Firefox에서, 그리고 다른 사이트의 프레임 안에서 패스키를 만들 때는 브라우저 자체의 패스키 대화 상자를 사용합니다. 새 패스키를 승인한 후 사이트가 취소하면 앱이 그 패스키를 다시 삭제합니다. 사이트가 패스키를 유지했는지 앱이 알 수 없는 경우에는 패스키가 보관함에 남으며, 앱에서 삭제할 수 있습니다.",
   "security.report-a-vulnerability.1": "취약점 신고",
   "security.report-a-vulnerability.2": "<a href=\"mailto:{{SECURITY_EMAIL}}\">{{SECURITY_EMAIL}}</a>로 이메일을 보내 주세요. <a href=\"[[root]]legal/vulnerability-disclosure.html\">취약점 공개 정책</a>에 대상 범위, 응답 속도, 연구자에 대한 크레딧 방식이 설명되어 있습니다.",
+  "security.source.title": "보안 감사를 위한 소스 코드",
+  "security.source.body": "LocalGateKeys는 소스 공개(source-available) 소프트웨어입니다. 누구나 보관함을 어떻게 보호하는지 확인할 수 있도록 전체 소스 코드를 <a href=\"https://github.com/LocalGateKeys/LocalGateKeys\">GitHub</a>에 공개합니다. 라이선스(보안 연구 허가가 포함된 PolyForm Strict)에 따라 취약점을 찾아 신고할 목적으로 코드를 비공개로 읽고, 빌드하고, 테스트할 수 있습니다. 오픈 소스가 아니므로 복사, 재배포, 판매는 허용되지 않습니다.",
+  "layout.help.source": "소스 코드",
   "support.title": "지원 및 FAQ",
   "support.description": "Windows, Mac, iPhone의 LocalGateKeys에 대한 자주 묻는 질문의 답변: 마스터 비밀번호, Pro 라이선스, 동기화, 공유, 환불, 지원팀 문의 방법.",
   "support.support-and-questions.1": "지원 및 질문",
@@ -1437,5 +1441,6 @@
   "download.android.beta.step2": "테스트 참여 후 Google Play에서 설치",
   "download.android.beta.step2.note": "(해당 휴대전화에서 열거나 같은 계정으로 로그인하세요).",
   "download.android.beta.stay": "앱을 설치한 채로 14일 동안 테스트에 계속 참여해 주세요. 공개 출시 전에 Google이 요구하는 조건입니다.",
-  "help.android.beta": "지금 Android 앱을 쓰고 싶다면 베타에 참여하세요."
+  "help.android.beta": "지금 Android 앱을 쓰고 싶다면 베타에 참여하세요.",
+  "index.v2.android_join": "테스트 참여"
 }

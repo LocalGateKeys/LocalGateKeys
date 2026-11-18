@@ -802,7 +802,7 @@ class FolderSync(
             val at = readHeartbeat(gk, peer, trusted[peer]) ?: continue
             PeerSeenAt.note(state.groupId, peer, minOf(at, now))
         }
-        if (needsWrite && own != null && documents && vault != null) issues.addAll(publishFolderBlobs(vault, own, now))
+        if (needsWrite && own != null && vault != null && documents) issues.addAll(publishFolderBlobs(vault, own, now))
         if (needsWrite && own != null) {
             val path = FolderLayout.deviceFile(state.deviceId)
             val sigPath = FolderLayout.signatureFile(state.deviceId)

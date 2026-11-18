@@ -302,7 +302,8 @@ def test_sync_reflected_and_cross_session_frames_are_rejected() -> None:
     frame = channel_a.seal(b"opaque delta")
     with pytest.raises(AuthenticationError):
         channel_a.open(frame)
-    assert channel_b.open(frame) == b"opaque delta"
+    opened = channel_b.open(frame)
+    assert opened == b"opaque delta"
     _later_a, later_b = _channels(inviter, invitee, peer_a, peer_b, b"2" * 16)
     with pytest.raises(AuthenticationError):
         later_b.open(frame)

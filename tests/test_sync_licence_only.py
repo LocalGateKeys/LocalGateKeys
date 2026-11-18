@@ -9,7 +9,6 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
-import pytest
 import test_licensing
 import test_sync_lan as lan_t
 import test_sync_service as svc_t
@@ -113,7 +112,7 @@ def _web_service(tmp_path, monkeypatch):
 
 def test_free_pc_adopts_synced_licence_and_turns_pro(tmp_path, signer, monkeypatch) -> None:
     bundle = make_bundle(signer)
-    _root, (a, la), _b = _free_pair(tmp_path, [bundle])
+    _, (a, la), _ = _free_pair(tmp_path, [bundle])
     assert licensing.status(build_date=ISSUED).state == "free"
     posted = _round(a, la)
     assert licensing.status(build_date=ISSUED).state == "pro"
@@ -166,7 +165,7 @@ def test_free_pc_publishes_nothing(tmp_path, signer, devs) -> None:
 
 
 def test_free_pc_drops_item_records(tmp_path, signer, devs) -> None:
-    _root, (a, la), _b = _free_pair(tmp_path, [make_bundle(signer)])
+    _, (a, la), _ = _free_pair(tmp_path, [make_bundle(signer)])
     items_before, entries_before = a.items.list_items(), _labels(a)
     meta_before = dict(a._require_typed_catalog().get("sync_meta", {}).get("items", {}))
     _round(a, la)
@@ -189,7 +188,7 @@ def test_free_pc_drops_item_records(tmp_path, signer, devs) -> None:
 def test_free_pc_rejects_revoked_licence(tmp_path, signer, monkeypatch) -> None:
     revoked = make_bundle(signer)
     expired = make_bundle(signer, license_id="lic-0003", issued_at="2019-01-01", updates_until="2019-06-01")
-    _root, (a, la), _b = _free_pair(tmp_path, [revoked, expired])
+    _, (a, la), _ = _free_pair(tmp_path, [revoked, expired])
     monkeypatch.setattr(licensing, "_cached_revoked_ids", lambda: frozenset({"lic-0001"}))
     posted = _round(a, la)
     assert licensing.status(build_date=ISSUED).state == "free"
@@ -202,7 +201,7 @@ def test_free_pc_rejects_revoked_licence(tmp_path, signer, monkeypatch) -> None:
 
 def test_removal_marker_blocks_licence_only_adoption(tmp_path, signer) -> None:
     bundle = make_bundle(signer)
-    _root, (a, la), _b = _free_pair(tmp_path, [bundle])
+    _, (a, la), _ = _free_pair(tmp_path, [bundle])
     licensing.install_license(licensing.encode_paste(bundle))
     licensing.remove_license()  # the user removed the licence on this PC
     assert licensing.removal_pending()

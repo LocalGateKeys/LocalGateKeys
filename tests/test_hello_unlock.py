@@ -202,7 +202,7 @@ def test_failed_key_deletion_does_not_claim_disabled(vault, provider):
 
 
 def test_master_change_invalidates_old_envelope_before_prompt(vault, provider, monkeypatch):
-    import localvault.vault as vault_module
+    from localvault import vault as vault_module
     monkeypatch.setattr(vault_module, "DEFAULT_KDF", {**vault_module.DEFAULT_KDF, **KDF})
     enroll(vault, provider)
     new_master = "Replacement-Test-Master-0002"

@@ -577,6 +577,7 @@ def local_ipv4_addresses() -> list[str]:
             if address not in found:
                 found.append(address)
     except OSError:
+        # Best-effort file/OS step: failure is harmless here, so it is ignored.
         pass
     return found
 

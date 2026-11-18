@@ -15,7 +15,7 @@ public class CliTests
     {
         var api = new FakeWebAuthnApi();
         setup?.Invoke(api);
-        var output = new StringWriter();
+        using var output = new StringWriter();
         var comRuns = 0;
         var context = new CliContext(output, api, TestClsid, () => buildSupported, () =>
         {

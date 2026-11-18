@@ -107,7 +107,7 @@ object ComputerBackup {
         for (e in list) {
             val n = e.name
             if (!(n == "header.json" || n == "manifest.bin" || (n.startsWith("data/") && n.endsWith(".bin")))) throw Unreadable("Unsafe full backup member")
-            if (e.flags and 1 != 0 || e.method != 0) throw Unreadable("Full backup members must be stored, not compressed or encrypted")
+            if ((e.flags and 1) != 0 || e.method != 0) throw Unreadable("Full backup members must be stored, not compressed or encrypted")
             if (e.uncompressedSize > MAX_MEMBER + 64 * 1024) throw Unreadable("Full backup member is too large")
             if (byName.put(n, e) != null) throw Unreadable("Unsafe full backup member")
         }

@@ -192,7 +192,7 @@ def rule_arguments(program: str, port: int, *, replace: bool = False) -> list[st
 def _shell_execute_elevated(executable: str, parameters: str) -> int:
     """Run *executable* elevated (UAC prompt), wait, and return its exit code (ERROR_CANCELLED on No)."""
     import ctypes
-    from ctypes import wintypes
+    import ctypes.wintypes as wintypes
 
     class SHELLEXECUTEINFOW(ctypes.Structure):
         _fields_ = [("cbSize", wintypes.DWORD), ("fMask", wintypes.ULONG), ("hwnd", wintypes.HWND),

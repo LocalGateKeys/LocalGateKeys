@@ -1,0 +1,6 @@
+# Test, test-vector and screenshot-demo code holds fake secrets on purpose.
+paths-ignore:
+  - tests
+  - scripts
+  - webui/src/screenshot
+  - android/app/src/debug

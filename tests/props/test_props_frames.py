@@ -96,6 +96,7 @@ def test_native_truncated_header(header, chunk_list):
         try:
             assert read(stream) is None and header == b""
         except errors:
+            # Rejecting a malformed frame with one of the documented errors is an allowed outcome.
             pass
 
 

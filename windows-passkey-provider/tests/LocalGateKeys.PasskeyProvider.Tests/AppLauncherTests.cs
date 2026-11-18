@@ -10,7 +10,7 @@ public sealed class AppLauncherTests : IDisposable
 
     private string Agent()
     {
-        var path = Path.Combine(_dir, "LocalGateKeys.exe");
+        var path = Path.Join(_dir, "LocalGateKeys.exe");
         File.WriteAllBytes(path, [0x4D, 0x5A]);
         return path;
     }
@@ -69,7 +69,7 @@ public sealed class AppLauncherTests : IDisposable
     public void MissingAgentIsNotStarted()
     {
         var starts = 0;
-        var launcher = new AppLauncher(Path.Combine(_dir, "LocalGateKeys.exe"), _ => { starts++; return true; }, _ => true);
+        var launcher = new AppLauncher(Path.Join(_dir, "LocalGateKeys.exe"), _ => { starts++; return true; }, _ => true);
         Assert.False(launcher.StartAgentOnce());
         Assert.Equal(0, starts);
     }

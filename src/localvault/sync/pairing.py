@@ -104,7 +104,6 @@ PAIRING_MAX_ATTEMPTS = 5
 PAIRING_SECRET_BYTES = 32
 PAIRING_CODE_DIGITS = 8
 MAX_DEVICE_ID_LENGTH = 128
-MAX_GROUP_ID_LENGTH = 128
 MAX_TRANSCRIPT_BYTES = 64 * 1024
 _MAX_INT = 2**53 - 1
 QR_PREFIX = "lgk-pair:"
@@ -1077,6 +1076,7 @@ def open_enrollment_reply(offer: PairingOffer, identity: DeviceIdentity, raw: An
             if isinstance(value, dict) and value.get("reason") in REFUSAL_REASONS:
                 reason = value["reason"]
         except PairingError:
+            # Expected failure for this optional step: fall back to the default behaviour.
             pass
         raise EnrollmentRefused(reason)
     if not isinstance(raw, bytes) or len(raw) > MAX_ENROLL_BYTES or not raw.startswith(ENROLL_REPLY_MAGIC):

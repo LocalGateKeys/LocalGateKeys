@@ -576,4 +576,5 @@ def clear_failures(record_id: str) -> None:
             if _failure_state_path().exists():
                 _persist_failures(_FAILURES)
         except OSError:
+            # Best-effort file/OS step: failure is harmless here, so it is ignored.
             pass

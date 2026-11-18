@@ -54,6 +54,7 @@ class WindowsSessionMonitor:
 
                 win32api.PostMessage(self._hwnd, win32con.WM_CLOSE, 0, 0)
             except Exception:
+                # Best-effort optional step: it must never break the caller, so any error is ignored.
                 pass
         if self.thread and self.thread.is_alive():
             self.thread.join(timeout=1.5)
@@ -96,6 +97,7 @@ class WindowsSessionMonitor:
             try:
                 win32ts.WTSRegisterSessionNotification(hwnd, win32ts.NOTIFY_FOR_THIS_SESSION)
             except Exception:
+                # Best-effort optional step: it must never break the caller, so any error is ignored.
                 pass
             while not self._stop.is_set():
                 if not win32gui.PumpWaitingMessages():
@@ -105,11 +107,13 @@ class WindowsSessionMonitor:
                 try:
                     win32ts.WTSUnRegisterSessionNotification(self._hwnd)
                 except Exception:
+                    # Best-effort optional step: it must never break the caller, so any error is ignored.
                     pass
             self._hwnd = None
             try:
                 win32gui.UnregisterClass(class_name, None)
             except Exception:
+                # Best-effort optional step: it must never break the caller, so any error is ignored.
                 pass
 
 
@@ -118,7 +122,7 @@ def windows_idle_seconds() -> float | None:
         return None
     try:
         import ctypes
-        from ctypes import wintypes
+        import ctypes.wintypes as wintypes
 
         class LASTINPUTINFO(ctypes.Structure):
             _fields_ = [("cbSize", wintypes.UINT), ("dwTime", wintypes.DWORD)]

@@ -66,6 +66,7 @@ Known v1 limitations
 from __future__ import annotations
 
 import hashlib
+import math
 import re
 import uuid
 from collections.abc import Iterable, Mapping
@@ -190,7 +191,7 @@ def _check_json(value: object, depth: int = 0) -> None:
             raise EngineError("integer out of range")
         return
     if isinstance(value, float):
-        if value != value or value in (float("inf"), float("-inf")):
+        if not math.isfinite(value):
             raise EngineError("non-finite float in item")
         return
     if isinstance(value, list):

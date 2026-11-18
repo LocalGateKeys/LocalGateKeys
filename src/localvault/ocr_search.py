@@ -38,7 +38,6 @@ MAX_OCR_TEXT = 2 * 1024 * 1024
 MAX_OCR_STORE = 200 * 1024 * 1024
 MAX_CONTENT_QUERY = 256
 MAX_CONTENT_MATCHES = 100
-MAX_CONTENT_MATCHES_PER_PAGE = 20
 MAX_SNIPPET = 240
 OCR_VERSION = 1
 MAX_OCR_MANIFEST_ROWS = MAX_OCR_STORE // 1024
@@ -270,6 +269,7 @@ class _FixedCommandAdapter:
             try:
                 temp.unlink(missing_ok=True)
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
         if not isinstance(completed, subprocess.CompletedProcess) or completed.returncode != 0:
             raise OcrError("The local OCR adapter rejected the document")
@@ -534,6 +534,7 @@ class OcrSearchService:
             try:
                 self._sidecar_path(str(row["id"])).unlink(missing_ok=True)
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
         rows[:] = keep
         if removed:

@@ -1127,7 +1127,7 @@ def test_revoked_or_invalid_license_not_published(tmp_path: Path, lease: FakeLea
     monkeypatch.setattr(licensing, "_cached_revoked_ids", lambda: frozenset({"lic-0001"}))
     assert dict(local_view(a, lease, device_id=A, now=NOW)) == {}
 
-    monkeypatch.setattr(licensing, "_cached_revoked_ids", lambda: frozenset())
+    monkeypatch.setattr(licensing, "_cached_revoked_ids", frozenset)
     b = _vault(tmp_path, "b")
     tampered = make_bundle(signer, license_id="lic-0002")
     tampered["license"]["name"] = "Mallory"

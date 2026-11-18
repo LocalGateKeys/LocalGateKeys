@@ -11,7 +11,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-import localvault.vault as vault_module
+from localvault import vault as vault_module
 from localvault import backup, face_unlock, hello_unlock, phone_backup, share, transfer
 from localvault.config import atomic_write_faults, read_json
 from localvault.face_models import EMBEDDING_SIZE, normalize_embedding

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import ctypes
+import ctypes.wintypes as wintypes
 import os
 import re
 import threading
 from collections.abc import Callable
-from ctypes import wintypes
 
 
 class HotkeyListener:
@@ -99,6 +99,7 @@ class HotkeyListener:
                     elif message.wParam == self.EMERGENCY_ID and emergency_ok and self.emergency_callback:
                         self.emergency_callback()
                 except Exception:
+                    # Best-effort optional step: it must never break the caller, so any error is ignored.
                     pass
         finally:
             if quick_ok: user32.UnregisterHotKey(None, self.QUICK_ID)

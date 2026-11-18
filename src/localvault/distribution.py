@@ -56,7 +56,7 @@ def _current_package_string(function_name: str) -> str | None:
         return None
     try:
         import ctypes
-        from ctypes import wintypes
+        import ctypes.wintypes as wintypes
 
         kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
         function = getattr(kernel32, function_name)

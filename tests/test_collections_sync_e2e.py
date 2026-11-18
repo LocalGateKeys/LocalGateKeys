@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 
 import test_sync_folder_transport as folder_tests
-from test_attachment_sync_e2e import _own_folders, devs, root  # noqa: F401 - fixtures
+from test_attachment_sync_e2e import devs, root  # noqa: F401 - fixtures
 from test_sync_folder_transport import kinds
 from test_sync_lan import _group_ab
 from test_sync_lan import kinds as lan_kinds

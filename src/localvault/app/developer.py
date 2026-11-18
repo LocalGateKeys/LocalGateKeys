@@ -393,6 +393,7 @@ class DeveloperService:
             try:
                 self._git_restore()  # put back what was already changed
             except dev_setup.DevSetupError:
+                # Expected failure for this optional step: fall back to the default behaviour.
                 pass
             raise ApiError("invalid", t("developer.err.gitFailed")) from None
         return {"message": t("developer.git.applied")}

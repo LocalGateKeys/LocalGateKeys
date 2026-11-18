@@ -162,6 +162,7 @@ def migrate_old_layout(real_path: Path | str) -> None:
         try:
             path.unlink(missing_ok=True)
         except OSError:
+            # Best-effort file/OS step: failure is harmless here, so it is ignored.
             pass
 
 
@@ -662,6 +663,7 @@ def refuse_recovery(path: Path | str, phrase: str) -> None:
     try:
         _vault._zero(_vault._unwrap_recovery_wrapper(header, wrapper, entropy))
     except _vault.RecoveryPhraseError:
+        # Expected failure for this optional step: fall back to the default behaviour.
         pass
     throttle.record_failure()
     raise _vault.RecoveryPhraseError(t("vault.err.recoveryWrongVault"))
@@ -705,6 +707,7 @@ def open_vault(path: Path | str, password: str | SecretText, *, factors: Any = N
             except (_vault.FactorRequired, _vault.FactorMismatch) as exc:
                 # The real vault wants its security key; the second vault must
                 # still open with its own password while the key is absent.
+                # Defensive: unreachable today (no hold means a second vault exists), kept in case that changes.
                 if not has_second:
                     raise
                 factor_error = exc
@@ -945,6 +948,7 @@ def remove(session: Any) -> bool:
     try:
         hold_path(session.path).unlink(missing_ok=True)
     except OSError:
+        # Best-effort file/OS step: failure is harmless here, so it is ignored.
         pass
     for name in _hold_marks(session.path):
         outside_marks.delete(name)

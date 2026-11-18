@@ -17,7 +17,7 @@ from types import SimpleNamespace
 
 import pytest
 
-import localvault.vault as vault_module
+from localvault import vault as vault_module
 from localvault import fido_unlock, security_key
 from localvault.api.result import ApiError
 from localvault.app.controller import WebController
@@ -157,7 +157,7 @@ def test_availability_reports_a_reason(monkeypatch):
     supported, reason = security_key.availability(lambda: SimulatedKey(version=2))
     assert not supported and "version 2" in reason
     monkeypatch.setattr(security_key, "supported_platform", lambda: False)
-    supported, reason = security_key.availability(lambda: SimulatedKey())
+    supported, reason = security_key.availability(SimulatedKey)
     assert not supported and "only on Windows" in reason
 
 

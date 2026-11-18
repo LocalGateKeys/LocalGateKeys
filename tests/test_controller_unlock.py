@@ -218,7 +218,8 @@ def test_the_settings_section_sets_up_and_removes(env):
     assert wrong.value.code == "wrong_password"
     done = service.setup(PASSWORD, DURESS, DURESS, HOURS, [])
     assert done["configured"] is True and done["lock_hours"] == HOURS
-    assert service.remove()["configured"] is False and not duress.configured(env.path)
+    removed = service.remove()
+    assert removed["configured"] is False and not duress.configured(env.path)
 
 
 def test_the_section_is_pro_only(env):

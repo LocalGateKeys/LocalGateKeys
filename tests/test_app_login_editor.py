@@ -155,7 +155,8 @@ def test_strict_open_requires_reauth(env):
     with pytest.raises(ApiError):
         editor.open(_ref(entry_id))
     port.passwords = [MASTER]
-    assert editor.open(_ref(entry_id))["notes"] == "bank notes"
+    opened = editor.open(_ref(entry_id))
+    assert opened["notes"] == "bank notes"
 
 
 def test_drafts_dropped_on_lock(env):

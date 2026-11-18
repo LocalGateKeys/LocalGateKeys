@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from test_backup_v2 import BACKUP_PASSWORD, MASTER, _export, _profile, _restore
-from test_sync_phone_restore import PASSWORD, _backup
+from test_backup_v2 import _export, _profile, _restore
+from test_sync_phone_restore import _backup
 from test_sync_vault_bridge import NOW, FakeLease, _vault
 
 from localvault.backup import export_encrypted_backup, restore_encrypted_backup

@@ -184,7 +184,6 @@ import hashlib
 import json
 import logging
 import math
-import time
 import uuid
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from contextvars import ContextVar
@@ -2985,7 +2984,7 @@ def save_rejoined_state(session: Any, state: SyncGroupState, *, drop_kept: bool)
 __all__ = [
     "CONFLICT_SUFFIX", "COUNTER_OVERFLOW", "ITEM_WRAPPER_SCHEMA", "LOCAL_ONLY_ENTRY_FIELDS", "LOCAL_ONLY_ITEM_FIELDS",
     "LOCAL_ONLY_ITEM_PAYLOAD_FIELDS", "MAX_SYNC_RECORDS", "TOMBSTONE_MAX_AGE_DAYS", "UNSYNCED_ITEM_KINDS",
-    "RESTORED_MARKER_SUFFIX", "ApplyReport", "BridgeError", "LocalView", "SyncGroupState",
+    "ApplyReport", "BridgeError", "LocalView", "SyncGroupState",
     "acknowledge_vault_rollback", "apply", "forget_peer_generation", 
     "check_remote_state", "clear_sync_state", "epoch_reset_fields",
     "SHARE_META_KEY", "forget_share_meta", "licenses_in_views", "load_sync_state", "local_view", "normal_form", "prune_tombstones", "published_licenses", "save_sync_state",

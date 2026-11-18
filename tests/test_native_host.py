@@ -1,6 +1,6 @@
 import pytest
 
-import localvault.config as config
+from localvault import config as config
 from localvault.config import EXTENSION_ORIGINS
 from localvault.native_host import _verify_caller
 
@@ -42,7 +42,7 @@ def test_native_host_does_not_trust_user_configured_origin(monkeypatch) -> None:
     (["h.exe", "lgk"], []),
 ])
 def test_native_host_cli_subcommands_run_lgk(monkeypatch, argv, expected) -> None:
-    import localvault.native_host as host
+    from localvault import native_host as host
 
     ran = []
     monkeypatch.setattr(host, "_run_cli", lambda args: ran.append(args) or 3)
@@ -54,7 +54,7 @@ def test_native_host_cli_subcommands_run_lgk(monkeypatch, argv, expected) -> Non
 
 
 def test_native_host_browser_arguments_never_start_the_cli(monkeypatch) -> None:
-    import localvault.native_host as host
+    from localvault import native_host as host
 
     origin = sorted(EXTENSION_ORIGINS)[0] if EXTENSION_ORIGINS else "chrome-extension://x/"
     for argv in (["h.exe", origin], ["h.exe", origin, "--parent-window=0"], ["h.exe", "C:/m.json", "ext@id"],
@@ -73,7 +73,7 @@ def test_native_host_browser_arguments_never_start_the_cli(monkeypatch) -> None:
 
 def test_native_host_cli_is_the_lgk_main(monkeypatch) -> None:
     import localvault.cli.main as cli_main
-    import localvault.native_host as host
+    from localvault import native_host as host
 
     seen = []
     monkeypatch.setattr(cli_main, "main", lambda args: seen.append(args) or 0)

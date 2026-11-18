@@ -56,5 +56,6 @@ if __name__ == "__main__":
         try:
             _stream.reconfigure(encoding="utf-8")  # the same encoding the output masking matches
         except (AttributeError, ValueError, OSError):
+            # Expected failure for this optional step: fall back to the default behaviour.
             pass
     raise SystemExit(main())

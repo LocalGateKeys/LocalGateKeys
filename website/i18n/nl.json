@@ -764,6 +764,7 @@
   "index.a-password-manager-that.4": "Geen account",
   "index.a-password-manager-that.5": "Geen LocalGateKeys-server",
   "index.a-password-manager-that.6": "Geen telemetrie",
+  "index.hero.source": "<a href=\"[[home]]security.html#source\">Broncode in te zien voor audits</a>",
   "index.a-password-manager-that.7": "Downloaden via de Microsoft Store",
   "index.a-password-manager-that.8": "Andere downloads",
   "index.a-password-manager-that.9": "Downloaden voor Windows",
@@ -1030,6 +1031,9 @@
   "security.known-limitations.6": "Passkeys werken in Chrome, Edge en Firefox. Aanmelden met een passkey binnen het frame van een andere site werkt in Chrome en Edge als de omringende site dat toestaat; in Firefox, en wanneer je een passkey aanmaakt binnen het frame van een andere site, wordt het eigen passkey-venster van de browser gebruikt. Als een site annuleert nadat je een nieuwe passkey hebt goedgekeurd, verwijdert de app hem weer; als de app niet kan zien of de site hem heeft bewaard, blijft de passkey in je kluis staan en kun je hem in de app verwijderen.",
   "security.report-a-vulnerability.1": "Een kwetsbaarheid melden",
   "security.report-a-vulnerability.2": "Mail naar <a href=\"mailto:{{SECURITY_EMAIL}}\">{{SECURITY_EMAIL}}</a>. Het <a href=\"[[root]]legal/vulnerability-disclosure.html\">beleid voor het melden van kwetsbaarheden</a> legt uit wat binnen het bereik valt, hoe snel we reageren en hoe we onderzoekers vermelden.",
+  "security.source.title": "Broncode voor beveiligingsaudits",
+  "security.source.body": "LocalGateKeys is source-available: de volledige broncode staat op <a href=\"https://github.com/LocalGateKeys/LocalGateKeys\">GitHub</a>, zodat iedereen kan nagaan hoe je kluis wordt beschermd. De licentie (PolyForm Strict, met toestemming voor beveiligingsonderzoek) staat toe dat je de code privé leest, bouwt en test om kwetsbaarheden te vinden en te melden. Het is geen open source: kopiëren, verspreiden of verkopen is niet toegestaan.",
+  "layout.help.source": "Broncode",
   "support.title": "Support en veelgestelde vragen",
   "support.description": "Antwoorden op veelgestelde vragen over LocalGateKeys op Windows, Mac en iPhone: hoofdwachtwoorden, Pro-licenties, synchronisatie, delen en terugbetalingen, en hoe je contact opneemt met de support.",
   "support.support-and-questions.1": "Support en vragen",
@@ -1437,5 +1441,6 @@
   "download.android.beta.step2": "Doe mee en installeer via Google Play",
   "download.android.beta.step2.note": "(open het op die telefoon of log in met hetzelfde account).",
   "download.android.beta.stay": "Houd de app 14 dagen geïnstalleerd en blijf aangemeld. Google vereist dat voor een openbare release.",
-  "help.android.beta": "Wil je de Android-app nu al? Doe mee aan de bèta."
+  "help.android.beta": "Wil je de Android-app nu al? Doe mee aan de bèta.",
+  "index.v2.android_join": "Doe mee met testen"
 }

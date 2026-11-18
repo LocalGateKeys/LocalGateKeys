@@ -154,7 +154,7 @@ def test_candidates_for_ranks_exact_origin_first_then_host_base_domain_prefix() 
 # ---------------------------------------------------------------------------
 # Public Suffix List (SEC-I12) and UTS-46 hosts (SEC-I11)
 # ---------------------------------------------------------------------------
-import localvault.origin as origin_module  # noqa: E402
+from localvault import origin as origin_module  # noqa: E402
 
 
 @pytest.fixture

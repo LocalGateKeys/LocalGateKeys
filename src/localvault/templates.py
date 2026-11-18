@@ -120,6 +120,7 @@ class TemplateService:
         try:
             self.session.activity.record(event_type)
         except (AttributeError, ItemSchemaError, VaultLockedError):
+            # Expected failure for this optional step: fall back to the default behaviour.
             pass
 
     def update(self, template_id: str, *, name: str | None = None,

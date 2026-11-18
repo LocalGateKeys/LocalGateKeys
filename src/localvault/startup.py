@@ -73,6 +73,7 @@ def set_start_with_windows(enabled: bool) -> None:
             try:
                 winreg.DeleteValue(key, legacy)
             except FileNotFoundError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
         if enabled:
             winreg.SetValueEx(key, VALUE_NAME, 0, winreg.REG_SZ, startup_command())
@@ -80,6 +81,7 @@ def set_start_with_windows(enabled: bool) -> None:
             try:
                 winreg.DeleteValue(key, VALUE_NAME)
             except FileNotFoundError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
 
 
@@ -98,6 +100,7 @@ def sync_start_with_windows(enabled: bool) -> None:
     try:
         set_start_with_windows(enabled)
     except OSError:
+        # Best-effort file/OS step: failure is harmless here, so it is ignored.
         pass
 
 

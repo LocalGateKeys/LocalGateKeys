@@ -362,15 +362,6 @@ def states_doc() -> dict:
         assert vault_bridge._unwrap(state, is_copy=False) == ("collection", checked)
         valid.append({"id": sid, "wrapper": wrapper, "digest": vault_bridge.wrapper_digest(wrapper)})
 
-    def mutate(base: dict, sid: str | None = None, **changes: object) -> tuple[str, dict]:
-        rec = copy.deepcopy(base)
-        for k, v in changes.items():
-            if v is _DROP:
-                rec.pop(k, None)
-            else:
-                rec[k] = v
-        return sid, rec
-
     cat_id = vault_bridge.CATALOG_ID_PREFIX + COLLECTION_ID
     mem_id = vault_bridge.MEMBERSHIP_ID_PREFIX + membership["item_id"]
     link_id = vault_bridge.LINK_ID_PREFIX + COLLECTION_ID

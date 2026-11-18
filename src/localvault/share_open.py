@@ -85,7 +85,7 @@ def signal_running_app() -> None:
     if os.name != "nt":
         return
     import ctypes
-    from ctypes import wintypes
+    import ctypes.wintypes as wintypes
 
     kernel32 = ctypes.windll.kernel32
     kernel32.OpenEventW.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.LPCWSTR]
@@ -104,7 +104,7 @@ def watch(on_open: Callable[[], None]) -> None:
     if os.name != "nt":
         return
     import ctypes
-    from ctypes import wintypes
+    import ctypes.wintypes as wintypes
 
     kernel32 = ctypes.windll.kernel32
     kernel32.CreateEventW.argtypes = [wintypes.LPVOID, wintypes.BOOL, wintypes.BOOL, wintypes.LPCWSTR]

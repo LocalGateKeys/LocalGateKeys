@@ -274,6 +274,12 @@ def markdown(text: str) -> str:
 # Pages
 # --------------------------------------------------------------------------
 
+def css_version() -> str:
+    """Short hash of the stylesheet: a new one after each change, so a cached old copy is never paired with new pages."""
+    import hashlib
+    return hashlib.sha256((SRC / "static" / "styles.css").read_bytes()).hexdigest()[:10]
+
+
 def parse_page(text: str) -> tuple[dict, str]:
     meta: dict[str, str] = {}
     if text.startswith("---\n"):
@@ -390,6 +396,7 @@ def build(strict: bool, langs: "list[str] | None" = None) -> int:
     # pages without claiming a lawyer has reviewed them.
     hide_notes = review_complete or config.get("HIDE_DRAFT_NOTES") is True
     layout = (SRC / "layout.html").read_text(encoding="utf-8")
+    layout = layout.replace('styles.css"', f'styles.css?v={css_version()}"')
 
     # Empty public/ rather than deleting it, so a preview server or shell
     # sitting in the folder does not make the build fail on Windows.
@@ -932,6 +939,7 @@ def build_app_legal(config: dict, hide_notes: bool, missing: dict[str, set]) -> 
     """The in-app legal pages (`legal/app/`): no site navigation, no shop links or names."""
     global _app_links
     layout = (SRC / "app-legal-layout.html").read_text(encoding="utf-8")
+    layout = layout.replace('styles.css"', f'styles.css?v={css_version()}"')
     app_config = {**config, **APP_CONFIG}
     _app_links = APP_LEGAL_LINKS
     try:

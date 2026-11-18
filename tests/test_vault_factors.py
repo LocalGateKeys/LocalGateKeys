@@ -18,7 +18,7 @@ import pytest
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-import localvault.vault as vault_module
+from localvault import vault as vault_module
 from localvault import composite_key, keyfile
 from localvault.vault import (
     DEFAULT_KDF,

@@ -7,8 +7,11 @@ namespace LocalGateKeys.PasskeyProvider.Tests;
 
 public class PipeFramingTests
 {
-    private static async Task<JsonObject> ReadAsync(byte[] frame) =>
-        await PipeFraming.ReadFrameAsync(new MemoryStream(frame), CancellationToken.None);
+    private static async Task<JsonObject> ReadAsync(byte[] frame)
+    {
+        using var stream = new MemoryStream(frame);
+        return await PipeFraming.ReadFrameAsync(stream, CancellationToken.None);
+    }
 
     private static byte[] Frame(byte[] payload)
     {

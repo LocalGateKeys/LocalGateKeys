@@ -84,7 +84,7 @@ def harden_process(*, platform: str | None = None) -> HardeningResult:
         return result
     try:
         import ctypes
-        from ctypes import wintypes
+        import ctypes.wintypes as wintypes
 
         kernel32 = _kernel32()
     except Exception:
@@ -123,7 +123,7 @@ def image_load_policy(*, platform: str | None = None) -> int | None:
         return None
     try:
         import ctypes
-        from ctypes import wintypes
+        import ctypes.wintypes as wintypes
 
         kernel32 = _kernel32()
         get_policy = kernel32.GetProcessMitigationPolicy

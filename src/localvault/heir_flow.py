@@ -719,6 +719,7 @@ def write_backup(target: BackupTarget, *, profile_dir: Path | str, profile_name:
             try:
                 stale.unlink(missing_ok=True)
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
     return path
 
@@ -885,6 +886,7 @@ def _remove_my_requests(directory: Path, plan_id: str, identity: RequesterIdenti
             try:
                 request.path.unlink()
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
 
 

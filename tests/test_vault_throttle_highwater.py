@@ -167,7 +167,8 @@ def test_name_for_depends_on_purpose_and_path(tmp_path: Path) -> None:
 
 
 def test_oversized_values_are_not_written_and_read_as_malformed(outside_marks_store) -> None:
-    assert outside_marks.write("x", "a" * (outside_marks.MAX_VALUE + 1)) is False
+    written = outside_marks.write("x", "a" * (outside_marks.MAX_VALUE + 1))
+    assert written is False
     outside_marks_store.values["y"] = "a" * (outside_marks.MAX_VALUE + 1)
     assert outside_marks.read("y") == ""
 

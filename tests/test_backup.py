@@ -87,7 +87,7 @@ def test_backup_header_records_vault_default_kdf_and_accepts_bounded_overrides(t
 
 
 def test_backup_rejects_kdf_parameters_outside_bounds_before_deriving(tmp_path: Path, monkeypatch) -> None:
-    import localvault.backup as backup_module
+    from localvault import backup as backup_module
 
     source = _export(tmp_path, kdf_overrides=FAST_KDF)
     envelope = read_json(source)

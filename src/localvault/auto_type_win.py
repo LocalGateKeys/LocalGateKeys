@@ -251,7 +251,7 @@ class WindowsPlatform:
     def __init__(self) -> None:
         if os.name != "nt":
             raise OSError("auto-type needs Windows")
-        from ctypes import wintypes as w
+        import ctypes.wintypes as w
 
         self._w = w
         user32 = ctypes.WinDLL("user32", use_last_error=True)

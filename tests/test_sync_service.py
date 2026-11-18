@@ -567,7 +567,7 @@ def test_ui_barrier_gives_up_when_cancelled() -> None:
 
 
 def test_reset_sync_clears_meta_and_group_state(tmp_path: Path) -> None:
-    _root, (a, lease), _b = _folder_pair(tmp_path)
+    _, (a, lease), _ = _folder_pair(tmp_path)
     assert "sync_meta" in a._payload and "sync_group" in a._payload
     svc.reset_sync(a, lease)
     assert "sync_meta" not in a._payload and "sync_group" not in a._payload
@@ -575,7 +575,7 @@ def test_reset_sync_clears_meta_and_group_state(tmp_path: Path) -> None:
 
 
 def test_reset_sync_needs_a_valid_lease(tmp_path: Path) -> None:
-    _root, (a, lease), _b = _folder_pair(tmp_path)
+    _, (a, lease), _ = _folder_pair(tmp_path)
     lease.valid = False
     with pytest.raises(StaleSession):
         svc.reset_sync(a, lease)
@@ -979,7 +979,7 @@ class _RecordingBarrier:
 
 
 def test_folder_io_runs_with_the_ui_free_and_vault_access_parked(tmp_path: Path, monkeypatch) -> None:
-    _root, (a, lease), _b = _folder_pair(tmp_path)
+    _, (a, lease), _ = _folder_pair(tmp_path)
     a.upsert_web(origin="https://mine.example.com", username="me", password="pw-123456", label="mine")
     barrier = _RecordingBarrier()
     seen: dict[str, set[bool]] = {}
@@ -1086,7 +1086,8 @@ def test_submit_runs_the_job_on_the_worker_inside_the_gate_and_reports(session) 
         return "made"
 
     results: list = []
-    assert service.submit(job, lambda result, error: results.append((result, error)))
+    submitted = service.submit(job, lambda result, error: results.append((result, error)))
+    assert submitted
     assert seen == [] and results == []  # nothing runs on the calling (Tk) thread
     worker.drain()
     assert seen == [(True, True)] and results == [("made", None)]
@@ -1106,7 +1107,8 @@ def test_submit_reports_errors_and_refuses_after_stop(session) -> None:
     ((result, error),) = results
     assert result is None and isinstance(error, ft.FolderSyncError) and error.reason == "weak-password"
     service.stop()
-    assert service.submit(boom, lambda *_: results.append("late")) is False
+    submitted = service.submit(boom, lambda *_: results.append("late"))
+    assert submitted is False
     worker.drain()
     assert results[1:] == []
 
@@ -1363,7 +1365,8 @@ def test_create_join_rotate_jobs_release_the_ui_for_kdf_and_folder_io(tmp_path: 
 
     def run_job(service, job) -> None:
         done: list = []
-        assert service.submit(job, lambda result, error: done.append(error), run_after=True)
+        submitted = service.submit(job, lambda result, error: done.append(error), run_after=True)
+        assert submitted
         service._worker.drain()
         assert done == [None]
         assert service.status().last_sync == NOW  # run_after: the service ran sync after the job

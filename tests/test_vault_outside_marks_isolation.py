@@ -36,7 +36,8 @@ def test_a_test_that_reaches_the_real_registry_store_is_caught(outside_marks_sto
         outside_marks.WindowsRegistry().write("rollback-mark-guard", "x")
     previous = outside_marks.set_backend(outside_marks.WindowsRegistry())
     try:
-        assert outside_marks.write("rollback-mark-guard", "x") is False  # refused, as an unreachable store
+        written = outside_marks.write("rollback-mark-guard", "x")
+        assert written is False  # refused, as an unreachable store
         with pytest.raises(OSError):
             outside_marks.read("rollback-mark-guard")
     finally:

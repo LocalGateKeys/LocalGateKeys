@@ -89,6 +89,7 @@ def test_does_not_follow_symlinks(tmp_path):
         os.symlink(outside, root / "linked", target_is_directory=True)
         made = True
     except (OSError, NotImplementedError):
+        # Symlinks need a privilege on Windows; the test still covers the links that could be made.
         pass
     if sys.platform == "win32":  # a junction needs no privilege
         subprocess.run(["cmd", "/c", "mklink", "/J", str(root / "junction"), str(outside)], check=True,
@@ -99,6 +100,7 @@ def test_does_not_follow_symlinks(tmp_path):
     try:
         os.symlink(outside / ".env", root / ".env", target_is_directory=False)
     except (OSError, NotImplementedError):
+        # Symlinks need a privilege on Windows; the test still covers the links that could be made.
         pass
     assert scan([root], cancel=Event()) == []
     assert (outside / ".env").read_text() == "A=1\n"  # and nothing was touched

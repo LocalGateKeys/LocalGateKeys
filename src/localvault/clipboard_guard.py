@@ -44,7 +44,7 @@ def _unavailable(*_args: Any) -> Any:
 def _clipboard_sequence() -> int:
     # Use the documented Win32 API rather than a pywin32-version-specific wrapper.
     import ctypes
-    from ctypes import wintypes
+    import ctypes.wintypes as wintypes
     fn = ctypes.windll.user32.GetClipboardSequenceNumber
     fn.argtypes = []
     fn.restype = wintypes.DWORD

@@ -10,7 +10,7 @@ from types import SimpleNamespace as NS
 import pytest
 from test_app_desktop import _bind, control, env, snapshot  # noqa: F401 - env is a fixture
 
-import localvault.vault as vault_module
+from localvault import vault as vault_module
 from localvault import config, uia
 from localvault.app.documents import DocumentService
 from localvault.config import atomic_write_json, read_json

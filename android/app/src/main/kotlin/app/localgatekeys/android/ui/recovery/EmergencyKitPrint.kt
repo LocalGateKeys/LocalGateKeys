@@ -181,8 +181,8 @@ private class KitAdapter(private val context: Context, blocks: List<EmergencyKit
         val word = paint(11f, mono = true)
         return Piece(rows * (height + gap)) { c, y ->
             for ((i, box) in boxes.withIndex()) {
-                val x = MARGIN + (i % columns) * (cell + gap)
-                val top = y + (i / columns) * (height + gap)
+                val x = MARGIN + ((i % columns) * (cell + gap))
+                val top = y + ((i / columns) * (height + gap))
                 c.drawRoundRect(x, top, x + cell, top + height, 3f, 3f, stroke)
                 c.drawText(box.number.toString(), x + 4f, top + 18f, small)
                 // A long word shrinks to fit rather than running out of its box.

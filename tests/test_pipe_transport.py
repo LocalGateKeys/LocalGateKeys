@@ -3,7 +3,7 @@ from types import SimpleNamespace as NS
 
 import pytest
 
-import localvault.pipe_transport as pipe
+from localvault import pipe_transport as pipe
 from localvault import browser_ancestry as ancestry
 from localvault.pipe_transport import _decode, _encode
 from localvault.protocol import ProtocolError
@@ -171,7 +171,6 @@ def test_refusal_names_the_sub_check(monkeypatch):
          "check=no_provider_path"),
     ]
     for kwargs, expected in cases:
-        lines = _logged(monkeypatch)
         policy = _policy(monkeypatch, **kwargs)
         lines = _logged(monkeypatch)
         policy.evaluate(1)

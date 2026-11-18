@@ -110,6 +110,7 @@ class Approvals:
         try:
             self._queue.remove(ticket)
         except ValueError:
+            # Expected failure for this optional step: fall back to the default behaviour.
             pass
         self._cond.notify_all()
 

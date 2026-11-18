@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
-import localvault.vault as vault_module
+from localvault import vault as vault_module
 from localvault import envelope, heir, heir_flow
 from localvault.vault import DEFAULT_KDF, create_vault, entropy_from_phrase, unlock_vault
 
@@ -292,7 +292,7 @@ def test_grant_needs_reauthentication_and_the_current_phrase(owner, shared):
 
 def test_a_grant_is_usable_only_by_the_requester_it_names(owner, shared, tmp_path):
     _backup(owner)
-    _identity, _path = _request(owner, shared, now=NOW + DAY)
+    _request(owner, shared, now=NOW + DAY)
     (pending,) = heir_flow.pending_requests(owner["session"], now=NOW + DAY)
     heir_flow.grant_now(owner["session"], pending, phrase=owner["phrase"], reauthenticate=lambda: True)
     other, _ = _request(owner, shared, index=1, now=NOW + DAY)

@@ -30,6 +30,7 @@ def _clear_readonly(func, path, _exc_info) -> None:  # type: ignore[no-untyped-d
         os.chmod(path, stat.S_IWRITE)
         func(path)
     except OSError:
+        # Best-effort cleanup of a temporary path; a leftover file must not fail the test.
         pass
 
 

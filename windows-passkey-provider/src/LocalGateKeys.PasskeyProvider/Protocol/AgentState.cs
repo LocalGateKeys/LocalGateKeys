@@ -43,7 +43,7 @@ public sealed class AgentState
 
     /// <summary><c>%LOCALAPPDATA%\LocalGateKeys\agent-state.json</c> (<c>config.agent_state_path</c>).</summary>
     public static string DefaultPath() =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LocalGateKeys",
+        Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LocalGateKeys",
                      "agent-state.json");
 
     public static string CurrentUserSid()

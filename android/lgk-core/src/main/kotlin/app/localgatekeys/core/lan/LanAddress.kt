@@ -41,13 +41,13 @@ object LanAddress {
     internal fun isLan(p: Parsed): Boolean = when (p) {
         is Parsed.V4 -> {
             val b = p.bytes.map { it.toInt() and 0xFF }
-            b[0] == 10 || (b[0] == 172 && b[1] and 0xF0 == 16) || (b[0] == 192 && b[1] == 168) ||
+            b[0] == 10 || (b[0] == 172 && (b[1] and 0xF0) == 16) || (b[0] == 192 && b[1] == 168) ||
                 (b[0] == 169 && b[1] == 254) || b[0] == 127
         }
         is Parsed.V6 -> {
             val b = p.bytes.map { it.toInt() and 0xFF }
             if ((0 until 15).all { b[it] == 0 } && b[15] == 1) true
-            else (b[0] == 0xFE && b[1] and 0xC0 == 0x80) || b[0] and 0xFE == 0xFC
+            else (b[0] == 0xFE && (b[1] and 0xC0) == 0x80) || (b[0] and 0xFE) == 0xFC
         }
     }
 

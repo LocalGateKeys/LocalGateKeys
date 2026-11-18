@@ -274,7 +274,8 @@ def test_hygiene_merge_and_bulk_undo(env):
     beta = session.create_web_login(urls=[{"url": "https://beta.test", "match": "exact_origin"}], username="b",
                                     password="pw-beta-1234567", label="Beta")
     refs = [ref, {"source": "credential", "id": beta}]
-    assert service.delete(refs)["can_undo"] is True
+    deleted = service.delete(refs)
+    assert deleted["can_undo"] is True
     assert session._require_payload()["entries"] == []
     service.undo()
     assert {e["id"] for e in session._require_payload()["entries"]} == {ref["id"], beta}
@@ -290,7 +291,8 @@ def test_hygiene_bulk_needs_pro(env):
     with pytest.raises(ApiError) as refused:
         service.delete([ref, {"source": "credential", "id": beta}])
     assert refused.value.code == "pro_required"
-    assert service.delete([ref])["can_undo"] is False
+    deleted = service.delete([ref])
+    assert deleted["can_undo"] is False
 
 
 # ------------------------------------------------------------- security scan 2026-11-15 regressions

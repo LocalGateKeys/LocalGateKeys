@@ -115,7 +115,7 @@ public sealed class ServerImageCheck : IServerImageCheck
 
     /// <summary><c>&lt;install dir&gt;\LocalGateKeys.exe</c> for <c>&lt;install dir&gt;\PasskeyProvider\...exe</c>.</summary>
     public static string ExpectedServerPathFor(string providerPath) =>
-        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(providerPath))!, "..", AgentImageName));
+        Path.GetFullPath(Path.Join(Path.GetDirectoryName(Path.GetFullPath(providerPath))!, "..", AgentImageName));
 
     public bool IsTrustedServer(int pid) => Refusal(pid) is null;
 

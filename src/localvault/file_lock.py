@@ -35,23 +35,21 @@ def _acquire(fd: int) -> None:
 def exclusive_writer(path: Path):
     path.parent.mkdir(parents=True,exist_ok=True)
     fd=os.open(str(path.with_name(path.name+'.lock')),os.O_RDWR|os.O_CREAT,0o600)
-    handle=os.fdopen(fd,'r+b')
-    held=False
-    try:
-        if os.name=='nt':
-            import msvcrt
-            if os.fstat(fd).st_size<1:
-                handle.write(b'0');handle.flush()
-            handle.seek(0)
-        _acquire(fd)
-        held=True
-        yield
-    finally:
-        if held:
+    with os.fdopen(fd,'r+b') as handle:  # closed after the unlock below, as before
+        held=False
+        try:
             if os.name=='nt':
-                import msvcrt
-                handle.seek(0);msvcrt.locking(fd,msvcrt.LK_UNLCK,1)
-            else:
-                import fcntl
-                fcntl.flock(fd,fcntl.LOCK_UN)
-        handle.close()
+                if os.fstat(fd).st_size<1:
+                    handle.write(b'0');handle.flush()
+                handle.seek(0)
+            _acquire(fd)
+            held=True
+            yield
+        finally:
+            if held:
+                if os.name=='nt':
+                    import msvcrt
+                    handle.seek(0);msvcrt.locking(fd,msvcrt.LK_UNLCK,1)
+                else:
+                    import fcntl
+                    fcntl.flock(fd,fcntl.LOCK_UN)

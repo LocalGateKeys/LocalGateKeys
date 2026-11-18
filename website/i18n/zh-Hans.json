@@ -764,6 +764,7 @@
   "index.a-password-manager-that.4": "无账户",
   "index.a-password-manager-that.5": "没有 LocalGateKeys 服务器",
   "index.a-password-manager-that.6": "无遥测",
+  "index.hero.source": "<a href=\"[[home]]security.html#source\">源代码可供审计</a>",
   "index.a-password-manager-that.7": "从 Microsoft Store 获取",
   "index.a-password-manager-that.8": "其他下载",
   "index.a-password-manager-that.9": "下载 Windows 版",
@@ -1030,6 +1031,9 @@
   "security.known-limitations.6": "通行密钥可在 Chrome、Edge 和 Firefox 中使用。在另一网站的框架内使用通行密钥登录，在外层网站允许时可在 Chrome 和 Edge 中使用；在 Firefox 中，以及在另一网站的框架内创建通行密钥时，会使用浏览器自带的通行密钥对话框。如果您批准新通行密钥后网站取消了操作，应用会再次将其删除；如果应用无法确定网站是否保留了它，该通行密钥会留在您的保管库中，您可以在应用中删除它。",
   "security.report-a-vulnerability.1": "报告漏洞",
   "security.report-a-vulnerability.2": "请发邮件到 <a href=\"mailto:{{SECURITY_EMAIL}}\">{{SECURITY_EMAIL}}</a>。<a href=\"[[root]]legal/vulnerability-disclosure.html\">漏洞披露政策</a>说明了适用范围、我们的响应速度，以及如何致谢研究人员。",
+  "security.source.title": "供安全审计的源代码",
+  "security.source.body": "LocalGateKeys 是源代码可用（source-available）软件：完整源代码已发布在 <a href=\"https://github.com/LocalGateKeys/LocalGateKeys\">GitHub</a> 上，任何人都可以查看它如何保护你的保险库。许可证（PolyForm Strict，附安全研究许可）允许你为发现和报告漏洞而私下阅读、构建和测试代码。它不是开源软件：不允许复制、再分发或出售。",
+  "layout.help.source": "源代码",
   "support.title": "支持与常见问题",
   "support.description": "关于 Windows、Mac 和 iPhone 上的 LocalGateKeys 的常见问题解答：主密码、Pro 许可证、同步、共享和退款，以及如何联系支持。",
   "support.support-and-questions.1": "支持与问题",
@@ -1437,5 +1441,6 @@
   "download.android.beta.step2": "在 Google Play 加入测试并安装",
   "download.android.beta.step2.note": "（在那部手机上打开，或用同一账号登录）。",
   "download.android.beta.stay": "请保持 App 已安装，并持续参加测试 14 天。这是 Google 公开发布前的要求。",
-  "help.android.beta": "现在就想用 Android App？加入测试版。"
+  "help.android.beta": "现在就想用 Android App？加入测试版。",
+  "index.v2.android_join": "加入测试"
 }

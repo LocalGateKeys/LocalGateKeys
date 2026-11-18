@@ -184,7 +184,8 @@ def _build(derive) -> dict[str, bytes]:
             created_at=CREATED_AT, pro_hint=PRO_HINT, _salt=SALT, _nonce=NONCE)
 
     backup = write()
-    assert write() == backup
+    written = write()
+    assert written == backup
 
     key = derive(PASSWORD, SALT, KDF)
     env = json.loads(backup)

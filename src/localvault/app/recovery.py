@@ -420,6 +420,7 @@ class RecoveryWebService:
             try:
                 directory.cleanup()
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
         self._trial = {}
         self.clear_factors()

@@ -38,13 +38,13 @@ def collect(*, extension_version: str = '', extension_seen: float = 0) -> dict[s
         report['native_host_exists'] = host.is_file()
         report['native_host_hash_matches'] = host.is_file() and _hash(host) == str(config.get('native_host_sha256', '')).upper()
     except (OSError, ValueError, TypeError):
+        # Expected failure for this optional step: fall back to the default behaviour.
         pass
     if os.name == 'nt':
         import winreg
         from .native_host import FIREFOX_EXTENSION_ID
 
         for browser, subkey in [('Chrome', 'Google\\Chrome'), ('Edge', 'Microsoft\\Edge'), ('Firefox', 'Mozilla')]:
-            status = 'not_registered'
             try:
                 keypath = f'Software\\{subkey}\\NativeMessagingHosts\\{NATIVE_HOST_NAME}'
                 with winreg.OpenKey(winreg.HKEY_CURRENT_USER, keypath) as key:

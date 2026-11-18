@@ -42,7 +42,8 @@ def test_login_delete_persists_only_selected_record(tmp_path: Path, kind: str) -
             selected_id = add_desktop("Selected", r"C:\Apps\Selected.exe")
             retained_id = add_desktop("Retained", r"C:\Apps\Retained.exe")
 
-        assert session.delete(selected_id)
+        deleted = session.delete(selected_id)
+        assert deleted
     finally:
         session.lock()
 

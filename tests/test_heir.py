@@ -10,7 +10,7 @@ import pytest
 import segno
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
-import localvault.vault as vault_module
+from localvault import vault as vault_module
 from localvault import envelope, heir, sss
 from localvault.vault import (
     DEFAULT_KDF,
@@ -371,7 +371,7 @@ def test_shard_bytes_differ_between_plans_of_the_same_entropy(owner):
 def test_split_randomness_is_a_module_seam_not_an_argument(owner, monkeypatch):
     session, phrase = owner
     with pytest.raises(TypeError):
-        _plan(session, phrase, rng=lambda size: bytes(size))
+        _plan(session, phrase, rng=bytes)
     calls = []
     monkeypatch.setattr(heir, "_rng", lambda size: calls.append(size) or bytes(size))
     _plan(session, phrase)
@@ -425,8 +425,8 @@ def test_damaged_stale_flag_is_refused(owner):
 def test_recovery_entropy_requires_reauthentication(owner):
     session, phrase = owner
     calls = []
-    assert session.recovery_entropy(phrase, reauthenticate=lambda: calls.append(1) or True) == \
-        entropy_from_phrase(phrase)
+    entropy = session.recovery_entropy(phrase, reauthenticate=lambda: calls.append(1) or True)
+    assert entropy == entropy_from_phrase(phrase)
     assert calls == [1]
     with pytest.raises(PermissionError):
         session.recovery_entropy(phrase, reauthenticate=lambda: False)

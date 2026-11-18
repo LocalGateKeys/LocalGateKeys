@@ -55,7 +55,7 @@ def test_the_writer_lock_waits_for_a_short_holder(tmp_path):
 
 
 def test_the_writer_lock_still_refuses_a_long_holder(tmp_path, monkeypatch):
-    import localvault.file_lock as file_lock
+    from localvault import file_lock as file_lock
 
     monkeypatch.setattr(file_lock, "LOCK_WAIT_SECONDS", 0.2)
     path = tmp_path / "vault.json"

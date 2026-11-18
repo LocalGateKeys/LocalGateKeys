@@ -37,7 +37,7 @@ def file_in_use(path: Path) -> bool:
     if os.name != "nt":
         return False
     import ctypes
-    from ctypes import wintypes
+    import ctypes.wintypes as wintypes
 
     rm = ctypes.WinDLL("rstrtmgr")
     session = wintypes.DWORD()
@@ -95,7 +95,7 @@ def shell_open(path: Path) -> _Process | None:
     if not can_open_externally(Path(path).name):
         raise PermissionError("This file type is not opened in other apps")
     import ctypes
-    from ctypes import wintypes
+    import ctypes.wintypes as wintypes
 
     class SHELLEXECUTEINFOW(ctypes.Structure):
         _fields_ = [("cbSize", wintypes.DWORD), ("fMask", wintypes.ULONG), ("hwnd", wintypes.HWND),
@@ -131,6 +131,7 @@ def remove_copy(path: Path) -> bool:
     try:
         path.parent.rmdir()
     except OSError:
+        # Best-effort file/OS step: failure is harmless here, so it is ignored.
         pass
     return True
 
@@ -275,6 +276,7 @@ def _copies(root: Path) -> list[Path]:
                 if not path.is_symlink() and path.is_file():
                     found.append(path)
             except OSError:
+                # Best-effort file/OS step: failure is harmless here, so it is ignored.
                 pass
     return found
 
@@ -300,6 +302,7 @@ def run_exit_sweeper(profile_dir: Path, *, poll: float = 3.0, max_seconds: float
     try:
         root.rmdir()  # only when empty
     except OSError:
+        # Best-effort file/OS step: failure is harmless here, so it is ignored.
         pass
     return 0 if not pending else 1
 

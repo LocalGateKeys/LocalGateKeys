@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
-import localvault.uia as uia
+from localvault import uia as uia
 from localvault.browser_broker import BrowserBroker
 from broker_host import BrokerHostBase as RuntimeActions
 from localvault.session_guard import SessionGuard

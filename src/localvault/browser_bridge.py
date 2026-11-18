@@ -283,7 +283,7 @@ def _run_reg_outside_package(*args: str) -> int | None:
         return None
     try:
         import ctypes
-        from ctypes import wintypes as wt
+        import ctypes.wintypes as wt
 
         kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
 
@@ -362,6 +362,7 @@ def _unregister_manifest() -> None:
         try:
             winreg.DeleteKey(winreg.HKEY_CURRENT_USER, key_path)
         except FileNotFoundError:
+            # Best-effort file/OS step: failure is harmless here, so it is ignored.
             pass
 
 
@@ -449,6 +450,7 @@ def unregister_browser_bridge() -> None:
         try:
             path.unlink()
         except FileNotFoundError:
+            # Best-effort file/OS step: failure is harmless here, so it is ignored.
             pass
 
 

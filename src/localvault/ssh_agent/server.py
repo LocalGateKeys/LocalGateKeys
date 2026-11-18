@@ -71,7 +71,7 @@ def pipe_held_by_current_user(pipe_name: str) -> bool:
 def _cancel_thread_io(native_id: int) -> None:
     """Cancel a blocking ReadFile/ConnectNamedPipe on another thread (synchronous handles serialise other calls)."""
     import ctypes
-    from ctypes import wintypes
+    import ctypes.wintypes as wintypes
 
     kernel32 = ctypes.windll.kernel32
     kernel32.OpenThread.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]

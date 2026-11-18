@@ -317,11 +317,13 @@ def write_atomic(path: Path, data: bytes) -> None:
         try:
             os.chmod(temp, stat.S_IMODE(path.stat().st_mode))
         except OSError:
+            # Best-effort file/OS step: failure is harmless here, so it is ignored.
             pass
         os.replace(temp, path)
     except BaseException:
         try:
             temp.unlink()
         except OSError:
+            # Best-effort file/OS step: failure is harmless here, so it is ignored.
             pass
         raise

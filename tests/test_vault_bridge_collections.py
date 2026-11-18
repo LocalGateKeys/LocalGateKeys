@@ -396,11 +396,14 @@ def test_a_shared_collection_is_never_deleted(tmp_path):
             CollectionService(dev.s).delete(cid)
         assert cid in dev.collections()
     work = CollectionService(m2.s).create("Work")
-    assert CollectionService(m2.s).delete(work)
+    deleted = CollectionService(m2.s).delete(work)
+    assert deleted
     # After leaving, the collection is the member's own again.
     sg.leave_share_group(m1.s, gid)
     pull(m2, m1)
-    assert CollectionService(m2.s).delete(cid) and CollectionService(m1.s).delete(cid)
+    deleted = CollectionService(m2.s).delete(cid)
+    deleted_too = CollectionService(m1.s).delete(cid)
+    assert deleted and deleted_too
     assert nid in m1.items()
 
 
@@ -461,7 +464,8 @@ def test_forgetting_the_link_of_a_lost_member_device_frees_the_collection_on_eve
     pull(m3, m2)
     assert LINKS_KEY not in m3.s._payload
     assert m3.item(nid)["title"] == "Mine now"
-    assert CollectionService(m3.s).delete(cid)
+    deleted = CollectionService(m3.s).delete(cid)
+    assert deleted
 
 
 def test_a_device_that_still_holds_the_share_publishes_its_link_again(tmp_path):

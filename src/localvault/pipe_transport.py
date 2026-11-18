@@ -72,7 +72,7 @@ def _named_pipe_client_pid(handle: Any) -> int | None:
         return None
     try:
         import ctypes
-        from ctypes import wintypes
+        import ctypes.wintypes as wintypes
 
         pid = wintypes.ULONG()
         kernel32 = ctypes.windll.kernel32
@@ -491,7 +491,7 @@ def _named_pipe_server_pid(handle: Any) -> int | None:
         return None
     try:
         import ctypes
-        from ctypes import wintypes
+        import ctypes.wintypes as wintypes
         pid = wintypes.ULONG()
         fn = ctypes.windll.kernel32.GetNamedPipeServerProcessId
         fn.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.ULONG)]
@@ -648,7 +648,7 @@ def _process_package_family_name(pid: int) -> str:
         return ""
     try:
         import ctypes
-        from ctypes import wintypes
+        import ctypes.wintypes as wintypes
 
         kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
         kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
@@ -780,7 +780,7 @@ def _flush_reply(handle: Any, timeout: float = 2.0) -> None:
         win32file.FlushFileBuffers(handle)
         return
     import ctypes
-    from ctypes import wintypes
+    import ctypes.wintypes as wintypes
     kernel32 = ctypes.windll.kernel32
     open_thread = kernel32.OpenThread
     open_thread.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
@@ -875,6 +875,7 @@ class NamedPipeAgentServer:
                     unprotect_agent_token(state), self.token):
                 state_path.unlink(missing_ok=True)
         except (OSError, ValueError, TypeError, BridgeFailure):
+            # Expected failure for this optional step: fall back to the default behaviour.
             pass
 
     def stop(self) -> None:
@@ -884,6 +885,7 @@ class NamedPipeAgentServer:
             if os.name == "nt":
                 forward_named_pipe({"action": "ping"}, timeout_ms=200)
         except Exception:
+            # Best-effort optional step: it must never break the caller, so any error is ignored.
             pass
         if self.thread and self.thread.is_alive():
             self.thread.join(timeout=1.5)
@@ -932,6 +934,7 @@ class NamedPipeAgentServer:
                 try:
                     win32file.CloseHandle(handle)
                 except Exception:
+                    # Best-effort optional step: it must never break the caller, so any error is ignored.
                     pass
             self._remove_owned_state()
 
@@ -1011,10 +1014,12 @@ class NamedPipeAgentServer:
             try:
                 win32pipe.DisconnectNamedPipe(handle)
             except Exception:
+                # Best-effort optional step: it must never break the caller, so any error is ignored.
                 pass
             try:
                 win32file.CloseHandle(handle)
             except Exception:
+                # Best-effort optional step: it must never break the caller, so any error is ignored.
                 pass
 
 

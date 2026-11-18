@@ -133,7 +133,7 @@ def test_session_id_matches_only_the_lease_token():
 
 def test_session_id_compare_is_constant_time(monkeypatch):
     calls = []
-    import localvault.browser_broker as module
+    from localvault import browser_broker as module
     real = module.hmac.compare_digest
     monkeypatch.setattr(module.hmac, "compare_digest", lambda a, b: calls.append((a, b)) or real(a, b))
     assert BrowserBroker._session_id_matches("tok", _Lease(token="tok"))

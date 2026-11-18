@@ -155,7 +155,7 @@ def test_copied_setup_rejected_for_other_vault_and_profile(vault, tmp_path):
 
 
 def test_master_password_change_revokes_old_camera_setup(vault, monkeypatch):
-    import localvault.vault as vault_module
+    from localvault import vault as vault_module
     monkeypatch.setattr(vault_module, "DEFAULT_KDF", {**vault_module.DEFAULT_KDF, **KDF})
     enroll(vault)
     vault.change_master_password(MASTER, NEW_MASTER)

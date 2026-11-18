@@ -1155,7 +1155,8 @@ class LanSession:
         aad = json.dumps(metadata, ensure_ascii=True, separators=(",", ":"), sort_keys=True).encode("ascii")
         assert {k: v for k, v in outer.items() if k != "ciphertext"} == metadata
         assert AESGCM(self.key).decrypt(nonce, base64.b64decode(outer["ciphertext"]), aad) == plaintext
-        assert receiver.open(frame) == plaintext
+        opened = receiver.open(frame)
+        assert opened == plaintext
         return {
             "sender": role,
             "counter": counter,

@@ -206,6 +206,7 @@ def prepare_enrollment(profile_id: str, context: str, hwnd: int, cancelled: thre
                 try:
                     provider.delete(record_id)
                 except Exception:
+                    # Best-effort optional step: it must never break the caller, so any error is ignored.
                     pass
             raise
 

@@ -10,7 +10,6 @@ const fs = require("fs"), path = require("path"), http = require("http"), os = r
 const puppeteer = require("puppeteer-core");
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const REPO = process.argv[2];
-const WHICH = process.argv[3] || "chrome";
 const USER = "alice.e2e@test.example";
 const PASS = "Test-Only-E2E-Secret-91!";
 
@@ -107,15 +106,6 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
   console.log("browser", await ctx.version(), "ext", extId);
   const base = s => `http://127.0.0.1:${port(s)}`;
   const pg = await ctx.newPage(); await sleep(1500); globalThis.__pg = pg; pg.on("console", m => { if (m.text().includes("LGKDBG")) console.log(m.text()); });
-  const panelFrame = async (timeout = 5000) => {
-    const end = Date.now() + timeout;
-    while (Date.now() < end) {
-      const fs_ = pg.frames().filter(f => f.url().includes("/panel.html")); const f = fs_[fs_.length - 1];
-      if (f) { try { await f.waitForSelector("button[data-row]", { timeout: 1500 }); return f; } catch {} }
-      await sleep(100);
-    }
-    throw new Error("no panel frame");
-  };
   const panelBox = () => pg.evaluate(() => {
     const host = [...document.documentElement.children].find(e => e.tagName === "DIV" && e.hasAttribute("popover"));
     if (!host || !host.isConnected) return null;
@@ -131,8 +121,6 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     await pg.mouse.click(best.x + best.width / 2, best.y + best.height / 2);
   };
   const goto = async url => { await pg.goto(url); await sleep(700); };
-  const pressInFrame = async (f, key) => { await f.page().keyboard.press(key); await sleep(150); };
-  const rowTexts = f => f.$$eval("button[data-row]", bs => bs.map(b => b.textContent.trim()));
   const ARM = +(process.env.ARM||900);
 
 
@@ -179,7 +167,7 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
   });
   await check("identity picker", async () => {
     await goto(base(main) + "/identity"); await clickIcon("[data-localgatekeys-identity-icon]", "#name");
-    const b = await waitBox(); assert(await pg.evaluate(() => window.find("Home identity")) === false, "find identity");
+    await waitBox(); assert(await pg.evaluate(() => window.find("Home identity")) === false, "find identity");
     await pg.keyboard.press("ArrowDown"); await sleep(150); await pg.keyboard.press("Enter"); await sleep(900); await waitBox(); await shot("idfields");
   });
   await check("error panel", async () => { await goto(base(err) + "/login"); await clickIcon("[data-localvault-field-icon]", "#password"); await waitBox(); await shot("err"); });
