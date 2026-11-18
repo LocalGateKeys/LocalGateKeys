@@ -2882,6 +2882,7 @@
     "other": "{count} years"
   },
   "sync.aDeviceCouldNotBe": "A device could not be reached on this network. Check that it is on the same Wi-Fi and that LocalGateKeys is unlocked there.",
+  "sync.theOtherDeviceClosedTheConnection": "The other device closed the connection without syncing. It probably removed this device, or left or reset sync: choose Leave sync here, then pair again with a new code.",
   "sync.aDeviceInTheMember": "A device in the member list has a name that is not a safe file name; it is ignored.",
   "sync.aDeviceThatIsNot": "A device that is not paired tried to sync and was refused.",
   "sync.aFileAttachedOnAnother": "A file attached on another device has not arrived yet. Its item appears after a sync that receives the file.",

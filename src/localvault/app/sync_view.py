@@ -247,6 +247,7 @@ ISSUE_COPY: Mapping[str, str] = {
     "listen-failed": "sync.wiFiSyncCouldNot",
     "no-endpoint": "sync.hasNoNetworkAddressIt",
     "unreachable": "sync.aDeviceCouldNotBe",
+    "not-accepted": "sync.theOtherDeviceClosedTheConnection",
     "unknown-peer": "sync.aDeviceThatIsNot",
     "peer-revoked": "sync.wasRemovedFromSyncAnd",
     "peer-mismatch": "sync.didNotMatchItsPairing",
@@ -317,7 +318,7 @@ RESET_KINDS = frozenset({"folder-has-other-group", "rotation-conflict", "removed
 
 _ERROR_KINDS = RESET_KINDS | frozenset({
     "rejoin-required", "removal-notice", "keyring-missing", "keyring-unreadable", "folder-missing", "folder-unreadable",
-    "write-failed", "epoch-behind", "error", "listen-failed", "local-data", "apply-failed", "too-large",
+    "write-failed", "epoch-behind", "error", "listen-failed", "not-accepted", "local-data", "apply-failed", "too-large",
     "counter-exhausted", "vault-rollback",
 })
 

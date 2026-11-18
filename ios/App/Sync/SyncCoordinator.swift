@@ -326,6 +326,8 @@ final class SyncCoordinator {
     }
 
     static let maxPasswordAttempts = 5
+    /// A Wi-Fi host closed the connection right after this device's hello: almost always, it no longer accepts it.
+    nonisolated static let notAccepted = "not-accepted"
     static let passwordBackoffSeconds: Int64 = 30
 
     private(set) var phase: Phase = .idle
@@ -551,7 +553,13 @@ final class SyncCoordinator {
         guard gate.isOpen else { return }
         refreshMembership()
         if result.ran {
-            lastSyncedAt = deps.clock.now
+            // A host that refused this device synced nothing: "Last synced" keeps its time and
+            // "The first sync is running" goes away.
+            if !result.issues.contains(where: { $0.kind == Self.notAccepted }) {
+                lastSyncedAt = deps.clock.now
+            } else if actionInfo == String(localized: "This \(SyncWording.thisDevice) joined the sync group. The first sync is running.") {
+                actionInfo = nil
+            }
             // A clean run makes an earlier action's error (e.g. a folder pick with no group) stale.
             if result.issues.isEmpty { actionError = nil; actionOffersSettings = false }
             conflictCopies += result.conflicts
@@ -861,6 +869,10 @@ final class SyncCoordinator {
         } catch let e as LanSyncError {
             noteRefusal(e, store: store, deps: deps, peer: peer, state: state, inline: inline)
             fail.issues = [SyncIssue(e.reason == "bad-message" ? "bad-reply" : e.reason, e.detail)]; return fail
+        } catch let e as LanPeerNotAnswering {
+            // Closed right after the hello: the host no longer accepts this device (removed there, or it left or
+            // reset sync); it says nothing on purpose, so this is the only sign.
+            fail.issues = [SyncIssue(e.closedByPeer ? Self.notAccepted : "unreachable", "\(e)")]; return fail
         } catch {
             fail.issues = [SyncIssue("unreachable", "\(error)")]; return fail
         }

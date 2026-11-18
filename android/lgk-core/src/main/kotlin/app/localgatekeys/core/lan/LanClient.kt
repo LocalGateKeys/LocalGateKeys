@@ -35,7 +35,15 @@ interface LanConnection {
  * was sent: the connect failed, or the hello exchange failed (desktop `transport.PeerNotAnswering`).
  * [LanClient] retries such a request once, with a NEW hello (new session id, higher counter).
  */
-class LanPeerNotAnswering(val detail: String) : Exception("peer did not answer: $detail")
+class LanPeerNotAnswering(
+    val detail: String,
+    /**
+     * The peer took the connection and the hello, then closed it without a word: a host does that only to a hello it
+     * will not accept (this device was removed there, or the host left or reset sync). Never true for a failed connect
+     * or a timeout.
+     */
+    val closedByPeer: Boolean = false,
+) : Exception("peer did not answer: $detail")
 
 interface LanConnector {
     fun connect(peer: PinnedPeer): LanConnection

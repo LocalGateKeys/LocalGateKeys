@@ -147,12 +147,16 @@ class PeerNotAnswering(TransportError):
     The peer processed nothing, so the caller may safely retry.  The original
     error is the ``__cause__``.  ``connected`` is True when the TCP connection
     was made and the peer then closed or stayed silent (a busy listener refusing
-    a slot), False when the connection itself failed.
+    a slot), False when the connection itself failed.  ``closed_by_peer`` is True
+    only when our hello was sent and the peer then closed or reset the
+    connection without a reply (a host that removed this device, or left or
+    reset sync, does exactly that); never for a timeout or a failed connect.
     """
 
-    def __init__(self, message: str, *, connected: bool = False) -> None:
+    def __init__(self, message: str, *, connected: bool = False, closed_by_peer: bool = False) -> None:
         super().__init__(message)
         self.connected = connected
+        self.closed_by_peer = closed_by_peer
 
 
 class PeerVersionMismatch(TransportError):
@@ -1436,6 +1440,7 @@ class SyncTransport:
         seal: SealContext | None = None
         try:
             connected = False
+            hello_sent = False
             try:
                 self._connect(sock, endpoint, deadline)
                 connected = True
@@ -1443,12 +1448,17 @@ class SyncTransport:
                 local_hello = self._local_hello(session_id, TRANSPORT_VERSION)
                 first, seal = seal_initiator_hello(local_hello, expected.exchange_public)
                 self._send_all(sock, encode_frame(first), deadline)
+                hello_sent = True
                 hello_frame = self._read_socket_frame(sock, deadline)
             except (TransportCancelled, AuthenticationError, SyncDisabled):
                 raise
             except (TransportError, OSError) as exc:
                 # Nothing of the request was sent: the peer dropped or never took the connection.
-                raise PeerNotAnswering(f"Peer did not answer: {exc}", connected=connected) from exc
+                # A clean close (EOF) or a reset after our hello, not a timeout or connect failure.
+                closed = hello_sent and (type(exc) is FrameError or isinstance(exc, ConnectionError)
+                                         or isinstance(exc.__cause__, ConnectionError))
+                raise PeerNotAnswering(f"Peer did not answer: {exc}", connected=connected,
+                                       closed_by_peer=closed) from exc
             refused = parse_version_refusal(hello_frame[FRAME_HEADER.size:])
             if refused is not None:
                 raise PeerVersionMismatch(refused)

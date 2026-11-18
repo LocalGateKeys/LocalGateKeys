@@ -537,7 +537,7 @@ def test_a_removed_wifi_peer_stays_revoked_and_its_kept_id_is_refused_after_a_re
     assert lt.SyncTransport().enroll(a.endpoint, pairing.build_enrollment_request(offer, ident_b, now=NOW)) == refused
     # After a restart (everything read back from the vault): its hello and its kept id are still refused.
     a.relisten()
-    assert lt.kinds(b.sync_with(a)) == ["unreachable"]
+    assert lt.kinds(b.sync_with(a)) == ["not-accepted"]
     offer, _text = lt._offer_for(a)
     assert lt.SyncTransport().enroll(a.endpoint, pairing.build_enrollment_request(offer, ident_b, now=NOW)) == refused
     _wifi_leave(b)
@@ -621,4 +621,4 @@ def test_an_older_vault_whose_removed_peer_was_deleted_needs_nothing(devs) -> No
     assert not lan.remove_lan_peer(a.session, a.lease, b.device_id, install_id=a.install)
     assert a.state.lan_peers == () and a.state.lan_removed is True
     a.relisten()
-    assert lt.kinds(b.sync_with(a)) == ["unreachable"]
+    assert lt.kinds(b.sync_with(a)) == ["not-accepted"]

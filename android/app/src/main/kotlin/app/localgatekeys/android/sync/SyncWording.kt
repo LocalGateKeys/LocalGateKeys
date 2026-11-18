@@ -293,6 +293,7 @@ class SyncWording(private val t: Txt) {
         "listen-failed" to R.string.sync_wi_fi_sync_could_not,
         "no-endpoint" to R.string.sync_issue_no_endpoint,
         "unreachable" to R.string.sync_a_device_could_not_be,
+        "not-accepted" to R.string.sync_issue_not_accepted,
         "unknown-peer" to R.string.sync_a_device_that_is_not,
         "peer-revoked" to R.string.sync_was_removed_from_sync_and,
         "peer-mismatch" to R.string.sync_did_not_match_its_pairing,

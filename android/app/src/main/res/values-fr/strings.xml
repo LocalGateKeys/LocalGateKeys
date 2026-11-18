@@ -483,6 +483,7 @@
     <string name="sync_wi_fi_sync_could_not">La synchronisation Wi-Fi n’a pas pu commencer à écouter. Vérifiez l’adresse et le port, et qu’aucune autre application n’utilise ce port.</string>
     <string name="sync_issue_no_endpoint">%1$s n’a pas d’adresse réseau ; c’est lui qui se connecte à ce téléphone.</string>
     <string name="sync_a_device_could_not_be">Un appareil est injoignable sur ce réseau. Vérifiez qu’il est sur le même Wi-Fi et que LocalGateKeys y est déverrouillé.</string>
+    <string name="sync_issue_not_accepted">L’autre appareil a fermé la connexion sans synchroniser. Il a probablement retiré cet appareil, ou quitté ou réinitialisé la synchronisation : choisissez Quitter la synchronisation ici, puis associez-le à nouveau avec un nouveau code.</string>
     <string name="sync_a_device_that_is_not">Un appareil non associé a tenté de se synchroniser et a été refusé.</string>
     <string name="sync_was_removed_from_sync_and">%1$s a été retiré de la synchronisation et n’a pas été contacté.</string>
     <string name="sync_did_not_match_its_pairing">%1$s ne correspondait pas à son association et n’a pas été synchronisé.</string>

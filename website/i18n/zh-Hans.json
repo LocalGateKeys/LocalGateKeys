@@ -1429,5 +1429,13 @@
   "compare.v.pl_bw": "Windows、Mac、Linux、iPhone、Android、网页应用、浏览器扩展、命令行",
   "compare.v.pl_en": "Mac、Windows、Linux、iPhone、Android、浏览器扩展",
   "compare.v.pl_kp": "Windows、Mac、Linux",
-  "compare.v.pl_pp": "Windows、Mac、Linux、iPhone、Android、网页应用、浏览器扩展、命令行"
+  "compare.v.pl_pp": "Windows、Mac、Linux、iPhone、Android、网页应用、浏览器扩展、命令行",
+  "download.android.beta.title": "Android 测试版：帮助我们上线",
+  "download.android.beta.text": "Android App 正在 Google Play 上进行封闭测试。公开发布前 Google 需要测试者，测试者可以抢先免费使用。",
+  "download.android.beta.step1": "加入测试者群组",
+  "download.android.beta.step1.note": "（使用你手机上的 Google 账号）。",
+  "download.android.beta.step2": "在 Google Play 加入测试并安装",
+  "download.android.beta.step2.note": "（在那部手机上打开，或用同一账号登录）。",
+  "download.android.beta.stay": "请保持 App 已安装，并持续参加测试 14 天。这是 Google 公开发布前的要求。",
+  "help.android.beta": "现在就想用 Android App？加入测试版。"
 }

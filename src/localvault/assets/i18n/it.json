@@ -2882,6 +2882,7 @@
     "other": "{count} anni"
   },
   "sync.aDeviceCouldNotBe": "Impossibile raggiungere un dispositivo su questa rete. Controlla che sia sulla stessa rete Wi-Fi e che LocalGateKeys sia sbloccato lì.",
+  "sync.theOtherDeviceClosedTheConnection": "L’altro dispositivo ha chiuso la connessione senza sincronizzare. Probabilmente ha rimosso questo dispositivo, oppure ha lasciato o reimpostato la sincronizzazione: scegli Esci dalla sincronizzazione qui, poi associa di nuovo con un nuovo codice.",
   "sync.aDeviceInTheMember": "Un dispositivo nell'elenco dei membri ha un nome che non è un nome di file sicuro; viene ignorato.",
   "sync.aDeviceThatIsNot": "Un dispositivo non associato ha provato a sincronizzare ed è stato rifiutato.",
   "sync.aFileAttachedOnAnother": "Un file allegato su un altro dispositivo non è ancora arrivato. Il suo elemento compare dopo una sincronizzazione che riceve il file.",

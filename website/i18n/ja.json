@@ -1429,5 +1429,13 @@
   "compare.v.pl_bw": "Windows、Mac、Linux、iPhone、Android、Web アプリ、ブラウザー拡張機能、コマンドライン",
   "compare.v.pl_en": "Mac、Windows、Linux、iPhone、Android、ブラウザー拡張機能",
   "compare.v.pl_kp": "Windows、Mac、Linux",
-  "compare.v.pl_pp": "Windows、Mac、Linux、iPhone、Android、Web アプリ、ブラウザー拡張機能、コマンドライン"
+  "compare.v.pl_pp": "Windows、Mac、Linux、iPhone、Android、Web アプリ、ブラウザー拡張機能、コマンドライン",
+  "download.android.beta.title": "Android ベータ：公開へのご協力を",
+  "download.android.beta.text": "Android アプリは Google Play でクローズドテスト中です。公開前に Google がテスターを必要としており、テスターは先行して無料で使えます。",
+  "download.android.beta.step1": "テスターグループに参加",
+  "download.android.beta.step1.note": "（スマートフォンで使っている Google アカウントで）。",
+  "download.android.beta.step2": "テストに参加して Google Play からインストール",
+  "download.android.beta.step2.note": "（そのスマートフォンで開くか、同じアカウントでログインしてください）。",
+  "download.android.beta.stay": "アプリをインストールしたまま、14 日間テストに参加し続けてください。公開前に Google が求めている条件です。",
+  "help.android.beta": "Android アプリを今すぐ使いたい方はベータへ。"
 }

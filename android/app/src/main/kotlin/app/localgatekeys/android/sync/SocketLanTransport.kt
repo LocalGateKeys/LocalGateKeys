@@ -102,7 +102,8 @@ class SocketLanConnection(private val endpoint: LanEndpoint, private val dialer:
             } catch (e: Exception) {
                 s.close()
                 if ((e as? LanSocketException)?.kind == LanFailure.CANCELLED || isCancelled()) throw e
-                throw LanPeerNotAnswering(e.message ?: e.javaClass.simpleName)
+                val closed = (e as? LanSocketException)?.kind == LanFailure.CLOSED_BY_PEER
+                throw LanPeerNotAnswering(e.message ?: e.javaClass.simpleName, closedByPeer = closed)
             }
         }
         val s = socket ?: throw LanSocketException("connection is closed")

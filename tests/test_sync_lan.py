@@ -481,7 +481,7 @@ def test_unpinned_device_gets_nothing_but_enrollment(devs) -> None:
     c.relisten()
     _web(c, "evil")
     before = a.labels()
-    assert kinds(c.sync_with(a)) == ["unreachable"]
+    assert kinds(c.sync_with(a)) == ["not-accepted"]
     assert a.labels() == before
     # The used offer only yields a refusal; with no offer armed, enrollment frames get no reply.
     assert (SyncTransport().enroll(a.endpoint, pairing.ENROLL_REQUEST_MAGIC + b"{}")
@@ -520,12 +520,16 @@ def test_removed_lan_peer_is_refused(devs) -> None:
     assert lan.remove_lan_peer(a.session, a.lease, b.device_id, install_id=a.install, transport=a.transport)
     # The entry stays listed as revoked (its id stays reserved), as on the iPhone, Mac and Android.
     assert lan.peer_entry(a.state, b.device_id)["revoked"] is True
-    assert kinds(b.sync_with(a)) == ["unreachable"]
+    # The host closes right after the hello: its own message, not "could not be reached".
+    with pytest.raises(PeerNotAnswering) as caught:
+        b.transport.request(a.endpoint, b"{}", peer_id=a.device_id, timeout=2.0)
+    assert caught.value.connected and caught.value.closed_by_peer
+    assert kinds(b.sync_with(a)) == ["not-accepted"]
     assert _serve(a, record, _view_msg(b, b.device_id)) == {"type": "error", "reason": "revoked"}
     assert kinds(a.sync_with(b)) == ["peer-revoked"]
     a.relisten()  # a restart: the revocation is read back from the vault
     assert b.device_id in a.transport.state.revoked_devices
-    assert kinds(b.sync_with(a)) == ["unreachable"]
+    assert kinds(b.sync_with(a)) == ["not-accepted"]
 
 
 def test_rotated_out_peer_is_dropped_and_never_gets_the_new_key(devs, tmp_path: Path) -> None:
@@ -543,7 +547,7 @@ def test_rotated_out_peer_is_dropped_and_never_gets_the_new_key(devs, tmp_path: 
                            now=NOW, _kdf_override=CHEAP)
     assert a.state.epoch == 2 and lan.peer_entry(a.state, b.device_id) is None
     a.relisten()
-    assert kinds(b.sync_with(a)) == ["unreachable"]
+    assert kinds(b.sync_with(a)) == ["not-accepted"]
     assert b.state.epoch == 1 and b.state.key == old_key
 
 
@@ -558,7 +562,7 @@ def test_revoked_peer_is_refused(devs) -> None:
     assert kinds(a.sync_with(b)) == ["peer-revoked"]
     a.relisten()  # a rebuilt transport does not trust a revoked peer at all
     assert b.device_id not in a.transport.state.trusted_peers
-    assert kinds(b.sync_with(a)) == ["unreachable"]
+    assert kinds(b.sync_with(a)) == ["not-accepted"]
 
 
 def test_oversized_frames_are_refused(devs) -> None:
@@ -732,6 +736,14 @@ def test_chunk_request_is_retried_once_when_the_peer_never_answered(devs, monkey
     calls["n"] = 1  # the next call is the first view of a new exchange
     monkeypatch.setattr(SyncTransport, "request", lambda self, *a_, **k: (_ for _ in ()).throw(
         PeerNotAnswering("down")))
+    assert kinds(a.sync_with(b)) == ["unreachable"]
+    # Connected, hello sent, closed twice (the retry): the host no longer accepts this device.
+    monkeypatch.setattr(SyncTransport, "request", lambda self, *a_, **k: (_ for _ in ()).throw(
+        PeerNotAnswering("closed", connected=True, closed_by_peer=True)))
+    assert kinds(a.sync_with(b)) == ["not-accepted"]
+    # Connected but silent (a timeout) stays "unreachable".
+    monkeypatch.setattr(SyncTransport, "request", lambda self, *a_, **k: (_ for _ in ()).throw(
+        PeerNotAnswering("timed out", connected=True)))
     assert kinds(a.sync_with(b)) == ["unreachable"]
 
 

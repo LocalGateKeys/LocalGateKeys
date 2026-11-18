@@ -73,7 +73,8 @@ actor SocketLanConnection: LanConnection {
                 return reply
             } catch {
                 s.close()
-                throw LanPeerNotAnswering("\(error)")
+                let closed = (error as? LanSocketError)?.kind == .closedByPeer
+                throw LanPeerNotAnswering("\(error)", closedByPeer: closed)
             }
         }
         guard let socket else { throw LanSocketError("connection is closed") }

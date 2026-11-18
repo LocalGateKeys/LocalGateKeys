@@ -31,6 +31,8 @@
   "IPHONE_APP_URL": "https://apps.apple.com/app/id6825488435",
   "MAC_APP_URL": "https://apps.apple.com/app/id6825488435",
   "ANDROID_APP_URL": null,
+  "ANDROID_TESTER_GROUP_URL": "https://groups.google.com/g/localgatekeys",
+  "ANDROID_BETA_OPTIN_URL": "https://play.google.com/apps/testing/app.localgatekeys.android",
   "CHROME_STORE_URL": "https://chromewebstore.google.com/detail/localgatekeys/fcilinmkccknaoeobcdnploacggajbdg",
   "EDGE_ADDONS_URL": "https://microsoftedge.microsoft.com/addons/detail/localgatekeys/oclkjglnfefdmhddgicmbadaoehakbjj",
   "FIREFOX_ADDON_URL": "https://addons.mozilla.org/firefox/addon/localgatekeys/",

@@ -483,6 +483,7 @@
     <string name="sync_wi_fi_sync_could_not">A sincronização por Wi-Fi não conseguiu começar a escutar. Verifique o endereço e a porta e se nenhum outro app usa essa porta.</string>
     <string name="sync_issue_no_endpoint">%1$s não tem endereço de rede; ele se conecta a este celular.</string>
     <string name="sync_a_device_could_not_be">Não foi possível alcançar um dispositivo nesta rede. Verifique se ele está no mesmo Wi-Fi e se o LocalGateKeys está desbloqueado lá.</string>
+    <string name="sync_issue_not_accepted">O outro dispositivo fechou a conexão sem sincronizar. Provavelmente ele removeu este dispositivo, ou saiu da sincronização ou a redefiniu: escolha Sair da sincronização aqui e pareie de novo com um novo código.</string>
     <string name="sync_a_device_that_is_not">Um dispositivo que não está pareado tentou sincronizar e foi recusado.</string>
     <string name="sync_was_removed_from_sync_and">%1$s foi removido da sincronização e não foi contatado.</string>
     <string name="sync_did_not_match_its_pairing">%1$s não correspondeu ao pareamento dele e não foi sincronizado.</string>

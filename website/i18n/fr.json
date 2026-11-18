@@ -1429,5 +1429,13 @@
   "compare.v.pl_bw": "Windows, Mac, Linux, iPhone, Android, application web, extensions de navigateur, ligne de commande",
   "compare.v.pl_en": "Mac, Windows, Linux, iPhone, Android, extensions de navigateur",
   "compare.v.pl_kp": "Windows, Mac, Linux",
-  "compare.v.pl_pp": "Windows, Mac, Linux, iPhone, Android, application web, extensions de navigateur, ligne de commande"
+  "compare.v.pl_pp": "Windows, Mac, Linux, iPhone, Android, application web, extensions de navigateur, ligne de commande",
+  "download.android.beta.title": "Bêta Android : aidez-nous à la lancer",
+  "download.android.beta.text": "L'app Android est en test fermé sur Google Play. Google exige des testeurs avant la publication, et les testeurs l'ont en premier et gratuitement.",
+  "download.android.beta.step1": "Rejoindre le groupe de testeurs",
+  "download.android.beta.step1.note": "avec le compte Google de votre téléphone.",
+  "download.android.beta.step2": "S'inscrire et installer depuis Google Play",
+  "download.android.beta.step2.note": "(ouvrez-le sur ce téléphone ou connectez-vous avec le même compte).",
+  "download.android.beta.stay": "Gardez l'app installée et restez inscrit pendant 14 jours. Google l'exige avant une publication publique.",
+  "help.android.beta": "Vous voulez l'app Android dès maintenant ? Rejoignez la bêta."
 }

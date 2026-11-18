@@ -2824,6 +2824,7 @@
     "other": "{count} 年"
   },
   "sync.aDeviceCouldNotBe": "无法在此网络上连接到某台设备。请确认它与此电脑在同一个 Wi-Fi 上，并且那里的 LocalGateKeys 已解锁。",
+  "sync.theOtherDeviceClosedTheConnection": "另一台设备未同步就关闭了连接。它可能移除了此设备，或者退出或重置了同步：请在此处选择“退出同步”，然后用新代码重新配对。",
   "sync.aDeviceInTheMember": "成员列表中有一台设备的名称不是安全的文件名；已忽略该设备。",
   "sync.aDeviceThatIsNot": "一台未配对的设备尝试同步，已被拒绝。",
   "sync.aFileAttachedOnAnother": "在另一台设备上添加的文件尚未到达。收到该文件的同步完成后，它所属的项目才会出现。",

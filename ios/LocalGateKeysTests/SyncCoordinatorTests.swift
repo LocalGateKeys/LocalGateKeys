@@ -690,6 +690,18 @@ final class SyncCoordinatorTests: XCTestCase {
 
     // MARK: running
 
+    func test_a_host_that_closes_after_the_hello_says_it_no_longer_accepts_this_device() async throws {
+        let store = LockedStore()
+        let c = try await qrJoined(store)
+        let before = c.lastSyncedAt
+        lan.exchange = { _ in throw LanPeerNotAnswering("peer closed the connection", closedByPeer: true) }
+        await c.sync(.manual)
+        XCTAssertEqual(c.issues.map(\.kind), ["not-accepted"])
+        XCTAssertTrue(c.issues.first?.text.hasPrefix("The other device closed the connection without syncing") ?? false)
+        XCTAssertEqual(c.lastSyncedAt, before)   // nothing synced: "Last synced" keeps its time
+        XCTAssertNil(c.actionInfo)               // "The first sync is running" is gone
+    }
+
     func test_issues_map_to_the_desktop_wording() async throws {
         let store = LockedStore()
         let c = try await qrJoined(store)
@@ -1112,7 +1124,7 @@ final class ScriptedDialer: LanDialer, @unchecked Sendable {
         init(_ step: Step, _ owner: ScriptedDialer) { self.step = step; self.owner = owner }
         func send(_ bytes: [UInt8]) async throws { owner.lock.withLock { owner.sentFrames.append(bytes) } }
         func receiveFrame() async throws -> [UInt8] {
-            if step == .dropBeforeReply { throw LanSocketError("peer closed the connection") }
+            if step == .dropBeforeReply { throw LanSocketError("peer closed the connection", kind: .closedByPeer) }
             return try LanTransport.encodeFrame(Array("reply".utf8))
         }
         func close() {}
@@ -1139,7 +1151,10 @@ final class PairedConnectorTests: XCTestCase {
         for failure in [ScriptedDialer.Step.refuse, .dropBeforeReply] {
             let dialer = ScriptedDialer([failure])
             let conn = try await PairedLanConnector(paired: peer, dialer: dialer).connect(to: peer)
-            do { _ = try await conn.exchange(try hello()); XCTFail("expected a failure") } catch is LanPeerNotAnswering {}
+            do { _ = try await conn.exchange(try hello()); XCTFail("expected a failure") } catch let e as LanPeerNotAnswering {
+                // Only a host that took the hello and closed without a word counts as "not accepted".
+                XCTAssertEqual(e.closedByPeer, failure == .dropBeforeReply)
+            }
             XCTAssertEqual(dialer.dials, [endpoint])
         }
     }

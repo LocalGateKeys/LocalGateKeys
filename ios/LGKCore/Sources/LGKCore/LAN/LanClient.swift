@@ -11,7 +11,11 @@ public protocol LanConnection: Sendable {
 /// `LanClient` retries such a request once, with a NEW hello (new session id, higher counter).
 public struct LanPeerNotAnswering: Error, Equatable, Sendable, CustomStringConvertible {
     public let detail: String
-    public init(_ detail: String) { self.detail = detail }
+    /// The peer took the connection and the hello, then closed it without a word: a host does that only to a hello
+    /// it will not accept (this device was removed there, or the host left or reset sync). Never true for a failed
+    /// connect or a timeout.
+    public let closedByPeer: Bool
+    public init(_ detail: String, closedByPeer: Bool = false) { self.detail = detail; self.closedByPeer = closedByPeer }
     public var description: String { "peer did not answer: \(detail)" }
 }
 

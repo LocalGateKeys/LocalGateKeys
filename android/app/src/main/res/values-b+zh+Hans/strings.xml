@@ -457,6 +457,7 @@
     <string name="sync_wi_fi_sync_could_not">Wi-Fi 同步无法开始监听。请检查地址和端口，并确认没有其他应用占用该端口。</string>
     <string name="sync_issue_no_endpoint">%1$s 没有网络地址；它会改为连接到这部手机。</string>
     <string name="sync_a_device_could_not_be">无法在此网络上连接到某台设备。请确认它与此电脑在同一个 Wi-Fi 上，并且那里的 LocalGateKeys 已解锁。</string>
+    <string name="sync_issue_not_accepted">另一台设备未同步就关闭了连接。它可能移除了此设备，或者退出或重置了同步：请在此处选择“退出同步”，然后用新代码重新配对。</string>
     <string name="sync_a_device_that_is_not">一台未配对的设备尝试同步，已被拒绝。</string>
     <string name="sync_was_removed_from_sync_and">%1$s已从同步中移除，未与其联系。</string>
     <string name="sync_did_not_match_its_pairing">%1$s与其配对不符，没有同步。</string>

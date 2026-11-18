@@ -487,6 +487,7 @@
     <string name="sync_wi_fi_sync_could_not">Wi-Fi sync could not start listening. Check the address and port, and that no other app uses that port.</string>
     <string name="sync_issue_no_endpoint">%1$s has no network address; it connects to this phone instead.</string>
     <string name="sync_a_device_could_not_be">A device could not be reached on this network. Check that it is on the same Wi-Fi and that LocalGateKeys is unlocked there.</string>
+    <string name="sync_issue_not_accepted">The other device closed the connection without syncing. It probably removed this device, or left or reset sync: choose Leave sync here, then pair again with a new code.</string>
     <string name="sync_a_device_that_is_not">A device that is not paired tried to sync and was refused.</string>
     <string name="sync_was_removed_from_sync_and">%1$s was removed from sync and was not contacted.</string>
     <string name="sync_did_not_match_its_pairing">%1$s did not match its pairing and was not synced.</string>

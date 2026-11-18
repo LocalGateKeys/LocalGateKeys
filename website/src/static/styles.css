@@ -793,6 +793,10 @@ td.unchecked { color: var(--soft); font-style: italic; }
 .dl-row h2 { font-size: var(--step-2); margin-bottom: .25rem; }
 .dl-row p { margin: 0; color: var(--soft); max-width: 60ch; }
 .dl-row p + p { margin-top: .4rem; }
+.dl-beta { padding: 1.25rem 1.5rem; margin-block: 1rem; border: 1px solid var(--line-strong); border-radius: 12px; }
+.dl-beta h3 { margin: 0 0 .35rem; }
+.dl-beta p, .dl-beta ol { margin: .35rem 0; max-width: 60ch; }
+.dl-beta li + li { margin-top: .35rem; }
 .hash { font-family: var(--mono); font-size: var(--step--1); overflow-wrap: anywhere; }
 
 /* FAQ -------------------------------------------------------------------- */

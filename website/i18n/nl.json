@@ -1429,5 +1429,13 @@
   "compare.v.pl_bw": "Windows, Mac, Linux, iPhone, Android, webapp, browserextensies, opdrachtregel",
   "compare.v.pl_en": "Mac, Windows, Linux, iPhone, Android, browserextensies",
   "compare.v.pl_kp": "Windows, Mac, Linux",
-  "compare.v.pl_pp": "Windows, Mac, Linux, iPhone, Android, webapp, browserextensies, opdrachtregel"
+  "compare.v.pl_pp": "Windows, Mac, Linux, iPhone, Android, webapp, browserextensies, opdrachtregel",
+  "download.android.beta.title": "Android-bèta: help ons lanceren",
+  "download.android.beta.text": "De Android-app zit in een gesloten test op Google Play. Google wil testers voordat hij openbaar mag, en testers krijgen hem als eerste en gratis.",
+  "download.android.beta.step1": "Word lid van de testergroep",
+  "download.android.beta.step1.note": "met het Google-account dat je op je telefoon gebruikt.",
+  "download.android.beta.step2": "Doe mee en installeer via Google Play",
+  "download.android.beta.step2.note": "(open het op die telefoon of log in met hetzelfde account).",
+  "download.android.beta.stay": "Houd de app 14 dagen geïnstalleerd en blijf aangemeld. Google vereist dat voor een openbare release.",
+  "help.android.beta": "Wil je de Android-app nu al? Doe mee aan de bèta."
 }

@@ -7,6 +7,7 @@ import app.localgatekeys.android.i18n.Txt
 import app.localgatekeys.android.trash.LocalDataHosting
 import app.localgatekeys.core.lan.LanFeatures
 import app.localgatekeys.core.lan.LanPeer
+import app.localgatekeys.core.lan.LanPeerNotAnswering
 import app.localgatekeys.core.sync.ShareGroups
 import app.localgatekeys.core.sync.CollectionShares
 import app.localgatekeys.core.lan.BlobFetch
@@ -476,7 +477,13 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
         refreshMembership()
         if (!gate.isOpen) return
         if (result.ran) {
-            _lastSyncedAt.value = deps.clock.now
+            // A host that refused this phone synced nothing: "Last synced" keeps its time and
+            // "The first sync is running" goes away.
+            if (result.issues.none { it.kind == NOT_ACCEPTED }) {
+                _lastSyncedAt.value = deps.clock.now
+            } else if (_actionInfo.value == t.s(R.string.sync_joined_info)) {
+                _actionInfo.value = null
+            }
             _conflictCopies.value += result.conflicts
             val m = _membership.value
             _issues.value = words.views(result.issues, ownID = m.deviceId, folder = m.hasFolder)
@@ -1040,6 +1047,9 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
 
     companion object {
         const val MAX_PASSWORD_ATTEMPTS = 5
+
+        /** A Wi-Fi host closed the connection right after this phone's hello: almost always, it no longer accepts this phone. */
+        const val NOT_ACCEPTED = "not-accepted"
         const val PASSWORD_BACKOFF_SECONDS = 30L
 
         /** Rule 5's refusal: the other device could not pair this device under its kept id; a new one is used next time. */
@@ -1347,6 +1357,10 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             } catch (e: LanSyncException) {
                 if (inline && e.reason == "peer-refused" && e.detail == "bad-view") refusedFormat2(store, snapshot, peer.deviceId, memory, now)
                 return fail(if (e.reason == "bad-message") "bad-reply" else e.reason, e.detail)
+            } catch (e: LanPeerNotAnswering) {
+                // Closed right after the hello: the host no longer accepts this phone (removed there, or it left or
+                // reset sync); it says nothing on purpose, so this is the only sign (live check 2026-11-18).
+                return fail(if (e.closedByPeer) NOT_ACCEPTED else "unreachable", detail(e))
             } catch (e: Exception) {
                 return fail("unreachable", detail(e))
             }

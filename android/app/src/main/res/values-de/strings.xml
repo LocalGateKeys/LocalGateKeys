@@ -483,6 +483,7 @@
     <string name="sync_wi_fi_sync_could_not">Die WLAN-Synchronisierung konnte nicht zu lauschen beginnen. Prüfen Sie Adresse und Port und dass keine andere App diesen Port verwendet.</string>
     <string name="sync_issue_no_endpoint">%1$s hat keine Netzwerkadresse; es verbindet sich stattdessen mit diesem Telefon.</string>
     <string name="sync_a_device_could_not_be">Ein Gerät konnte in diesem Netzwerk nicht erreicht werden. Prüfen Sie, ob es im selben WLAN ist und LocalGateKeys dort entsperrt ist.</string>
+    <string name="sync_issue_not_accepted">Das andere Gerät hat die Verbindung ohne Synchronisierung beendet. Wahrscheinlich hat es dieses Gerät entfernt oder die Synchronisierung verlassen oder zurückgesetzt: Wählen Sie hier „Synchronisierung verlassen“ und koppeln Sie dann mit einem neuen Code erneut.</string>
     <string name="sync_a_device_that_is_not">Ein nicht gekoppeltes Gerät hat versucht zu synchronisieren und wurde abgewiesen.</string>
     <string name="sync_was_removed_from_sync_and">%1$s wurde aus der Synchronisierung entfernt und nicht kontaktiert.</string>
     <string name="sync_did_not_match_its_pairing">%1$s stimmte nicht mit seiner Kopplung überein und wurde nicht synchronisiert.</string>

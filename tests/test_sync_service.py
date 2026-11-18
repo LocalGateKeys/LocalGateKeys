@@ -836,6 +836,14 @@ def test_responder_reports_each_merge_a_peer_started(session, monkeypatch) -> No
     assert served == [merged]  # only a request that reached the merge step counts as a sync
 
 
+def test_a_host_that_closed_on_this_device_does_not_count_as_synced() -> None:
+    merged = RunReport(applied=1, own_states=())
+    assert svc._synced(merged)
+    assert not svc._synced(RunReport(issues=(SyncIssue("not-accepted", "peer"),)))
+    assert not svc._synced(dataclasses.replace(merged, issues=(SyncIssue("not-accepted", "peer"),)))
+    assert not svc._synced(RunReport(issues=(SyncIssue("unreachable", "peer"),)))
+
+
 def test_a_sync_the_phone_started_is_recorded_and_announced(session) -> None:
     # A phone has no endpoint: it connects to this PC, so the PC's own runs never sync with it.
     _lan_group(session)

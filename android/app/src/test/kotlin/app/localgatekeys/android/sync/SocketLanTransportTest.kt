@@ -598,7 +598,10 @@ class SocketLanTransportTest {
         for (step in listOf(ScriptedDialer.Step.REFUSE, ScriptedDialer.Step.DROP_BEFORE_REPLY)) {
             val dialer = ScriptedDialer(listOf(step))
             val conn: LanConnection = PairedLanConnector(scriptedPeer, dialer).connect(scriptedPeer)
-            assertTrue(failure { conn.exchange(hello()) } is LanPeerNotAnswering)
+            val e = failure { conn.exchange(hello()) }
+            assertTrue(e is LanPeerNotAnswering)
+            // Only a host that took the hello and closed without a word counts as "not accepted".
+            assertEquals(step == ScriptedDialer.Step.DROP_BEFORE_REPLY, (e as LanPeerNotAnswering).closedByPeer)
             assertEquals(listOf(endpoint), dialer.dials)
         }
     }

@@ -2882,6 +2882,7 @@
     "other": "{count} ans"
   },
   "sync.aDeviceCouldNotBe": "Un appareil est injoignable sur ce réseau. Vérifiez qu’il est sur le même Wi-Fi et que LocalGateKeys y est déverrouillé.",
+  "sync.theOtherDeviceClosedTheConnection": "L’autre appareil a fermé la connexion sans synchroniser. Il a probablement retiré cet appareil, ou quitté ou réinitialisé la synchronisation : choisissez Quitter la synchronisation ici, puis associez-le à nouveau avec un nouveau code.",
   "sync.aDeviceInTheMember": "Un appareil de la liste des membres porte un nom qui n’est pas un nom de fichier sûr ; il est ignoré.",
   "sync.aDeviceThatIsNot": "Un appareil non associé a tenté de se synchroniser et a été refusé.",
   "sync.aFileAttachedOnAnother": "Un fichier joint sur un autre appareil n’est pas encore arrivé. Son élément apparaît après une synchronisation qui reçoit le fichier.",

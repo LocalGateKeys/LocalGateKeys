@@ -65,7 +65,16 @@ description: [[t:download.description]]
       </div>
       <!-- if:ANDROID_APP_URL --><a class="button store-button" href="{{ANDROID_APP_URL}}">[[t:index.v2.store.play]]</a><!-- else --><span class="button disabled" aria-disabled="true">[[t:download.v2.soon.button]]</span><!-- /if -->
     </div>
-  </div>
+<!-- if:ANDROID_TESTER_GROUP_URL -->    <div class="dl-beta" id="android-beta">
+      <h3>[[t:download.android.beta.title]]</h3>
+      <p>[[t:download.android.beta.text]]</p>
+      <ol>
+        <li><a href="{{ANDROID_TESTER_GROUP_URL}}" rel="noopener">[[t:download.android.beta.step1]]</a> [[t:download.android.beta.step1.note]]</li>
+        <li><a href="{{ANDROID_BETA_OPTIN_URL}}" rel="noopener">[[t:download.android.beta.step2]]</a> [[t:download.android.beta.step2.note]]</li>
+      </ol>
+      <p class="quiet">[[t:download.android.beta.stay]]</p>
+    </div>
+<!-- /if -->  </div>
 
   <div class="prose" id="old-installer">
     <h2>[[t:download.v2.old-installer.title]]</h2>

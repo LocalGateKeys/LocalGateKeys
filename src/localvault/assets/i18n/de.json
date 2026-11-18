@@ -2882,6 +2882,7 @@
     "other": "{count} Jahre"
   },
   "sync.aDeviceCouldNotBe": "Ein Gerät konnte in diesem Netzwerk nicht erreicht werden. Prüfen Sie, ob es im selben WLAN ist und LocalGateKeys dort entsperrt ist.",
+  "sync.theOtherDeviceClosedTheConnection": "Das andere Gerät hat die Verbindung ohne Synchronisierung beendet. Wahrscheinlich hat es dieses Gerät entfernt oder die Synchronisierung verlassen oder zurückgesetzt: Wählen Sie hier „Synchronisierung verlassen“ und koppeln Sie dann mit einem neuen Code erneut.",
   "sync.aDeviceInTheMember": "Ein Gerät in der Mitgliederliste hat einen Namen, der kein sicherer Dateiname ist; es wird ignoriert.",
   "sync.aDeviceThatIsNot": "Ein nicht gekoppeltes Gerät hat versucht zu synchronisieren und wurde abgewiesen.",
   "sync.aFileAttachedOnAnother": "Eine auf einem anderen Gerät angehängte Datei ist noch nicht angekommen. Der zugehörige Eintrag erscheint nach einer Synchronisierung, die die Datei empfängt.",

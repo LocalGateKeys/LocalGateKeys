@@ -56,3 +56,6 @@ website/**/_headers text eol=lf
 
 # Compared byte for byte with browser-extension/site-logos.json (LF, see above).
 src/localvault/assets/site_logos.json text eol=lf
+
+# Translation catalogs are LF (a tool run on Windows once rewrote them with CRLF, 2026-11-18).
+src/localvault/assets/i18n/*.json text eol=lf

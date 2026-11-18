@@ -1429,5 +1429,13 @@
   "compare.v.pl_bw": "Windows, Mac, Linux, iPhone, Android, aplikacja webowa, rozszerzenia przeglądarki, wiersz poleceń",
   "compare.v.pl_en": "Mac, Windows, Linux, iPhone, Android, rozszerzenia przeglądarki",
   "compare.v.pl_kp": "Windows, Mac, Linux",
-  "compare.v.pl_pp": "Windows, Mac, Linux, iPhone, Android, aplikacja webowa, rozszerzenia przeglądarki, wiersz poleceń"
+  "compare.v.pl_pp": "Windows, Mac, Linux, iPhone, Android, aplikacja webowa, rozszerzenia przeglądarki, wiersz poleceń",
+  "download.android.beta.title": "Beta na Androida: pomóż nam wystartować",
+  "download.android.beta.text": "Aplikacja na Androida jest w zamkniętym teście w Google Play. Google wymaga testerów przed publikacją, a testerzy dostają ją pierwsi i za darmo.",
+  "download.android.beta.step1": "Dołącz do grupy testerów",
+  "download.android.beta.step1.note": "kontem Google, którego używasz na telefonie.",
+  "download.android.beta.step2": "Dołącz do testu i zainstaluj z Google Play",
+  "download.android.beta.step2.note": "(otwórz na tym telefonie lub zaloguj się tym samym kontem).",
+  "download.android.beta.stay": "Nie odinstalowuj aplikacji i pozostań w teście przez 14 dni. Google wymaga tego przed publiczną premierą.",
+  "help.android.beta": "Chcesz aplikację na Androida już teraz? Dołącz do bety."
 }

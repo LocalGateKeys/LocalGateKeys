@@ -535,6 +535,7 @@
     <string name="sync_wi_fi_sync_could_not">Synchronizacja Wi-Fi nie mogła zacząć nasłuchiwać. Sprawdź adres i port oraz czy żadna inna aplikacja nie używa tego portu.</string>
     <string name="sync_issue_no_endpoint">%1$s nie ma adresu sieciowego; to ono łączy się z tym telefonem.</string>
     <string name="sync_a_device_could_not_be">Nie udało się połączyć z urządzeniem w tej sieci. Sprawdź, czy jest w tej samej sieci Wi-Fi i czy LocalGateKeys jest tam odblokowany.</string>
+    <string name="sync_issue_not_accepted">Drugie urządzenie zamknęło połączenie bez synchronizacji. Prawdopodobnie usunęło to urządzenie albo opuściło lub zresetowało synchronizację: wybierz tutaj Opuść synchronizację, a potem sparuj ponownie z nowym kodem.</string>
     <string name="sync_a_device_that_is_not">Niesparowane urządzenie próbowało się synchronizować i zostało odrzucone.</string>
     <string name="sync_was_removed_from_sync_and">%1$s usunięto z synchronizacji i nie nawiązano z nim kontaktu.</string>
     <string name="sync_did_not_match_its_pairing">%1$s nie zgadzało się ze swoim parowaniem i nie zostało zsynchronizowane.</string>

@@ -203836,6 +203836,77 @@
         }
       }
     },
+    "sync.theOtherDeviceClosedWithoutSyncing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das andere Gerät hat die Verbindung ohne Synchronisierung beendet. Wahrscheinlich hat es dieses Gerät entfernt oder die Synchronisierung verlassen oder zurückgesetzt: Wählen Sie hier „Synchronisierung verlassen“ und koppeln Sie dann mit einem neuen Code erneut."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The other device closed the connection without syncing. It probably removed this device, or left or reset sync: choose Leave sync here, then pair again with a new code."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El otro dispositivo cerró la conexión sin sincronizar. Probablemente quitó este dispositivo, o salió de la sincronización o la restableció: elige Salir de la sincronización aquí y vuelve a emparejar con un código nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’autre appareil a fermé la connexion sans synchroniser. Il a probablement retiré cet appareil, ou quitté ou réinitialisé la synchronisation : choisissez Quitter la synchronisation ici, puis associez-le à nouveau avec un nouveau code."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’altro dispositivo ha chiuso la connessione senza sincronizzare. Probabilmente ha rimosso questo dispositivo, oppure ha lasciato o reimpostato la sincronizzazione: scegli Esci dalla sincronizzazione qui, poi associa di nuovo con un nuovo codice."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相手のデバイスが同期せずに接続を閉じました。このデバイスを削除したか、同期から離脱またはリセットした可能性があります。ここで「同期から離脱」を選び、新しいコードでもう一度ペアリングしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "다른 기기가 동기화하지 않고 연결을 닫았습니다. 이 기기를 제거했거나 동기화를 나갔거나 초기화했을 수 있습니다. 여기서 동기화 나가기를 선택한 다음 새 코드로 다시 페어링하세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het andere apparaat sloot de verbinding zonder te synchroniseren. Waarschijnlijk heeft het dit apparaat verwijderd, of de synchronisatie verlaten of opnieuw ingesteld: kies hier Synchronisatie verlaten en koppel daarna opnieuw met een nieuwe code."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drugie urządzenie zamknęło połączenie bez synchronizacji. Prawdopodobnie usunęło to urządzenie albo opuściło lub zresetowało synchronizację: wybierz tutaj Opuść synchronizację, a potem sparuj ponownie z nowym kodem."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O outro dispositivo fechou a conexão sem sincronizar. Provavelmente ele removeu este dispositivo, ou saiu da sincronização ou a redefiniu: escolha Sair da sincronização aqui e pareie de novo com um novo código."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "另一台设备未同步就关闭了连接。它可能移除了此设备，或者退出或重置了同步：请在此处选择“退出同步”，然后用新代码重新配对。"
+          }
+        }
+      }
+    },
     "sync.theOtherDeviceCouldNot" : {
       "extractionState" : "manual",
       "localizations" : {

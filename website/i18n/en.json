@@ -1429,5 +1429,13 @@
   "compare.v.pl_bw": "Windows, Mac, Linux, iPhone, Android, web app, browser extensions, command line",
   "compare.v.pl_en": "Mac, Windows, Linux, iPhone, Android, browser extensions",
   "compare.v.pl_kp": "Windows, Mac, Linux",
-  "compare.v.pl_pp": "Windows, Mac, Linux, iPhone, Android, web app, browser extensions, command line"
+  "compare.v.pl_pp": "Windows, Mac, Linux, iPhone, Android, web app, browser extensions, command line",
+  "download.android.beta.title": "Android beta: help us launch",
+  "download.android.beta.text": "The Android app is in a closed test on Google Play. Google needs testers before it can go public, and testers get it free first.",
+  "download.android.beta.step1": "Join the tester group",
+  "download.android.beta.step1.note": "with the Google account you use on your phone.",
+  "download.android.beta.step2": "Opt in and install from Google Play",
+  "download.android.beta.step2.note": "(open it on that phone, or sign in with the same account).",
+  "download.android.beta.stay": "Please keep the app installed and stay opted in for 14 days. Google requires this before a public release.",
+  "help.android.beta": "Want the Android app now? Join the beta."
 }

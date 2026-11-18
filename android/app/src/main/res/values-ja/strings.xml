@@ -457,6 +457,7 @@
     <string name="sync_wi_fi_sync_could_not">Wi-Fi同期が待ち受けを開始できませんでした。アドレスとポートを確認し、ほかのアプリがそのポートを使っていないことも確認してください。</string>
     <string name="sync_issue_no_endpoint">%1$sにはネットワークアドレスがないため、代わりにそちらからこのスマートフォンに接続します。</string>
     <string name="sync_a_device_could_not_be">このネットワークでデバイスに接続できませんでした。同じWi-Fiに接続していること、そのデバイスでLocalGateKeysがロック解除されていることを確認してください。</string>
+    <string name="sync_issue_not_accepted">相手のデバイスが同期せずに接続を閉じました。このデバイスを削除したか、同期から離脱またはリセットした可能性があります。ここで「同期から離脱」を選び、新しいコードでもう一度ペアリングしてください。</string>
     <string name="sync_a_device_that_is_not">ペアリングされていないデバイスが同期しようとして、拒否されました。</string>
     <string name="sync_was_removed_from_sync_and">%1$sは同期から削除されており、接続しませんでした。</string>
     <string name="sync_did_not_match_its_pairing">%1$sがペアリングと一致しなかったため、同期されませんでした。</string>

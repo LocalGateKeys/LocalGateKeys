@@ -8,6 +8,7 @@ import app.localgatekeys.android.unlock.TestClock
 import app.localgatekeys.android.vault.SecretSlots
 import app.localgatekeys.android.vault.Slot
 import app.localgatekeys.android.vault.VaultCounterStore
+import app.localgatekeys.core.lan.LanPeerNotAnswering
 import app.localgatekeys.core.lan.DeviceIdentity
 import app.localgatekeys.core.lan.Enrollment
 import app.localgatekeys.core.lan.LanAddress
@@ -709,6 +710,18 @@ class SyncCoordinatorTest {
     }
 
     // MARK: running
+
+    @Test fun a_host_that_closes_after_the_hello_says_it_no_longer_accepts_this_phone() = test {
+        val store = LockedStore()
+        val c = qrJoined(store)
+        val before = c.lastSyncedAt.value
+        lan.exchange = { throw LanPeerNotAnswering("peer closed the connection", closedByPeer = true) }
+        c.sync(Trigger.MANUAL)
+        assertEquals(listOf("not-accepted"), c.issues.value.map { it.kind })
+        assertTrue(c.issues.value.first().text.startsWith("The other device closed the connection without syncing"))
+        assertEquals(before, c.lastSyncedAt.value) // nothing synced: "Last synced" keeps its time
+        assertNull(c.actionInfo.value) // "The first sync is running" is gone
+    }
 
     @Test fun issues_map_to_the_desktop_wording() = test {
         val store = LockedStore()

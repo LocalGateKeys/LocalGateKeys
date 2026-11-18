@@ -23,7 +23,7 @@ ALL_KINDS = (
     "folder-unreadable", "group-mismatch", "identity-mismatch", "keyring-corrupt", "keyring-missing",
     "keyring-unreadable", "lan-not-listening", "listen-failed", "local-data", "no-endpoint", "not-joined",
     "peer-epoch-behind", "peer-mismatch", "peer-not-joined", "peer-refused", "peer-rejoin-required",
-    "peer-revoked", "state-corrupt", "tampered", "too-large", "unknown-peer", "unreachable", "unreadable",
+    "peer-revoked", "state-corrupt", "tampered", "too-large", "unknown-peer", "unreachable", "not-accepted", "unreadable",
     "unsafe-member", "bad-chunk", "bad-message", "refused", "bad-offer", "already-joined", "update-needed",
     "bad-name",
     # extended audit 2026-10-24 (M-6 counters, M-7 signed views)

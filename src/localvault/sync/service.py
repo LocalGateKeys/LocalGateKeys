@@ -1014,6 +1014,11 @@ class _Status:
     shares: dict[str, TransportStatus] = field(default_factory=dict)
 
 
+def _synced(report: RunReport) -> bool:
+    """Whether *report* counts for "Last synced": it merged, and no host closed on this device."""
+    return report.own_states is not None and not any(i.kind == "not-accepted" for i in report.issues)
+
+
 def _changed_items(report: RunReport) -> int:
     return report.applied + report.deleted + report.conflicts
 
@@ -1407,7 +1412,7 @@ class SyncService:
                         old, configured=configured.get(adapter.name, False), issues=())
                     st.skipped.pop(adapter.name, None)
                     continue
-                synced = report.own_states is not None
+                synced = _synced(report)
                 st.transports[adapter.name] = TransportStatus(
                     adapter.name, True, now, now if synced else old.last_sync, dedupe_issues(report.issues))
                 st.skipped[adapter.name] = tuple(report.skipped)
@@ -1417,7 +1422,7 @@ class SyncService:
                     continue
                 group_id = name[len(SHARE_PREFIX):]
                 old = st.shares.get(group_id, TransportStatus(group_id))
-                synced = report.own_states is not None
+                synced = _synced(report)
                 st.shares[group_id] = TransportStatus(group_id, True, now, now if synced else old.last_sync,
                                                       dedupe_issues(report.issues))
                 st.conflicts += report.conflicts

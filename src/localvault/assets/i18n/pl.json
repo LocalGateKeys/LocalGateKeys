@@ -3000,6 +3000,7 @@
     "other": "{count} roku"
   },
   "sync.aDeviceCouldNotBe": "Nie udało się połączyć z urządzeniem w tej sieci. Sprawdź, czy jest w tej samej sieci Wi-Fi i czy LocalGateKeys jest tam odblokowany.",
+  "sync.theOtherDeviceClosedTheConnection": "Drugie urządzenie zamknęło połączenie bez synchronizacji. Prawdopodobnie usunęło to urządzenie albo opuściło lub zresetowało synchronizację: wybierz tutaj Opuść synchronizację, a potem sparuj ponownie z nowym kodem.",
   "sync.aDeviceInTheMember": "Urządzenie z listy członków ma nazwę, która nie jest bezpieczną nazwą pliku; jest ignorowane.",
   "sync.aDeviceThatIsNot": "Niesparowane urządzenie próbowało się synchronizować i zostało odrzucone.",
   "sync.aFileAttachedOnAnother": "Plik załączony na innym urządzeniu jeszcze nie dotarł. Jego element pojawi się po synchronizacji, która odbierze plik.",

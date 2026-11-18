@@ -1803,7 +1803,14 @@ def sync_with(transport: SyncTransport, peer_id: str, session: Any, lease: Any, 
                               heir=peer_id in state.heir_peers)
             inline = peer_id in state.witness_peers and session_generation(session) is not None
         first, out = _prepare_view(session, lease, own, now, inline=inline)
-        reply = call(first, retry=False)  # an unreachable peer is reported at once
+        try:
+            reply = call(first, retry=False)  # an unreachable peer is reported at once
+        except PeerNotAnswering as exc:
+            if not exc.closed_by_peer:
+                raise
+            # Connected, hello sent, closed without a reply even on the retry: the host no
+            # longer accepts this device (it removed it, or left or reset sync).
+            return RunReport(issues=(SyncIssue("not-accepted", f"{peer_id}: {exc}"),))
         if out is not None:
             for seq in range(1, len(out.parts)):
                 if reply != {"type": "ack", "transfer": out.transfer, "seq": seq - 1}:

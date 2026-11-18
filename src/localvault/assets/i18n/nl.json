@@ -2882,6 +2882,7 @@
     "other": "{count} jaar"
   },
   "sync.aDeviceCouldNotBe": "Een apparaat kon op dit netwerk niet worden bereikt. Controleer of het op hetzelfde wifi-netwerk zit en of LocalGateKeys daar is ontgrendeld.",
+  "sync.theOtherDeviceClosedTheConnection": "Het andere apparaat sloot de verbinding zonder te synchroniseren. Waarschijnlijk heeft het dit apparaat verwijderd, of de synchronisatie verlaten of opnieuw ingesteld: kies hier Synchronisatie verlaten en koppel daarna opnieuw met een nieuwe code.",
   "sync.aDeviceInTheMember": "Een apparaat in de ledenlijst heeft een naam die geen veilige bestandsnaam is; het wordt genegeerd.",
   "sync.aDeviceThatIsNot": "Een apparaat dat niet is gekoppeld, probeerde te synchroniseren en is geweigerd.",
   "sync.aFileAttachedOnAnother": "Een op een ander apparaat bijgevoegd bestand is nog niet aangekomen. Het bijbehorende item verschijnt na een synchronisatie die het bestand ontvangt.",

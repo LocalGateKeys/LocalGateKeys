@@ -483,6 +483,7 @@
     <string name="sync_wi_fi_sync_could_not">Wifi-synchronisatie kon niet gaan luisteren. Controleer het adres en de poort, en dat geen andere app die poort gebruikt.</string>
     <string name="sync_issue_no_endpoint">%1$s heeft geen netwerkadres; het maakt in plaats daarvan verbinding met deze telefoon.</string>
     <string name="sync_a_device_could_not_be">Een apparaat kon op dit netwerk niet worden bereikt. Controleer of het op hetzelfde wifi-netwerk zit en of LocalGateKeys daar is ontgrendeld.</string>
+    <string name="sync_issue_not_accepted">Het andere apparaat sloot de verbinding zonder te synchroniseren. Waarschijnlijk heeft het dit apparaat verwijderd, of de synchronisatie verlaten of opnieuw ingesteld: kies hier Synchronisatie verlaten en koppel daarna opnieuw met een nieuwe code.</string>
     <string name="sync_a_device_that_is_not">Een apparaat dat niet is gekoppeld, probeerde te synchroniseren en is geweigerd.</string>
     <string name="sync_was_removed_from_sync_and">%1$s is uit de synchronisatie verwijderd en er is geen contact mee gemaakt.</string>
     <string name="sync_did_not_match_its_pairing">%1$s kwam niet overeen met de koppeling en is niet gesynchroniseerd.</string>
