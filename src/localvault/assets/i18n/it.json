@@ -2302,6 +2302,7 @@
   "secrets.addedToFavorites": "Aggiunto ai preferiti.",
   "secrets.confirmToCopyThisPassword": "Conferma per copiare questa password",
   "secrets.confirmToRevealThisPassword": "Conferma per rivelare questa password",
+  "secrets.confirmToRevealThisNote": "Conferma per rivelare questa nota",
   "secrets.invalidSetupKey": "Chiave di configurazione non valida",
   "secrets.moveToTheTrashYou": "Spostare {name} nel cestino? Potrai ripristinarlo dal Cestino più tardi.",
   "secrets.moveToTrash": "Spostare nel cestino?",

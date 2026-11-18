@@ -2390,6 +2390,7 @@
   "secrets.addedToFavorites": "Dodano do ulubionych.",
   "secrets.confirmToCopyThisPassword": "Potwierdź, aby skopiować to hasło",
   "secrets.confirmToRevealThisPassword": "Potwierdź, aby pokazać to hasło",
+  "secrets.confirmToRevealThisNote": "Potwierdź, aby pokazać tę notatkę",
   "secrets.invalidSetupKey": "Nieprawidłowy klucz konfiguracji",
   "secrets.moveToTheTrashYou": "Przenieść {name} do kosza? Później możesz to przywrócić z Kosza.",
   "secrets.moveToTrash": "Przenieść do kosza?",

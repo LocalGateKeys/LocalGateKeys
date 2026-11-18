@@ -107,6 +107,43 @@ def test_unsaved_changes_mark_is_not_a_window_change():
     assert "".join(v for k, v in p.sent if k == "text") == "bob@test.examplepw-long-1234"
 
 
+def test_untitled_tab_named_after_typed_text_is_not_a_window_change():
+    """Live check 2026-11-18: Windows 11 Notepad renamed "Untitled - Notepad" to "test - Notepad" after the first
+    batch and typing stopped."""
+    doc = Target(11, "Untitled - Notepad", "notepad.exe", 42)
+    p = FakePlatform({11: doc})
+    assert still_target(p, doc, "test")
+    p.windows[11] = Target(11, "test - Notepad", "notepad.exe", 42)
+    assert still_target(p, doc, "testuser") and still_target(p, doc, "test")
+    assert not still_target(p, doc, "")  # nothing typed yet: a rename is a change
+    assert not still_target(p, doc, "bob")  # a name that is not the typed text (another tab)
+    p.windows[11] = Target(11, "test - Other", "notepad.exe", 42)  # the app part changed
+    assert not still_target(p, doc, "testuser")
+    page = Target(11, "Untitled - Browser", "chrome.exe", 42)  # never for a browser
+    p.windows[11] = Target(11, "test - Browser", "chrome.exe", 42)
+    assert not still_target(p, page, "testuser")
+    p.windows[11] = doc  # a full run: every batch renames the tab after the whole first line, tab included
+
+    line = []
+
+    def rename():
+        p.windows[11] = Target(11, "*" + "".join(line) + " - Notepad", "notepad.exe", 42)
+
+    def send_text(text):
+        p.sent.append(("text", text))
+        line.append(text)
+        rename()
+
+    def send_key(key):
+        p.sent.append(("key", key))
+        if key == "tab":
+            line.append("\t")
+            rename()
+    p.send_text, p.send_key = send_text, send_key
+    assert run(p, doc, sequence("testuser", "pw-long-1234"), settings=ON, countdown=0, own_pid=OWN) == {"typed": 4}
+    assert "".join(v for k, v in p.sent if k == "text") == "testuserpw-long-1234"
+
+
 def test_types_after_countdown():
     p, ticks = FakePlatform(), []
     assert run(p, NOTEPAD, sequence("ada", "pw"), settings=ON, on_tick=ticks.append, own_pid=OWN) == {"typed": 4}

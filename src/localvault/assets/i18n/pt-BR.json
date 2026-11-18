@@ -2302,6 +2302,7 @@
   "secrets.addedToFavorites": "Adicionado aos favoritos.",
   "secrets.confirmToCopyThisPassword": "Confirme para copiar esta senha",
   "secrets.confirmToRevealThisPassword": "Confirme para revelar esta senha",
+  "secrets.confirmToRevealThisNote": "Confirme para revelar esta nota",
   "secrets.invalidSetupKey": "Chave de configuração inválida",
   "secrets.moveToTheTrashYou": "Mover {name} para a lixeira? Você poderá restaurá-lo da Lixeira depois.",
   "secrets.moveToTrash": "Mover para a lixeira?",

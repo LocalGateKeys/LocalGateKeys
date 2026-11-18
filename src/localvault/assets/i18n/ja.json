@@ -2259,6 +2259,7 @@
   "secrets.addedToFavorites": "お気に入りに追加しました。",
   "secrets.confirmToCopyThisPassword": "このパスワードのコピーを確認",
   "secrets.confirmToRevealThisPassword": "このパスワードの表示を確認",
+  "secrets.confirmToRevealThisNote": "このメモの表示を確認",
   "secrets.invalidSetupKey": "セットアップキーが無効です",
   "secrets.moveToTheTrashYou": "{name}をゴミ箱へ移動しますか? 後でゴミ箱から復元できます。",
   "secrets.moveToTrash": "ゴミ箱へ移動しますか?",

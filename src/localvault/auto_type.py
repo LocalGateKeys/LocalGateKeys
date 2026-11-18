@@ -82,17 +82,31 @@ def _without_unsaved_mark(title: str) -> str:
     return text
 
 
-def still_target(platform: Platform, target: Target) -> bool:
+def _named_from_typed(before: str, after: str, typed: str) -> bool:
+    """True when ``after`` is ``before`` with the document name replaced by the start of the first line typed so far:
+    Windows 11 Notepad names an untitled tab after its first line, and renames it as the line grows ("Untitled -
+    Notepad" -> "bob - Notepad" -> "bob<TAB>pw - Notepad"), live check 2026-11-18. The app part after the last " - " must stay the same; another tab's name is not typed text."""
+    if not typed or " - " not in before or " - " not in after:
+        return False
+    old_doc, old_app = before.rsplit(" - ", 1)
+    new_doc, new_app = after.rsplit(" - ", 1)
+    return new_app == old_app and bool(new_doc.strip()) and new_doc != old_doc and typed.startswith(new_doc)
+
+
+def still_target(platform: Platform, target: Target, typed: str = "") -> bool:
     """True only while the foreground is the same window with the same title and process as captured; a title
-    that differs only by an unsaved-changes mark is the same."""
+    that differs only by an unsaved-changes mark is the same, and so is an untitled document renamed after the
+    first field's text ``typed`` so far (never for a browser, whose title is the page's)."""
     if platform.secure_desktop():
         return False
     hwnd = platform.foreground()
     if hwnd != target.hwnd:
         return False
     now = platform.describe(hwnd)
-    return now is not None and (now.process, now.pid) == (target.process, target.pid) and \
-        _without_unsaved_mark(now.title) == _without_unsaved_mark(target.title)
+    if now is None or (now.process, now.pid) != (target.process, target.pid):
+        return False
+    before, after = _without_unsaved_mark(target.title), _without_unsaved_mark(now.title)
+    return after == before or (not is_browser(target.process) and _named_from_typed(before, after, typed))
 
 
 # Web browsers (and hosts of embedded web pages): the page decides the window title and LocalGateKeys cannot
@@ -139,16 +153,24 @@ def run(platform: Platform, target: Target, steps: list[tuple[str, str]], *, set
         if not still_target(platform, target):
             raise AutoTypeError("foreground_changed")
     typed = 0
+    first = ""  # the first line typed so far (an untitled editor tab takes its name from it, tab included)
+    first_done = False
     for kind, value in steps:
         if kind != "text":
-            if not still_target(platform, target):
+            if not still_target(platform, target, first):
                 raise AutoTypeError("foreground_changed")
             platform.send_key(value)
+            if value == "tab" and not first_done:
+                first += "\t"
+            else:
+                first_done = True
         else:
             for start in range(0, len(value), TEXT_BATCH):
-                if not still_target(platform, target):
+                if not still_target(platform, target, first):
                     raise AutoTypeError("foreground_changed")
                 platform.send_text(value[start:start + TEXT_BATCH])
+                if not first_done:
+                    first += value[start:start + TEXT_BATCH]
         typed += 1
     return {"typed": typed}
 

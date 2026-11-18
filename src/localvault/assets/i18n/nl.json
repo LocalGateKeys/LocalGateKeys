@@ -2302,6 +2302,7 @@
   "secrets.addedToFavorites": "Aan favorieten toegevoegd.",
   "secrets.confirmToCopyThisPassword": "Bevestig om dit wachtwoord te kopiëren",
   "secrets.confirmToRevealThisPassword": "Bevestig om dit wachtwoord te tonen",
+  "secrets.confirmToRevealThisNote": "Bevestig om deze notitie te tonen",
   "secrets.invalidSetupKey": "Ongeldige installatiesleutel",
   "secrets.moveToTheTrashYou": "{name} naar de prullenbak verplaatsen? Je kunt het later herstellen vanuit de Prullenbak.",
   "secrets.moveToTrash": "Naar prullenbak verplaatsen?",

@@ -2259,6 +2259,7 @@
   "secrets.addedToFavorites": "已添加到收藏。",
   "secrets.confirmToCopyThisPassword": "确认复制此密码",
   "secrets.confirmToRevealThisPassword": "确认显示此密码",
+  "secrets.confirmToRevealThisNote": "确认显示此笔记",
   "secrets.invalidSetupKey": "设置密钥无效",
   "secrets.moveToTheTrashYou": "要将 {name} 移到回收站吗？之后可以从回收站还原。",
   "secrets.moveToTrash": "要移到回收站吗？",

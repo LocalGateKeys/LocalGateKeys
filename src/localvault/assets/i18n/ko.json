@@ -2259,6 +2259,7 @@
   "secrets.addedToFavorites": "즐겨찾기에 추가했습니다.",
   "secrets.confirmToCopyThisPassword": "이 비밀번호를 복사하려면 확인하세요",
   "secrets.confirmToRevealThisPassword": "이 비밀번호를 표시하려면 확인하세요",
+  "secrets.confirmToRevealThisNote": "이 메모를 표시하려면 확인하세요",
   "secrets.invalidSetupKey": "잘못된 설정 키",
   "secrets.moveToTheTrashYou": "{name}을(를) 휴지통으로 이동하시겠습니까? 나중에 휴지통에서 복원할 수 있습니다.",
   "secrets.moveToTrash": "휴지통으로 이동하시겠습니까?",

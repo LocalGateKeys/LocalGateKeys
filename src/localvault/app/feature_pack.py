@@ -339,7 +339,8 @@ class ItemHistoryService(_Base):
             else:
                 snapshot = self._snapshot(session, ns, str(current["id"]), snapshot_id)
                 strict = _master_hidden_changed(kind, item_history.diff(snapshot, current, kind))
-            self._auth.reauthenticate(t("secrets.confirmToRevealThisPassword"), lease, allow_hello=not strict)
+            title = "secrets.confirmToRevealThisNote" if kind == "note" else "secrets.confirmToRevealThisPassword"
+            self._auth.reauthenticate(t(title), lease, allow_hello=not strict)
             self._require(lease)
             ns, current = _record(session, ref)
             kind = str(current.get("kind") or "")

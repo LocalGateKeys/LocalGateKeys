@@ -453,7 +453,7 @@ def test_history_reveal_of_a_note_body_needs_the_master_password(env):
     port.passwords = []  # cancelled
     with pytest.raises(ApiError):
         service.diff(ref, row["snapshot_id"], reveal=True)
-    assert port.asked  # asked although the grace was running
+    assert port.asked == ["Confirm to reveal this note"]  # asked although the grace was running; not "password"
     port.asked.clear()
     port.passwords = [MASTER]
     shown = service.diff(ref, row["snapshot_id"], reveal=True)["fields"]

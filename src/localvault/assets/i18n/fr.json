@@ -2302,6 +2302,7 @@
   "secrets.addedToFavorites": "Ajouté aux favoris.",
   "secrets.confirmToCopyThisPassword": "Confirmez pour copier ce mot de passe",
   "secrets.confirmToRevealThisPassword": "Confirmez pour afficher ce mot de passe",
+  "secrets.confirmToRevealThisNote": "Confirmez pour afficher cette note",
   "secrets.invalidSetupKey": "Clé de configuration non valide",
   "secrets.moveToTheTrashYou": "Mettre {name} dans la corbeille ? Vous pourrez le restaurer plus tard depuis la corbeille.",
   "secrets.moveToTrash": "Mettre dans la corbeille ?",

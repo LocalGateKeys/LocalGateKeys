@@ -23,5 +23,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\fixtures\system-messages.json" Link="fixtures\system-messages.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Many tests here use time limits of a few hundred milliseconds: one test class at a time, so a small
+         CI runner does not miss them. -->
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

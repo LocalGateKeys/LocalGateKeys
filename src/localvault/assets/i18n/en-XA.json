@@ -2611,6 +2611,7 @@
   "secret_scan.vars": "Vårîåbléš: {count}~~~~~~~",
   "secrets.addedToFavorites": "Åddéd tõ fåvõrîtéš.~~~~~~~~",
   "secrets.confirmToCopyThisPassword": "Çõñfîrm tõ çõpý thîš påššwõrd~~~~~~~~~~~~",
+  "secrets.confirmToRevealThisNote": "Çõñfîrm tõ révéål thîš ñõté~~~~~~~~~~~",
   "secrets.confirmToRevealThisPassword": "Çõñfîrm tõ révéål thîš påššwõrd~~~~~~~~~~~~",
   "secrets.invalidSetupKey": "Îñvålîd šétüp kéý~~~~~~~",
   "secrets.moveToTheTrashYou": "Mõvé {name} tõ thé tråšh? Ýõü çåñ réštõré ît frõm Tråšh låtér.~~~~~~~~~~~~~~~~~~~~~~~~~",

@@ -2302,6 +2302,7 @@
   "secrets.addedToFavorites": "Zu Favoriten hinzugefügt.",
   "secrets.confirmToCopyThisPassword": "Bestätigen, um dieses Passwort zu kopieren",
   "secrets.confirmToRevealThisPassword": "Bestätigen, um dieses Passwort anzuzeigen",
+  "secrets.confirmToRevealThisNote": "Bestätigen, um diese Notiz anzuzeigen",
   "secrets.invalidSetupKey": "Ungültiger Einrichtungsschlüssel",
   "secrets.moveToTheTrashYou": "{name} in den Papierkorb verschieben? Sie können es später aus dem Papierkorb wiederherstellen.",
   "secrets.moveToTrash": "In den Papierkorb verschieben?",

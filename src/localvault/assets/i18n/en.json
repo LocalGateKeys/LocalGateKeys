@@ -2302,6 +2302,7 @@
   "secrets.addedToFavorites": "Added to favorites.",
   "secrets.confirmToCopyThisPassword": "Confirm to copy this password",
   "secrets.confirmToRevealThisPassword": "Confirm to reveal this password",
+  "secrets.confirmToRevealThisNote": "Confirm to reveal this note",
   "secrets.invalidSetupKey": "Invalid setup key",
   "secrets.moveToTheTrashYou": "Move {name} to the trash? You can restore it from Trash later.",
   "secrets.moveToTrash": "Move to trash?",
