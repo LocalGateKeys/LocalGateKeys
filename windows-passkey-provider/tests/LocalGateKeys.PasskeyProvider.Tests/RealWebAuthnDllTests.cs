@@ -19,8 +19,11 @@ public class RealWebAuthnDllTests
         if (!NativeLibrary.TryLoad("webauthn.dll", typeof(RealWebAuthnDllTests).Assembly,
                                    DllImportSearchPath.System32, out var handle))
             return false;
-        return NativeLibrary.TryGetExport(handle, "WebAuthNDecodeGetAssertionRequest", out _)
-               && NativeLibrary.TryGetExport(handle, "WebAuthNEncodeGetAssertionResponse", out _);
+        if (!NativeLibrary.TryGetExport(handle, "WebAuthNDecodeGetAssertionRequest", out _)
+            || !NativeLibrary.TryGetExport(handle, "WebAuthNEncodeGetAssertionResponse", out _))
+            return false;
+        // Windows Server (the CI runner) has the exports but the wrapper answers "not implemented".
+        return WebAuthnApi.Instance.DecodeGetAssertion(GetAssertionCbor(), out _) != HResults.ENotImpl;
     }
 
     private static readonly byte[] Hash = SHA256.HashData("client data"u8.ToArray());

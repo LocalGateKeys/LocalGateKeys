@@ -42,3 +42,11 @@ windows-passkey-provider/**/*.exe binary
 windows-passkey-provider/**/*.winmd binary
 windows-passkey-provider/**/*.snk binary
 windows-passkey-provider/**/*.bin binary
+
+# Extension text is LF everywhere: the Safari resources under ios/ (LF) are built from these files and a test
+# compares them byte for byte, also on a Windows checkout with core.autocrlf on.
+browser-extension/**/*.js text eol=lf
+browser-extension/**/*.json text eol=lf
+browser-extension/**/*.html text eol=lf
+browser-extension/**/*.css text eol=lf
+browser-extension/**/*.txt text eol=lf
