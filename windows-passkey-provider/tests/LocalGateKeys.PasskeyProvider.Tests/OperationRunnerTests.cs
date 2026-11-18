@@ -210,7 +210,9 @@ public class OperationRunnerTests
     {
         var pipe = new FakeConnector((_, _) => throw new AgentUnavailableException());
         var launcher = new FakeLauncher();
-        var runner = Runner(pipe, launcher);
+        // Not a timing test: the first refused connection ends it. A long limit, so a slow CI runner that takes
+        // more than the short one to schedule the call still gets the answer and not a timeout.
+        var runner = Runner(pipe, launcher, timeout: TimeSpan.FromSeconds(30));
         runner.StartsApp = false;
         var result = await runner.RunAsync(new JsonObject { ["action"] = "passkey_lock_status_system" }, Txn,
                                            CancellationToken.None);
